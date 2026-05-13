@@ -1,0 +1,92 @@
+# Fastlane runbook for GPSinfo.
+#
+# Quick reference:
+#   bundle exec fastlane verify           # Run unit tests
+#   bundle exec fastlane bundle           # Build a signed AAB (release)
+#   bundle exec fastlane screenshots      # Generate Play Store screenshots
+#                                         #   (needs a running emulator)
+#   bundle exec fastlane deploy_internal  # Upload to Play Console internal track
+#   bundle exec fastlane deploy_production # Promote to production
+#
+# The actual signing config lives in app/build.gradle.kts; this runbook
+# does NOT pass keystore credentials around — gradle reads them from
+# keystore.properties (gitignored) or the FASTLANE_GPSINFO_* env vars.
+
+default_platform(:android)
+
+LOCALES = %w[
+  en-US cs-CZ de-DE es-ES fr-FR it-IT ja-JP nl-NL pl-PL pt-BR ru-RU tr-TR
+]
+
+platform :android do
+
+  desc "Run unit tests"
+  lane :verify do
+    gradle(task: "testDebugUnitTest")
+  end
+
+  desc "Build a signed AAB ready for Play upload"
+  lane :bundle do
+    verify
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      print_command: false
+    )
+  end
+
+  desc "Generate Play Store screenshots across all supported locales."
+  desc "Requires an Android emulator already running (adb devices)."
+  desc "Output: fastlane/metadata/android/<locale>/images/phoneScreenshots/"
+  lane :screenshots do
+    gradle(task: "assembleDebug assembleDebugAndroidTest")
+    capture_android_screenshots(
+      locales: LOCALES,
+      clear_previous_screenshots: true,
+      app_apk_path: "app/build/outputs/apk/debug/app-debug.apk",
+      tests_apk_path: "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      use_adb_root: false
+    )
+  end
+
+  desc "Upload AAB + metadata to internal testing track."
+  desc "Use this for every release before promoting to production."
+  lane :deploy_internal do
+    bundle
+    upload_to_play_store(
+      track: "internal",
+      release_status: "draft",
+      skip_upload_apk: true,
+      skip_upload_screenshots: false,
+      validate_only: false
+    )
+  end
+
+  desc "Promote the current internal release to production."
+  desc "Runs the standard staged rollout (10% by default)."
+  lane :deploy_production do
+    upload_to_play_store(
+      track: "production",
+      track_promote_to: "production",
+      rollout: "0.1",
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: false,
+      skip_upload_changelogs: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Upload only the listing metadata + screenshots (no AAB)."
+  desc "Useful for translation tweaks between builds."
+  lane :metadata_only do
+    upload_to_play_store(
+      track: "internal",
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_changelogs: false,
+      skip_upload_screenshots: false
+    )
+  end
+end

@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ explicit allow-list. Same intent as backup_rules.xml: only
+  the UI preferences DataStore is allowed to leave the device. Anything
+  that could leak a fix or movement history is excluded by default.
+-->
 <data-extraction-rules>
-    <cloud-backup />
-    <device-transfer />
+    <cloud-backup>
+        <include domain="file" path="datastore/gpsinfo_prefs.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="file" path="datastore/gpsinfo_prefs.preferences_pb" />
+    </device-transfer>
 </data-extraction-rules>

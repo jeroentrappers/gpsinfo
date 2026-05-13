@@ -1,0 +1,8 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+Pierwsza wersja.
+- Zintegrowany panel: fix, pozycja, ruch, widok nieba, kompas, mapa świata, czas i słońce
+- Retro analogowy prędkościomierz z trybem HUD
+- Adaptacyjny azymut działający w każdej orientacji
+- 12 języków, motyw jasny/ciemny, jednostki metryczne/imperialne/morskie
+- 100% offline, brak śledzenia, brak Play Services

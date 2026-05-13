@@ -1,0 +1,3 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+Tableau de bord GNSS, boussole, soleil et vitesse en direct. Hors-ligne.

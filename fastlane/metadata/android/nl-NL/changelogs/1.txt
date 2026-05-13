@@ -1,0 +1,8 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+Eerste release.
+- Geïntegreerd dashboard: fix, positie, beweging, hemelweergave, kompas, wereldkaart, tijd en zon
+- Retro-analoge snelheidsmeter met HUD-modus
+- Adaptieve azimut die in elke oriëntatie werkt
+- 12 talen, licht/donker thema, metrisch/imperiaal/nautisch
+- 100% offline, geen tracking, geen Play Services

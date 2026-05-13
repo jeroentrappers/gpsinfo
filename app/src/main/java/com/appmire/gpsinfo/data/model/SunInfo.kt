@@ -1,5 +1,8 @@
 package com.appmire.gpsinfo.data.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class SunInfo(
     val sunAzimuthDeg: Double,
     val sunElevationDeg: Double,

@@ -56,6 +56,14 @@ debug-keystore*
 .env.*
 *.env
 
+# Local publish-to-prod script — contains plaintext keystore + Play
+# service-account credentials. NEVER commit. A redacted example is
+# tracked as build-production.example.sh.
+build-production.sh
+
+# Play Console service account JSON
+play-service-account.json
+
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
 .cxx/

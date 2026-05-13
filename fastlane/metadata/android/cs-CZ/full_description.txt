@@ -1,0 +1,21 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+GPSinfo je čistý, moderní GNSS panel pro Android. Každý údaj, který GPS čip a senzory vašeho telefonu poskytují, na jediné integrované obrazovce.
+
+Co zobrazuje
+• Kvalita fixu — stav 2D/3D, vodorovná/svislá přesnost, viditelné vs. použité satelity
+• Pohled na oblohu — každý satelit v azimutu/elevaci, síla signálu na PRN, vícepásmový (GPS L1+L5, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS)
+• Poloha — zem./dél. v DMS nebo desetinně, nadm. výška, sdílení polohy, otevření v libovolné mapě
+• Pohyb — rychlost, magnetický kurz, nadm. výška, celoobrazovkový retro analogový tachometr s režimem HUD zrcadlo
+• Kompas — magnetický kurz s naklonovou kompenzací, deklinace/inklinace, magnetická přesnost, kardanový pohled
+• Mapa světa — vaše poloha, poloha slunce, terminátor den/noc z reálných dat Natural Earth
+• Slunce a čas — UTC a místní čas, východ/poledne/západ slunce, délka dne, azimut/elevace slunce
+
+Co NEDĚLÁ
+• Žádný přístup k síti. Žádné oprávnění INTERNET. Nic neopouští zařízení.
+• Žádná závislost na Google Play Services.
+• Žádné sledování na pozadí, žádné záznamy, žádná analytika, žádné reklamy.
+
+Pro turisty, plachtaře, řidiče, piloty a každého, kdo chce vědět, co GPS opravdu dělá.
+
+Open source. Zdarma. Příspěvky vítány na paypal.me/jeroentrappers.

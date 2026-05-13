@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -14,8 +15,10 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.appmire.gpsinfo.R
 import com.appmire.gpsinfo.data.model.SatelliteInfo
 
 @Composable
@@ -28,6 +31,24 @@ fun SnrBarChart(
     val outline = MaterialTheme.colorScheme.outline
     val density = LocalDensity.current
     val labelPx = with(density) { 10.sp.toPx() }
+    val waitingText = stringResource(R.string.sky_waiting)
+    // Hoisted Paint for the "Waiting…" placeholder + the dB-Hz axis label.
+    val labelPaintCenter = remember(onSurfaceVariant, labelPx) {
+        android.graphics.Paint().apply {
+            color = onSurfaceVariant.toArgb()
+            textSize = labelPx
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+    }
+    val labelPaintLeft = remember(onSurfaceVariant, labelPx) {
+        android.graphics.Paint().apply {
+            color = onSurfaceVariant.toArgb()
+            textSize = labelPx
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.LEFT
+        }
+    }
 
     Canvas(modifier = modifier.fillMaxWidth().height(160.dp)) {
         val w = size.width
@@ -53,13 +74,7 @@ fun SnrBarChart(
 
         if (satellites.isEmpty()) {
             drawIntoCanvas { c ->
-                val p = android.graphics.Paint().apply {
-                    color = onSurfaceVariant.toArgb()
-                    textAlign = android.graphics.Paint.Align.CENTER
-                    textSize = labelPx
-                    isAntiAlias = true
-                }
-                c.nativeCanvas.drawText("Waiting for satellites…", w / 2f, h / 2f, p)
+                c.nativeCanvas.drawText(waitingText, w / 2f, h / 2f, labelPaintCenter)
             }
             return@Canvas
         }
@@ -100,15 +115,9 @@ fun SnrBarChart(
             }
         }
 
-        // label at far-left bottom showing max
+        // label at far-left bottom showing max (Paint hoisted)
         drawIntoCanvas { c ->
-            val p = android.graphics.Paint().apply {
-                color = onSurfaceVariant.toArgb()
-                textSize = labelPx
-                isAntiAlias = true
-                textAlign = android.graphics.Paint.Align.LEFT
-            }
-            c.nativeCanvas.drawText("dB-Hz", padLeft, padTop + labelPx, p)
+            c.nativeCanvas.drawText("dB-Hz", padLeft, padTop + labelPx, labelPaintLeft)
         }
     }
 }
@@ -119,6 +128,23 @@ fun AverageSnrBar(avg: Float, modifier: Modifier = Modifier) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val density = LocalDensity.current
+    val axisTextPx = with(density) { 9.sp.toPx() }
+    val axisPaintLeft = remember(onSurfaceVariant, axisTextPx) {
+        android.graphics.Paint().apply {
+            color = onSurfaceVariant.toArgb()
+            textSize = axisTextPx
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.LEFT
+        }
+    }
+    val axisPaintRight = remember(onSurfaceVariant, axisTextPx) {
+        android.graphics.Paint().apply {
+            color = onSurfaceVariant.toArgb()
+            textSize = axisTextPx
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.RIGHT
+        }
+    }
     Canvas(modifier = modifier.fillMaxWidth().height(28.dp)) {
         val w = size.width
         val h = size.height
@@ -146,17 +172,11 @@ fun AverageSnrBar(avg: Float, modifier: Modifier = Modifier) {
             end = Offset(pointerX, barY + barH + with(density) { 4.dp.toPx() }),
             strokeWidth = with(density) { 1.5.dp.toPx() }
         )
-        // axis labels
+        // axis labels (Paints hoisted out of draw block)
         drawIntoCanvas { c ->
-            val p = android.graphics.Paint().apply {
-                color = onSurfaceVariant.toArgb()
-                textSize = with(density) { 9.sp.toPx() }
-                isAntiAlias = true
-                textAlign = android.graphics.Paint.Align.LEFT
-            }
-            c.nativeCanvas.drawText("0", 0f, barY - with(density) { 2.dp.toPx() }, p)
-            p.textAlign = android.graphics.Paint.Align.RIGHT
-            c.nativeCanvas.drawText("99", w, barY - with(density) { 2.dp.toPx() }, p)
+            val labelY = barY - with(density) { 2.dp.toPx() }
+            c.nativeCanvas.drawText("0", 0f, labelY, axisPaintLeft)
+            c.nativeCanvas.drawText("99", w, labelY, axisPaintRight)
         }
         // also outline rect for tidiness
         drawRect(

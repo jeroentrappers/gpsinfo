@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
+  Native speaker should verify GNSS terminology + UI ergonomics.
+  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
+-->
+<resources>
+    <string name="app_name">GPSinfo</string>
+
+    <!-- Permission screen -->
+    <string name="permission_required_title">Acesso à localização necessário</string>
+    <string name="permission_required_body">O GPSinfo precisa da localização precisa para mostrar dados de satélites, fix e movimento. Nenhum dado de localização sai do seu dispositivo.</string>
+    <string name="grant_permission">Conceder permissão</string>
+    <string name="open_settings">Abrir configurações</string>
+
+    <!-- Section titles -->
+    <string name="section_position">Posição</string>
+    <string name="section_movement">Movimento</string>
+    <string name="section_sky">Vista do céu</string>
+    <string name="section_compass">Bússola</string>
+    <string name="section_world">Mundo</string>
+    <string name="section_time">Hora &amp; Sol</string>
+
+    <!-- Actions -->
+    <string name="action_back">Voltar</string>
+    <string name="action_share_location">Compartilhar localização</string>
+    <string name="action_open_maps">Abrir no Maps</string>
+    <string name="action_toggle_units">Alternar unidades</string>
+    <string name="action_toggle_theme">Alternar tema</string>
+    <string name="action_about">Sobre</string>
+    <string name="action_open_about">Abrir tela \"Sobre\"</string>
+
+    <string name="share_subject">Minha localização</string>
+
+    <!-- Fix statuses -->
+    <string name="fix_status_no_fix">Sem fix</string>
+    <string name="fix_status_2d">Fix 2D</string>
+    <string name="fix_status_3d">Fix 3D</string>
+
+    <!-- Magnetic accuracy levels -->
+    <string name="mag_acc_unknown">Desconhecida</string>
+    <string name="mag_acc_unreliable">Não confiável</string>
+    <string name="mag_acc_low">Baixa</string>
+    <string name="mag_acc_medium">Média</string>
+    <string name="mag_acc_high">Alta</string>
+
+    <!-- Location services banner -->
+    <string name="location_off_title">Serviços de localização desativados</string>
+    <string name="location_off_body">Ative nas configurações do sistema para receber um fix GPS.</string>
+    <string name="location_off_open_settings">Abrir configurações de localização</string>
+
+    <!-- StatusBar -->
+    <string name="metric_accuracy">Prec</string>
+    <string name="metric_sats">Sats</string>
+    <string name="metric_snr">SNR</string>
+
+    <!-- Position -->
+    <string name="metric_altitude">Altitude</string>
+    <string name="metric_h_accuracy">H-Prec</string>
+    <string name="metric_v_accuracy">V-Prec</string>
+
+    <!-- Speed card -->
+    <string name="metric_speed">Velocidade</string>
+    <string name="metric_heading">Direção</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_m">m</string>
+    <string name="degrees_magnetic">° magnético</string>
+    <string name="heading_magnetic_suffix">%1$s · °M</string>
+
+    <!-- Compass -->
+    <string name="metric_orientation">Orientação</string>
+    <string name="metric_declination">Declinação</string>
+    <string name="metric_inclination">Inclinação</string>
+    <string name="metric_reciprocal">Recíproco</string>
+    <string name="metric_mag_acc">Prec Mag</string>
+    <string name="metric_field">Campo</string>
+    <string name="metric_pitch">Arfagem</string>
+    <string name="metric_roll">Rolagem</string>
+    <string name="metric_hdg">HDG</string>
+    <string name="metric_decl">DECL</string>
+    <string name="unit_microtesla">%1$.0f µT</string>
+    <string name="degrees_east_format">%1$.2f° E</string>
+
+    <!-- Time &amp; sun -->
+    <string name="metric_utc">UTC</string>
+    <string name="metric_local">Local</string>
+    <string name="metric_sunrise">Nascer do sol</string>
+    <string name="metric_solar_noon">Meio-dia solar</string>
+    <string name="metric_sunset">Pôr do sol</string>
+    <string name="metric_day_length">Duração do dia</string>
+    <string name="metric_sun_elev">Elev sol</string>
+    <string name="metric_sun_az">Az sol</string>
+    <string name="metric_phase">Fase</string>
+    <string name="phase_day">Dia</string>
+    <string name="phase_night">Noite</string>
+
+    <!-- Satellites screen -->
+    <string name="screen_satellites">Satélites</string>
+    <string name="sat_sort_label">ORDENAR</string>
+    <string name="sat_sort_by_constellation">Por constelação</string>
+    <string name="sat_sort_by_signal">Por sinal</string>
+    <string name="sat_sort_announce">Ordem: %1$s</string>
+    <string name="sat_overview_title">VISÃO GERAL GNSS</string>
+    <string name="sat_stat_in_view">À vista</string>
+    <string name="sat_stat_in_fix">Em uso</string>
+    <string name="sat_stat_tracking">Rastreando</string>
+    <string name="sat_stat_best">Melhor</string>
+    <string name="sat_col_constellation">CON</string>
+    <string name="sat_col_svid">SVID</string>
+    <string name="sat_col_cn0">CN0</string>
+    <string name="sat_col_signal">SINAL</string>
+    <string name="sat_col_elevation">ELV</string>
+    <string name="sat_col_azimuth">AZ</string>
+    <string name="sat_col_fix">FIX</string>
+    <string name="unit_dbhz">%1$.0f dB-Hz</string>
+    <string name="placeholder_dash">—</string>
+
+    <!-- Compass detail -->
+    <string name="screen_compass">Bússola</string>
+
+    <!-- Speed screen -->
+    <string name="screen_speed">Velocidade</string>
+    <string name="screen_speed_hud">Velocidade · HUD</string>
+    <string name="hud_toggle_on">Modo HUD ativado — toque para desativar</string>
+    <string name="hud_toggle_off">Ativar modo HUD (reflexo no para-brisa)</string>
+    <string name="metric_fix">Fix</string>
+
+    <!-- About -->
+    <string name="screen_about">Sobre</string>
+    <string name="about_brand_alt">Appmire</string>
+    <string name="about_tagline">Oferecido gratuitamente.\nDoações são bem-vindas.</string>
+    <string name="about_visit_site">Visite appmire.be</string>
+
+    <!-- Sky view -->
+    <string name="sky_summary">À vista %1$d   ·   Em uso %2$d   ·   MÉD %3$.1f</string>
+    <string name="sky_waiting">Aguardando satélites…</string>
+
+    <!-- World map -->
+    <string name="world_position_label">Posição : Lat/Lon (WGS84)</string>
+
+    <!-- Build / about footer -->
+    <string name="build_badge">GPSinfo · v%1$s</string>
+
+    <!-- Card click semantic descriptions -->
+    <string name="open_speed_gauge">Abrir velocímetro</string>
+    <string name="open_satellites">Abrir lista de satélites</string>
+    <string name="open_compass_detail">Abrir detalhes da bússola</string>
+
+    <!-- Settings (About screen) -->
+    <string name="screen_settings">Configurações</string>
+    <string name="settings_units_label">Unidades</string>
+    <string name="settings_language_label">Idioma</string>
+    <string name="unit_system_metric">Métrico</string>
+    <string name="unit_system_imperial">Imperial</string>
+    <string name="unit_system_nautical">Náutico</string>
+    <string name="language_system">Padrão do sistema</string>
+    <string name="unit_mph">mph</string>
+    <string name="unit_ft">ft</string>
+    <string name="unit_knots">kn</string>
+</resources>

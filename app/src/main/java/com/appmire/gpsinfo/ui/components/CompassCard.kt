@@ -49,9 +49,12 @@ fun CompassCard(reading: CompassReading) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            MetricSmall("Orientation", headingToCardinal(reading.magneticHeadingDeg))
-            MetricSmall("Declination", "%.2f° E".format(reading.declinationDeg))
-            MetricSmall("Inclination", "%.0f°".format(reading.inclinationDeg))
+            MetricSmall(stringResource(R.string.metric_orientation), headingToCardinal(reading.magneticHeadingDeg))
+            MetricSmall(
+                stringResource(R.string.metric_declination),
+                stringResource(R.string.degrees_east_format, reading.declinationDeg),
+            )
+            MetricSmall(stringResource(R.string.metric_inclination), "%.0f°".format(reading.inclinationDeg))
         }
 
         Spacer(Modifier.height(8.dp))
@@ -65,7 +68,7 @@ fun CompassCard(reading: CompassReading) {
             CompassRose(continuousHeadingDeg = reading.continuousMagneticHeadingDeg)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    "Heading",
+                    stringResource(R.string.metric_heading),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -75,7 +78,7 @@ fun CompassCard(reading: CompassReading) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    "° magnetic",
+                    stringResource(R.string.degrees_magnetic),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -87,9 +90,19 @@ fun CompassCard(reading: CompassReading) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            MetricSmall("Reciprocal", "%03d°".format(reading.reciprocalHeadingDeg.toInt()))
-            MetricSmall("Mag Acc", reading.accuracy.label, accentForAccuracy(reading.accuracy))
-            MetricSmall("Field", "%.0f µT".format(reading.fieldStrengthNanoTesla))
+            MetricSmall(
+                stringResource(R.string.metric_reciprocal),
+                "%03d°".format(reading.reciprocalHeadingDeg.toInt()),
+            )
+            MetricSmall(
+                stringResource(R.string.metric_mag_acc),
+                stringResource(reading.accuracy.labelRes),
+                accentForAccuracy(reading.accuracy),
+            )
+            MetricSmall(
+                stringResource(R.string.metric_field),
+                stringResource(R.string.unit_microtesla, reading.fieldStrengthNanoTesla),
+            )
         }
     }
 }
@@ -150,6 +163,33 @@ private fun CompassRose(continuousHeadingDeg: Float) {
     val needleBack = Color(0xFFE0E0E0)    // light grey — the tail
     val density = LocalDensity.current
 
+    // Pre-allocate the three text Paints once per (color, density) tuple
+    // and reuse them on every draw. Previously each Paint was constructed
+    // inside drawIntoCanvas at 50 Hz — three allocations per frame.
+    val tickFontPx = with(density) { 11.sp.toPx() }
+    val cardinalPx = with(density) { 22.sp.toPx() }
+    val tickPaint = remember(onSurfaceVariant, tickFontPx) {
+        android.graphics.Paint().apply {
+            color = onSurfaceVariant.toArgb()
+            textSize = tickFontPx
+            textAlign = android.graphics.Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = android.graphics.Typeface.DEFAULT
+        }
+    }
+    val cardinalPaint = remember(onSurface, cardinalPx) {
+        android.graphics.Paint().apply {
+            color = onSurface.toArgb()
+            textSize = cardinalPx
+            textAlign = android.graphics.Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
+    }
+    val northPaint = remember(needleFront, cardinalPx) {
+        android.graphics.Paint(cardinalPaint).apply { color = needleFront.toArgb() }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,8 +210,6 @@ private fun CompassRose(continuousHeadingDeg: Float) {
             val cy = size.minDimension / 2f
             val outerR = size.minDimension / 2f - with(density) { 4.dp.toPx() }
             val innerR = outerR * 0.78f
-            val tickFontPx = with(density) { 11.sp.toPx() }
-            val cardinalPx = with(density) { 22.sp.toPx() }
 
             // Dial face — radial gradient centred to keep the dial looking
             // flat under the gentler tilt.
@@ -217,26 +255,9 @@ private fun CompassRose(continuousHeadingDeg: Float) {
                     )
                 }
 
-                // numeric labels + cardinal letters
+                // numeric labels + cardinal letters (Paints hoisted outside
+                // the draw block — reused across frames).
                 drawIntoCanvas { canvas ->
-                    val tickPaint = android.graphics.Paint().apply {
-                        color = onSurfaceVariant.toArgb()
-                        textSize = tickFontPx
-                        textAlign = android.graphics.Paint.Align.CENTER
-                        isAntiAlias = true
-                        typeface = android.graphics.Typeface.DEFAULT
-                    }
-                    val cardinalPaint = android.graphics.Paint().apply {
-                        color = onSurface.toArgb()
-                        textSize = cardinalPx
-                        textAlign = android.graphics.Paint.Align.CENTER
-                        isAntiAlias = true
-                        typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    }
-                    // North gets the brand colour so it is impossible to miss.
-                    val northPaint = android.graphics.Paint(cardinalPaint).apply {
-                        color = needleFront.toArgb()
-                    }
                     val labelRadius = innerR - with(density) { 6.dp.toPx() }
                     val cardinalRadius = innerR - with(density) { 18.dp.toPx() }
                     val cardinals = mapOf(

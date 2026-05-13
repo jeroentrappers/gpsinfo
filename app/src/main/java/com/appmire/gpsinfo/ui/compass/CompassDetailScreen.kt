@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.appmire.gpsinfo.R
 import com.appmire.gpsinfo.data.model.CompassReading
 import com.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import com.appmire.gpsinfo.util.headingToCardinal
@@ -76,12 +78,12 @@ fun CompassDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Compass") },
+                title = { Text(stringResource(R.string.screen_compass)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.action_back),
                         )
                     }
                 },
@@ -115,12 +117,12 @@ fun CompassDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Stat("HDG", "%.0f° %s".format(
+                Stat(stringResource(R.string.metric_hdg), "%.0f° %s".format(
                     reading.magneticHeadingDeg,
                     headingToCardinal(reading.magneticHeadingDeg),
                 ))
-                Stat("PITCH", "%+.0f°".format(reading.pitchDeg))
-                Stat("ROLL", "%+.0f°".format(reading.rollDeg))
+                Stat(stringResource(R.string.metric_pitch), "%+.0f°".format(reading.pitchDeg))
+                Stat(stringResource(R.string.metric_roll), "%+.0f°".format(reading.rollDeg))
             }
 
             Spacer(Modifier.height(8.dp))
@@ -129,9 +131,12 @@ fun CompassDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Stat("DECL",  "%+.1f°".format(reading.declinationDeg))
-                Stat("FIELD", "%.0f µT".format(reading.fieldStrengthNanoTesla))
-                Stat("ACC",   reading.accuracy.label)
+                Stat(stringResource(R.string.metric_decl), "%+.1f°".format(reading.declinationDeg))
+                Stat(
+                    stringResource(R.string.metric_field),
+                    stringResource(R.string.unit_microtesla, reading.fieldStrengthNanoTesla),
+                )
+                Stat(stringResource(R.string.metric_mag_acc), stringResource(reading.accuracy.labelRes))
             }
         }
     }

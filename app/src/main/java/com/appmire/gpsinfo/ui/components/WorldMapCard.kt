@@ -1,7 +1,9 @@
 package com.appmire.gpsinfo.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -41,7 +43,7 @@ fun WorldMapCard(
 }
 
 @Composable
-fun WorldMap(latDeg: Double?, lonDeg: Double?, sun: SunInfo?) {
+private fun WorldMap(latDeg: Double?, lonDeg: Double?, sun: SunInfo?) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val ocean = if (isDark) MapOcean else MapOceanLight
     val land = if (isDark) MapLand else MapLandLight
@@ -55,91 +57,101 @@ fun WorldMap(latDeg: Double?, lonDeg: Double?, sun: SunInfo?) {
     val context = LocalContext.current
     val coastlines = remember { WorldCoastlines.load(context) }
 
-    Canvas(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(2f)
     ) {
-        val w = size.width
-        val h = size.height
-
-        // ocean
-        drawRect(ocean, topLeft = Offset.Zero, size = Size(w, h))
-
-        // grid: equator + prime meridian + 30° lines
-        for (gLat in listOf(-60, -30, 30, 60)) {
-            val y = h * (1f - (gLat + 90f) / 180f)
-            drawLine(gridColor, Offset(0f, y), Offset(w, y), 1f)
-        }
-        for (gLon in listOf(-120, -60, 60, 120)) {
-            val x = w * (gLon + 180f) / 360f
-            drawLine(gridColor, Offset(x, 0f), Offset(x, h), 1f)
-        }
-        // equator + prime meridian stronger
-        drawLine(gridColor.copy(alpha = 0.7f), Offset(0f, h / 2f), Offset(w, h / 2f), 1.5f)
-        drawLine(gridColor.copy(alpha = 0.7f), Offset(w / 2f, 0f), Offset(w / 2f, h), 1.5f)
-
-        // continents — Natural Earth 1:110m land, public domain
-        val landPath = Path()
-        coastlines.forEach { ring ->
-            val n = ring.size
-            var i = 0
-            while (i < n) {
-                val lat = ring[i]; val lon = ring[i + 1]
-                val x = w * (lon + 180f) / 360f
-                val y = h * (1f - (lat + 90f) / 180f)
-                if (i == 0) landPath.moveTo(x, y) else landPath.lineTo(x, y)
-                i += 2
+        // Resolve the px size once. The Path is then memoized against
+        // that size — previously this Path of 5,109 vertices was rebuilt
+        // every single draw frame (50 Hz during sensor activity).
+        val wPx = with(density) { maxWidth.toPx() }
+        val hPx = with(density) { maxHeight.toPx() }
+        val landPath = remember(coastlines, wPx, hPx) {
+            Path().apply {
+                coastlines.forEach { ring ->
+                    val n = ring.size
+                    var i = 0
+                    while (i < n) {
+                        val lat = ring[i]; val lon = ring[i + 1]
+                        val x = wPx * (lon + 180f) / 360f
+                        val y = hPx * (1f - (lat + 90f) / 180f)
+                        if (i == 0) moveTo(x, y) else lineTo(x, y)
+                        i += 2
+                    }
+                    close()
+                }
             }
-            landPath.close()
         }
-        drawPath(landPath, color = land)
 
-        // night-side terminator (great circle 90° from subsolar)
-        if (sun != null) {
-            val nightPath = nightPolygon(sun, w, h)
-            drawPath(nightPath, color = nightOverlay)
-            drawPath(
-                nightPath,
-                color = nightStroke,
-                style = Stroke(
-                    width = with(density) { 1.dp.toPx() },
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+
+            // ocean
+            drawRect(ocean, topLeft = Offset.Zero, size = Size(w, h))
+
+            // grid: equator + prime meridian + 30° lines
+            for (gLat in listOf(-60, -30, 30, 60)) {
+                val y = h * (1f - (gLat + 90f) / 180f)
+                drawLine(gridColor, Offset(0f, y), Offset(w, y), 1f)
+            }
+            for (gLon in listOf(-120, -60, 60, 120)) {
+                val x = w * (gLon + 180f) / 360f
+                drawLine(gridColor, Offset(x, 0f), Offset(x, h), 1f)
+            }
+            drawLine(gridColor.copy(alpha = 0.7f), Offset(0f, h / 2f), Offset(w, h / 2f), 1.5f)
+            drawLine(gridColor.copy(alpha = 0.7f), Offset(w / 2f, 0f), Offset(w / 2f, h), 1.5f)
+
+            // continents — Natural Earth 1:110m land, public domain
+            drawPath(landPath, color = land)
+
+            // night-side terminator (great circle 90° from subsolar)
+            if (sun != null) {
+                val nightPath = nightPolygon(sun, w, h)
+                drawPath(nightPath, color = nightOverlay)
+                drawPath(
+                    nightPath,
+                    color = nightStroke,
+                    style = Stroke(
+                        width = with(density) { 1.dp.toPx() },
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+                    )
                 )
-            )
 
-            // sun glyph at subsolar point
-            val sunX = w * (sun.subsolarLonDeg + 180.0).toFloat() / 360f
-            val sunY = h * (1f - ((sun.subsolarLatDeg + 90.0).toFloat() / 180f))
-            drawCircle(
-                color = sunColor,
-                radius = with(density) { 6.dp.toPx() },
-                center = Offset(sunX, sunY)
-            )
-            drawCircle(
-                color = sunColor.copy(alpha = 0.35f),
-                radius = with(density) { 14.dp.toPx() },
-                center = Offset(sunX, sunY)
+                // sun glyph at subsolar point
+                val sunX = w * (sun.subsolarLonDeg + 180.0).toFloat() / 360f
+                val sunY = h * (1f - ((sun.subsolarLatDeg + 90.0).toFloat() / 180f))
+                drawCircle(
+                    color = sunColor,
+                    radius = with(density) { 6.dp.toPx() },
+                    center = Offset(sunX, sunY)
+                )
+                drawCircle(
+                    color = sunColor.copy(alpha = 0.35f),
+                    radius = with(density) { 14.dp.toPx() },
+                    center = Offset(sunX, sunY)
+                )
+            }
+
+            // user position pin
+            if (latDeg != null && lonDeg != null) {
+                val px = w * (lonDeg + 180.0).toFloat() / 360f
+                val py = h * (1f - ((latDeg + 90.0).toFloat() / 180f))
+                drawCircle(youColor, radius = with(density) { 5.dp.toPx() }, center = Offset(px, py))
+                drawCircle(
+                    youColor, radius = with(density) { 10.dp.toPx() },
+                    center = Offset(px, py), style = Stroke(width = with(density) { 1.5.dp.toPx() })
+                )
+            }
+
+            // frame
+            drawRect(
+                frameColor,
+                topLeft = Offset.Zero, size = Size(w, h),
+                style = Stroke(width = with(density) { 1.dp.toPx() })
             )
         }
-
-        // user position pin
-        if (latDeg != null && lonDeg != null) {
-            val px = w * (lonDeg + 180.0).toFloat() / 360f
-            val py = h * (1f - ((latDeg + 90.0).toFloat() / 180f))
-            drawCircle(youColor, radius = with(density) { 5.dp.toPx() }, center = Offset(px, py))
-            drawCircle(
-                youColor, radius = with(density) { 10.dp.toPx() },
-                center = Offset(px, py), style = Stroke(width = with(density) { 1.5.dp.toPx() })
-            )
-        }
-
-        // frame
-        drawRect(
-            frameColor,
-            topLeft = Offset.Zero, size = Size(w, h),
-            style = Stroke(width = with(density) { 1.dp.toPx() })
-        )
     }
 }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material3.Button
@@ -33,7 +34,7 @@ fun PermissionRequiredScreen(onRequest: () -> Unit) {
                 Icons.Outlined.MyLocation,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.height(64.dp)
+                modifier = Modifier.size(64.dp)
             )
             Text(
                 stringResource(R.string.permission_required_title),

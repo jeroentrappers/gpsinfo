@@ -12,18 +12,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.LocationOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -35,10 +42,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.appmire.gpsinfo.R
 import com.appmire.gpsinfo.ui.components.CompassCard
 import com.appmire.gpsinfo.ui.components.PositionCard
@@ -55,11 +65,11 @@ import com.appmire.gpsinfo.util.CoordinateFormat
 fun DashboardScreen(
     isDark: Boolean,
     onToggleTheme: () -> Unit,
+    vm: DashboardViewModel,
     onOpenSatellites: () -> Unit = {},
     onOpenCompass: () -> Unit = {},
     onOpenSpeed: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
-    vm: DashboardViewModel = viewModel(factory = DashboardViewModel.factory())
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var coordFormat by remember { mutableStateOf(CoordinateFormat.DMS) }
@@ -89,14 +99,28 @@ fun DashboardScreen(
         contentWindowInsets = WindowInsets.systemBars
     ) { padding ->
         val loc = state.gnss.location
-        val sections = listOf<@Composable () -> Unit>(
+        val ctx = LocalContext.current
+        val sections = listOfNotNull<@Composable () -> Unit>(
+            // Banner when system Location toggle is off — without this the
+            // user just sees perpetual NO_FIX with no actionable text.
+            if (!state.locationEnabled) {
+                {
+                    LocationDisabledBanner(onOpenSettings = {
+                        ctx.startActivity(
+                            android.content.Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
+                    })
+                }
+            } else null,
             {
                 StatusBar(
                     fix = state.gnss.fix,
                     accuracyMeters = loc?.takeIf { it.hasAccuracy() }?.accuracy,
                     satellitesInView = state.gnss.satellitesInView,
                     satellitesInUse = state.gnss.satellitesInUse,
-                    averageSnr = state.gnss.averageSnr
+                    averageSnr = state.gnss.averageSnr,
+                    unitSystem = state.unitSystem,
                 )
             },
             {
@@ -112,25 +136,39 @@ fun DashboardScreen(
                     onToggleFormat = {
                         coordFormat = if (coordFormat == CoordinateFormat.DMS)
                             CoordinateFormat.DECIMAL else CoordinateFormat.DMS
-                    }
+                    },
+                    unitSystem = state.unitSystem,
                 )
             },
             {
-                Box(modifier = Modifier.clickable(onClick = onOpenSpeed)) {
+                val speedDesc = stringResource(R.string.open_speed_gauge)
+                Box(modifier = Modifier
+                    .clickable(onClick = onOpenSpeed, role = Role.Button)
+                    .semantics(mergeDescendants = true) { contentDescription = speedDesc }
+                ) {
                     SpeedCard(
                         speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
                         headingDegMagnetic = state.compass.magneticHeadingDeg,
-                        altMeters = loc?.takeIf { it.hasAltitude() }?.altitude
+                        altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
+                        unitSystem = state.unitSystem,
                     )
                 }
             },
             {
-                Box(modifier = Modifier.clickable(onClick = onOpenSatellites)) {
+                val satDesc = stringResource(R.string.open_satellites)
+                Box(modifier = Modifier
+                    .clickable(onClick = onOpenSatellites, role = Role.Button)
+                    .semantics(mergeDescendants = true) { contentDescription = satDesc }
+                ) {
                     SkyViewCard(state.gnss)
                 }
             },
             {
-                Box(modifier = Modifier.clickable(onClick = onOpenCompass)) {
+                val compassDesc = stringResource(R.string.open_compass_detail)
+                Box(modifier = Modifier
+                    .clickable(onClick = onOpenCompass, role = Role.Button)
+                    .semantics(mergeDescendants = true) { contentDescription = compassDesc }
+                ) {
                     CompassCard(state.compass)
                 }
             },
@@ -152,10 +190,10 @@ fun DashboardScreen(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(sections.size) { idx -> sections[idx]() }
-                item { Spacer(Modifier.height(16.dp)) }
-                item { CopyrightFooter(onOpenAbout) }
-                item { Spacer(Modifier.height(12.dp)) }
+                items(sections.size, key = { "section-$it" }) { idx -> sections[idx]() }
+                item(key = "footer-spacer") { Spacer(Modifier.height(16.dp)) }
+                item(key = "footer-copy") { CopyrightFooter(onOpenAbout) }
+                item(key = "footer-tail") { Spacer(Modifier.height(12.dp)) }
             }
         }
     }
@@ -163,20 +201,99 @@ fun DashboardScreen(
 
 @Composable
 private fun CopyrightFooter(onClick: () -> Unit) {
-    // Year resolved at composition time — no hardcoded value to bit-rot.
     val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-    Box(
+    val description = stringResource(R.string.action_open_about)
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
+            .clickable(onClick = onClick, role = Role.Button)
+            .semantics(mergeDescendants = true) { contentDescription = description },
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 1.dp,
     ) {
-        Text(
-            text = "© $year Appmire",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(vertical = 12.dp),
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = "© $year Appmire",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.action_about),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                    contentDescription = stringResource(R.string.action_open_about),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocationDisabledBanner(onOpenSettings: () -> Unit) {
+    val description = stringResource(R.string.location_off_open_settings)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpenSettings, role = Role.Button)
+            .semantics(mergeDescendants = true) { contentDescription = description },
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.LocationOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.size(24.dp),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.location_off_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+                Text(
+                    text = stringResource(R.string.location_off_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                contentDescription = stringResource(R.string.location_off_open_settings),
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 

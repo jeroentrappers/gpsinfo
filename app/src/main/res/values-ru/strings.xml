@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
+  Native speaker should verify GNSS terminology + UI ergonomics.
+  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
+-->
+<resources>
+    <string name="app_name">GPSinfo</string>
+
+    <!-- Permission screen -->
+    <string name="permission_required_title">Требуется доступ к геолокации</string>
+    <string name="permission_required_body">GPSinfo требуется точная геолокация для отображения данных спутников, фиксации и движения. Данные о местоположении не покидают устройство.</string>
+    <string name="grant_permission">Предоставить разрешение</string>
+    <string name="open_settings">Открыть настройки</string>
+
+    <!-- Section titles -->
+    <string name="section_position">Позиция</string>
+    <string name="section_movement">Движение</string>
+    <string name="section_sky">Небо</string>
+    <string name="section_compass">Компас</string>
+    <string name="section_world">Мир</string>
+    <string name="section_time">Время и Солнце</string>
+
+    <!-- Actions -->
+    <string name="action_back">Назад</string>
+    <string name="action_share_location">Поделиться местоположением</string>
+    <string name="action_open_maps">Открыть в Картах</string>
+    <string name="action_toggle_units">Сменить единицы</string>
+    <string name="action_toggle_theme">Сменить тему</string>
+    <string name="action_about">О программе</string>
+    <string name="action_open_about">Открыть экран «О программе»</string>
+
+    <string name="share_subject">Моё местоположение</string>
+
+    <!-- Fix statuses -->
+    <string name="fix_status_no_fix">Нет фикса</string>
+    <string name="fix_status_2d">Фикс 2D</string>
+    <string name="fix_status_3d">Фикс 3D</string>
+
+    <!-- Magnetic accuracy levels -->
+    <string name="mag_acc_unknown">Неизвестно</string>
+    <string name="mag_acc_unreliable">Ненадёжно</string>
+    <string name="mag_acc_low">Низкая</string>
+    <string name="mag_acc_medium">Средняя</string>
+    <string name="mag_acc_high">Высокая</string>
+
+    <!-- Location services banner -->
+    <string name="location_off_title">Службы геолокации отключены</string>
+    <string name="location_off_body">Включите их в системных настройках, чтобы получить фикс GPS.</string>
+    <string name="location_off_open_settings">Открыть настройки геолокации</string>
+
+    <!-- StatusBar -->
+    <string name="metric_accuracy">Точн</string>
+    <string name="metric_sats">Спут</string>
+    <string name="metric_snr">SNR</string>
+
+    <!-- Position -->
+    <string name="metric_altitude">Высота</string>
+    <string name="metric_h_accuracy">Г-Точн</string>
+    <string name="metric_v_accuracy">В-Точн</string>
+
+    <!-- Speed card -->
+    <string name="metric_speed">Скорость</string>
+    <string name="metric_heading">Курс</string>
+    <string name="unit_kmh">км/ч</string>
+    <string name="unit_m">м</string>
+    <string name="degrees_magnetic">° магн.</string>
+    <string name="heading_magnetic_suffix">%1$s · °M</string>
+
+    <!-- Compass -->
+    <string name="metric_orientation">Ориентация</string>
+    <string name="metric_declination">Склонение</string>
+    <string name="metric_inclination">Наклонение</string>
+    <string name="metric_reciprocal">Обратный</string>
+    <string name="metric_mag_acc">Точн магн.</string>
+    <string name="metric_field">Поле</string>
+    <string name="metric_pitch">Тангаж</string>
+    <string name="metric_roll">Крен</string>
+    <string name="metric_hdg">HDG</string>
+    <string name="metric_decl">DECL</string>
+    <string name="unit_microtesla">%1$.0f мкТл</string>
+    <string name="degrees_east_format">%1$.2f° E</string>
+
+    <!-- Time &amp; sun -->
+    <string name="metric_utc">UTC</string>
+    <string name="metric_local">Местное</string>
+    <string name="metric_sunrise">Восход</string>
+    <string name="metric_solar_noon">Солн. полдень</string>
+    <string name="metric_sunset">Закат</string>
+    <string name="metric_day_length">Длина дня</string>
+    <string name="metric_sun_elev">Выс. солнца</string>
+    <string name="metric_sun_az">Аз. солнца</string>
+    <string name="metric_phase">Фаза</string>
+    <string name="phase_day">День</string>
+    <string name="phase_night">Ночь</string>
+
+    <!-- Satellites screen -->
+    <string name="screen_satellites">Спутники</string>
+    <string name="sat_sort_label">СОРТ</string>
+    <string name="sat_sort_by_constellation">По созвездию</string>
+    <string name="sat_sort_by_signal">По сигналу</string>
+    <string name="sat_sort_announce">Сортировка: %1$s</string>
+    <string name="sat_overview_title">ОБЗОР GNSS</string>
+    <string name="sat_stat_in_view">Видимых</string>
+    <string name="sat_stat_in_fix">В фиксе</string>
+    <string name="sat_stat_tracking">Отслеж.</string>
+    <string name="sat_stat_best">Лучший</string>
+    <string name="sat_col_constellation">CON</string>
+    <string name="sat_col_svid">SVID</string>
+    <string name="sat_col_cn0">CN0</string>
+    <string name="sat_col_signal">СИГНАЛ</string>
+    <string name="sat_col_elevation">ELV</string>
+    <string name="sat_col_azimuth">AZ</string>
+    <string name="sat_col_fix">FIX</string>
+    <string name="unit_dbhz">%1$.0f дБ-Гц</string>
+    <string name="placeholder_dash">—</string>
+
+    <!-- Compass detail -->
+    <string name="screen_compass">Компас</string>
+
+    <!-- Speed screen -->
+    <string name="screen_speed">Скорость</string>
+    <string name="screen_speed_hud">Скорость · HUD</string>
+    <string name="hud_toggle_on">Режим HUD включён — нажмите, чтобы выключить</string>
+    <string name="hud_toggle_off">Включить режим HUD (отражение в стекле)</string>
+    <string name="metric_fix">Фикс</string>
+
+    <!-- About -->
+    <string name="screen_about">О программе</string>
+    <string name="about_brand_alt">Appmire</string>
+    <string name="about_tagline">Предоставляется бесплатно.\nПожертвования приветствуются.</string>
+    <string name="about_visit_site">Посетите appmire.be</string>
+
+    <!-- Sky view -->
+    <string name="sky_summary">Видимых %1$d   ·   В фиксе %2$d   ·   СРЕД %3$.1f</string>
+    <string name="sky_waiting">Ожидание спутников…</string>
+
+    <!-- World map -->
+    <string name="world_position_label">Позиция : Шир/Долг (WGS84)</string>
+
+    <!-- Build / about footer -->
+    <string name="build_badge">GPSinfo · v%1$s</string>
+
+    <!-- Card click semantic descriptions -->
+    <string name="open_speed_gauge">Открыть спидометр</string>
+    <string name="open_satellites">Открыть список спутников</string>
+    <string name="open_compass_detail">Открыть детали компаса</string>
+
+    <!-- Settings (About screen) -->
+    <string name="screen_settings">Настройки</string>
+    <string name="settings_units_label">Единицы</string>
+    <string name="settings_language_label">Язык</string>
+    <string name="unit_system_metric">Метрические</string>
+    <string name="unit_system_imperial">Имперские</string>
+    <string name="unit_system_nautical">Морские</string>
+    <string name="language_system">Системный по умолчанию</string>
+    <string name="unit_mph">mph</string>
+    <string name="unit_ft">ft</string>
+    <string name="unit_knots">kn</string>
+</resources>

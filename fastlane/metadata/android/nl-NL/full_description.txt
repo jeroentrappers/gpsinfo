@@ -1,0 +1,21 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+GPSinfo is een strak, modern GNSS-dashboard voor Android. Elke meting die de GPS-chip en sensoren van je telefoon kunnen tonen, samen op één geïntegreerd scherm.
+
+Wat je ziet
+• Fix-kwaliteit — 2D/3D-status, horizontale/verticale nauwkeurigheid, zichtbare vs. gebruikte satellieten
+• Hemelweergave — elke satelliet in azimut/elevatie, signaalsterkte per PRN, multi-band (GPS L1+L5, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS)
+• Positie — lat/lon in DMS of decimaal, hoogte, locatie delen, openen in elke maps-app
+• Beweging — snelheid, magnetische koers, hoogte, volledig scherm retro-analoge snelheidsmeter met HUD-spiegelmodus
+• Kompas — tilt-gecompenseerde magnetische koers, declinatie/inclinatie, magnetische nauwkeurigheid, gimbaal-binnacle
+• Wereldkaart — je positie, zonpositie, dag/nacht-grens uit echte Natural Earth-kustlijn­data
+• Zon en tijd — UTC- en lokale klok, zonsopgang/middag/zonsondergang, dagduur, zon-azimut/-elevatie
+
+Wat het NIET doet
+• Geen netwerktoegang. Geen INTERNET-machtiging. Niets verlaat je toestel.
+• Geen Google Play Services-afhankelijkheid.
+• Geen achtergrond-tracking, geen opnames, geen analytics, geen advertenties.
+
+Gemaakt voor wandelaars, zeilers, automobilisten, piloten en iedereen die wil weten wat z'n GPS écht doet.
+
+Open source. Gratis. Donaties welkom op paypal.me/jeroentrappers.

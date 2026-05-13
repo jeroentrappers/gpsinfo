@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher foreground is designed to fill the adaptive-icon canvas
+     (orbits reach ~88% of the edges). Android 12+ splash recommends content
+     in the inner ~66% of the icon container, so we inset it here. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@mipmap/ic_launcher_foreground"
+    android:inset="18%" />

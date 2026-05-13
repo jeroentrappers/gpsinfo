@@ -1,0 +1,3 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+Panel GNSS, brújula, sol y velocidad en vivo. 100% sin conexión.

@@ -42,15 +42,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.appmire.gpsinfo.R
+import com.appmire.gpsinfo.data.UnitSystem
 import com.appmire.gpsinfo.ui.components.DialZone
 import com.appmire.gpsinfo.ui.components.RetroDial
 import com.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
+import com.appmire.gpsinfo.util.UnitConverter
 import com.appmire.gpsinfo.util.headingToCardinal
+import com.appmire.gpsinfo.util.lengthUnitLabel
+import com.appmire.gpsinfo.util.speedUnitLabel
 
 /**
  * Full-screen speed gauge using the retro VW-T4-style dial ported from
@@ -66,13 +72,21 @@ fun SpeedGaugeScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val loc = state.gnss.location
-    val speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f) ?: 0f
-    val altitudeM = loc?.takeIf { it.hasAltitude() }?.altitude?.toInt()
+    val unit = state.unitSystem
+    val speedKmhRaw = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f) ?: 0f
+    val altitudeMRaw = loc?.takeIf { it.hasAltitude() }?.altitude
     val headingDeg = state.compass.magneticHeadingDeg.toInt()
     val headingCardinal = headingToCardinal(state.compass.magneticHeadingDeg)
-    val accuracyM = loc?.takeIf { it.hasSpeedAccuracy() && android.os.Build.VERSION.SDK_INT >= 26 }
+    val accuracyKmhRaw = loc?.takeIf { it.hasSpeedAccuracy() && android.os.Build.VERSION.SDK_INT >= 26 }
         ?.speedAccuracyMetersPerSecond?.times(3.6f)
-    val maxSpeedKmh = state.maxSpeedKmh
+
+    val speed = UnitConverter.speedFromKmh(speedKmhRaw, unit)
+    val maxSpeed = UnitConverter.speedFromKmh(state.maxSpeedKmh, unit)
+    val accuracy = accuracyKmhRaw?.let { UnitConverter.speedFromKmh(it, unit) }
+    val altitudeDisplay = altitudeMRaw?.let { UnitConverter.lengthFromMeters(it, unit).toInt() }
+    val dialConfig = dialConfigFor(unit)
+    val speedUnit = speedUnitLabel(unit)
+    val lengthUnit = lengthUnitLabel(unit)
 
     val isLandscape =
         LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -86,12 +100,16 @@ fun SpeedGaugeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (hudMode) "Speed · HUD" else "Speed") },
+                title = {
+                    Text(stringResource(
+                        if (hudMode) R.string.screen_speed_hud else R.string.screen_speed
+                    ))
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.action_back),
                         )
                     }
                 },
@@ -111,10 +129,9 @@ fun SpeedGaugeScreen(
                                 Icons.Outlined.DirectionsCar
                             else
                                 Icons.Outlined.FlipToBack,
-                            contentDescription = if (hudMode)
-                                "HUD mode on — tap to disable"
-                            else
-                                "Enable HUD (windshield-reflection) mode",
+                            contentDescription = stringResource(
+                                if (hudMode) R.string.hud_toggle_on else R.string.hud_toggle_off
+                            ),
                         )
                     }
                 },
@@ -149,9 +166,12 @@ fun SpeedGaugeScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 DialHousing(
-                    speedKmh = speedKmh,
-                    maxSpeedKmh = maxSpeedKmh,
-                    accuracyKmh = accuracyM,
+                    speed = speed,
+                    maxSpeed = maxSpeed,
+                    accuracy = accuracy,
+                    speedUnit = speedUnit,
+                    dialConfig = dialConfig,
+                    unit = unit,
                     modifier = Modifier
                         .fillMaxHeight()
                         .aspectRatio(1f)
@@ -168,15 +188,15 @@ fun SpeedGaugeScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         MetricCell(
-                            label = "HEADING",
+                            label = stringResource(R.string.metric_heading),
                             primary = "%03d°".format(headingDeg),
                             secondary = headingCardinal,
                             modifier = Modifier.weight(1f),
                         )
                         MetricCell(
-                            label = "ALTITUDE",
-                            primary = altitudeM?.let { "$it" } ?: "—",
-                            secondary = "m",
+                            label = stringResource(R.string.metric_altitude),
+                            primary = altitudeDisplay?.let { "$it" } ?: stringResource(R.string.placeholder_dash),
+                            secondary = lengthUnit,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -184,10 +204,11 @@ fun SpeedGaugeScreen(
                     Spacer(Modifier.height(12.dp))
 
                     GnssHealthStrip(
-                        fix = state.gnss.fix.label,
+                        fix = stringResource(state.gnss.fix.labelRes),
                         inUse = state.gnss.satellitesInUse,
                         inView = state.gnss.satellitesInView,
                         accuracyM = loc?.takeIf { it.hasAccuracy() }?.accuracy,
+                        unit = unit,
                     )
                 }
             }
@@ -201,9 +222,12 @@ fun SpeedGaugeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 DialHousing(
-                    speedKmh = speedKmh,
-                    maxSpeedKmh = maxSpeedKmh,
-                    accuracyKmh = accuracyM,
+                    speed = speed,
+                    maxSpeed = maxSpeed,
+                    accuracy = accuracy,
+                    speedUnit = speedUnit,
+                    dialConfig = dialConfig,
+                    unit = unit,
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f),
@@ -216,15 +240,15 @@ fun SpeedGaugeScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     MetricCell(
-                        label = "HEADING",
+                        label = stringResource(R.string.metric_heading),
                         primary = "%03d°".format(headingDeg),
                         secondary = headingCardinal,
                         modifier = Modifier.weight(1f),
                     )
                     MetricCell(
-                        label = "ALTITUDE",
-                        primary = altitudeM?.let { "$it" } ?: "—",
-                        secondary = "m",
+                        label = stringResource(R.string.metric_altitude),
+                        primary = altitudeDisplay?.let { "$it" } ?: stringResource(R.string.placeholder_dash),
+                        secondary = lengthUnit,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -232,10 +256,11 @@ fun SpeedGaugeScreen(
                 Spacer(Modifier.height(12.dp))
 
                 GnssHealthStrip(
-                    fix = state.gnss.fix.label,
+                    fix = stringResource(state.gnss.fix.labelRes),
                     inUse = state.gnss.satellitesInUse,
                     inView = state.gnss.satellitesInView,
                     accuracyM = loc?.takeIf { it.hasAccuracy() }?.accuracy,
+                    unit = unit,
                 )
             }
         }
@@ -250,12 +275,16 @@ fun SpeedGaugeScreen(
  */
 @Composable
 private fun DialHousing(
-    speedKmh: Float,
-    maxSpeedKmh: Float,
-    accuracyKmh: Float?,
+    speed: Float,
+    maxSpeed: Float,
+    accuracy: Float?,
+    speedUnit: String,
+    dialConfig: DialConfig,
+    unit: UnitSystem,
     modifier: Modifier = Modifier,
 ) {
-    val (tickStep, labelStep) = chooseTickSteps(maxSpeedKmh)
+    val (tickStep, labelStep) = chooseTickSteps(maxSpeed, unit)
+    val pivot = dialConfig.pivotValue
     Surface(
         modifier = modifier,
         color = Color(0xFF0B0B0B),
@@ -263,14 +292,14 @@ private fun DialHousing(
     ) {
         Box(contentAlignment = Alignment.Center) {
             RetroDial(
-                valueFraction = speedToFraction(speedKmh, maxSpeedKmh),
+                valueFraction = speedToFraction(speed, maxSpeed, pivot),
                 minValue = 0f,
-                maxValue = maxSpeedKmh,
+                maxValue = maxSpeed,
                 tickStep = tickStep,
                 labelStep = labelStep,
-                label = "km/h",
-                valueToFraction = { v -> speedToFraction(v, maxSpeedKmh) },
-                accentTickValues = listOf(30f, 50f, 70f, 90f, 120f),
+                label = speedUnit,
+                valueToFraction = { v -> speedToFraction(v, maxSpeed, pivot) },
+                accentTickValues = dialConfig.accentTicks,
                 accentTickColor = Color(0xFFE67635),
                 needleColor = Color(0xDDFFFFFF),
                 modifier = Modifier.fillMaxSize(),
@@ -287,15 +316,15 @@ private fun DialHousing(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = "%.0f".format(speedKmh),
+                    text = "%.0f".format(speed),
                     color = Color(0xFF7FE3FF),
                     fontSize = 56.sp,
                     fontWeight = FontWeight.ExtraBold,
                     fontFamily = FontFamily.Monospace,
                 )
-                if (accuracyKmh != null && accuracyKmh > 0f) {
+                if (accuracy != null && accuracy > 0f) {
                     Text(
-                        text = "± %.1f km/h".format(accuracyKmh),
+                        text = "± %.1f %s".format(accuracy, speedUnit),
                         color = Color(0xFF8AA0AA),
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
@@ -312,7 +341,10 @@ private fun GnssHealthStrip(
     inUse: Int,
     inView: Int,
     accuracyM: Float?,
+    unit: UnitSystem,
 ) {
+    val lengthLabel = lengthUnitLabel(unit)
+    val accuracyDisplay = accuracyM?.let { UnitConverter.lengthFromMeters(it, unit) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -324,9 +356,12 @@ private fun GnssHealthStrip(
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            InlineStat("Fix", fix)
-            InlineStat("Sats", "$inUse/$inView")
-            InlineStat("Acc", accuracyM?.let { "±${it.toInt()} m" } ?: "—")
+            InlineStat(stringResource(R.string.metric_fix), fix)
+            InlineStat(stringResource(R.string.metric_sats), "$inUse/$inView")
+            InlineStat(
+                stringResource(R.string.metric_accuracy),
+                accuracyDisplay?.let { "±${it.toInt()} $lengthLabel" } ?: stringResource(R.string.placeholder_dash),
+            )
         }
     }
 }
@@ -386,30 +421,73 @@ private fun InlineStat(label: String, value: String) {
 }
 
 /**
- * Piecewise speed → dial-fraction mapping. Lifted from id.dash:
- * dedicate 60 % of the sweep to 0–100 km/h (city / road speeds where
- * resolution matters most), and give the remaining 40 % to 100–[maxSpeed]
- * (motorway and beyond). The 100 km/h break is fixed regardless of where
- * the auto-expanding max lands, so low-speed resolution stays useful even
- * after the dial has grown to 300+ km/h.
+ * Per-unit dial appearance: the [pivotValue] is the breakpoint where the
+ * dial's 60 %/40 % piecewise mapping switches from "low-speed resolution"
+ * to "high-speed compression"; [accentTicks] are the orange highlight
+ * values rendered onto the face (city / residential / highway-ish
+ * speeds in the unit the user picked).
  */
-private fun speedToFraction(speed: Float, maxSpeed: Float): Float {
+internal data class DialConfig(
+    val pivotValue: Float,
+    val accentTicks: List<Float>,
+)
+
+internal fun dialConfigFor(unit: UnitSystem): DialConfig = when (unit) {
+    UnitSystem.Metric -> DialConfig(100f, listOf(30f, 50f, 70f, 90f, 120f))
+    UnitSystem.Imperial -> DialConfig(60f, listOf(20f, 35f, 45f, 55f, 75f))
+    UnitSystem.Nautical -> DialConfig(40f, listOf(6f, 10f, 20f, 30f, 45f))
+}
+
+/**
+ * Piecewise speed → dial-fraction mapping. Lifted from id.dash:
+ * dedicate 60 % of the sweep to 0–[pivot] (city / road speeds where
+ * resolution matters most), and give the remaining 40 % to [pivot]–[maxSpeed]
+ * (motorway and beyond). The pivot is fixed regardless of where the
+ * auto-expanding max lands, so low-speed resolution stays useful even
+ * after the dial has grown well past it.
+ *
+ * Internal (not private) so unit tests can call it directly.
+ */
+internal fun speedToFraction(speed: Float, maxSpeed: Float, pivot: Float): Float {
     if (maxSpeed <= 0f) return 0f
     val v = speed.coerceIn(0f, maxSpeed)
     return when {
-        // If the ceiling has somehow ended up below 100 km/h, fall back to linear.
-        maxSpeed <= 100f -> v / maxSpeed
-        v <= 100f -> (v / 100f) * 0.6f
-        else -> 0.6f + ((v - 100f) / (maxSpeed - 100f)) * 0.4f
+        // If the ceiling has somehow ended up below the pivot, fall back to linear.
+        maxSpeed <= pivot -> v / maxSpeed
+        v <= pivot -> (v / pivot) * 0.6f
+        else -> 0.6f + ((v - pivot) / (maxSpeed - pivot)) * 0.4f
     }
 }
 
+/** Metric-pivot (100 km/h) overload preserved for existing call sites and tests. */
+internal fun speedToFraction(speed: Float, maxSpeed: Float): Float =
+    speedToFraction(speed, maxSpeed, 100f)
+
 /** Pick a sensible tick/label step so the dial doesn't get crowded as
- *  the ceiling grows. The numbers were tuned to keep ~25 minor ticks and
- *  ~10 labelled majors across the full sweep. */
-private fun chooseTickSteps(maxSpeed: Float): Pair<Float, Float> = when {
-    maxSpeed <= 200f -> 10f to 20f
-    maxSpeed <= 400f -> 20f to 40f
-    maxSpeed <= 700f -> 25f to 50f
-    else -> 50f to 100f
+ *  the ceiling grows. Per-unit-system because the absolute numbers differ
+ *  by ~1.6× (imperial) and ~1.85× (nautical) vs metric. Tuned to keep
+ *  ~25 minor ticks and ~10 labelled majors across the full sweep. */
+internal fun chooseTickSteps(maxSpeed: Float, unit: UnitSystem): Pair<Float, Float> = when (unit) {
+    UnitSystem.Metric -> when {
+        maxSpeed <= 200f -> 10f to 20f
+        maxSpeed <= 400f -> 20f to 40f
+        maxSpeed <= 700f -> 25f to 50f
+        else -> 50f to 100f
+    }
+    UnitSystem.Imperial -> when {
+        maxSpeed <= 125f -> 5f to 10f
+        maxSpeed <= 250f -> 10f to 25f
+        maxSpeed <= 450f -> 25f to 50f
+        else -> 50f to 100f
+    }
+    UnitSystem.Nautical -> when {
+        maxSpeed <= 110f -> 5f to 10f
+        maxSpeed <= 220f -> 10f to 25f
+        maxSpeed <= 380f -> 25f to 50f
+        else -> 50f to 100f
+    }
 }
+
+/** Metric overload preserved for existing tests. */
+internal fun chooseTickSteps(maxSpeed: Float): Pair<Float, Float> =
+    chooseTickSteps(maxSpeed, UnitSystem.Metric)

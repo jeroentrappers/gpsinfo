@@ -1,0 +1,8 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+Lanzamiento inicial.
+- Panel integrado: fix, posición, movimiento, vista del cielo, brújula, mapa mundial, hora y sol
+- Velocímetro analógico retro con modo HUD
+- Azimut adaptativo en cualquier orientación
+- 12 idiomas, tema claro/oscuro, unidades métricas/imperiales/náuticas
+- 100% sin conexión, sin seguimiento, sin Play Services

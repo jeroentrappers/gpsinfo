@@ -1,0 +1,10 @@
+# Connects fastlane to Google Play Console.
+#
+# `package_name` matches `applicationId` in app/build.gradle.kts.
+# `json_key_file` points to a service-account JSON exported from the
+# Google Cloud Console with the "Release manager" role on Play Console.
+# The file MUST stay out of git — keep it under ~/.config/gpsinfo/ or
+# set `SUPPLY_JSON_KEY` instead of a path.
+
+json_key_file(ENV["SUPPLY_JSON_KEY_FILE"] || "../play-service-account.json")
+package_name("com.appmire.gpsinfo")

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
+  Native speaker should verify GNSS terminology + UI ergonomics.
+  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
+-->
+<resources>
+    <string name="app_name">GPSinfo</string>
+
+    <!-- Permission screen -->
+    <string name="permission_required_title">Konum erişimi gerekli</string>
+    <string name="permission_required_body">GPSinfo, uydu, sabitleme ve hareket verilerini göstermek için hassas konuma ihtiyaç duyar. Hiçbir konum verisi cihazınızdan ayrılmaz.</string>
+    <string name="grant_permission">İzin ver</string>
+    <string name="open_settings">Ayarları aç</string>
+
+    <!-- Section titles -->
+    <string name="section_position">Konum</string>
+    <string name="section_movement">Hareket</string>
+    <string name="section_sky">Gökyüzü görünümü</string>
+    <string name="section_compass">Pusula</string>
+    <string name="section_world">Dünya</string>
+    <string name="section_time">Zaman &amp; Güneş</string>
+
+    <!-- Actions -->
+    <string name="action_back">Geri</string>
+    <string name="action_share_location">Konumu paylaş</string>
+    <string name="action_open_maps">Haritalar\'da aç</string>
+    <string name="action_toggle_units">Birimleri değiştir</string>
+    <string name="action_toggle_theme">Temayı değiştir</string>
+    <string name="action_about">Hakkında</string>
+    <string name="action_open_about">Hakkında ekranını aç</string>
+
+    <string name="share_subject">Konumum</string>
+
+    <!-- Fix statuses -->
+    <string name="fix_status_no_fix">Sabitleme yok</string>
+    <string name="fix_status_2d">2B Sabitleme</string>
+    <string name="fix_status_3d">3B Sabitleme</string>
+
+    <!-- Magnetic accuracy levels -->
+    <string name="mag_acc_unknown">Bilinmiyor</string>
+    <string name="mag_acc_unreliable">Güvenilmez</string>
+    <string name="mag_acc_low">Düşük</string>
+    <string name="mag_acc_medium">Orta</string>
+    <string name="mag_acc_high">Yüksek</string>
+
+    <!-- Location services banner -->
+    <string name="location_off_title">Konum servisleri kapalı</string>
+    <string name="location_off_body">GPS sabitlemesi almak için sistem ayarlarından açın.</string>
+    <string name="location_off_open_settings">Konum ayarlarını aç</string>
+
+    <!-- StatusBar -->
+    <string name="metric_accuracy">Has</string>
+    <string name="metric_sats">Uydu</string>
+    <string name="metric_snr">SNR</string>
+
+    <!-- Position -->
+    <string name="metric_altitude">Yükseklik</string>
+    <string name="metric_h_accuracy">Y-Has</string>
+    <string name="metric_v_accuracy">D-Has</string>
+
+    <!-- Speed card -->
+    <string name="metric_speed">Hız</string>
+    <string name="metric_heading">Yön</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_m">m</string>
+    <string name="degrees_magnetic">° manyetik</string>
+    <string name="heading_magnetic_suffix">%1$s · °M</string>
+
+    <!-- Compass -->
+    <string name="metric_orientation">Yönelim</string>
+    <string name="metric_declination">Sapma</string>
+    <string name="metric_inclination">Eğim</string>
+    <string name="metric_reciprocal">Karşıt</string>
+    <string name="metric_mag_acc">Mag Has</string>
+    <string name="metric_field">Alan</string>
+    <string name="metric_pitch">Yunuslama</string>
+    <string name="metric_roll">Yatış</string>
+    <string name="metric_hdg">HDG</string>
+    <string name="metric_decl">DECL</string>
+    <string name="unit_microtesla">%1$.0f µT</string>
+    <string name="degrees_east_format">%1$.2f° E</string>
+
+    <!-- Time &amp; sun -->
+    <string name="metric_utc">UTC</string>
+    <string name="metric_local">Yerel</string>
+    <string name="metric_sunrise">Gün doğumu</string>
+    <string name="metric_solar_noon">Güneş tepe</string>
+    <string name="metric_sunset">Gün batımı</string>
+    <string name="metric_day_length">Gündüz süresi</string>
+    <string name="metric_sun_elev">Güneş yük</string>
+    <string name="metric_sun_az">Güneş az</string>
+    <string name="metric_phase">Faz</string>
+    <string name="phase_day">Gündüz</string>
+    <string name="phase_night">Gece</string>
+
+    <!-- Satellites screen -->
+    <string name="screen_satellites">Uydular</string>
+    <string name="sat_sort_label">SIRALA</string>
+    <string name="sat_sort_by_constellation">Takımyıldıza göre</string>
+    <string name="sat_sort_by_signal">Sinyale göre</string>
+    <string name="sat_sort_announce">Sıralama: %1$s</string>
+    <string name="sat_overview_title">GNSS GENEL BAKIŞ</string>
+    <string name="sat_stat_in_view">Görüş</string>
+    <string name="sat_stat_in_fix">Kullanım</string>
+    <string name="sat_stat_tracking">Takip</string>
+    <string name="sat_stat_best">En iyi</string>
+    <string name="sat_col_constellation">CON</string>
+    <string name="sat_col_svid">SVID</string>
+    <string name="sat_col_cn0">CN0</string>
+    <string name="sat_col_signal">SİNYAL</string>
+    <string name="sat_col_elevation">ELV</string>
+    <string name="sat_col_azimuth">AZ</string>
+    <string name="sat_col_fix">FIX</string>
+    <string name="unit_dbhz">%1$.0f dB-Hz</string>
+    <string name="placeholder_dash">—</string>
+
+    <!-- Compass detail -->
+    <string name="screen_compass">Pusula</string>
+
+    <!-- Speed screen -->
+    <string name="screen_speed">Hız</string>
+    <string name="screen_speed_hud">Hız · HUD</string>
+    <string name="hud_toggle_on">HUD modu açık — devre dışı bırakmak için dokunun</string>
+    <string name="hud_toggle_off">HUD modunu etkinleştir (ön cam yansıması)</string>
+    <string name="metric_fix">Sabitleme</string>
+
+    <!-- About -->
+    <string name="screen_about">Hakkında</string>
+    <string name="about_brand_alt">Appmire</string>
+    <string name="about_tagline">Size ücretsiz sunulmuştur.\nBağışlar takdir edilir.</string>
+    <string name="about_visit_site">appmire.be\'yi ziyaret et</string>
+
+    <!-- Sky view -->
+    <string name="sky_summary">Görüş %1$d   ·   Kullanım %2$d   ·   ORT %3$.1f</string>
+    <string name="sky_waiting">Uydular bekleniyor…</string>
+
+    <!-- World map -->
+    <string name="world_position_label">Konum : Enlem/Boylam (WGS84)</string>
+
+    <!-- Build / about footer -->
+    <string name="build_badge">GPSinfo · v%1$s</string>
+
+    <!-- Card click semantic descriptions -->
+    <string name="open_speed_gauge">Hız göstergesini aç</string>
+    <string name="open_satellites">Uydu listesini aç</string>
+    <string name="open_compass_detail">Pusula detayını aç</string>
+
+    <!-- Settings (About screen) -->
+    <string name="screen_settings">Ayarlar</string>
+    <string name="settings_units_label">Birimler</string>
+    <string name="settings_language_label">Dil</string>
+    <string name="unit_system_metric">Metrik</string>
+    <string name="unit_system_imperial">İngiliz</string>
+    <string name="unit_system_nautical">Denizcilik</string>
+    <string name="language_system">Sistem varsayılanı</string>
+    <string name="unit_mph">mph</string>
+    <string name="unit_ft">ft</string>
+    <string name="unit_knots">kn</string>
+</resources>

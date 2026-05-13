@@ -1,0 +1,6 @@
+Initial release.
+- Integrated dashboard: fix, position, movement, sky view, compass, world map, time & sun
+- Retro analog speed gauge with HUD mode
+- Adaptive azimuth that works in any device orientation
+- 12 languages, light/dark mode, metric/imperial/nautical units
+- 100% offline, no tracking, no Play Services

@@ -1,0 +1,8 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+Première version.
+- Tableau de bord intégré : fix, position, mouvement, vue du ciel, boussole, carte du monde, heure et soleil
+- Compteur analogique rétro avec mode HUD
+- Azimut adaptatif fonctionnant dans toutes les orientations
+- 12 langues, thème clair/sombre, unités métriques/impériales/nautiques
+- 100% hors-ligne, sans suivi, sans Play Services

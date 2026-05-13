@@ -1,2 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<full-backup-content />
+<!--
+  Pre-Android 12 backup configuration. We only allow backing up the small
+  set of UI preferences (theme, units, sort, dial max) so nothing
+  location-related ever syncs to Google Drive.
+-->
+<full-backup-content>
+    <include domain="sharedpref" path="gpsinfo_prefs.xml" />
+    <include domain="file" path="datastore/gpsinfo_prefs.preferences_pb" />
+</full-backup-content>

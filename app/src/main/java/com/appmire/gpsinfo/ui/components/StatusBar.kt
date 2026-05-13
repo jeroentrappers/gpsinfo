@@ -20,12 +20,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.appmire.gpsinfo.R
+import com.appmire.gpsinfo.data.UnitSystem
 import com.appmire.gpsinfo.data.model.FixStatus
 import com.appmire.gpsinfo.ui.theme.SignalGreen
 import com.appmire.gpsinfo.ui.theme.SignalOrange
 import com.appmire.gpsinfo.ui.theme.SignalRed
 import com.appmire.gpsinfo.ui.theme.SignalYellow
+import com.appmire.gpsinfo.util.UnitConverter
+import com.appmire.gpsinfo.util.lengthUnitLabel
 
 @Composable
 fun StatusBar(
@@ -33,7 +38,8 @@ fun StatusBar(
     accuracyMeters: Float?,
     satellitesInView: Int,
     satellitesInUse: Int,
-    averageSnr: Float
+    averageSnr: Float,
+    unitSystem: UnitSystem = UnitSystem.Metric,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -51,20 +57,26 @@ fun StatusBar(
                 FixDot(fix)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    fix.label,
+                    stringResource(fix.labelRes),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
-            Divider()
-            MetricMini("Acc", if (accuracyMeters != null) "±${accuracyMeters.toInt()}m" else "—")
-            Divider()
-            MetricMini("Sats", "$satellitesInUse / $satellitesInView")
+            val dash = stringResource(R.string.placeholder_dash)
+            val lengthLabel = lengthUnitLabel(unitSystem)
+            val accuracyDisplay = accuracyMeters?.let { UnitConverter.lengthFromMeters(it, unitSystem) }
             Divider()
             MetricMini(
-                "SNR",
-                if (averageSnr > 0f) "%.1f".format(averageSnr) else "—",
+                stringResource(R.string.metric_accuracy),
+                if (accuracyDisplay != null) "±${accuracyDisplay.toInt()}$lengthLabel" else dash,
+            )
+            Divider()
+            MetricMini(stringResource(R.string.metric_sats), "$satellitesInUse / $satellitesInView")
+            Divider()
+            MetricMini(
+                stringResource(R.string.metric_snr),
+                if (averageSnr > 0f) "%.1f".format(averageSnr) else dash,
                 accent = snrColor(averageSnr)
             )
         }

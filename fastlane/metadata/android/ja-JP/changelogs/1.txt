@@ -1,0 +1,8 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+初回リリース。
+- 統合ダッシュボード: 測位、位置、移動、スカイビュー、コンパス、世界地図、時刻と太陽
+- HUDモード対応のレトロ風アナログ速度計
+- 任意の向きで動作する適応型方位計算
+- 12言語、ライト/ダークテーマ、メートル法/ヤードポンド法/海事単位
+- 完全オフライン、追跡なし、Play Servicesなし

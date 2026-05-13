@@ -1,0 +1,8 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+Versão inicial.
+- Painel integrado: fix, posição, movimento, vista do céu, bússola, mapa-múndi, hora e sol
+- Velocímetro analógico retrô com modo HUD
+- Azimute adaptativo em qualquer orientação
+- 12 idiomas, tema claro/escuro, unidades métricas/imperiais/náuticas
+- 100% offline, sem rastreamento, sem Play Services

@@ -21,9 +21,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.appmire.gpsinfo.R
+import com.appmire.gpsinfo.data.UnitSystem
 import com.appmire.gpsinfo.util.CoordinateFormat
 import com.appmire.gpsinfo.util.CoordinateFormatter
 import com.appmire.gpsinfo.util.IntentHelpers
+import com.appmire.gpsinfo.util.UnitConverter
+import com.appmire.gpsinfo.util.lengthUnitLabel
 
 @Composable
 fun PositionCard(
@@ -33,7 +36,8 @@ fun PositionCard(
     hAccuracyMeters: Float?,
     vAccuracyMeters: Float?,
     format: CoordinateFormat,
-    onToggleFormat: () -> Unit
+    onToggleFormat: () -> Unit,
+    unitSystem: UnitSystem = UnitSystem.Metric,
 ) {
     SectionCard(
         title = stringResource(R.string.section_position),
@@ -46,20 +50,25 @@ fun PositionCard(
         }
     ) {
         Column {
+            val dash = stringResource(R.string.placeholder_dash)
             if (latDeg != null && lonDeg != null) {
                 val formatted = CoordinateFormatter.format(latDeg, lonDeg, format)
                 Text(formatted.lat, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
                 Text(formatted.lon, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
             } else {
-                Text("—", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(dash, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Spacer(Modifier.height(8.dp))
 
+            val lengthLabel = lengthUnitLabel(unitSystem)
+            val altDisplay = altMeters?.let { UnitConverter.lengthFromMeters(it, unitSystem) }
+            val hAccDisplay = hAccuracyMeters?.let { UnitConverter.lengthFromMeters(it, unitSystem) }
+            val vAccDisplay = vAccuracyMeters?.let { UnitConverter.lengthFromMeters(it, unitSystem) }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                MetricCell("Altitude", altMeters?.let { "${it.toInt()} m" } ?: "—")
-                MetricCell("H-Acc", hAccuracyMeters?.let { "±${it.toInt()} m" } ?: "—")
-                MetricCell("V-Acc", vAccuracyMeters?.let { "±${it.toInt()} m" } ?: "—")
+                MetricCell(stringResource(R.string.metric_altitude), altDisplay?.let { "${it.toInt()} $lengthLabel" } ?: dash)
+                MetricCell(stringResource(R.string.metric_h_accuracy), hAccDisplay?.let { "±${it.toInt()} $lengthLabel" } ?: dash)
+                MetricCell(stringResource(R.string.metric_v_accuracy), vAccDisplay?.let { "±${it.toInt()} $lengthLabel" } ?: dash)
             }
 
             Spacer(Modifier.height(16.dp))

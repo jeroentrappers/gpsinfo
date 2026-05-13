@@ -1,5 +1,8 @@
 package com.appmire.gpsinfo.data.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 enum class Constellation(val label: String, val color: Long) {
     GPS("GPS", 0xFF4FC3F7),
     GLONASS("GLONASS", 0xFFFFB74D),
@@ -11,6 +14,7 @@ enum class Constellation(val label: String, val color: Long) {
     UNKNOWN("???", 0xFF9E9E9E)
 }
 
+@Immutable
 data class SatelliteInfo(
     val svid: Int,
     val constellation: Constellation,

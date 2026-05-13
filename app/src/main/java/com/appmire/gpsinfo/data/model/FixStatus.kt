@@ -1,7 +1,12 @@
 package com.appmire.gpsinfo.data.model
 
-enum class FixStatus(val label: String) {
-    NO_FIX("No fix"),
-    TWO_D("2D Fix"),
-    THREE_D("3D Fix")
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
+import com.appmire.gpsinfo.R
+
+@Immutable
+enum class FixStatus(@StringRes val labelRes: Int) {
+    NO_FIX(R.string.fix_status_no_fix),
+    TWO_D(R.string.fix_status_2d),
+    THREE_D(R.string.fix_status_3d),
 }

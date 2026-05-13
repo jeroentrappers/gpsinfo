@@ -1,0 +1,1 @@
+Live GNSS, compass, sun & speed dashboard. 100% offline. No tracking.

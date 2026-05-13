@@ -1,0 +1,3 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+GNSS・コンパス・太陽・速度のライブダッシュボード。完全オフライン。

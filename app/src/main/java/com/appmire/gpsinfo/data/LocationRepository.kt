@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import android.location.GnssMeasurementsEvent
 import android.location.GnssStatus
 import android.location.Location
 import android.location.LocationListener
@@ -20,56 +19,67 @@ import com.appmire.gpsinfo.data.model.GnssSnapshot
 import com.appmire.gpsinfo.data.model.SatelliteInfo
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 
 /**
  * Wraps the rawest public Android GNSS surface:
- *   - LocationManager GPS provider (fused not used to avoid Play Services dep)
- *   - GnssStatus.Callback for per-satellite az/el/SNR/used-in-fix
- *   - GnssMeasurementsEvent.Callback for raw pseudorange (logged, future UI)
+ *   - [LocationManager.GPS_PROVIDER] for fixes (no Play Services dependency).
+ *   - [GnssStatus.Callback] for per-satellite az/el/SNR/used-in-fix.
  *
- * Exposes a single Flow<GnssSnapshot> that the ViewModel can collect.
+ * Exposes a single Flow<GnssSnapshot> the ViewModel can collect.
+ *
+ * Notes on what is intentionally NOT here:
+ *   - `GnssMeasurementsEvent.Callback` was previously registered as a no-op
+ *     placeholder for "future raw pseudorange UI." It kept the GNSS
+ *     measurement engine on at high cost for zero UI value; removed until
+ *     the feature is actually built.
+ *   - We don't use FusedLocationProvider to keep the app Play-Services-free.
+ *     Trade-off: cold-start indoors is slower. The repository seeds with
+ *     `getLastKnownLocation(NETWORK_PROVIDER)` before the first GPS fix so
+ *     the world-map marker lands somewhere plausible immediately.
  */
-class LocationRepository(private val context: Context) {
+class LocationRepository(private val context: Context) : LocationDataSource {
 
     private val lm: LocationManager =
         context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    private val _firstFix = MutableStateFlow<Long?>(null)
-    val firstFix = _firstFix.asStateFlow()
-
-    fun hasFineLocationPermission(): Boolean =
+    override fun hasFineLocationPermission(): Boolean =
         ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
+    /** Whether the system Location toggle is on. Surface this on the UI so
+     *  the user gets a "Location services are disabled" prompt instead of
+     *  staring at a perpetual NO_FIX. */
+    override fun isLocationEnabled(): Boolean =
+        lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+            lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
     @SuppressLint("MissingPermission")
-    fun snapshots(): Flow<GnssSnapshot> = callbackFlow {
+    override fun snapshots(): Flow<GnssSnapshot> = callbackFlow {
         if (!hasFineLocationPermission()) {
             trySend(GnssSnapshot())
             awaitClose { }
             return@callbackFlow
         }
 
+        val mainHandler = Handler(Looper.getMainLooper())
         var latestLocation: Location? = null
         var latestSatellites: List<SatelliteInfo> = emptyList()
+        var firstFixMillis: Long? = null
 
         fun emit() {
             val loc = latestLocation
             val fix = computeFix(loc, latestSatellites)
-            if (fix != FixStatus.NO_FIX && _firstFix.value == null) {
-                _firstFix.value = System.currentTimeMillis()
+            if (fix != FixStatus.NO_FIX && firstFixMillis == null) {
+                firstFixMillis = System.currentTimeMillis()
             }
             trySend(
                 GnssSnapshot(
                     location = loc,
                     fix = fix,
                     satellites = latestSatellites,
-                    firstFixMillis = _firstFix.value,
+                    firstFixMillis = firstFixMillis,
                     lastUpdateElapsedRealtime = SystemClock.elapsedRealtime()
                 )
             )
@@ -95,15 +105,7 @@ class LocationRepository(private val context: Context) {
                 emit()
             }
             override fun onFirstFix(ttffMillis: Int) {
-                if (_firstFix.value == null) _firstFix.value = System.currentTimeMillis()
-            }
-        }
-
-        val measurementCallback = object : GnssMeasurementsEvent.Callback() {
-            override fun onGnssMeasurementsReceived(event: GnssMeasurementsEvent) {
-                // Raw pseudorange / carrier phase available here.
-                // v1: not surfaced in UI — receiving the callback exercises the pipeline
-                // so we keep it cheap and intentionally do nothing.
+                if (firstFixMillis == null) firstFixMillis = System.currentTimeMillis()
             }
         }
 
@@ -116,15 +118,20 @@ class LocationRepository(private val context: Context) {
                 Looper.getMainLooper()
             )
         } catch (_: SecurityException) {
-            // permission revoked between check and use — ignore, callbackFlow will close
+            // Permission revoked between check and use — listeners stay
+            // unregistered, flow closes via awaitClose when collector cancels.
         } catch (_: IllegalArgumentException) {
-            // provider not available
+            // Provider not available on this device.
         }
 
         lm.registerGnssStatusCallback(gnssStatusCallback, mainHandler)
-        lm.registerGnssMeasurementsCallback(measurementCallback, mainHandler)
 
-        lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let {
+        // Seed: prefer the most-recent GPS fix; otherwise fall back to a
+        // network-cached coarse fix so the world-map pin lands somewhere
+        // plausible before the GPS first-fix lands.
+        val seed = runCatching { lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) }.getOrNull()
+            ?: runCatching { lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) }.getOrNull()
+        seed?.let {
             latestLocation = it
             emit()
         }
@@ -132,7 +139,6 @@ class LocationRepository(private val context: Context) {
         awaitClose {
             lm.removeUpdates(locationListener)
             lm.unregisterGnssStatusCallback(gnssStatusCallback)
-            lm.unregisterGnssMeasurementsCallback(measurementCallback)
         }
     }
 
@@ -167,6 +173,20 @@ class LocationRepository(private val context: Context) {
         else -> Constellation.UNKNOWN
     }
 
+    /**
+     * Derive a fix-type from the [Location] + tracked satellites.
+     *
+     * Android's [Location] API doesn't expose a "2D vs 3D" field, so we
+     * approximate:
+     *   - No location at all OR location older than 10 s → [FixStatus.NO_FIX]
+     *   - <3 satellites used → [FixStatus.NO_FIX]
+     *   - Altitude present AND ≥4 satellites used → [FixStatus.THREE_D]
+     *   - Otherwise → [FixStatus.TWO_D]
+     *
+     * The 10-second freshness window is intentional: at speed the receiver
+     * updates rapidly, while stationary it can occasionally idle for a few
+     * seconds without that meaning "lost fix."
+     */
     private fun computeFix(loc: Location?, sats: List<SatelliteInfo>): FixStatus {
         if (loc == null) return FixStatus.NO_FIX
         val used = sats.count { it.usedInFix }

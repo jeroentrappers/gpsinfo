@@ -33,18 +33,21 @@ fun TimeSunCard(nowMillis: Long, sun: SunInfo?) {
     val locTime = remember("locT") { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val timeOnly = remember("locTm") { SimpleDateFormat("HH:mm", Locale.getDefault()) }
 
+    val dash = stringResource(R.string.placeholder_dash)
+    val phaseDay = stringResource(R.string.phase_day)
+    val phaseNight = stringResource(R.string.phase_night)
     SectionCard(title = stringResource(R.string.section_time)) {
         Column {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Tile(modifier = Modifier.weight(1f)) {
-                    Text("UTC", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.metric_utc), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(utcTime.format(Date(nowMillis)), style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
-                    Text(utcDate.format(Date(nowMillis)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(utcDate.format(Date(nowMillis)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Tile(modifier = Modifier.weight(1f)) {
-                    Text("Local", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.metric_local), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(locTime.format(Date(nowMillis)), style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
-                    Text(locDate.format(Date(nowMillis)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(locDate.format(Date(nowMillis)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -52,25 +55,25 @@ fun TimeSunCard(nowMillis: Long, sun: SunInfo?) {
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Tile(modifier = Modifier.weight(1f)) {
-                    Text("Sunrise", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.metric_sunrise), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        sun?.sunriseEpochMillis?.let { timeOnly.format(Date(it)) } ?: "—",
+                        sun?.sunriseEpochMillis?.let { timeOnly.format(Date(it)) } ?: dash,
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Tile(modifier = Modifier.weight(1f)) {
-                    Text("Solar noon", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.metric_solar_noon), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        sun?.solarNoonEpochMillis?.let { timeOnly.format(Date(it)) } ?: "—",
+                        sun?.solarNoonEpochMillis?.let { timeOnly.format(Date(it)) } ?: dash,
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Tile(modifier = Modifier.weight(1f)) {
-                    Text("Sunset", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.metric_sunset), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        sun?.sunsetEpochMillis?.let { timeOnly.format(Date(it)) } ?: "—",
+                        sun?.sunsetEpochMillis?.let { timeOnly.format(Date(it)) } ?: dash,
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -80,10 +83,10 @@ fun TimeSunCard(nowMillis: Long, sun: SunInfo?) {
             Spacer(Modifier.height(10.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                MetricMini("Day length", sun?.dayLengthMillis?.let { formatDuration(it) } ?: "—")
-                MetricMini("Sun elev", sun?.let { "%.1f°".format(it.sunElevationDeg) } ?: "—")
-                MetricMini("Sun az", sun?.let { "%03d°".format(it.sunAzimuthDeg.toInt()) } ?: "—")
-                MetricMini("Phase", sun?.let { if (it.isDaytime) "Day" else "Night" } ?: "—")
+                MetricMini(stringResource(R.string.metric_day_length), sun?.dayLengthMillis?.let { formatDuration(it) } ?: dash)
+                MetricMini(stringResource(R.string.metric_sun_elev), sun?.let { "%.1f°".format(it.sunElevationDeg) } ?: dash)
+                MetricMini(stringResource(R.string.metric_sun_az), sun?.let { "%03d°".format(it.sunAzimuthDeg.toInt()) } ?: dash)
+                MetricMini(stringResource(R.string.metric_phase), sun?.let { if (it.isDaytime) phaseDay else phaseNight } ?: dash)
             }
         }
     }

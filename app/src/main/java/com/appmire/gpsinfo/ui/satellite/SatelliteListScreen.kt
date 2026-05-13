@@ -42,9 +42,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.appmire.gpsinfo.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.appmire.gpsinfo.data.model.Constellation
 import com.appmire.gpsinfo.data.model.SatelliteInfo
@@ -59,11 +61,11 @@ import com.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
  * sorted by constellation then SVID. Header summarises in-view / in-fix
  * counts and the strongest signal.
  */
-enum class SatSortMode(val label: String) {
+enum class SatSortMode(@androidx.annotation.StringRes val labelRes: Int) {
     /** Group by constellation, then SVID — stable, easy to find a specific PRN. */
-    CONSTELLATION("By constellation"),
+    CONSTELLATION(R.string.sat_sort_by_constellation),
     /** Strongest Cn0 first — useful for "what's actually tracking well right now". */
-    SIGNAL("By signal");
+    SIGNAL(R.string.sat_sort_by_signal);
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,12 +108,12 @@ fun SatelliteListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Satellites") },
+                title = { Text(stringResource(R.string.screen_satellites)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.action_back),
                         )
                     }
                 },
@@ -120,16 +122,14 @@ fun SatelliteListScreen(
                         SatSortMode.CONSTELLATION -> SatSortMode.SIGNAL
                         SatSortMode.SIGNAL -> SatSortMode.CONSTELLATION
                     }
+                    val nextLabel = stringResource(nextMode.labelRes)
                     IconButton(onClick = { sortMode = nextMode }) {
-                        // Icon reflects the *current* sort mode so the user
-                        // sees what they have, and the tooltip describes what
-                        // tapping will do (switch to the other mode).
                         Icon(
                             imageVector = when (sortMode) {
                                 SatSortMode.CONSTELLATION -> Icons.AutoMirrored.Outlined.Sort
                                 SatSortMode.SIGNAL -> Icons.Outlined.SignalCellularAlt
                             },
-                            contentDescription = "Sort: ${nextMode.label}",
+                            contentDescription = stringResource(R.string.sat_sort_announce, nextLabel),
                         )
                     }
                 },
@@ -186,7 +186,7 @@ private fun SortChips(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "SORT",
+            stringResource(R.string.sat_sort_label),
             modifier = Modifier.padding(start = 4.dp),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -197,7 +197,7 @@ private fun SortChips(
             FilterChip(
                 selected = mode == current,
                 onClick = { onSelect(mode) },
-                label = { Text(mode.label) },
+                label = { Text(stringResource(mode.labelRes)) },
                 leadingIcon = if (mode == current) {
                     {
                         Icon(
@@ -225,9 +225,10 @@ private fun Header(sats: List<SatelliteInfo>) {
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {
+        val dash = stringResource(R.string.placeholder_dash)
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                "GNSS OVERVIEW",
+                stringResource(R.string.sat_overview_title),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -236,10 +237,13 @@ private fun Header(sats: List<SatelliteInfo>) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Stat("In view", "${sats.size}")
-                Stat("In fix", "$inFix")
-                Stat("Tracking", "$withSignal")
-                Stat("Best", if (best > 0f) "%.0f dB-Hz".format(best) else "—")
+                Stat(stringResource(R.string.sat_stat_in_view), "${sats.size}")
+                Stat(stringResource(R.string.sat_stat_in_fix), "$inFix")
+                Stat(stringResource(R.string.sat_stat_tracking), "$withSignal")
+                Stat(
+                    stringResource(R.string.sat_stat_best),
+                    if (best > 0f) stringResource(R.string.unit_dbhz, best) else dash,
+                )
             }
         }
     }
@@ -269,13 +273,13 @@ private fun ColumnHeaders() {
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HeaderCell("CON", 56.dp)
-        HeaderCell("SVID", 56.dp)
-        HeaderCell("CN0", 56.dp)
-        Box(Modifier.weight(1f)) { HeaderCell("SIGNAL") }
-        HeaderCell("ELV", 52.dp)
-        HeaderCell("AZ", 52.dp)
-        HeaderCell("FIX", 40.dp)
+        HeaderCell(stringResource(R.string.sat_col_constellation), 56.dp)
+        HeaderCell(stringResource(R.string.sat_col_svid), 56.dp)
+        HeaderCell(stringResource(R.string.sat_col_cn0), 56.dp)
+        Box(Modifier.weight(1f)) { HeaderCell(stringResource(R.string.sat_col_signal)) }
+        HeaderCell(stringResource(R.string.sat_col_elevation), 52.dp)
+        HeaderCell(stringResource(R.string.sat_col_azimuth), 52.dp)
+        HeaderCell(stringResource(R.string.sat_col_fix), 40.dp)
     }
 }
 
@@ -306,10 +310,11 @@ private fun SatelliteRow(sat: SatelliteInfo) {
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val dash = stringResource(R.string.placeholder_dash)
         ConstellationBadge(sat.constellation, Modifier.width(56.dp))
         MonoCell("${sat.svid}", 56.dp)
         MonoCell(
-            text = if (sat.cn0DbHz > 0f) "%.0f".format(sat.cn0DbHz) else "—",
+            text = if (sat.cn0DbHz > 0f) "%.0f".format(sat.cn0DbHz) else dash,
             width = 56.dp,
             color = signalColor(sat.cn0DbHz),
         )
@@ -330,8 +335,8 @@ private fun SatelliteRow(sat: SatelliteInfo) {
             )
         }
         Spacer(Modifier.width(8.dp))
-        MonoCell(if (sat.elevationDeg >= 0f) "%.0f°".format(sat.elevationDeg) else "—", 52.dp)
-        MonoCell(if (sat.azimuthDeg >= 0f) "%.0f°".format(sat.azimuthDeg) else "—", 52.dp)
+        MonoCell(if (sat.elevationDeg >= 0f) "%.0f°".format(sat.elevationDeg) else dash, 52.dp)
+        MonoCell(if (sat.azimuthDeg >= 0f) "%.0f°".format(sat.azimuthDeg) else dash, 52.dp)
         Text(
             text = if (sat.usedInFix) "✓" else "·",
             modifier = Modifier.width(40.dp),

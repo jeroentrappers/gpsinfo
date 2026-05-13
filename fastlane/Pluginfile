@@ -1,0 +1,8 @@
+# No Ruby plugins required today.
+#
+# `capture_android_screenshots` is a built-in Fastlane action — the only
+# Screengrab artefact that needs installing is the Android library
+# `tools.fastlane:screengrab` (wired into androidTestImplementation in
+# app/build.gradle.kts).
+#
+# If you ever need a plugin, add it here and re-run `bundle install`.

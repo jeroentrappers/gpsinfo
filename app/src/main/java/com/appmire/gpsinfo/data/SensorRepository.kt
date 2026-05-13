@@ -8,6 +8,8 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.hardware.display.DisplayManager
 import android.location.Location
+import android.os.Handler
+import android.os.Looper
 import android.view.Display
 import android.view.Surface
 import com.appmire.gpsinfo.data.model.CompassReading
@@ -15,34 +17,39 @@ import com.appmire.gpsinfo.data.model.MagneticAccuracy
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * Tilt-corrected magnetic heading using rotation vector + magnetometer accuracy callback.
- * Declination/inclination computed from GeomagneticField against the most-recent fix.
+ * Tilt-corrected magnetic heading from [Sensor.TYPE_ROTATION_VECTOR],
+ * plus [GeomagneticField]-derived declination/inclination relative to the
+ * most-recent fix.
  *
- * Stability strategy:
- *   1. Display-rotation remap — the rotation matrix is re-expressed in the
- *      *display's* frame (via [SensorManager.remapCoordinateSystem]) so
- *      pitch/roll/heading match what the user perceives, whether the phone
- *      is held portrait, landscape, or reverse-portrait.
- *   2. Adaptive azimuth — heading is derived from whichever display-frame
- *      axis has the largest horizontal projection: top edge (+Y) when the
- *      device is flat, back of the device (−Z) when held upright. A single
- *      fixed convention is gimbal-locked at the extreme of its range; this
- *      cross-fades smoothly between the two regimes.
- *   3. Sample at SENSOR_DELAY_GAME (~50 Hz) so the EMA has enough samples.
- *   4. Circular exponential moving average on sin/cos of azimuth — avoids
- *      the 0°/360° wrap-around glitch a naive scalar EMA produces.
- *   5. EMA alpha adapts to magnetic accuracy: less smoothing when the
- *      magnetometer is well-calibrated, more when it's noisy.
- *   6. Cumulative (unwrapped) heading is tracked alongside the wrapped one
- *      so rotation animations never reverse direction crossing north.
+ * Stability strategy (in this order):
+ *   1. **Display-rotation remap** — rotation matrix re-expressed in the
+ *      display's frame via [SensorManager.remapCoordinateSystem] so
+ *      pitch/roll/heading match what the user perceives in any orientation.
+ *   2. **Adaptive azimuth** — heading is derived from whichever display-
+ *      frame axis has the largest horizontal projection: top edge (+Y)
+ *      when the device is flat, back of the device (−Z) when held upright.
+ *   3. **SENSOR_DELAY_GAME** sampling (~50 Hz) so the EMA has samples.
+ *   4. **Circular EMA on sin/cos** — avoids the 0°/360° wrap-around glitch
+ *      a naive scalar EMA produces.
+ *   5. **Accuracy-adaptive alpha** — less smoothing when the magnetometer
+ *      is well-calibrated, more when it's noisy.
+ *   6. **Continuous (unwrapped) heading** alongside the wrapped value so
+ *      rotation animations never reverse direction crossing north.
+ *
+ * Caching:
+ *   - [GeomagneticField] is rebuilt only when location moves by more than
+ *     [GEO_RECOMPUTE_METERS] — it doesn't change measurably below that.
+ *   - Display rotation is cached and refreshed by a [DisplayManager.DisplayListener]
+ *     rather than read on every sensor tick.
  */
-class SensorRepository(private val context: Context) {
+class SensorRepository(private val context: Context) : SensorDataSource {
 
     private val sm: SensorManager =
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -50,37 +57,83 @@ class SensorRepository(private val context: Context) {
     private val displayManager: DisplayManager =
         context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
 
-    /** Current display rotation read fresh each sensor sample. Cheap, and
-     *  the display rotation can change without the repository being
-     *  re-collected (especially with our activity's configChanges flag). */
-    private fun displayRotation(): Int =
-        displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: Surface.ROTATION_0
-
-    fun readings(currentLocation: () -> Location?): Flow<CompassReading> = callbackFlow {
+    override fun readings(currentLocation: () -> Location?): Flow<CompassReading> = callbackFlow {
         val rotationVector = sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         val magnetic = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        val mainHandler = Handler(Looper.getMainLooper())
+
+        // Cached display rotation — kept in sync via DisplayListener instead
+        // of re-read on every sensor tick. IPC saved: ~50/sec → 0.
+        var cachedRotation = displayManager
+            .getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: Surface.ROTATION_0
+        val displayListener = object : DisplayManager.DisplayListener {
+            override fun onDisplayChanged(displayId: Int) {
+                if (displayId == Display.DEFAULT_DISPLAY) {
+                    cachedRotation = displayManager
+                        .getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: Surface.ROTATION_0
+                }
+            }
+            override fun onDisplayAdded(displayId: Int) = Unit
+            override fun onDisplayRemoved(displayId: Int) = Unit
+        }
+        displayManager.registerDisplayListener(displayListener, mainHandler)
+
+        // Cached GeomagneticField — invalidated when the user moves more
+        // than GEO_RECOMPUTE_METERS from the last computation point.
+        var cachedGeo: GeomagneticField? = null
+        var cachedGeoLat = Double.NaN
+        var cachedGeoLon = Double.NaN
+        var cachedGeoAlt = Double.NaN
+
+        fun geomagneticFor(loc: Location?): GeomagneticField? {
+            if (loc == null) {
+                cachedGeo = null
+                cachedGeoLat = Double.NaN
+                cachedGeoLon = Double.NaN
+                cachedGeoAlt = Double.NaN
+                return null
+            }
+            val alt = if (loc.hasAltitude()) loc.altitude else 0.0
+            val moved = cachedGeoLat.isNaN() ||
+                metresBetween(cachedGeoLat, cachedGeoLon, loc.latitude, loc.longitude) >
+                    GEO_RECOMPUTE_METERS ||
+                abs(alt - cachedGeoAlt) > GEO_RECOMPUTE_ALTITUDE_METERS
+            if (moved) {
+                cachedGeo = GeomagneticField(
+                    loc.latitude.toFloat(),
+                    loc.longitude.toFloat(),
+                    alt.toFloat(),
+                    System.currentTimeMillis()
+                )
+                cachedGeoLat = loc.latitude
+                cachedGeoLon = loc.longitude
+                cachedGeoAlt = alt
+            }
+            return cachedGeo
+        }
 
         var lastHeading = 0f
         var lastContinuousHeading = 0f
         var lastPitch = 0f
         var lastRoll = 0f
-        var lastAccuracy = MagneticAccuracy.UNKNOWN
+        // Rotation-vector accuracy = the meaningful one for compass UI.
+        // We keep magnetic-field sensor accuracy separately so they don't
+        // overwrite each other.
+        var rotationAccuracy = MagneticAccuracy.UNKNOWN
+        var magneticAccuracy = MagneticAccuracy.UNKNOWN
         var fieldStrength = 0f
 
         fun emit() {
             val loc = currentLocation()
-            val geo: GeomagneticField? = loc?.let {
-                GeomagneticField(
-                    it.latitude.toFloat(),
-                    it.longitude.toFloat(),
-                    if (it.hasAltitude()) it.altitude.toFloat() else 0f,
-                    System.currentTimeMillis()
-                )
-            }
+            val geo = geomagneticFor(loc)
             val declination = geo?.declination ?: 0f
             val inclination = geo?.inclination ?: 0f
             val trueHeading = ((lastHeading + declination) % 360f + 360f) % 360f
-
+            // The rotation-vector accuracy is the one driving the heading
+            // smoothing alpha, and it's the more useful number for the UI.
+            // Worst of the two when both are known so we don't claim "High"
+            // confidence when the bare magnetometer is unreliable.
+            val combinedAccuracy = worstOf(rotationAccuracy, magneticAccuracy)
             trySend(
                 CompassReading(
                     magneticHeadingDeg = lastHeading,
@@ -91,7 +144,7 @@ class SensorRepository(private val context: Context) {
                     declinationDeg = declination,
                     inclinationDeg = inclination,
                     fieldStrengthNanoTesla = fieldStrength,
-                    accuracy = lastAccuracy
+                    accuracy = combinedAccuracy,
                 )
             )
         }
@@ -101,18 +154,17 @@ class SensorRepository(private val context: Context) {
             private val remappedMatrix = FloatArray(9)
             private val orientation = FloatArray(3)
 
-            // Circular EMA state — heading is stored as filtered sin/cos so
-            // the 0°/360° wrap never produces a long-way jump in the output.
+            // Circular EMA state — stored as filtered sin/cos so the 0°/360°
+            // wrap never produces a long-way jump in the output.
             private var filtSin = 0.0
             private var filtCos = 0.0
             private var filtPitch = 0.0
             private var filtRoll = 0.0
             private var initialized = false
 
-            // Continuous (unwrapped) heading — integrates the shortest angular
-            // delta each sample so tiny wobble across 0°/360° cannot flip the
-            // sign of the next animation step. Can grow unbounded over many
-            // physical rotations; that is fine for rotate().
+            // Continuous (unwrapped) heading — integrates the shortest
+            // angular delta each sample so tiny wobble across 0°/360°
+            // cannot flip the sign of the next animation step.
             private var prevWrappedDeg = Double.NaN
             private var continuousDeg = 0.0
 
@@ -121,21 +173,14 @@ class SensorRepository(private val context: Context) {
 
                 SensorManager.getRotationMatrixFromVector(rotMatrix, event.values)
 
-                // Re-express the rotation matrix in the *display's* frame.
-                // The sensor frame is locked to the device's natural
-                // orientation (portrait for most phones), so without this
-                // remap "top of the phone" stops matching "top of the
-                // screen" the moment the device is rotated, and pitch/roll
-                // swap meanings. The mapping below is the canonical one
-                // documented by Android for each display rotation.
-                val (axisX, axisY) = when (displayRotation()) {
+                val (axisX, axisY) = when (cachedRotation) {
                     Surface.ROTATION_90 ->
                         SensorManager.AXIS_Y to SensorManager.AXIS_MINUS_X
                     Surface.ROTATION_180 ->
                         SensorManager.AXIS_MINUS_X to SensorManager.AXIS_MINUS_Y
                     Surface.ROTATION_270 ->
                         SensorManager.AXIS_MINUS_Y to SensorManager.AXIS_X
-                    else -> // ROTATION_0 (natural)
+                    else -> // ROTATION_0
                         SensorManager.AXIS_X to SensorManager.AXIS_Y
                 }
                 SensorManager.remapCoordinateSystem(
@@ -143,23 +188,11 @@ class SensorRepository(private val context: Context) {
                 )
                 SensorManager.getOrientation(remappedMatrix, orientation)
 
-                // Adaptive azimuth. The remapped rotation matrix R maps
-                // *display-frame* device vectors into the world frame
-                // (X=east, Y=north, Z=up). The horizontal projection of
-                // display +Y (top of the screen) lives in (R[1], R[4]);
-                // display −Z (back of the screen) lives in (−R[2], −R[5]).
-                // Whichever has the larger squared magnitude is well-
-                // conditioned in the current pose — pick it.
-                //   * Device flat face-up → top projects strongly → +Y wins.
-                //   * Device held upright → top points at the sky, its
-                //     projection collapses → −Z wins.
-                // The cross-fade between regimes is implicit and smooth.
                 val r1 = remappedMatrix[1]; val r4 = remappedMatrix[4]
                 val r2 = remappedMatrix[2]; val r5 = remappedMatrix[5]
                 val topHoriz2 = r1 * r1 + r4 * r4
                 val backHoriz2 = r2 * r2 + r5 * r5
                 val rawAzRad = if (topHoriz2 >= backHoriz2) {
-                    // East over north → bearing clockwise from north.
                     atan2(r1.toDouble(), r4.toDouble())
                 } else {
                     atan2((-r2).toDouble(), (-r5).toDouble())
@@ -167,7 +200,7 @@ class SensorRepository(private val context: Context) {
                 val rawPitchDeg = Math.toDegrees(orientation[1].toDouble())
                 val rawRollDeg = Math.toDegrees(orientation[2].toDouble())
 
-                val alpha = when (lastAccuracy) {
+                val alpha = when (rotationAccuracy) {
                     MagneticAccuracy.HIGH -> 0.28
                     MagneticAccuracy.MEDIUM -> 0.18
                     MagneticAccuracy.LOW -> 0.10
@@ -190,20 +223,10 @@ class SensorRepository(private val context: Context) {
 
                 val azDeg = Math.toDegrees(atan2(filtSin, filtCos))
                 val wrappedDeg = ((azDeg % 360.0) + 360.0) % 360.0
-
-                // Accumulate the shortest angular delta into the continuous
-                // heading. First sample seeds it; thereafter each delta is
-                // clamped to (-180, 180] so wrap-around never reverses the
-                // animation direction.
-                if (prevWrappedDeg.isNaN()) {
-                    continuousDeg = wrappedDeg
-                } else {
-                    var delta = wrappedDeg - prevWrappedDeg
-                    if (delta > 180.0) delta -= 360.0
-                    if (delta < -180.0) delta += 360.0
-                    continuousDeg += delta
-                }
-                prevWrappedDeg = wrappedDeg
+                val (newContinuous, newPrev) =
+                    integrateContinuousHeading(prevWrappedDeg, wrappedDeg, continuousDeg)
+                continuousDeg = newContinuous
+                prevWrappedDeg = newPrev
 
                 lastHeading = wrappedDeg.toFloat()
                 lastContinuousHeading = continuousDeg.toFloat()
@@ -215,7 +238,7 @@ class SensorRepository(private val context: Context) {
 
             override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
                 if (sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
-                    lastAccuracy = mapAccuracy(accuracy)
+                    rotationAccuracy = mapAccuracy(accuracy)
                     emit()
                 }
             }
@@ -225,11 +248,18 @@ class SensorRepository(private val context: Context) {
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.sensor.type != Sensor.TYPE_MAGNETIC_FIELD) return
                 val x = event.values[0]; val y = event.values[1]; val z = event.values[2]
-                fieldStrength = sqrt(x * x + y * y + z * z)
+                val newStrength = sqrt(x * x + y * y + z * z)
+                // Emit only when it changes meaningfully — the bare
+                // magnetometer ticks at ~50 Hz too and we don't need to
+                // multiply that by the rotation-vector rate.
+                if (abs(newStrength - fieldStrength) > 0.5f) {
+                    fieldStrength = newStrength
+                    emit()
+                }
             }
             override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
                 if (sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
-                    lastAccuracy = mapAccuracy(accuracy)
+                    magneticAccuracy = mapAccuracy(accuracy)
                     emit()
                 }
             }
@@ -239,13 +269,14 @@ class SensorRepository(private val context: Context) {
             sm.registerListener(rotationListener, rotationVector, SensorManager.SENSOR_DELAY_GAME)
         }
         if (magnetic != null) {
-            sm.registerListener(magneticListener, magnetic, SensorManager.SENSOR_DELAY_GAME)
+            sm.registerListener(magneticListener, magnetic, SensorManager.SENSOR_DELAY_UI)
         }
 
         emit()
         awaitClose {
             sm.unregisterListener(rotationListener)
             sm.unregisterListener(magneticListener)
+            displayManager.unregisterDisplayListener(displayListener)
         }
     }
 
@@ -256,4 +287,56 @@ class SensorRepository(private val context: Context) {
         SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> MagneticAccuracy.HIGH
         else -> MagneticAccuracy.UNKNOWN
     }
+
+    private fun worstOf(a: MagneticAccuracy, b: MagneticAccuracy): MagneticAccuracy {
+        if (a == MagneticAccuracy.UNKNOWN) return b
+        if (b == MagneticAccuracy.UNKNOWN) return a
+        return if (a.ordinal < b.ordinal) a else b
+    }
+
+    private companion object {
+        /** Lat/lon move tolerance before we recompute the magnetic field
+         *  (declination changes by ~0.1° per 100 km mid-latitude, so 100 m
+         *  is well below any perceptible change). */
+        const val GEO_RECOMPUTE_METERS = 100.0
+        const val GEO_RECOMPUTE_ALTITUDE_METERS = 200.0
+    }
+}
+
+/**
+ * Integrates a new wrapped-heading sample into the running continuous
+ * (unwrapped) heading. Returns `(newContinuous, newPrev)`.
+ *
+ * The delta from `prevWrapped` to `newWrapped` is clamped to (-180, 180]
+ * so wrap-around at 0°/360° never causes the rose to reverse direction.
+ * First sample (when prevWrapped is NaN) seeds the continuous value.
+ *
+ * Pure function, extracted for unit testability.
+ */
+internal fun integrateContinuousHeading(
+    prevWrapped: Double,
+    newWrapped: Double,
+    prevContinuous: Double,
+): Pair<Double, Double> {
+    if (prevWrapped.isNaN()) return newWrapped to newWrapped
+    var delta = newWrapped - prevWrapped
+    if (delta > 180.0) delta -= 360.0
+    if (delta < -180.0) delta += 360.0
+    return (prevContinuous + delta) to newWrapped
+}
+
+/**
+ * Approximate distance in metres between two lat/lon points using the
+ * equirectangular projection. Good to better than 1% for sub-100 km
+ * distances — plenty for "did the user move >100 m?"
+ *
+ * Pure function, extracted for unit testability.
+ */
+internal fun metresBetween(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    if (lat1.isNaN() || lon1.isNaN()) return Double.POSITIVE_INFINITY
+    val rEarth = 6_371_000.0
+    val midLatRad = Math.toRadians((lat1 + lat2) / 2.0)
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1) * cos(midLatRad)
+    return rEarth * sqrt(dLat * dLat + dLon * dLon)
 }

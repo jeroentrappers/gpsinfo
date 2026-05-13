@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,7 +52,12 @@ fun SkyViewCard(snapshot: GnssSnapshot) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "In view ${snapshot.satellitesInView}   ·   In use ${snapshot.satellitesInUse}   ·   AVG ${"%.1f".format(snapshot.averageSnr)}",
+                    stringResource(
+                        R.string.sky_summary,
+                        snapshot.satellitesInView,
+                        snapshot.satellitesInUse,
+                        snapshot.averageSnr,
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -69,6 +75,24 @@ private fun SkyRadial(satellites: List<SatelliteInfo>) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val density = LocalDensity.current
     val labelPx = with(density) { 9.sp.toPx() }
+    // Hoisted Paints — previously constructed inside drawIntoCanvas on
+    // every frame.
+    val cardinalPaint = remember(onSurfaceVariant, labelPx) {
+        android.graphics.Paint().apply {
+            color = onSurfaceVariant.toArgb()
+            textSize = labelPx + 2f
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+    }
+    val svidPaint = remember(onSurface, labelPx) {
+        android.graphics.Paint().apply {
+            color = onSurface.toArgb()
+            textSize = labelPx
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+    }
     Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
             val cx = size.width / 2f
@@ -87,26 +111,15 @@ private fun SkyRadial(satellites: List<SatelliteInfo>) {
             // cardinal cross
             drawLine(outline.copy(alpha = 0.4f), Offset(cx - rMax, cy), Offset(cx + rMax, cy), 1f)
             drawLine(outline.copy(alpha = 0.4f), Offset(cx, cy - rMax), Offset(cx, cy + rMax), 1f)
-            // cardinal letters
+            // cardinal letters (Paint hoisted out of draw block)
             drawIntoCanvas { c ->
-                val p = android.graphics.Paint().apply {
-                    color = onSurfaceVariant.toArgb()
-                    textSize = labelPx + 2f
-                    isAntiAlias = true
-                    textAlign = android.graphics.Paint.Align.CENTER
-                }
-                c.nativeCanvas.drawText("N", cx, cy - rMax - 4f, p)
-                c.nativeCanvas.drawText("S", cx, cy + rMax + labelPx + 2f, p)
-                c.nativeCanvas.drawText("E", cx + rMax + 8f, cy + labelPx / 2f, p)
-                c.nativeCanvas.drawText("W", cx - rMax - 8f, cy + labelPx / 2f, p)
+                c.nativeCanvas.drawText("N", cx, cy - rMax - 4f, cardinalPaint)
+                c.nativeCanvas.drawText("S", cx, cy + rMax + labelPx + 2f, cardinalPaint)
+                c.nativeCanvas.drawText("E", cx + rMax + 8f, cy + labelPx / 2f, cardinalPaint)
+                c.nativeCanvas.drawText("W", cx - rMax - 8f, cy + labelPx / 2f, cardinalPaint)
             }
-            // satellites
-            val labelPaint = android.graphics.Paint().apply {
-                color = onSurface.toArgb()
-                textSize = labelPx
-                isAntiAlias = true
-                textAlign = android.graphics.Paint.Align.CENTER
-            }
+            // satellites — Paint hoisted out of draw block.
+            val labelPaint = svidPaint
             satellites.forEach { sat ->
                 if (sat.elevationDeg < 0f || sat.elevationDeg > 90f) return@forEach
                 val r = rMax * (90f - sat.elevationDeg) / 90f

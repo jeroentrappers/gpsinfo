@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-app language preference (Android 13+). Lists every locale the app
+  has translations for. Keep in sync with resourceConfigurations in
+  build.gradle.kts and Language picker entries in the About screen.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="cs" />
+    <locale android:name="de" />
+    <locale android:name="es" />
+    <locale android:name="fr" />
+    <locale android:name="it" />
+    <locale android:name="ja" />
+    <locale android:name="nl" />
+    <locale android:name="pl" />
+    <locale android:name="pt-BR" />
+    <locale android:name="ru" />
+    <locale android:name="tr" />
+</locale-config>

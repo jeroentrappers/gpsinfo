@@ -1,13 +1,19 @@
 package com.appmire.gpsinfo.data.model
 
-enum class MagneticAccuracy(val label: String) {
-    UNRELIABLE("Unreliable"),
-    LOW("Low"),
-    MEDIUM("Medium"),
-    HIGH("High"),
-    UNKNOWN("Unknown")
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
+import com.appmire.gpsinfo.R
+
+@Immutable
+enum class MagneticAccuracy(@StringRes val labelRes: Int) {
+    UNRELIABLE(R.string.mag_acc_unreliable),
+    LOW(R.string.mag_acc_low),
+    MEDIUM(R.string.mag_acc_medium),
+    HIGH(R.string.mag_acc_high),
+    UNKNOWN(R.string.mag_acc_unknown),
 }
 
+@Immutable
 data class CompassReading(
     /** Wrapped magnetic heading in [0°, 360°). Use for text readouts and cardinal lookup. */
     val magneticHeadingDeg: Float = 0f,

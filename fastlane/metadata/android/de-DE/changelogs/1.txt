@@ -1,0 +1,8 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+Erste Veröffentlichung.
+- Integriertes Dashboard: Fix, Position, Bewegung, Himmelsansicht, Kompass, Weltkarte, Zeit & Sonne
+- Retro-Analog-Tachoanzeige mit HUD-Modus
+- Adaptiver Azimut, funktioniert in jeder Geräteausrichtung
+- 12 Sprachen, helles/dunkles Theme, metrisch/imperial/nautisch
+- 100% offline, kein Tracking, keine Play Services

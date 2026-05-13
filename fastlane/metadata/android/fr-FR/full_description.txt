@@ -1,0 +1,21 @@
+[TODO_REVIEW: machine translation, native-speaker review required before publish]
+
+GPSinfo est un tableau de bord GNSS épuré et moderne pour Android. Toutes les mesures que la puce GPS et les capteurs de votre téléphone exposent, réunies sur un seul écran.
+
+Ce qu'il affiche
+• Qualité du fix — état 2D/3D, précision horizontale/verticale, satellites visibles vs. utilisés
+• Vue du ciel — chaque satellite en azimut/élévation, signal par PRN, multi-bande (GPS L1+L5, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS)
+• Position — lat/lon en DMS ou décimal, altitude, partage de position, ouverture dans l'app de cartes
+• Mouvement — vitesse, cap magnétique, altitude, compteur de vitesse analogique rétro plein écran avec mode HUD miroir
+• Boussole — cap magnétique compensé en inclinaison, déclinaison/inclinaison, précision magnétique, vue en habitacle
+• Carte du monde — votre position, position du soleil, terminateur jour/nuit tracé sur des données Natural Earth réelles
+• Soleil et heure — horloges UTC et locale, lever/midi/coucher du soleil, durée du jour, azimut/élévation solaire
+
+Ce qu'il ne fait PAS
+• Aucun accès réseau. Aucune autorisation INTERNET. Rien ne quitte votre appareil.
+• Aucune dépendance Google Play Services.
+• Aucun suivi en arrière-plan, aucun enregistrement, aucun analytique, aucune pub.
+
+Conçu pour randonneurs, marins, conducteurs, pilotes et tous ceux qui veulent savoir ce que leur GPS fait réellement.
+
+Open source. Gratuit. Dons bienvenus sur paypal.me/jeroentrappers.
