@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GPSinfo</string>
+
+    <string name="permission_required_title">Location access required</string>
+    <string name="permission_required_body">GPSinfo needs precise location to surface satellite, fix and movement data. No location data ever leaves your device.</string>
+    <string name="grant_permission">Grant permission</string>
+    <string name="open_settings">Open settings</string>
+
+    <string name="section_position">Position</string>
+    <string name="section_movement">Movement</string>
+    <string name="section_sky">Sky view</string>
+    <string name="section_compass">Compass</string>
+    <string name="section_world">World</string>
+    <string name="section_time">Time &amp; Sun</string>
+
+    <string name="action_share_location">Share location</string>
+    <string name="action_open_maps">Open in Maps</string>
+    <string name="action_toggle_units">Toggle units</string>
+    <string name="action_toggle_theme">Toggle theme</string>
+
+    <string name="share_subject">My location</string>
+    <string name="no_fix">No fix</string>
+    <string name="fix_2d">2D Fix</string>
+    <string name="fix_3d">3D Fix</string>
+</resources>
