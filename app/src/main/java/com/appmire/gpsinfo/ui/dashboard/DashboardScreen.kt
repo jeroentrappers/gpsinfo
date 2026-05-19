@@ -1,49 +1,35 @@
 package com.appmire.gpsinfo.ui.dashboard
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.OpenInNew
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.outlined.AddLocationAlt
-import androidx.compose.material.icons.outlined.FiberManualRecord
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material.icons.outlined.LocationOff
-import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material.icons.outlined.Map
-import androidx.compose.material.icons.outlined.Stop
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -67,20 +53,42 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.appmire.gpsinfo.R
-import com.appmire.gpsinfo.data.RecordingState
 import com.appmire.gpsinfo.data.TrailRecordingService
 import com.appmire.gpsinfo.data.model.MagneticAccuracy
 import com.appmire.gpsinfo.ui.components.CompassCard
-import com.appmire.gpsinfo.ui.onboarding.OnboardingDialog
 import com.appmire.gpsinfo.ui.components.PositionCard
 import com.appmire.gpsinfo.ui.components.SkyViewCard
 import com.appmire.gpsinfo.ui.components.SpeedCard
 import com.appmire.gpsinfo.ui.components.StatusBar
 import com.appmire.gpsinfo.ui.components.TimeSunCard
 import com.appmire.gpsinfo.ui.components.WorldMapCard
+import com.appmire.gpsinfo.ui.onboarding.OnboardingDialog
 import com.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import com.appmire.gpsinfo.util.CoordinateFormat
+import com.appmire.gpsinfo.util.TrailNaming
 import kotlinx.coroutines.launch
+
+/**
+ * Named section keys for the dashboard's [LazyColumn]. Identifies each
+ * card so a future reorder doesn't collapse the children's `remember`
+ * state — index-based keys silently break this.
+ */
+private object SectionKeys {
+    const val LocationDisabled = "section-location-disabled"
+    const val CompassCalibration = "section-compass-calibration"
+    const val Status = "section-status"
+    const val Position = "section-position"
+    const val Speed = "section-speed"
+    const val Sky = "section-sky"
+    const val Compass = "section-compass"
+    const val World = "section-world"
+    const val TimeSun = "section-time-sun"
+}
+
+private data class DashboardSection(
+    val key: String,
+    val content: @Composable () -> Unit,
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -127,11 +135,10 @@ fun DashboardScreen(
                         onClick = {
                             scope.launch {
                                 val id = vm.saveCurrentAsWaypoint(
-                                    "$waypointDefault @ ${
-                                        java.text.SimpleDateFormat(
-                                            "yyyy-MM-dd HH:mm", java.util.Locale.US
-                                        ).format(java.util.Date())
-                                    }"
+                                    TrailNaming.timestamped(
+                                        waypointDefault,
+                                        System.currentTimeMillis(),
+                                    ),
                                 )
                                 android.widget.Toast.makeText(
                                     ctx,
@@ -193,11 +200,11 @@ fun DashboardScreen(
         contentWindowInsets = WindowInsets.systemBars
     ) { padding ->
         val loc = state.gnss.location
-        val sections = listOfNotNull<@Composable () -> Unit>(
+        val sections = buildList {
             // Banner when system Location toggle is off — without this the
             // user just sees perpetual NO_FIX with no actionable text.
-            if (!state.locationEnabled) {
-                {
+            if (!state.locationEnabled) add(
+                DashboardSection(SectionKeys.LocationDisabled) {
                     LocationDisabledBanner(onOpenSettings = {
                         ctx.startActivity(
                             android.content.Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
@@ -205,16 +212,18 @@ fun DashboardScreen(
                         )
                     })
                 }
-            } else null,
+            )
             // Compass-calibration banner — only when the magnetometer is
             // bad enough that the heading is meaningfully wrong. Shown
             // above the cards so users notice before reading the compass.
             if (compass.accuracy == MagneticAccuracy.LOW ||
                 compass.accuracy == MagneticAccuracy.UNRELIABLE
-            ) {
-                { CompassCalibrationBanner() }
-            } else null,
-            {
+            ) add(
+                DashboardSection(SectionKeys.CompassCalibration) {
+                    CompassCalibrationBanner()
+                }
+            )
+            add(DashboardSection(SectionKeys.Status) {
                 StatusBar(
                     fix = state.gnss.fix,
                     accuracyMeters = loc?.takeIf { it.hasAccuracy() }?.accuracy,
@@ -223,8 +232,8 @@ fun DashboardScreen(
                     averageSnr = state.gnss.averageSnr,
                     unitSystem = state.unitSystem,
                 )
-            },
-            {
+            })
+            add(DashboardSection(SectionKeys.Position) {
                 PositionCard(
                     latDeg = loc?.latitude,
                     lonDeg = loc?.longitude,
@@ -240,8 +249,8 @@ fun DashboardScreen(
                     },
                     unitSystem = state.unitSystem,
                 )
-            },
-            {
+            })
+            add(DashboardSection(SectionKeys.Speed) {
                 val speedDesc = stringResource(R.string.open_speed_gauge)
                 Box(modifier = Modifier
                     .testTag("card_speed")
@@ -255,8 +264,8 @@ fun DashboardScreen(
                         unitSystem = state.unitSystem,
                     )
                 }
-            },
-            {
+            })
+            add(DashboardSection(SectionKeys.Sky) {
                 val satDesc = stringResource(R.string.open_satellites)
                 Box(modifier = Modifier
                     .testTag("card_satellites")
@@ -265,8 +274,8 @@ fun DashboardScreen(
                 ) {
                     SkyViewCard(state.gnss)
                 }
-            },
-            {
+            })
+            add(DashboardSection(SectionKeys.Compass) {
                 val compassDesc = stringResource(R.string.open_compass_detail)
                 Box(modifier = Modifier
                     .testTag("card_compass")
@@ -275,10 +284,14 @@ fun DashboardScreen(
                 ) {
                     CompassCard(compass)
                 }
-            },
-            { WorldMapCard(latDeg = loc?.latitude, lonDeg = loc?.longitude, sun = state.sun) },
-            { TimeSunCard(nowMillis = state.nowMillis, sun = state.sun) }
-        )
+            })
+            add(DashboardSection(SectionKeys.World) {
+                WorldMapCard(latDeg = loc?.latitude, lonDeg = loc?.longitude, sun = state.sun)
+            })
+            add(DashboardSection(SectionKeys.TimeSun) {
+                TimeSunCard(nowMillis = state.nowMillis, sun = state.sun)
+            })
+        }
 
         if (twoColumn) {
             TwoColumnLayout(
@@ -294,7 +307,7 @@ fun DashboardScreen(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(sections.size, key = { "section-$it" }) { idx -> sections[idx]() }
+                items(sections, key = { it.key }) { section -> section.content() }
                 item(key = "footer-spacer") { Spacer(Modifier.height(16.dp)) }
                 item(key = "footer-copy") { CopyrightFooter(onOpenAbout) }
                 item(key = "footer-tail") { Spacer(Modifier.height(12.dp)) }
@@ -323,243 +336,9 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun RecordFab(
-    recording: RecordingState,
-    onStart: () -> Unit,
-    onStop: () -> Unit,
-) {
-    when (recording) {
-        is RecordingState.Idle -> {
-            FloatingActionButton(
-                onClick = onStart,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Icon(
-                    Icons.Outlined.FiberManualRecord,
-                    contentDescription = stringResource(R.string.trail_record),
-                )
-            }
-        }
-        is RecordingState.Recording -> {
-            // Elapsed seconds. Cheap to format as plain time-string —
-            // we don't bother with a ticker because the underlying
-            // pointCount already re-emits at the GNSS rate.
-            val elapsedSeconds = (System.currentTimeMillis() - recording.startedAtMillis) / 1000L
-            ExtendedFloatingActionButton(
-                onClick = onStop,
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                icon = {
-                    Icon(
-                        Icons.Outlined.Stop,
-                        contentDescription = stringResource(R.string.trail_stop),
-                    )
-                },
-                text = {
-                    Text(
-                        stringResource(
-                            R.string.trail_recording_stats,
-                            recording.pointCount,
-                            formatElapsed(elapsedSeconds),
-                        ),
-                    )
-                },
-            )
-        }
-    }
-}
-
-private fun formatElapsed(seconds: Long): String {
-    val h = seconds / 3600
-    val m = (seconds % 3600) / 60
-    val s = seconds % 60
-    return if (h > 0) "%d:%02d:%02d".format(java.util.Locale.ROOT, h, m, s)
-    else "%d:%02d".format(java.util.Locale.ROOT, m, s)
-}
-
-@Composable
-private fun SaveTrailDialog(
-    onCancel: () -> Unit,
-    onDiscard: () -> Unit,
-    onSave: (String) -> Unit,
-) {
-    val default = remember {
-        val fmt = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
-        "Trail " + fmt.format(java.util.Date())
-    }
-    var name by remember { mutableStateOf(default) }
-    AlertDialog(
-        onDismissRequest = onCancel,
-        title = { Text(stringResource(R.string.trail_save_title)) },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.trail_save_name_label)) },
-                singleLine = true,
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(name) }) {
-                Text(stringResource(R.string.trail_save))
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onDiscard) {
-                    Text(stringResource(R.string.trail_discard))
-                }
-                TextButton(onClick = onCancel) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
-        },
-    )
-}
-
-@Composable
-private fun CopyrightFooter(onClick: () -> Unit) {
-    val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-    val description = stringResource(R.string.action_open_about)
-    Surface(
-        modifier = Modifier
-            .testTag("footer_about")
-            .fillMaxWidth()
-            .clickable(onClick = onClick, role = Role.Button)
-            .semantics(mergeDescendants = true) { contentDescription = description },
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(16.dp),
-        tonalElevation = 1.dp,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    text = "© $year Appmire",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.action_about),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
-                    contentDescription = stringResource(R.string.action_open_about),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CompassCalibrationBanner() {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.tertiaryContainer,
-        shape = RoundedCornerShape(16.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // Closest stock icon to "figure-8 motion" — a rotational
-            // arrow loop. Good enough as a visual hint without shipping
-            // a custom vector.
-            Icon(
-                imageVector = Icons.Outlined.Loop,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.size(24.dp),
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.compass_calibrate_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-                Text(
-                    text = stringResource(R.string.compass_calibrate_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LocationDisabledBanner(onOpenSettings: () -> Unit) {
-    val description = stringResource(R.string.location_off_open_settings)
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onOpenSettings, role = Role.Button)
-            .semantics(mergeDescendants = true) { contentDescription = description },
-        color = MaterialTheme.colorScheme.errorContainer,
-        shape = RoundedCornerShape(16.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.LocationOff,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.size(24.dp),
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.location_off_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                )
-                Text(
-                    text = stringResource(R.string.location_off_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                )
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
-                contentDescription = stringResource(R.string.location_off_open_settings),
-                tint = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-    }
-}
-
-@Composable
 private fun TwoColumnLayout(
     padding: PaddingValues,
-    sections: List<@Composable () -> Unit>,
+    sections: List<DashboardSection>,
     onOpenAbout: () -> Unit,
 ) {
     // status bar full-width, then two columns
@@ -573,7 +352,7 @@ private fun TwoColumnLayout(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            sections.firstOrNull()?.invoke()
+            sections.firstOrNull()?.content?.invoke()
             val rest = sections.drop(1)
             val left = rest.filterIndexed { i, _ -> i % 2 == 0 }
             val right = rest.filterIndexed { i, _ -> i % 2 == 1 }
@@ -583,10 +362,10 @@ private fun TwoColumnLayout(
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    left.forEach { it() }
+                    left.forEach { it.content() }
                 }
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    right.forEach { it() }
+                    right.forEach { it.content() }
                 }
             }
             Spacer(Modifier.height(8.dp))

@@ -250,3 +250,167 @@ private fun PreviewRetroDial() {
         }
     }
 }
+
+// ---------- Light-theme variants -------------------------------------
+//
+// Each card already has a dark preview above. The light variants below
+// catch contrast/colour-token regressions that only surface when the
+// system theme is light — common when designers tweak surface tonals.
+
+@Preview(name = "StatusBar — light")
+@Composable
+private fun PreviewStatusBarLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(12.dp)
+        ) {
+            StatusBar(
+                fix = FixStatus.THREE_D,
+                accuracyMeters = 7f,
+                satellitesInView = 71,
+                satellitesInUse = 12,
+                averageSnr = 24.7f,
+            )
+        }
+    }
+}
+
+@Preview(name = "PositionCard — light")
+@Composable
+private fun PreviewPositionCardLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(12.dp)
+            .fillMaxWidth()
+        ) {
+            PositionCard(
+                latDeg = 51.1302028,
+                lonDeg = 4.3777386,
+                altMeters = 45.0,
+                hAccuracyMeters = 4f,
+                vAccuracyMeters = 6f,
+                format = com.appmire.gpsinfo.util.CoordinateFormat.DMS,
+                onToggleFormat = {},
+            )
+        }
+    }
+}
+
+@Preview(name = "SpeedCard — light")
+@Composable
+private fun PreviewSpeedCardLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(12.dp)
+            .fillMaxWidth()
+        ) {
+            SpeedCard(
+                speedKmh = 87f,
+                headingDegMagnetic = 58f,
+                altMeters = 45.0,
+            )
+        }
+    }
+}
+
+@Preview(name = "CompassCard — light")
+@Composable
+private fun PreviewCompassCardLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(12.dp)
+            .fillMaxWidth()
+        ) {
+            CompassCard(reading = PreviewFixtures.compass)
+        }
+    }
+}
+
+@Preview(name = "SkyViewCard — light")
+@Composable
+private fun PreviewSkyViewCardLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(12.dp)
+            .fillMaxWidth()
+        ) {
+            SkyViewCard(snapshot = PreviewFixtures.gnss)
+        }
+    }
+}
+
+@Preview(name = "WorldMapCard — light")
+@Composable
+private fun PreviewWorldMapCardLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(12.dp)
+            .fillMaxWidth()
+        ) {
+            WorldMapCard(
+                latDeg = 51.13,
+                lonDeg = 4.38,
+                sun = PreviewFixtures.sun,
+            )
+        }
+    }
+}
+
+@Preview(name = "TimeSunCard — light")
+@Composable
+private fun PreviewTimeSunCardLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(12.dp)
+            .fillMaxWidth()
+        ) {
+            TimeSunCard(
+                nowMillis = System.currentTimeMillis(),
+                sun = PreviewFixtures.sun,
+            )
+        }
+    }
+}
+
+@Preview(name = "SnrBarChart — light")
+@Composable
+private fun PreviewSnrBarChartLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(12.dp)
+            .fillMaxWidth()
+        ) {
+            SnrBarChart(satellites = PreviewFixtures.satellites)
+        }
+    }
+}
+
+@Preview(name = "RetroDial — light")
+@Composable
+private fun PreviewRetroDialLight() {
+    GPSinfoTheme(forceDark = false) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(24.dp)
+            .fillMaxWidth()
+        ) {
+            RetroDial(
+                valueFraction = 75f / 180f,
+                minValue = 0f,
+                maxValue = 180f,
+                tickStep = 10f,
+                labelStep = 20f,
+                label = "km/h",
+                accentTickValues = listOf(30f, 50f, 70f, 90f, 120f),
+            )
+        }
+    }
+}

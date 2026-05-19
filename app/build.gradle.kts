@@ -114,6 +114,33 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    // Android Lint is invoked from CI by `./gradlew lintDebug`. The
+    // HTML/XML report is uploaded as an artifact regardless of pass/fail.
+    //
+    // Bootstrap workflow (one time):
+    //   1. `./gradlew :app:updateLintBaseline` locally to generate
+    //      `app/lint-baseline.xml` capturing today's findings.
+    //   2. Uncomment the `baseline = ...` line below.
+    //   3. Commit both — new issues then break the build, existing ones
+    //      stay baselined.
+    //
+    // Until then: `abortOnError = false` keeps CI green on day one, but
+    // `MissingTranslation` is still promoted to error severity so the
+    // report screams loudly when an 11-locale string drifts.
+    lint {
+        // baseline = file("lint-baseline.xml")
+        abortOnError = false
+        warningsAsErrors = false
+        checkDependencies = true
+        // `MissingTranslation` is the check most worth enforcing here —
+        // 11 locales is easy to break with a single new string.
+        error += listOf("MissingTranslation")
+        // Noisy on Compose-heavy code; we don't want it gating CI.
+        disable += listOf("Typos")
+        htmlReport = true
+        xmlReport = true
+    }
 }
 
 dependencies {

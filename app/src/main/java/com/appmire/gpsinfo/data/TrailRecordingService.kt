@@ -77,6 +77,15 @@ class TrailRecordingService : Service() {
 
     private fun startCollecting() {
         if (collectJob != null) return
+        // Note: while the activity is also foregrounded, this is a SECOND
+        // GNSS subscription on top of the one the activity's ViewModel
+        // owns. The OS multiplexes both onto a single GPS hardware
+        // session, so the battery cost is the listener overhead only —
+        // not a second radio activation. The recorder's per-point
+        // distance/time gate (see [TrailRecorder.offer]) dedupes the
+        // double feed. We accept this small overhead because it makes
+        // background-only recording (the dashboard never opened during
+        // a recording session) self-contained.
         collectJob = LocationRepository(applicationContext).snapshots()
             .onEach { TrailRecordingController.offer(it) }
             .launchIn(scope)
