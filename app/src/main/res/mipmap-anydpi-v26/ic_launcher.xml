@@ -2,4 +2,9 @@
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@mipmap/ic_launcher_background" />
     <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <!-- Themed icons on Android 13+ use only the alpha channel of this
+         drawable, re-tinted to match the system theme. Reusing the
+         foreground gives a silhouette that matches the launcher icon's
+         own shape without a hand-authored monochrome glyph. -->
+    <monochrome android:drawable="@mipmap/ic_launcher_foreground" />
 </adaptive-icon>

@@ -1,0 +1,8 @@
+Prima versione.
+
+• Dashboard GPS offline con dati GNSS grezzi su 7 costellazioni
+• Registrazione tracce (primo piano e background) in GPX 1.1 standard
+• Mappa OpenStreetMap con pre-caricamento offline, grafico velocità/altitudine, riproduzione scorrevole
+• Arco solare, bussola compensata in inclinazione, indicatore di velocità con scala automatica e modalità HUD
+• Semplifica, rinomina, condividi, importa, salva tracce
+• Senza Play Services. Senza telemetria. Senza account.

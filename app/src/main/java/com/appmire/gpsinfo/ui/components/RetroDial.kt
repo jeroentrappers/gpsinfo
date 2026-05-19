@@ -24,6 +24,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
@@ -55,6 +56,7 @@ fun RetroDial(
     tickStep: Float,
     labelStep: Float,
     label: String,
+    modifier: Modifier = Modifier,
     zones: List<DialZone> = emptyList(),
     startAngleDegrees: Float = 150f,
     sweepDegrees: Float = 240f,
@@ -62,7 +64,6 @@ fun RetroDial(
     valueToFraction: ((Float) -> Float)? = null,
     accentTickValues: List<Float> = emptyList(),
     accentTickColor: Color = Color(0xFFE67635),
-    modifier: Modifier = Modifier,
 ) {
     val target = valueFraction.coerceIn(0f, 1f)
     val animated by animateFloatAsState(
@@ -206,7 +207,7 @@ fun RetroDial(
 private fun formatTick(value: Float): String {
     val rounded = value.toInt()
     return if (rounded.toFloat() == value) rounded.toString()
-    else String.format("%.0f", value)
+    else String.format(Locale.ROOT, "%.0f", value)
 }
 
 private fun shortestSide(s: Size): Float = max(0f, kotlin.math.min(s.width, s.height))

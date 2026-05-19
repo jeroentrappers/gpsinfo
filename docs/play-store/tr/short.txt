@@ -1,0 +1,1 @@
+Çevrimdışı GPS panosu, ham GNSS verileri ve iz kaydı — Play Services'siz.

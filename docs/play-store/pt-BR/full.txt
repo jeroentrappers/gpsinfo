@@ -1,0 +1,36 @@
+GPSinfo é um painel GPS para Android, direto ao ponto e offline por padrão.
+
+Tudo o que você quer ver de uma vez — sua posição, sinais de satélite, bússola, velocidade, altitude, posição do sol — em um único painel rolável. Sem SDK do Google Maps, sem Play Services, sem telemetria, sem contas.
+
+Feito para trilheiros, velejadores, ciclistas, motociclistas, entusiastas de GNSS e qualquer um que queira manter seus dados de localização no próprio celular.
+
+▌ PAINEL
+• Posição em WGS84 (DMS ou decimal), com altitude e precisão por eixo
+• Contagem de satélites e intensidade de sinal em tempo real para GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS e IRNSS
+• Vista do céu com satélites coloridos por constelação, no azimute e elevação reais
+• Bússola com correção de inclinação, rumo magnético e verdadeiro, declinação e inclinação
+• Velocímetro com escala automática e modo espelho HUD para reflexo no para-brisa
+• Posição do sol, nascer e pôr, duração do dia e terminador noite/dia no mapa-múndi
+
+▌ TRILHAS
+• Gravação de trilhas GPS no padrão GPX 1.1 com Garmin TrackPointExtension (velocidade, curso)
+• Serviço em primeiro plano: a gravação continua mesmo com o app em segundo plano ou a tela apagada
+• Exibição da trilha no OpenStreetMap: polilinha e marcadores com toque para inspecionar
+• Gráfico de velocidade e altitude com controle deslizante para examinar qualquer ponto da rota
+• Modo de mapa orientado pelo rumo, sobreposição do arco solar
+• Pré-cache dos tiles de mapa de uma área, para que o mapa da trilha funcione totalmente offline
+• Simplificação de trilhas com Ramer-Douglas-Peucker para limpar o ruído do GPS
+• Importe GPX de qualquer lugar; compartilhe ou salve como GPX em qualquer lugar
+• Captura de waypoint com um toque
+
+▌ PRIVACIDADE
+• Sem analytics, sem relatórios de falha, sem publicidade, sem rastreadores de terceiros.
+• Seus dados de localização nunca saem do dispositivo.
+• A única chamada de rede que o app faz é o download anônimo de tiles do OpenStreetMap, e somente quando você abre um mapa de trilha.
+• Política de privacidade completa: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ SEM PLAY SERVICES
+O app não depende do Google Play Services e funciona em dispositivos sem Google (GrapheneOS, LineageOS, /e/OS, …). A localização vem direto das APIs GNSS nativas do Android.
+
+▌ CÓDIGO ABERTO
+Código-fonte: https://github.com/jeroentrappers/gpsinfo

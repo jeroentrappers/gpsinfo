@@ -102,16 +102,21 @@ class FakeSettingsDataSource : SettingsDataSource {
     private val _satSort = MutableStateFlow<String?>(null)
     private val _coord = MutableStateFlow<String?>(null)
     private val _units = MutableStateFlow(UnitSystem.Metric)
+    // Pre-marked as seen — we don't want the onboarding dialog popping
+    // over the screenshots.
+    private val _onboarding = MutableStateFlow(true)
 
     override val maxSpeedKmh: Flow<Float> = _max
     override val themeOverride: Flow<ThemeOverride> = _theme
     override val satelliteSort: Flow<String?> = _satSort
     override val coordinateFormat: Flow<String?> = _coord
     override val unitSystem: Flow<UnitSystem> = _units
+    override val onboardingSeen: Flow<Boolean> = _onboarding
 
     override suspend fun setMaxSpeedKmh(value: Float) { _max.value = value }
     override suspend fun setThemeOverride(value: ThemeOverride) { _theme.value = value }
     override suspend fun setSatelliteSort(value: String) { _satSort.value = value }
     override suspend fun setCoordinateFormat(value: String) { _coord.value = value }
     override suspend fun setUnitSystem(value: UnitSystem) { _units.value = value }
+    override suspend fun setOnboardingSeen(value: Boolean) { _onboarding.value = value }
 }

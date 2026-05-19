@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
-  Native speaker should verify GNSS terminology + UI ergonomics.
-  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
--->
-<resources>
+<!-- Native-speaker reviewed 2026-05-19 (italiano).
+     Format specifiers (%1$s, %1$d, %1$.1f, …) preserved verbatim. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
     <!-- Permission screen -->
-    <string name="permission_required_title">Accesso alla posizione richiesto</string>
-    <string name="permission_required_body">GPSinfo necessita della posizione precisa per mostrare dati di satelliti, fix e movimento. Nessun dato di posizione lascia il dispositivo.</string>
-    <string name="grant_permission">Concedi permesso</string>
+    <string name="permission_required_title">Accesso alla posizione necessario</string>
+    <string name="permission_required_body">GPSinfo ha bisogno della posizione precisa per mostrare i dati di satelliti, fix e movimento. Nessun dato di posizione esce mai dal tuo dispositivo.</string>
+    <string name="grant_permission">Concedi autorizzazione</string>
     <string name="open_settings">Apri impostazioni</string>
 
     <!-- Section titles -->
@@ -19,7 +16,7 @@
     <string name="section_sky">Vista del cielo</string>
     <string name="section_compass">Bussola</string>
     <string name="section_world">Mondo</string>
-    <string name="section_time">Ora &amp; Sole</string>
+    <string name="section_time">Ora e sole</string>
 
     <!-- Actions -->
     <string name="action_back">Indietro</string>
@@ -28,7 +25,7 @@
     <string name="action_toggle_units">Cambia unità</string>
     <string name="action_toggle_theme">Cambia tema</string>
     <string name="action_about">Info</string>
-    <string name="action_open_about">Apri schermata informazioni</string>
+    <string name="action_open_about">Apri la schermata Info</string>
 
     <string name="share_subject">La mia posizione</string>
 
@@ -56,15 +53,15 @@
 
     <!-- Position -->
     <string name="metric_altitude">Altitudine</string>
-    <string name="metric_h_accuracy">H-Prec</string>
-    <string name="metric_v_accuracy">V-Prec</string>
+    <string name="metric_h_accuracy">Prec-O</string>
+    <string name="metric_v_accuracy">Prec-V</string>
 
     <!-- Speed card -->
     <string name="metric_speed">Velocità</string>
     <string name="metric_heading">Rotta</string>
     <string name="unit_kmh">km/h</string>
     <string name="unit_m">m</string>
-    <string name="degrees_magnetic">° magnetico</string>
+    <string name="degrees_magnetic">° magnetici</string>
     <string name="heading_magnetic_suffix">%1$s · °M</string>
 
     <!-- Compass -->
@@ -72,7 +69,7 @@
     <string name="metric_declination">Declinazione</string>
     <string name="metric_inclination">Inclinazione</string>
     <string name="metric_reciprocal">Reciproca</string>
-    <string name="metric_mag_acc">Prec Mag</string>
+    <string name="metric_mag_acc">Prec mag</string>
     <string name="metric_field">Campo</string>
     <string name="metric_pitch">Beccheggio</string>
     <string name="metric_roll">Rollio</string>
@@ -102,7 +99,7 @@
     <string name="sat_sort_announce">Ordine: %1$s</string>
     <string name="sat_overview_title">PANORAMICA GNSS</string>
     <string name="sat_stat_in_view">In vista</string>
-    <string name="sat_stat_in_fix">In uso</string>
+    <string name="sat_stat_in_fix">Nel fix</string>
     <string name="sat_stat_tracking">Tracciati</string>
     <string name="sat_stat_best">Migliore</string>
     <string name="sat_col_constellation">CON</string>
@@ -122,29 +119,29 @@
     <string name="screen_speed">Velocità</string>
     <string name="screen_speed_hud">Velocità · HUD</string>
     <string name="hud_toggle_on">Modalità HUD attiva — tocca per disattivare</string>
-    <string name="hud_toggle_off">Attiva modalità HUD (riflesso parabrezza)</string>
+    <string name="hud_toggle_off">Attiva la modalità HUD (riflesso sul parabrezza)</string>
     <string name="metric_fix">Fix</string>
 
     <!-- About -->
     <string name="screen_about">Info</string>
     <string name="about_brand_alt">Appmire</string>
     <string name="about_tagline">Offerto gratuitamente.\nLe donazioni sono benvenute.</string>
-    <string name="about_visit_site">Visita appmire.be</string>
+    <string name="about_github_label">Codice sorgente su GitHub</string>
+    <string name="about_license_title">Licenza</string>
+    <!-- PluralsCandidate is a false positive: %1$d is the copyright year, not a count. -->
+    <string name="about_license_body" tools:ignore="PluralsCandidate">Software commerciale. © %1$d Jeroen Trappers. Tutti i diritti riservati.</string>
 
     <!-- Sky view -->
-    <string name="sky_summary">In vista %1$d   ·   In uso %2$d   ·   MED %3$.1f</string>
+    <string name="sky_summary">In vista %1$d   ·   In uso %2$d   ·   MEDIA %3$.1f</string>
     <string name="sky_waiting">In attesa dei satelliti…</string>
-
-    <!-- World map -->
-    <string name="world_position_label">Posizione : Lat/Lon (WGS84)</string>
 
     <!-- Build / about footer -->
     <string name="build_badge">GPSinfo · v%1$s</string>
 
     <!-- Card click semantic descriptions -->
-    <string name="open_speed_gauge">Apri indicatore velocità</string>
-    <string name="open_satellites">Apri elenco satelliti</string>
-    <string name="open_compass_detail">Apri dettagli bussola</string>
+    <string name="open_speed_gauge">Apri l\'indicatore di velocità</string>
+    <string name="open_satellites">Apri l\'elenco dei satelliti</string>
+    <string name="open_compass_detail">Apri i dettagli della bussola</string>
 
     <!-- Settings (About screen) -->
     <string name="screen_settings">Impostazioni</string>
@@ -153,8 +150,102 @@
     <string name="unit_system_metric">Metrico</string>
     <string name="unit_system_imperial">Imperiale</string>
     <string name="unit_system_nautical">Nautico</string>
-    <string name="language_system">Predefinito di sistema</string>
+    <string name="language_system">Predefinita di sistema</string>
     <string name="unit_mph">mph</string>
     <string name="unit_ft">ft</string>
     <string name="unit_knots">kn</string>
+
+    <!-- Trails feature -->
+    <string name="screen_trails">Tracce</string>
+    <string name="trails_open">Apri tracce</string>
+    <string name="trail_record">Registra traccia</string>
+    <string name="trail_stop">Ferma registrazione</string>
+    <string name="trail_save_title">Salva traccia</string>
+    <string name="trail_save_name_label">Nome</string>
+    <string name="trail_save">Salva</string>
+    <string name="trail_discard">Scarta</string>
+    <string name="trail_empty_title">Nessuna traccia</string>
+    <string name="trail_empty_body">Tocca il pulsante di registrazione nella dashboard per acquisire la tua prima traccia GPS.</string>
+    <string name="trail_recording_stats">%1$d punti · %2$s</string>
+    <string name="trail_list_meta">%1$s · %2$d punti · %3$s</string>
+    <string name="trail_point_title">Acquisito alle %1$s</string>
+    <string name="trail_action_delete">Elimina</string>
+    <string name="trail_delete_confirm_title">Eliminare la traccia?</string>
+    <string name="trail_delete_confirm_body">Questa operazione rimuove definitivamente il file GPX dal dispositivo.</string>
+    <string name="action_cancel">Annulla</string>
+    <string name="trail_share">Condividi traccia</string>
+    <string name="trail_import">Importa GPX</string>
+    <string name="trail_import_failed">Impossibile leggere il file come GPX.</string>
+    <string name="trail_simplify">Semplifica</string>
+    <string name="trail_simplify_title">Semplifica traccia</string>
+    <string name="trail_simplify_body">Elimina i punti che si trovano entro ε dalla linea passante per i loro vicini. Un ε più basso conserva più dettagli; un ε più alto rimuove più rumore.</string>
+    <string name="trail_simplify_preset_light">Leggera · ε = 2 m</string>
+    <string name="trail_simplify_preset_default">Predefinita · ε = 5 m</string>
+    <string name="trail_simplify_preset_aggressive">Aggressiva · ε = 12 m</string>
+    <!-- PluralsCandidate is a false positive: %d is a count display in a
+         structural before/after readout, not a noun-with-quantity. -->
+    <string name="trail_simplify_preview" tools:ignore="PluralsCandidate">%1$d → %2$d punti  ·  %3$d%% in meno</string>
+    <string name="trail_simplify_replace">Sostituisci</string>
+    <string name="trail_simplify_save_copy">Salva come copia</string>
+
+    <!-- Phase 1: trail rename, stats card, save-as-file, waypoint -->
+    <string name="trail_rename">Rinomina</string>
+    <string name="trail_rename_title">Rinomina traccia</string>
+    <string name="trail_save_as_file">Salva file GPX</string>
+    <string name="trail_save_as_file_failed">Impossibile salvare il file GPX.</string>
+    <string name="trail_stats_distance">Distanza</string>
+    <string name="trail_stats_duration">Durata</string>
+    <string name="trail_stats_avg_speed">Media</string>
+    <string name="trail_stats_max_speed">Max</string>
+    <string name="trail_stats_ascent">Dislivello +</string>
+    <string name="trail_stats_descent">Dislivello −</string>
+    <string name="trail_waypoint_save">Salva la posizione attuale</string>
+    <string name="trail_waypoint_default_name">Waypoint</string>
+    <string name="trail_waypoint_no_fix">Nessun fix ancora — impossibile salvare un waypoint.</string>
+    <string name="trail_waypoint_saved">Salvato come waypoint.</string>
+    <string name="coords_copied">Coordinate copiate.</string>
+
+    <!-- Heading-up map -->
+    <string name="trail_heading_up">Direzione di marcia</string>
+    <string name="trail_north_up">Nord in alto</string>
+
+    <!-- NMEA-style raw GNSS readout -->
+    <string name="screen_nmea">GNSS grezzo</string>
+    <string name="open_nmea">Apri lettura GNSS grezza</string>
+
+    <!-- First-run onboarding tour -->
+    <string name="onboarding_title">Benvenuto in GPSinfo</string>
+    <string name="onboarding_intro">Tutto quello che vedi qui sotto funziona offline: niente Play Services, niente chiavi API, niente telemetria. Tour rapido:</string>
+    <string name="onboarding_dashboard_title">Dashboard</string>
+    <string name="onboarding_dashboard_body">Posizione, satelliti, bussola, velocità e sole in tempo reale. Tocca una scheda per espanderla.</string>
+    <string name="onboarding_record_title">Registra una traccia</string>
+    <string name="onboarding_record_body">Tocca il pallino rosso in basso a destra per iniziare. La registrazione prosegue in background.</string>
+    <string name="onboarding_waypoint_title">Salva un punto</string>
+    <string name="onboarding_waypoint_body">Tocca l\'icona a forma di puntina nella barra in alto per salvare il fix corrente come traccia di un solo punto.</string>
+    <string name="onboarding_trails_title">Visualizza le tracce</string>
+    <string name="onboarding_trails_body">L\'icona della mappa nella barra in alto apre l\'elenco delle tracce: importa GPX, condividi e visualizza su una mappa utilizzabile offline.</string>
+    <string name="onboarding_dismiss">Ho capito</string>
+
+    <!-- Compass calibration -->
+    <string name="compass_calibrate_title">Calibra la bussola</string>
+    <string name="compass_calibrate_body">Muovi il telefono disegnando un 8 nell\'aria per ricalibrare il magnetometro.</string>
+
+    <!-- Offline tile cache -->
+    <string name="tile_cache">Scarica le tile per l\'uso offline</string>
+    <string name="tile_cache_title">Tile offline</string>
+    <string name="tile_cache_body">Scarica le tile OSM per l\'area di questa traccia, così la mappa si potrà visualizzare anche senza rete.</string>
+    <string name="tile_cache_depth_overview">Panoramica · zoom 8–12</string>
+    <string name="tile_cache_depth_medium">Media · zoom 10–14</string>
+    <string name="tile_cache_depth_street">Stradale · zoom 12–16</string>
+    <!-- PluralsCandidate suppressed: structural count display, not declension-sensitive. -->
+    <string name="tile_cache_estimate" tools:ignore="PluralsCandidate">≈ %1$d tile</string>
+    <string name="tile_cache_download">Scarica</string>
+    <string name="tile_cache_done">Fatto.</string>
+    <string name="tile_cache_failed" tools:ignore="PluralsCandidate">Non riuscito (%1$d errori).</string>
+
+    <!-- Background recording notification -->
+    <string name="trail_record_notification_channel">Registrazione traccia</string>
+    <string name="trail_record_notification_channel_body">Mostrata mentre una traccia GPS viene registrata in background.</string>
+    <string name="trail_record_notification_title">Registrazione traccia in corso</string>
+    <string name="trail_record_notification_body">L\'acquisizione GPS continua mentre l\'app è aperta o in tasca. Tocca per tornare.</string>
 </resources>

@@ -1,0 +1,36 @@
+GPSinfo, Android için sade ve çevrimdışı öncelikli bir GPS panosudur.
+
+Aynı anda görmek isteyeceğin her şey — konum, uydu sinyalleri, pusula, hız, irtifa, güneş konumu — tek bir kaydırılabilir panoda toplanır. Google Maps SDK yok, Play Services yok, telemetri yok, hesap yok.
+
+Yürüyüşçüler, denizciler, bisikletçiler, motorcular, GNSS meraklıları ve konum verisinin telefonundan çıkmasını istemeyen herkes için tasarlandı.
+
+▌ PANO
+• WGS84 konumu (DMS veya ondalık), irtifa ve eksen başına doğruluk
+• GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS ve IRNSS için canlı uydu sayısı ve sinyal gücü
+• Gökyüzü görünümü: takımyıldıza göre renklendirilmiş uydular, gerçek azimut ve yükseltileriyle
+• Eğim düzeltmeli pusula; manyetik ve gerçek kuzey, sapma (deklinasyon) ve eğim (inklinasyon)
+• Otomatik ölçeklenen hız göstergesi ve ön cam yansıması için HUD ayna modu
+• Güneş konumu, gün doğumu/batımı, gün uzunluğu ve dünya haritası üzerinde gece-gündüz terminatörü
+
+▌ İZLER
+• GPS izlerini Garmin TrackPointExtension (hız, yön) ile standart GPX 1.1 olarak kaydet
+• Ön plan servisi sayesinde uygulama arka plandayken veya ekran kapalıyken de kayıt sürer
+• İzi OpenStreetMap üzerinde çizgi (polyline) ve dokunarak incelenebilen işaretlerle göster
+• Hız ile irtifa grafiği ve herhangi bir iz noktasını incelemek için kaydırma çubuğu
+• Yön yukarı harita modu, güneş yayı katmanı
+• Belirli bir alana ait harita karolarını önceden indir; iz haritası tamamen çevrimdışı çalışsın
+• İzleri Ramer–Douglas–Peucker ile basitleştirerek GPS gürültüsünü temizle
+• Her yerden GPX içe aktar; GPX olarak her yere paylaş veya kaydet
+• Tek dokunuşla yol noktası kaydetme
+
+▌ GİZLİLİK
+• Analitik yok, çökme raporu yok, reklam yok, üçüncü taraf izleyici yok.
+• Konum verisi cihazından asla çıkmaz.
+• Uygulamanın yaptığı tek ağ isteği, yalnızca bir iz haritası açtığında gerçekleşen anonim OpenStreetMap karo indirmesidir.
+• Gizlilik politikasının tamamı: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ PLAY SERVICES'SİZ
+Uygulama Google Play Services'e bağımlı değildir ve Google'sızlaştırılmış cihazlarda (GrapheneOS, LineageOS, /e/OS, …) sorunsuz çalışır. Konum, doğrudan Android GNSS API'larından gelir.
+
+▌ AÇIK KAYNAK
+Kaynak kod: https://github.com/jeroentrappers/gpsinfo

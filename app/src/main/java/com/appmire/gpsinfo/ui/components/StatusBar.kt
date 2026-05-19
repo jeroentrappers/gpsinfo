@@ -28,6 +28,7 @@ import com.appmire.gpsinfo.data.model.FixStatus
 import com.appmire.gpsinfo.ui.theme.SignalGreen
 import com.appmire.gpsinfo.ui.theme.SignalOrange
 import com.appmire.gpsinfo.ui.theme.SignalRed
+import java.util.Locale
 import com.appmire.gpsinfo.ui.theme.SignalYellow
 import com.appmire.gpsinfo.util.UnitConverter
 import com.appmire.gpsinfo.util.lengthUnitLabel
@@ -76,7 +77,7 @@ fun StatusBar(
             Divider()
             MetricMini(
                 stringResource(R.string.metric_snr),
-                if (averageSnr > 0f) "%.1f".format(averageSnr) else dash,
+                if (averageSnr > 0f) "%.1f".format(Locale.ROOT, averageSnr) else dash,
                 accent = snrColor(averageSnr)
             )
         }

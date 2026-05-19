@@ -1,0 +1,1 @@
+Offline GPS-dashboard met ruwe GNSS-data en routeopname — zonder Play Services.

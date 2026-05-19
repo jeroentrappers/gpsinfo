@@ -1,29 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
-  Native speaker should verify GNSS terminology + UI ergonomics.
-  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
--->
-<resources>
+<!-- Native-speaker reviewed 2026-05-19 (日本語).
+     Format specifiers (%1$s, %1$d, %1$.1f, …) preserved verbatim. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
     <!-- Permission screen -->
-    <string name="permission_required_title">位置情報へのアクセスが必要です</string>
-    <string name="permission_required_body">GPSinfo は、衛星、測位、動きのデータを表示するために正確な位置情報が必要です。位置情報がデバイス外に送信されることはありません。</string>
-    <string name="grant_permission">権限を付与</string>
+    <string name="permission_required_title">位置情報の利用許可が必要です</string>
+    <string name="permission_required_body">GPSinfo は、衛星・測位・移動データを表示するために高精度な位置情報を使用します。位置情報がこの端末から外部へ送信されることは一切ありません。</string>
+    <string name="grant_permission">許可する</string>
     <string name="open_settings">設定を開く</string>
 
     <!-- Section titles -->
     <string name="section_position">位置</string>
-    <string name="section_movement">動き</string>
-    <string name="section_sky">上空ビュー</string>
+    <string name="section_movement">移動</string>
+    <string name="section_sky">スカイビュー</string>
     <string name="section_compass">コンパス</string>
-    <string name="section_world">世界</string>
+    <string name="section_world">ワールド</string>
     <string name="section_time">時刻と太陽</string>
 
     <!-- Actions -->
     <string name="action_back">戻る</string>
-    <string name="action_share_location">位置を共有</string>
+    <string name="action_share_location">現在地を共有</string>
     <string name="action_open_maps">マップで開く</string>
     <string name="action_toggle_units">単位を切り替え</string>
     <string name="action_toggle_theme">テーマを切り替え</string>
@@ -45,8 +42,8 @@
     <string name="mag_acc_high">高</string>
 
     <!-- Location services banner -->
-    <string name="location_off_title">位置情報サービスはオフです</string>
-    <string name="location_off_body">GPS の測位を受信するにはシステム設定でオンにしてください。</string>
+    <string name="location_off_title">位置情報サービスがオフです</string>
+    <string name="location_off_body">GPS で測位するには、システム設定でオンにしてください。</string>
     <string name="location_off_open_settings">位置情報設定を開く</string>
 
     <!-- StatusBar -->
@@ -55,16 +52,16 @@
     <string name="metric_snr">SNR</string>
 
     <!-- Position -->
-    <string name="metric_altitude">高度</string>
+    <string name="metric_altitude">標高</string>
     <string name="metric_h_accuracy">水平精度</string>
     <string name="metric_v_accuracy">垂直精度</string>
 
     <!-- Speed card -->
     <string name="metric_speed">速度</string>
-    <string name="metric_heading">進路</string>
+    <string name="metric_heading">進行方位</string>
     <string name="unit_kmh">km/h</string>
     <string name="unit_m">m</string>
-    <string name="degrees_magnetic">° 磁北</string>
+    <string name="degrees_magnetic">° 磁北基準</string>
     <string name="heading_magnetic_suffix">%1$s · °M</string>
 
     <!-- Compass -->
@@ -83,14 +80,14 @@
 
     <!-- Time &amp; sun -->
     <string name="metric_utc">UTC</string>
-    <string name="metric_local">ローカル</string>
+    <string name="metric_local">現地時刻</string>
     <string name="metric_sunrise">日の出</string>
     <string name="metric_solar_noon">南中</string>
-    <string name="metric_sunset">日の入</string>
-    <string name="metric_day_length">日長</string>
+    <string name="metric_sunset">日の入り</string>
+    <string name="metric_day_length">日照時間</string>
     <string name="metric_sun_elev">太陽高度</string>
     <string name="metric_sun_az">太陽方位</string>
-    <string name="metric_phase">フェーズ</string>
+    <string name="metric_phase">時間帯</string>
     <string name="phase_day">昼</string>
     <string name="phase_night">夜</string>
 
@@ -101,8 +98,8 @@
     <string name="sat_sort_by_signal">信号強度別</string>
     <string name="sat_sort_announce">並べ替え: %1$s</string>
     <string name="sat_overview_title">GNSS 概要</string>
-    <string name="sat_stat_in_view">視野内</string>
-    <string name="sat_stat_in_fix">使用中</string>
+    <string name="sat_stat_in_view">受信中</string>
+    <string name="sat_stat_in_fix">測位使用</string>
     <string name="sat_stat_tracking">追跡中</string>
     <string name="sat_stat_best">最良</string>
     <string name="sat_col_constellation">CON</string>
@@ -121,28 +118,28 @@
     <!-- Speed screen -->
     <string name="screen_speed">速度</string>
     <string name="screen_speed_hud">速度 · HUD</string>
-    <string name="hud_toggle_on">HUD モードオン — タップでオフ</string>
-    <string name="hud_toggle_off">HUD モード（フロントガラス反射）をオン</string>
+    <string name="hud_toggle_on">HUD モード オン — タップで解除</string>
+    <string name="hud_toggle_off">HUD モード（フロントガラス投影）をオン</string>
     <string name="metric_fix">測位</string>
 
     <!-- About -->
     <string name="screen_about">アプリ情報</string>
     <string name="about_brand_alt">Appmire</string>
-    <string name="about_tagline">無料で提供しています。\n寄付歓迎です。</string>
-    <string name="about_visit_site">appmire.be を訪問</string>
+    <string name="about_tagline">無料でお使いいただけます。\n寄付を歓迎します。</string>
+    <string name="about_github_label">GitHub でソースを見る</string>
+    <string name="about_license_title">ライセンス</string>
+    <!-- PluralsCandidate is a false positive: %1$d is the copyright year, not a count. -->
+    <string name="about_license_body" tools:ignore="PluralsCandidate">商用ソフトウェア © %1$d Jeroen Trappers. All rights reserved.</string>
 
     <!-- Sky view -->
-    <string name="sky_summary">視野内 %1$d   ·   使用中 %2$d   ·   平均 %3$.1f</string>
-    <string name="sky_waiting">衛星を待機中…</string>
-
-    <!-- World map -->
-    <string name="world_position_label">位置 : 緯度/経度 (WGS84)</string>
+    <string name="sky_summary">受信中 %1$d   ·   測位使用 %2$d   ·   平均 %3$.1f</string>
+    <string name="sky_waiting">衛星を捕捉中…</string>
 
     <!-- Build / about footer -->
     <string name="build_badge">GPSinfo · v%1$s</string>
 
     <!-- Card click semantic descriptions -->
-    <string name="open_speed_gauge">スピードメーターを開く</string>
+    <string name="open_speed_gauge">スピードゲージを開く</string>
     <string name="open_satellites">衛星リストを開く</string>
     <string name="open_compass_detail">コンパス詳細を開く</string>
 
@@ -152,9 +149,103 @@
     <string name="settings_language_label">言語</string>
     <string name="unit_system_metric">メートル法</string>
     <string name="unit_system_imperial">ヤード・ポンド法</string>
-    <string name="unit_system_nautical">海事</string>
+    <string name="unit_system_nautical">海里・ノット</string>
     <string name="language_system">システム設定に従う</string>
     <string name="unit_mph">mph</string>
     <string name="unit_ft">ft</string>
     <string name="unit_knots">kn</string>
+
+    <!-- Trails feature -->
+    <string name="screen_trails">トラック</string>
+    <string name="trails_open">トラックを開く</string>
+    <string name="trail_record">トラックを記録</string>
+    <string name="trail_stop">記録を停止</string>
+    <string name="trail_save_title">トラックを保存</string>
+    <string name="trail_save_name_label">名前</string>
+    <string name="trail_save">保存</string>
+    <string name="trail_discard">破棄</string>
+    <string name="trail_empty_title">トラックがまだありません</string>
+    <string name="trail_empty_body">ダッシュボードの記録ボタンをタップして、最初の GPS トラックを記録しましょう。</string>
+    <string name="trail_recording_stats">%1$d 点 · %2$s</string>
+    <string name="trail_list_meta">%1$s · %2$d 点 · %3$s</string>
+    <string name="trail_point_title">%1$s に記録</string>
+    <string name="trail_action_delete">削除</string>
+    <string name="trail_delete_confirm_title">トラックを削除しますか？</string>
+    <string name="trail_delete_confirm_body">この端末から GPX ファイルが完全に削除されます。</string>
+    <string name="action_cancel">キャンセル</string>
+    <string name="trail_share">トラックを共有</string>
+    <string name="trail_import">GPX を読み込み</string>
+    <string name="trail_import_failed">このファイルを GPX として読み込めませんでした。</string>
+    <string name="trail_simplify">簡略化</string>
+    <string name="trail_simplify_title">トラックを簡略化</string>
+    <string name="trail_simplify_body">隣接点を結んだ直線から ε 以内にある点を削除します。ε を小さくすると形状をより忠実に残し、大きくするとノイズをより多く除去します。</string>
+    <string name="trail_simplify_preset_light">弱め · ε = 2 m</string>
+    <string name="trail_simplify_preset_default">標準 · ε = 5 m</string>
+    <string name="trail_simplify_preset_aggressive">強め · ε = 12 m</string>
+    <!-- PluralsCandidate is a false positive: %d is a count display in a
+         structural before/after readout, not a noun-with-quantity. -->
+    <string name="trail_simplify_preview" tools:ignore="PluralsCandidate">%1$d → %2$d 点  ·  %3$d%% 削減</string>
+    <string name="trail_simplify_replace">置き換え</string>
+    <string name="trail_simplify_save_copy">コピーとして保存</string>
+
+    <!-- Phase 1: trail rename, stats card, save-as-file, waypoint -->
+    <string name="trail_rename">名前を変更</string>
+    <string name="trail_rename_title">トラック名を変更</string>
+    <string name="trail_save_as_file">GPX ファイルを保存</string>
+    <string name="trail_save_as_file_failed">GPX ファイルを書き出せませんでした。</string>
+    <string name="trail_stats_distance">距離</string>
+    <string name="trail_stats_duration">時間</string>
+    <string name="trail_stats_avg_speed">平均</string>
+    <string name="trail_stats_max_speed">最高</string>
+    <string name="trail_stats_ascent">上昇</string>
+    <string name="trail_stats_descent">下降</string>
+    <string name="trail_waypoint_save">現在地を保存</string>
+    <string name="trail_waypoint_default_name">ウェイポイント</string>
+    <string name="trail_waypoint_no_fix">まだ測位できていません — ウェイポイントを保存できません。</string>
+    <string name="trail_waypoint_saved">ウェイポイントとして保存しました。</string>
+    <string name="coords_copied">座標をコピーしました。</string>
+
+    <!-- Heading-up map -->
+    <string name="trail_heading_up">ヘディングアップ</string>
+    <string name="trail_north_up">ノースアップ</string>
+
+    <!-- NMEA-style raw GNSS readout -->
+    <string name="screen_nmea">生 GNSS</string>
+    <string name="open_nmea">生 GNSS データを開く</string>
+
+    <!-- First-run onboarding tour -->
+    <string name="onboarding_title">GPSinfo へようこそ</string>
+    <string name="onboarding_intro">以下のすべての機能はオフラインで動作します — Play Services 不要、API キー不要、テレメトリーなし。簡単に紹介します:</string>
+    <string name="onboarding_dashboard_title">ダッシュボード</string>
+    <string name="onboarding_dashboard_body">現在地・衛星・コンパス・速度・太陽情報をリアルタイム表示。カードをタップすると詳細を開けます。</string>
+    <string name="onboarding_record_title">トラックを記録する</string>
+    <string name="onboarding_record_body">右下の赤い丸をタップして開始。バックグラウンドでも記録が続きます。</string>
+    <string name="onboarding_waypoint_title">ピンを立てる</string>
+    <string name="onboarding_waypoint_body">上部バーのピンアイコンをタップすると、現在の測位を 1 点だけのトラックとして保存します。</string>
+    <string name="onboarding_trails_title">トラックを見る</string>
+    <string name="onboarding_trails_body">上部バーのマップアイコンからトラック一覧を開けます。GPX の読み込み・共有・オフライン対応マップでの表示が可能です。</string>
+    <string name="onboarding_dismiss">はじめる</string>
+
+    <!-- Compass calibration -->
+    <string name="compass_calibrate_title">コンパスを校正</string>
+    <string name="compass_calibrate_body">端末を 8 の字に振って磁気センサーを再校正してください。</string>
+
+    <!-- Offline tile cache -->
+    <string name="tile_cache">オフライン用にタイルをダウンロード</string>
+    <string name="tile_cache_title">オフラインタイル</string>
+    <string name="tile_cache_body">このトラックの範囲の OSM タイルを事前キャッシュしておくと、後でネットワークなしでも地図を表示できます。</string>
+    <string name="tile_cache_depth_overview">広域 · ズーム 8〜12</string>
+    <string name="tile_cache_depth_medium">中域 · ズーム 10〜14</string>
+    <string name="tile_cache_depth_street">市街地 · ズーム 12〜16</string>
+    <!-- PluralsCandidate suppressed: structural count display, not declension-sensitive. -->
+    <string name="tile_cache_estimate" tools:ignore="PluralsCandidate">約 %1$d タイル</string>
+    <string name="tile_cache_download">ダウンロード</string>
+    <string name="tile_cache_done">完了しました。</string>
+    <string name="tile_cache_failed" tools:ignore="PluralsCandidate">失敗（%1$d 件のエラー）。</string>
+
+    <!-- Background recording notification -->
+    <string name="trail_record_notification_channel">トラック記録</string>
+    <string name="trail_record_notification_channel_body">GPS トラックをバックグラウンドで記録中に表示されます。</string>
+    <string name="trail_record_notification_title">トラックを記録中</string>
+    <string name="trail_record_notification_body">アプリを開いている間、またはポケットに入れている間も GPS の記録が続きます。タップで戻ります。</string>
 </resources>

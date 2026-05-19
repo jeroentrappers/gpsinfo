@@ -1,0 +1,8 @@
+První vydání.
+
+• Primárně offline GPS panel se surovými GNSS daty ze 7 satelitních systémů
+• Záznam tras (na popředí i v pozadí) ve standardním formátu GPX 1.1
+• Mapa tras na OpenStreetMap s předběžným stažením dlaždic offline, grafem rychlosti a výšky, posuvníkem pro přehrávání
+• Vrstva sluneční dráhy, kompas s korekcí náklonu, tachometr s automatickou stupnicí a režimem HUD
+• Zjednodušení, přejmenování, sdílení, import a ukládání tras
+• Bez Play Services. Bez telemetrie. Bez účtů.

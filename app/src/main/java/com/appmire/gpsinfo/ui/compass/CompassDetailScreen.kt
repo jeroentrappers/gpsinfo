@@ -49,6 +49,7 @@ import com.appmire.gpsinfo.R
 import com.appmire.gpsinfo.data.model.CompassReading
 import com.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import com.appmire.gpsinfo.util.headingToCardinal
+import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
@@ -72,8 +73,7 @@ fun CompassDetailScreen(
     vm: DashboardViewModel,
     onBack: () -> Unit,
 ) {
-    val state by vm.state.collectAsStateWithLifecycle()
-    val reading = state.compass
+    val reading by vm.compass.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -131,7 +131,7 @@ fun CompassDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Stat(stringResource(R.string.metric_decl), "%+.1f°".format(reading.declinationDeg))
+                Stat(stringResource(R.string.metric_decl), "%+.1f°".format(Locale.ROOT, reading.declinationDeg))
                 Stat(
                     stringResource(R.string.metric_field),
                     stringResource(R.string.unit_microtesla, reading.fieldStrengthNanoTesla),

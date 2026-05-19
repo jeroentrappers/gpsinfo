@@ -4,7 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.net.Uri
+import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import com.appmire.gpsinfo.R
+import java.io.File
+import java.util.Locale
 
 object IntentHelpers {
 
@@ -31,7 +35,10 @@ object IntentHelpers {
 
         val payload = buildString {
             append("${dms.lat}, ${dms.lon}\n")
-            append("%.6f, %.6f".format(latDeg, lonDeg))
+            // Locale.ROOT — this line is technical coordinate data, not a
+            // localised display, so we want "51.130203" everywhere even on
+            // comma-decimal locales.
+            append("%.6f, %.6f".format(Locale.ROOT, latDeg, lonDeg))
             if (altMeters != null) append("\nAltitude: ${altMeters.toInt()} m")
             append("\n\nOpen in maps:\n")
             append(mapsUrl).append('\n')
@@ -58,7 +65,7 @@ object IntentHelpers {
      * on the device handles `geo:`.
      */
     fun openInMaps(context: Context, latDeg: Double, lonDeg: Double) {
-        val geoUri = Uri.parse("geo:$latDeg,$lonDeg?q=$latDeg,$lonDeg(My location)")
+        val geoUri = "geo:$latDeg,$lonDeg?q=$latDeg,$lonDeg(My location)".toUri()
         val viewIntent = Intent(Intent.ACTION_VIEW, geoUri)
 
         val handlers: List<ResolveInfo> =
@@ -74,9 +81,7 @@ object IntentHelpers {
 
         // No native geo: handler — fall back to a web URL that any browser
         // (and many map apps via their own intent-filters) will accept.
-        val webUri = Uri.parse(
-            "https://www.openstreetmap.org/?mlat=$latDeg&mlon=$lonDeg#map=17/$latDeg/$lonDeg"
-        )
+        val webUri = "https://www.openstreetmap.org/?mlat=$latDeg&mlon=$lonDeg#map=17/$latDeg/$lonDeg".toUri()
         context.startActivity(
             Intent(Intent.ACTION_VIEW, webUri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
@@ -92,8 +97,39 @@ object IntentHelpers {
 
     /** Opens an arbitrary URL with the user's preferred browser/app chooser. */
     fun openUrl(context: Context, url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
+    }
+
+    /**
+     * Puts the given text on the system clipboard, labelled for the
+     * clipboard manager UI. Android 13+ shows a system toast on copy
+     * automatically, so we deliberately don't surface our own.
+     */
+    fun copyToClipboard(context: Context, label: String, text: String) {
+        val cm = context.getSystemService(android.content.ClipboardManager::class.java)
+        cm?.setPrimaryClip(android.content.ClipData.newPlainText(label, text))
+    }
+
+    /**
+     * Wraps the given GPX file in a `content://` URI via FileProvider and
+     * fires the system share sheet. The receiving app gets read-only
+     * access for the duration of the intent — we never grant a path,
+     * only a URI.
+     */
+    fun shareGpx(context: Context, file: File, trailName: String) {
+        val authority = "${context.packageName}.fileprovider"
+        val uri = FileProvider.getUriForFile(context, authority, file)
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "application/gpx+xml"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, trailName)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(
+            Intent.createChooser(send, context.getString(R.string.trail_share))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
     }
 }

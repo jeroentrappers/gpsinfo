@@ -1,0 +1,1 @@
+Panel GPS sin conexión: datos GNSS en bruto y rutas. Sin Play Services.

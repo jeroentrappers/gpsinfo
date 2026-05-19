@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.SignalCellularAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -73,6 +74,7 @@ enum class SatSortMode(@androidx.annotation.StringRes val labelRes: Int) {
 fun SatelliteListScreen(
     vm: DashboardViewModel,
     onBack: () -> Unit,
+    onOpenNmea: () -> Unit = {},
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var sortMode by remember { mutableStateOf(SatSortMode.CONSTELLATION) }
@@ -123,6 +125,12 @@ fun SatelliteListScreen(
                         SatSortMode.SIGNAL -> SatSortMode.CONSTELLATION
                     }
                     val nextLabel = stringResource(nextMode.labelRes)
+                    IconButton(onClick = onOpenNmea) {
+                        Icon(
+                            imageVector = Icons.Outlined.Code,
+                            contentDescription = stringResource(R.string.open_nmea),
+                        )
+                    }
                     IconButton(onClick = { sortMode = nextMode }) {
                         Icon(
                             imageVector = when (sortMode) {

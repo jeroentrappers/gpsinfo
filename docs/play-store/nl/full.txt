@@ -1,0 +1,36 @@
+GPSinfo is een compact, offline-first GPS-dashboard voor Android.
+
+Alles wat je in één oogopslag wilt zien — je positie, satellietsignalen, kompas, snelheid, hoogte, zonpositie — op één scrollbaar dashboard. Geen Google Maps SDK, geen Play Services, geen telemetrie, geen accounts.
+
+Gemaakt voor wandelaars, zeilers, fietsers, motorrijders, GNSS-knutselaars en iedereen die zijn locatiedata op het eigen toestel wil houden.
+
+▌ DASHBOARD
+• Positie in WGS84 (DMS of decimaal), met hoogte en nauwkeurigheid per as
+• Live aantal satellieten en signaalsterkte voor GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS en IRNSS
+• Hemelaanzicht met satellieten gekleurd per constellatie, op hun werkelijke azimut en elevatie
+• Kantelgecompenseerd kompas met magnetische én ware koers, declinatie en inclinatie
+• Snelheidsmeter met automatisch schalende verdeling en HUD-spiegelmodus voor reflectie op de voorruit
+• Zonpositie, zonsopgang en -ondergang, daglengte en dag-/nachtgrens op de wereldkaart
+
+▌ ROUTES
+• Neem routes op als standaard GPX 1.1 met Garmin TrackPointExtension (snelheid, koers)
+• Opname loopt door op de achtergrond, ook als het scherm uit staat (foreground service)
+• Toon de route op OpenStreetMap als polylijn met markers die je kunt aantikken voor details
+• Snelheids- en hoogtegrafiek met schuifregelaar om elk trackpunt na te lopen
+• Kaartmodus "koers boven" en overlay met zonneboog
+• Pre-cache de kaarttegels voor een gebied, zodat de routekaart volledig offline werkt
+• Vereenvoudig routes met Ramer–Douglas–Peucker om GPS-ruis op te schonen
+• Importeer GPX uit eender welke bron; deel of bewaar als GPX waar je wil
+• Waypoints vastleggen met één tik
+
+▌ PRIVACY
+• Geen analytics, geen crashrapporten, geen advertenties, geen externe trackers.
+• Je locatiedata verlaat nooit je toestel.
+• De enige netwerkoproep die de app ooit doet, is het anoniem ophalen van OpenStreetMap-tegels, en enkel wanneer je een routekaart opent.
+• Volledig privacybeleid: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ ZONDER PLAY SERVICES
+Deze app heeft Google Play Services niet nodig en draait op de-googled toestellen (GrapheneOS, LineageOS, /e/OS, …). De locatie komt rechtstreeks uit de Android GNSS-API's.
+
+▌ OPEN SOURCE
+Broncode: https://github.com/jeroentrappers/gpsinfo

@@ -2,7 +2,8 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("androidx.baselineprofile")
 }
 
 // Release signing — three sources tried in order:
@@ -33,22 +34,23 @@ val hasReleaseSigning =
 
 android {
     namespace = "com.appmire.gpsinfo"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.appmire.gpsinfo"
-        minSdk = 29
-        targetSdk = 34
+        minSdk = 24
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        // minSdk 29 has native VectorDrawable support — no support library needed.
+        // minSdk 24 has reliable native VectorDrawable support — no support library needed.
+    }
 
-        // Strip everything except the languages we actually ship resources for.
-        // This is more aggressive than `resourceConfigurations` because R8 also
-        // shrinks transitive resources from libraries (material3, etc.). Keep
-        // in sync with res/xml/locales_config.xml and the Language picker.
-        resourceConfigurations += listOf(
+    // Strip everything except the languages we actually ship resources for.
+    // R8 also shrinks transitive resources from libraries (material3, etc.).
+    // Keep in sync with res/xml/locales_config.xml and the Language picker.
+    androidResources {
+        localeFilters += listOf(
             "en", "cs", "de", "es", "fr", "it", "ja", "nl", "pl", "pt-rBR", "ru", "tr"
         )
     }
@@ -76,29 +78,35 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
-        debug {
-            // Speed up dev cycles — no shrinking on debug.
-            isMinifyEnabled = false
-            isShrinkResources = false
-        }
+        // `debug` keeps the AGP defaults (no minify, no resource shrinking)
+        // so dev cycles stay fast.
     }
 
     buildFeatures {
         compose = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
+    // Compose compiler is now configured via the
+    // `org.jetbrains.kotlin.plugin.compose` plugin in the root build file —
+    // the old `composeOptions.kotlinCompilerExtensionVersion` block is gone.
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn"
+    // AGP 9's built-in Kotlin support — the old `kotlinOptions { }` block
+    // belongs to the standalone Kotlin Android plugin we no longer apply.
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
+            // Future Kotlin default: an annotation on a constructor `val`
+            // applies to BOTH the parameter and the backing property/field.
+            // Matches the intent of @StringRes on enum value-class params.
+            // See KT-73255.
+            freeCompilerArgs.add("-Xannotation-default-target=param-property")
+        }
     }
 
     packaging {
@@ -109,32 +117,40 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
-    implementation(composeBom)
+    implementation(platform(libs.compose.bom))
 
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    implementation("androidx.navigation:navigation-compose:2.8.4")
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
 
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.animation:animation")
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.animation)
 
-    implementation("androidx.core:core-splashscreen:1.0.1")
-    implementation("androidx.window:window:1.3.0")
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.window)
+    // Loads the bundled ART baseline profile at app install / first run.
+    // Without this dependency the baseline-prof.txt the plugin produces
+    // is dead weight — profileinstaller is what reads it.
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
+    // Tile-based map renderer for the trail-detail screen. Open-source,
+    // OSM-backed, no Play Services. The rest of the app still avoids
+    // Maps SDKs; this one is scoped to the trail view only.
+    implementation(libs.osmdroid.android)
 
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
 
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     // Instrumented test + Fastlane screengrab support.
     //
@@ -143,10 +159,10 @@ dependencies {
     // `InputManager.getInstance()`, which Android 14+ no longer exposes,
     // and screengrab tests would fail with a `NoSuchMethodException`.
     // For pure screenshot capture, UiAutomator + ActivityScenario is enough.
-    androidTestImplementation("androidx.test:core:1.6.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
-    androidTestImplementation("androidx.test:rules:1.6.1")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
-    androidTestImplementation("tools.fastlane:screengrab:2.1.1")
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.uiautomator)
+    androidTestImplementation(libs.fastlane.screengrab)
 }

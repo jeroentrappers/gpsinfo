@@ -1,0 +1,36 @@
+GPSinfo to minimalistyczny pulpit GPS dla Androida, zaprojektowany w duchu offline-first.
+
+Wszystko, co chcesz mieć przed oczami naraz — twoja pozycja, sygnały satelitów, kompas, prędkość, wysokość, położenie słońca — zebrane na jednym przewijanym pulpicie. Bez Google Maps SDK, bez Play Services, bez telemetrii, bez kont.
+
+Stworzony dla turystów, żeglarzy, rowerzystów, motocyklistów, majsterkowiczów GNSS i wszystkich, którzy chcą, by ich dane lokalizacyjne zostały w telefonie.
+
+▌ PULPIT
+• Pozycja w WGS84 (DMS lub dziesiętne), z wysokością i dokładnością na każdej osi
+• Liczba satelitów i siła sygnału na żywo dla GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS i IRNSS
+• Widok nieba z satelitami w kolorach konstelacji, na ich rzeczywistych pozycjach (azymut i elewacja)
+• Kompas z korekcją nachylenia — kurs magnetyczny i geograficzny, deklinacja oraz inklinacja
+• Prędkościomierz z samoskalującą się skalą oraz tryb HUD do odbicia na szybie
+• Pozycja słońca, wschód i zachód, długość dnia oraz terminator dnia i nocy na mapie świata
+
+▌ TRASY
+• Zapis tras GPS w standardzie GPX 1.1 z rozszerzeniem Garmin TrackPointExtension (prędkość, kurs)
+• Usługa pierwszego planu nagrywa dalej, gdy aplikacja działa w tle lub ekran jest wygaszony
+• Wyświetlanie trasy na OpenStreetMap jako polilinia ze znacznikami z podglądem po dotknięciu
+• Wykres prędkości i wysokości oraz suwak do przeglądania pojedynczych punktów trasy
+• Tryb mapy „kursem do góry”, nakładka łuku słonecznego
+• Wstępne pobieranie kafelków mapy dla wybranego obszaru — mapa trasy działa w pełni offline
+• Upraszczanie tras algorytmem Ramer-Douglas-Peucker w celu usunięcia szumu GPS
+• Import GPX skądkolwiek; udostępnianie i zapis jako GPX gdziekolwiek
+• Zapis punktu trasy jednym dotknięciem
+
+▌ PRYWATNOŚĆ
+• Bez analityki, bez raportów awarii, bez reklam, bez zewnętrznych trackerów.
+• Dane lokalizacyjne nigdy nie opuszczają twojego urządzenia.
+• Jedyne połączenie sieciowe, jakie aplikacja wykonuje, to anonimowe pobieranie kafelków OpenStreetMap — i tylko wtedy, gdy otworzysz mapę trasy.
+• Pełna polityka prywatności: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ BEZ PLAY SERVICES
+Aplikacja nie wymaga Google Play Services i działa na urządzeniach de-googled (GrapheneOS, LineageOS, /e/OS, …). Lokalizacja pochodzi bezpośrednio z API GNSS Androida.
+
+▌ OTWARTE ŹRÓDŁA
+Kod źródłowy: https://github.com/jeroentrappers/gpsinfo

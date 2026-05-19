@@ -1,5 +1,7 @@
 package com.appmire.gpsinfo.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +30,7 @@ import com.appmire.gpsinfo.util.IntentHelpers
 import com.appmire.gpsinfo.util.UnitConverter
 import com.appmire.gpsinfo.util.lengthUnitLabel
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PositionCard(
     latDeg: Double?,
@@ -39,6 +42,9 @@ fun PositionCard(
     onToggleFormat: () -> Unit,
     unitSystem: UnitSystem = UnitSystem.Metric,
 ) {
+    val ctx = LocalContext.current
+    val copyLabel = stringResource(R.string.section_position)
+    val copyToast = stringResource(R.string.coords_copied)
     SectionCard(
         title = stringResource(R.string.section_position),
         trailing = {
@@ -53,8 +59,27 @@ fun PositionCard(
             val dash = stringResource(R.string.placeholder_dash)
             if (latDeg != null && lonDeg != null) {
                 val formatted = CoordinateFormatter.format(latDeg, lonDeg, format)
-                Text(formatted.lat, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
-                Text(formatted.lon, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+                // Long-press anywhere on the coords copies them to the
+                // clipboard in "lat, lon" form. Short-press toggles
+                // DMS / decimal via the existing onToggleFormat callback.
+                val copyAction = {
+                    IntentHelpers.copyToClipboard(
+                        ctx,
+                        copyLabel,
+                        "${formatted.lat}, ${formatted.lon}",
+                    )
+                    android.widget.Toast.makeText(
+                        ctx, copyToast, android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+                val coordsModifier = Modifier.combinedClickable(
+                    onClick = onToggleFormat,
+                    onLongClick = copyAction,
+                )
+                Column(modifier = coordsModifier) {
+                    Text(formatted.lat, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+                    Text(formatted.lon, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+                }
             } else {
                 Text(dash, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -73,7 +98,6 @@ fun PositionCard(
 
             Spacer(Modifier.height(16.dp))
 
-            val ctx = LocalContext.current
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FilledTonalIconButton(
                     enabled = latDeg != null && lonDeg != null,

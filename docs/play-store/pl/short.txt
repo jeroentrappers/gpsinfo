@@ -1,0 +1,1 @@
+Offline pulpit GPS z surowymi danymi GNSS i nagrywaniem tras, bez Play Services.

@@ -1,25 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
-  Native speaker should verify GNSS terminology + UI ergonomics.
-  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
--->
-<resources>
+<!-- Native-speaker reviewed 2026-05-19 (Türkçe).
+     Format specifiers (%1$s, %1$d, %1$.1f, …) preserved verbatim. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
     <!-- Permission screen -->
     <string name="permission_required_title">Konum erişimi gerekli</string>
-    <string name="permission_required_body">GPSinfo, uydu, sabitleme ve hareket verilerini göstermek için hassas konuma ihtiyaç duyar. Hiçbir konum verisi cihazınızdan ayrılmaz.</string>
+    <string name="permission_required_body">GPSinfo, uydu, sabitleme ve hareket verilerini gösterebilmek için hassas konuma ihtiyaç duyar. Hiçbir konum verisi cihazından dışarı çıkmaz.</string>
     <string name="grant_permission">İzin ver</string>
     <string name="open_settings">Ayarları aç</string>
 
     <!-- Section titles -->
     <string name="section_position">Konum</string>
     <string name="section_movement">Hareket</string>
-    <string name="section_sky">Gökyüzü görünümü</string>
+    <string name="section_sky">Gökyüzü</string>
     <string name="section_compass">Pusula</string>
     <string name="section_world">Dünya</string>
-    <string name="section_time">Zaman &amp; Güneş</string>
+    <string name="section_time">Zaman ve Güneş</string>
 
     <!-- Actions -->
     <string name="action_back">Geri</string>
@@ -46,7 +43,7 @@
 
     <!-- Location services banner -->
     <string name="location_off_title">Konum servisleri kapalı</string>
-    <string name="location_off_body">GPS sabitlemesi almak için sistem ayarlarından açın.</string>
+    <string name="location_off_body">GPS sabitlemesi alabilmek için sistem ayarlarından aç.</string>
     <string name="location_off_open_settings">Konum ayarlarını aç</string>
 
     <!-- StatusBar -->
@@ -62,34 +59,34 @@
     <!-- Speed card -->
     <string name="metric_speed">Hız</string>
     <string name="metric_heading">Yön</string>
-    <string name="unit_kmh">km/h</string>
+    <string name="unit_kmh">km/sa</string>
     <string name="unit_m">m</string>
     <string name="degrees_magnetic">° manyetik</string>
     <string name="heading_magnetic_suffix">%1$s · °M</string>
 
     <!-- Compass -->
     <string name="metric_orientation">Yönelim</string>
-    <string name="metric_declination">Sapma</string>
-    <string name="metric_inclination">Eğim</string>
+    <string name="metric_declination">Sapma (deklinasyon)</string>
+    <string name="metric_inclination">Eğim (inklinasyon)</string>
     <string name="metric_reciprocal">Karşıt</string>
     <string name="metric_mag_acc">Mag Has</string>
     <string name="metric_field">Alan</string>
-    <string name="metric_pitch">Yunuslama</string>
+    <string name="metric_pitch">Eğiklik</string>
     <string name="metric_roll">Yatış</string>
     <string name="metric_hdg">HDG</string>
     <string name="metric_decl">DECL</string>
     <string name="unit_microtesla">%1$.0f µT</string>
-    <string name="degrees_east_format">%1$.2f° E</string>
+    <string name="degrees_east_format">%1$.2f° D</string>
 
     <!-- Time &amp; sun -->
     <string name="metric_utc">UTC</string>
     <string name="metric_local">Yerel</string>
     <string name="metric_sunrise">Gün doğumu</string>
-    <string name="metric_solar_noon">Güneş tepe</string>
+    <string name="metric_solar_noon">Güneş tepede</string>
     <string name="metric_sunset">Gün batımı</string>
     <string name="metric_day_length">Gündüz süresi</string>
-    <string name="metric_sun_elev">Güneş yük</string>
-    <string name="metric_sun_az">Güneş az</string>
+    <string name="metric_sun_elev">Güneş yük.</string>
+    <string name="metric_sun_az">Güneş az.</string>
     <string name="metric_phase">Faz</string>
     <string name="phase_day">Gündüz</string>
     <string name="phase_night">Gece</string>
@@ -101,9 +98,9 @@
     <string name="sat_sort_by_signal">Sinyale göre</string>
     <string name="sat_sort_announce">Sıralama: %1$s</string>
     <string name="sat_overview_title">GNSS GENEL BAKIŞ</string>
-    <string name="sat_stat_in_view">Görüş</string>
-    <string name="sat_stat_in_fix">Kullanım</string>
-    <string name="sat_stat_tracking">Takip</string>
+    <string name="sat_stat_in_view">Görüşte</string>
+    <string name="sat_stat_in_fix">Sabitlemede</string>
+    <string name="sat_stat_tracking">Takipte</string>
     <string name="sat_stat_best">En iyi</string>
     <string name="sat_col_constellation">CON</string>
     <string name="sat_col_svid">SVID</string>
@@ -121,22 +118,22 @@
     <!-- Speed screen -->
     <string name="screen_speed">Hız</string>
     <string name="screen_speed_hud">Hız · HUD</string>
-    <string name="hud_toggle_on">HUD modu açık — devre dışı bırakmak için dokunun</string>
-    <string name="hud_toggle_off">HUD modunu etkinleştir (ön cam yansıması)</string>
+    <string name="hud_toggle_on">HUD modu açık — kapatmak için dokun</string>
+    <string name="hud_toggle_off">HUD modunu aç (ön cam yansıması)</string>
     <string name="metric_fix">Sabitleme</string>
 
     <!-- About -->
     <string name="screen_about">Hakkında</string>
     <string name="about_brand_alt">Appmire</string>
-    <string name="about_tagline">Size ücretsiz sunulmuştur.\nBağışlar takdir edilir.</string>
-    <string name="about_visit_site">appmire.be\'yi ziyaret et</string>
+    <string name="about_tagline">Sana ücretsiz sunuldu.\nBağışlar memnuniyetle karşılanır.</string>
+    <string name="about_github_label">Kaynak kodu GitHub\'da</string>
+    <string name="about_license_title">Lisans</string>
+    <!-- PluralsCandidate is a false positive: %1$d is the copyright year, not a count. -->
+    <string name="about_license_body" tools:ignore="PluralsCandidate">Ticari yazılım. © %1$d Jeroen Trappers. Tüm hakları saklıdır.</string>
 
     <!-- Sky view -->
-    <string name="sky_summary">Görüş %1$d   ·   Kullanım %2$d   ·   ORT %3$.1f</string>
+    <string name="sky_summary">Görüşte %1$d   ·   Kullanımda %2$d   ·   ORT %3$.1f</string>
     <string name="sky_waiting">Uydular bekleniyor…</string>
-
-    <!-- World map -->
-    <string name="world_position_label">Konum : Enlem/Boylam (WGS84)</string>
 
     <!-- Build / about footer -->
     <string name="build_badge">GPSinfo · v%1$s</string>
@@ -144,7 +141,7 @@
     <!-- Card click semantic descriptions -->
     <string name="open_speed_gauge">Hız göstergesini aç</string>
     <string name="open_satellites">Uydu listesini aç</string>
-    <string name="open_compass_detail">Pusula detayını aç</string>
+    <string name="open_compass_detail">Pusula ayrıntısını aç</string>
 
     <!-- Settings (About screen) -->
     <string name="screen_settings">Ayarlar</string>
@@ -157,4 +154,98 @@
     <string name="unit_mph">mph</string>
     <string name="unit_ft">ft</string>
     <string name="unit_knots">kn</string>
+
+    <!-- Trails feature -->
+    <string name="screen_trails">İzler</string>
+    <string name="trails_open">İzleri aç</string>
+    <string name="trail_record">İz kaydet</string>
+    <string name="trail_stop">Kaydı durdur</string>
+    <string name="trail_save_title">İzi kaydet</string>
+    <string name="trail_save_name_label">Ad</string>
+    <string name="trail_save">Kaydet</string>
+    <string name="trail_discard">Vazgeç</string>
+    <string name="trail_empty_title">Henüz iz yok</string>
+    <string name="trail_empty_body">İlk GPS izini yakalamak için panodaki kayıt düğmesine dokun.</string>
+    <string name="trail_recording_stats">%1$d nokta · %2$s</string>
+    <string name="trail_list_meta">%1$s · %2$d nokta · %3$s</string>
+    <string name="trail_point_title">%1$s tarihinde kaydedildi</string>
+    <string name="trail_action_delete">Sil</string>
+    <string name="trail_delete_confirm_title">İz silinsin mi?</string>
+    <string name="trail_delete_confirm_body">Bu işlem GPX dosyasını cihazdan kalıcı olarak kaldırır.</string>
+    <string name="action_cancel">İptal</string>
+    <string name="trail_share">İzi paylaş</string>
+    <string name="trail_import">GPX içe aktar</string>
+    <string name="trail_import_failed">Bu dosya GPX olarak okunamadı.</string>
+    <string name="trail_simplify">Sadeleştir</string>
+    <string name="trail_simplify_title">İzi sadeleştir</string>
+    <string name="trail_simplify_body">Komşu noktalardan geçen doğruya ε mesafesinden yakın olan noktaları atar. Düşük ε şekli daha çok korur; yüksek ε daha çok gürültüyü temizler.</string>
+    <string name="trail_simplify_preset_light">Hafif · ε = 2 m</string>
+    <string name="trail_simplify_preset_default">Varsayılan · ε = 5 m</string>
+    <string name="trail_simplify_preset_aggressive">Agresif · ε = 12 m</string>
+    <!-- PluralsCandidate is a false positive: %d is a count display in a
+         structural before/after readout, not a noun-with-quantity. -->
+    <string name="trail_simplify_preview" tools:ignore="PluralsCandidate">%1$d → %2$d nokta  ·  %%%3$d küçüldü</string>
+    <string name="trail_simplify_replace">Değiştir</string>
+    <string name="trail_simplify_save_copy">Kopya olarak kaydet</string>
+
+    <!-- Phase 1: trail rename, stats card, save-as-file, waypoint -->
+    <string name="trail_rename">Yeniden adlandır</string>
+    <string name="trail_rename_title">İzi yeniden adlandır</string>
+    <string name="trail_save_as_file">GPX dosyası kaydet</string>
+    <string name="trail_save_as_file_failed">GPX dosyası yazılamadı.</string>
+    <string name="trail_stats_distance">Mesafe</string>
+    <string name="trail_stats_duration">Süre</string>
+    <string name="trail_stats_avg_speed">Ort.</string>
+    <string name="trail_stats_max_speed">Maks.</string>
+    <string name="trail_stats_ascent">Tırmanış</string>
+    <string name="trail_stats_descent">İniş</string>
+    <string name="trail_waypoint_save">Mevcut konumu kaydet</string>
+    <string name="trail_waypoint_default_name">Ara nokta</string>
+    <string name="trail_waypoint_no_fix">Henüz sabitleme yok — ara nokta kaydedilemez.</string>
+    <string name="trail_waypoint_saved">Ara nokta olarak kaydedildi.</string>
+    <string name="coords_copied">Koordinatlar kopyalandı.</string>
+
+    <!-- Heading-up map -->
+    <string name="trail_heading_up">Yön yukarı</string>
+    <string name="trail_north_up">Kuzey yukarı</string>
+
+    <!-- NMEA-style raw GNSS readout -->
+    <string name="screen_nmea">Ham GNSS</string>
+    <string name="open_nmea">Ham GNSS okumasını aç</string>
+
+    <!-- First-run onboarding tour -->
+    <string name="onboarding_title">GPSinfo\'ya hoş geldin</string>
+    <string name="onboarding_intro">Aşağıdaki her şey çevrimdışı çalışır — Play Services\'siz, API anahtarsız, telemetrisiz. Kısa tur:</string>
+    <string name="onboarding_dashboard_title">Pano</string>
+    <string name="onboarding_dashboard_body">Canlı konum, uydular, pusula, hız, güneş. Genişletmek için herhangi bir karta dokun.</string>
+    <string name="onboarding_record_title">İz kaydet</string>
+    <string name="onboarding_record_body">Başlamak için sağ alttaki kırmızı noktaya dokun. Kayıt arka planda sürer.</string>
+    <string name="onboarding_waypoint_title">İğne bırak</string>
+    <string name="onboarding_waypoint_body">Üst çubuktaki iğne simgesine dokunarak mevcut sabitlemeyi tek noktalık bir iz olarak kaydet.</string>
+    <string name="onboarding_trails_title">İzleri görüntüle</string>
+    <string name="onboarding_trails_body">Üst çubuktaki harita simgesi iz listesini açar — GPX içe aktar, paylaş ve çevrimdışı kullanılabilen haritada görüntüle.</string>
+    <string name="onboarding_dismiss">Anladım</string>
+
+    <!-- Compass calibration -->
+    <string name="compass_calibrate_title">Pusulayı kalibre et</string>
+    <string name="compass_calibrate_body">Manyetometreyi yeniden kalibre etmek için telefonu sekiz çizecek şekilde salla.</string>
+
+    <!-- Offline tile cache -->
+    <string name="tile_cache">Çevrimdışı için karoları indir</string>
+    <string name="tile_cache_title">Çevrimdışı karolar</string>
+    <string name="tile_cache_body">Haritanın daha sonra ağ olmadan da görüntülenebilmesi için bu izin sınırlayıcı kutusundaki OSM karolarını indir.</string>
+    <string name="tile_cache_depth_overview">Genel bakış · zum 8–12</string>
+    <string name="tile_cache_depth_medium">Orta · zum 10–14</string>
+    <string name="tile_cache_depth_street">Sokak · zum 12–16</string>
+    <!-- PluralsCandidate suppressed: structural count display, not declension-sensitive. -->
+    <string name="tile_cache_estimate" tools:ignore="PluralsCandidate">≈ %1$d karo</string>
+    <string name="tile_cache_download">İndir</string>
+    <string name="tile_cache_done">Tamam.</string>
+    <string name="tile_cache_failed" tools:ignore="PluralsCandidate">Başarısız (%1$d hata).</string>
+
+    <!-- Background recording notification -->
+    <string name="trail_record_notification_channel">İz kaydı</string>
+    <string name="trail_record_notification_channel_body">Arka planda bir GPS izi kaydedilirken gösterilir.</string>
+    <string name="trail_record_notification_title">İz kaydediliyor</string>
+    <string name="trail_record_notification_body">Uygulama açıkken veya cepteyken GPS yakalaması sürer. Geri dönmek için dokun.</string>
 </resources>

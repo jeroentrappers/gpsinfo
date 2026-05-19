@@ -1,0 +1,1 @@
+Offline GPS panel se surovými GNSS daty a záznamem tras, bez Play Services.

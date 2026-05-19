@@ -1,0 +1,1 @@
+Tableau de bord GPS hors ligne : GNSS brut, traces, sans Play Services.

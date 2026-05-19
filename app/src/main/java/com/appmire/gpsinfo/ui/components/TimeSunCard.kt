@@ -84,7 +84,7 @@ fun TimeSunCard(nowMillis: Long, sun: SunInfo?) {
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 MetricMini(stringResource(R.string.metric_day_length), sun?.dayLengthMillis?.let { formatDuration(it) } ?: dash)
-                MetricMini(stringResource(R.string.metric_sun_elev), sun?.let { "%.1f°".format(it.sunElevationDeg) } ?: dash)
+                MetricMini(stringResource(R.string.metric_sun_elev), sun?.let { "%.1f°".format(Locale.ROOT, it.sunElevationDeg) } ?: dash)
                 MetricMini(stringResource(R.string.metric_sun_az), sun?.let { "%03d°".format(it.sunAzimuthDeg.toInt()) } ?: dash)
                 MetricMini(stringResource(R.string.metric_phase), sun?.let { if (it.isDaytime) phaseDay else phaseNight } ?: dash)
             }

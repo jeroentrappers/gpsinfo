@@ -1,0 +1,8 @@
+Primera versión.
+
+• Panel GPS sin conexión con datos GNSS en bruto de 7 constelaciones
+• Grabación de rutas (primer y segundo plano) en GPX 1.1 estándar
+• Mapa sobre OpenStreetMap con precarga de teselas sin conexión, gráfico de velocidad y altitud, reproducción con deslizador
+• Capa de arco solar, brújula con compensación de inclinación, velocímetro autoescalable con modo HUD
+• Simplificar, renombrar, compartir, importar y guardar rutas
+• Sin Play Services. Sin telemetría. Sin cuentas.

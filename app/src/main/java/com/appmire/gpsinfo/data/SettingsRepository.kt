@@ -28,7 +28,7 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         val SatelliteSort = stringPreferencesKey("sat_sort")         // SatSortMode name
         val CoordinateFormat = stringPreferencesKey("coord_format")  // CoordinateFormat name
         val UnitSystem = stringPreferencesKey("unit_system")         // metric | imperial | nautical
-        @Suppress("unused") val Reserved = booleanPreferencesKey("reserved") // future-proofing
+        val OnboardingSeen = booleanPreferencesKey("onboarding_seen")
     }
 
     override val maxSpeedKmh: Flow<Float> = context.dataStore.data
@@ -45,6 +45,9 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     override val unitSystem: Flow<UnitSystem> = context.dataStore.data
         .map { UnitSystem.fromString(it[Keys.UnitSystem]) }
+
+    override val onboardingSeen: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.OnboardingSeen] ?: false }
 
     override suspend fun setMaxSpeedKmh(value: Float) {
         context.dataStore.edit { it[Keys.MaxSpeedKmh] = value }
@@ -64,6 +67,10 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     override suspend fun setUnitSystem(value: UnitSystem) {
         context.dataStore.edit { it[Keys.UnitSystem] = value.key }
+    }
+
+    override suspend fun setOnboardingSeen(value: Boolean) {
+        context.dataStore.edit { it[Keys.OnboardingSeen] = value }
     }
 
     companion object {

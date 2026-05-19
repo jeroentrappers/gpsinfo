@@ -40,10 +40,13 @@ interface SettingsDataSource {
     val satelliteSort: Flow<String?>
     val coordinateFormat: Flow<String?>
     val unitSystem: Flow<UnitSystem>
+    /** Whether the first-run onboarding tour has been shown. */
+    val onboardingSeen: Flow<Boolean>
 
     suspend fun setMaxSpeedKmh(value: Float)
     suspend fun setThemeOverride(value: ThemeOverride)
     suspend fun setSatelliteSort(value: String)
     suspend fun setCoordinateFormat(value: String)
     suspend fun setUnitSystem(value: UnitSystem)
+    suspend fun setOnboardingSeen(value: Boolean)
 }

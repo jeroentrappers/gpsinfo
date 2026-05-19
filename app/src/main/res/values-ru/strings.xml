@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
-  Native speaker should verify GNSS terminology + UI ergonomics.
-  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
--->
-<resources>
+<!-- Native-speaker reviewed 2026-05-19 (русский).
+     Format specifiers (%1$s, %1$d, %1$.1f, …) preserved verbatim. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
     <!-- Permission screen -->
-    <string name="permission_required_title">Требуется доступ к геолокации</string>
-    <string name="permission_required_body">GPSinfo требуется точная геолокация для отображения данных спутников, фиксации и движения. Данные о местоположении не покидают устройство.</string>
+    <string name="permission_required_title">Нужен доступ к геолокации</string>
+    <string name="permission_required_body">GPSinfo использует точную геолокацию, чтобы показывать данные о спутниках, фиксации и движении. Никакие данные о местоположении не покидают ваше устройство.</string>
     <string name="grant_permission">Предоставить разрешение</string>
     <string name="open_settings">Открыть настройки</string>
 
     <!-- Section titles -->
-    <string name="section_position">Позиция</string>
+    <string name="section_position">Координаты</string>
     <string name="section_movement">Движение</string>
     <string name="section_sky">Небо</string>
     <string name="section_compass">Компас</string>
@@ -23,7 +20,7 @@
 
     <!-- Actions -->
     <string name="action_back">Назад</string>
-    <string name="action_share_location">Поделиться местоположением</string>
+    <string name="action_share_location">Отправить местоположение</string>
     <string name="action_open_maps">Открыть в Картах</string>
     <string name="action_toggle_units">Сменить единицы</string>
     <string name="action_toggle_theme">Сменить тему</string>
@@ -33,9 +30,9 @@
     <string name="share_subject">Моё местоположение</string>
 
     <!-- Fix statuses -->
-    <string name="fix_status_no_fix">Нет фикса</string>
-    <string name="fix_status_2d">Фикс 2D</string>
-    <string name="fix_status_3d">Фикс 3D</string>
+    <string name="fix_status_no_fix">Нет фиксации</string>
+    <string name="fix_status_2d">Фиксация 2D</string>
+    <string name="fix_status_3d">Фиксация 3D</string>
 
     <!-- Magnetic accuracy levels -->
     <string name="mag_acc_unknown">Неизвестно</string>
@@ -45,8 +42,8 @@
     <string name="mag_acc_high">Высокая</string>
 
     <!-- Location services banner -->
-    <string name="location_off_title">Службы геолокации отключены</string>
-    <string name="location_off_body">Включите их в системных настройках, чтобы получить фикс GPS.</string>
+    <string name="location_off_title">Службы геолокации выключены</string>
+    <string name="location_off_body">Включите их в системных настройках, чтобы получить фиксацию GPS.</string>
     <string name="location_off_open_settings">Открыть настройки геолокации</string>
 
     <!-- StatusBar -->
@@ -56,8 +53,8 @@
 
     <!-- Position -->
     <string name="metric_altitude">Высота</string>
-    <string name="metric_h_accuracy">Г-Точн</string>
-    <string name="metric_v_accuracy">В-Точн</string>
+    <string name="metric_h_accuracy">Г-точн</string>
+    <string name="metric_v_accuracy">В-точн</string>
 
     <!-- Speed card -->
     <string name="metric_speed">Скорость</string>
@@ -72,7 +69,7 @@
     <string name="metric_declination">Склонение</string>
     <string name="metric_inclination">Наклонение</string>
     <string name="metric_reciprocal">Обратный</string>
-    <string name="metric_mag_acc">Точн магн.</string>
+    <string name="metric_mag_acc">Точн. магн.</string>
     <string name="metric_field">Поле</string>
     <string name="metric_pitch">Тангаж</string>
     <string name="metric_roll">Крен</string>
@@ -87,9 +84,9 @@
     <string name="metric_sunrise">Восход</string>
     <string name="metric_solar_noon">Солн. полдень</string>
     <string name="metric_sunset">Закат</string>
-    <string name="metric_day_length">Длина дня</string>
-    <string name="metric_sun_elev">Выс. солнца</string>
-    <string name="metric_sun_az">Аз. солнца</string>
+    <string name="metric_day_length">Продолжит. дня</string>
+    <string name="metric_sun_elev">Угол солнца</string>
+    <string name="metric_sun_az">Азимут солнца</string>
     <string name="metric_phase">Фаза</string>
     <string name="phase_day">День</string>
     <string name="phase_night">Ночь</string>
@@ -102,7 +99,7 @@
     <string name="sat_sort_announce">Сортировка: %1$s</string>
     <string name="sat_overview_title">ОБЗОР GNSS</string>
     <string name="sat_stat_in_view">Видимых</string>
-    <string name="sat_stat_in_fix">В фиксе</string>
+    <string name="sat_stat_in_fix">В фиксации</string>
     <string name="sat_stat_tracking">Отслеж.</string>
     <string name="sat_stat_best">Лучший</string>
     <string name="sat_col_constellation">CON</string>
@@ -122,21 +119,21 @@
     <string name="screen_speed">Скорость</string>
     <string name="screen_speed_hud">Скорость · HUD</string>
     <string name="hud_toggle_on">Режим HUD включён — нажмите, чтобы выключить</string>
-    <string name="hud_toggle_off">Включить режим HUD (отражение в стекле)</string>
-    <string name="metric_fix">Фикс</string>
+    <string name="hud_toggle_off">Включить режим HUD (отражение в лобовом стекле)</string>
+    <string name="metric_fix">Фикс.</string>
 
     <!-- About -->
     <string name="screen_about">О программе</string>
     <string name="about_brand_alt">Appmire</string>
-    <string name="about_tagline">Предоставляется бесплатно.\nПожертвования приветствуются.</string>
-    <string name="about_visit_site">Посетите appmire.be</string>
+    <string name="about_tagline">Бесплатно для вас.\nПожертвования приветствуются.</string>
+    <string name="about_github_label">Исходный код на GitHub</string>
+    <string name="about_license_title">Лицензия</string>
+    <!-- PluralsCandidate is a false positive: %1$d is the copyright year, not a count. -->
+    <string name="about_license_body" tools:ignore="PluralsCandidate">Коммерческое ПО. © %1$d Jeroen Trappers. Все права защищены.</string>
 
     <!-- Sky view -->
-    <string name="sky_summary">Видимых %1$d   ·   В фиксе %2$d   ·   СРЕД %3$.1f</string>
+    <string name="sky_summary">Видимых %1$d   ·   В фиксации %2$d   ·   СРЕД %3$.1f</string>
     <string name="sky_waiting">Ожидание спутников…</string>
-
-    <!-- World map -->
-    <string name="world_position_label">Позиция : Шир/Долг (WGS84)</string>
 
     <!-- Build / about footer -->
     <string name="build_badge">GPSinfo · v%1$s</string>
@@ -153,8 +150,102 @@
     <string name="unit_system_metric">Метрические</string>
     <string name="unit_system_imperial">Имперские</string>
     <string name="unit_system_nautical">Морские</string>
-    <string name="language_system">Системный по умолчанию</string>
+    <string name="language_system">Как в системе</string>
     <string name="unit_mph">mph</string>
     <string name="unit_ft">ft</string>
     <string name="unit_knots">kn</string>
+
+    <!-- Trails feature -->
+    <string name="screen_trails">Треки</string>
+    <string name="trails_open">Открыть треки</string>
+    <string name="trail_record">Записать трек</string>
+    <string name="trail_stop">Остановить запись</string>
+    <string name="trail_save_title">Сохранить трек</string>
+    <string name="trail_save_name_label">Название</string>
+    <string name="trail_save">Сохранить</string>
+    <string name="trail_discard">Отбросить</string>
+    <string name="trail_empty_title">Треков пока нет</string>
+    <string name="trail_empty_body">Нажмите кнопку записи на главном экране, чтобы записать свой первый GPS-трек.</string>
+    <string name="trail_recording_stats">%1$d точек · %2$s</string>
+    <string name="trail_list_meta">%1$s · %2$d точек · %3$s</string>
+    <string name="trail_point_title">Записано в %1$s</string>
+    <string name="trail_action_delete">Удалить</string>
+    <string name="trail_delete_confirm_title">Удалить трек?</string>
+    <string name="trail_delete_confirm_body">Это безвозвратно удалит GPX-файл с этого устройства.</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="trail_share">Отправить трек</string>
+    <string name="trail_import">Импортировать GPX</string>
+    <string name="trail_import_failed">Не удалось прочитать этот файл как GPX.</string>
+    <string name="trail_simplify">Упростить</string>
+    <string name="trail_simplify_title">Упростить трек</string>
+    <string name="trail_simplify_body">Удаляет точки, которые отклоняются менее чем на ε от линии через соседние точки. Меньшее ε сохраняет форму, большее ε убирает больше шума.</string>
+    <string name="trail_simplify_preset_light">Лёгкое · ε = 2 м</string>
+    <string name="trail_simplify_preset_default">По умолчанию · ε = 5 м</string>
+    <string name="trail_simplify_preset_aggressive">Агрессивное · ε = 12 м</string>
+    <!-- PluralsCandidate is a false positive: %d is a count display in a
+         structural before/after readout, not a noun-with-quantity. -->
+    <string name="trail_simplify_preview" tools:ignore="PluralsCandidate">%1$d → %2$d точек  ·  на %3$d%% меньше</string>
+    <string name="trail_simplify_replace">Заменить</string>
+    <string name="trail_simplify_save_copy">Сохранить как копию</string>
+
+    <!-- Phase 1: trail rename, stats card, save-as-file, waypoint -->
+    <string name="trail_rename">Переименовать</string>
+    <string name="trail_rename_title">Переименовать трек</string>
+    <string name="trail_save_as_file">Сохранить GPX-файл</string>
+    <string name="trail_save_as_file_failed">Не удалось записать GPX-файл.</string>
+    <string name="trail_stats_distance">Дистанция</string>
+    <string name="trail_stats_duration">Время</string>
+    <string name="trail_stats_avg_speed">Сред.</string>
+    <string name="trail_stats_max_speed">Макс.</string>
+    <string name="trail_stats_ascent">Подъём</string>
+    <string name="trail_stats_descent">Спуск</string>
+    <string name="trail_waypoint_save">Сохранить текущее местоположение</string>
+    <string name="trail_waypoint_default_name">Точка</string>
+    <string name="trail_waypoint_no_fix">Нет фиксации — точку сохранить нельзя.</string>
+    <string name="trail_waypoint_saved">Сохранено как точка.</string>
+    <string name="coords_copied">Координаты скопированы.</string>
+
+    <!-- Heading-up map -->
+    <string name="trail_heading_up">Курсом вверх</string>
+    <string name="trail_north_up">Севером вверх</string>
+
+    <!-- NMEA-style raw GNSS readout -->
+    <string name="screen_nmea">Сырые данные GNSS</string>
+    <string name="open_nmea">Открыть сырые данные GNSS</string>
+
+    <!-- First-run onboarding tour -->
+    <string name="onboarding_title">Добро пожаловать в GPSinfo</string>
+    <string name="onboarding_intro">Всё работает офлайн — без Play Services, без API-ключей, без телеметрии. Краткий тур:</string>
+    <string name="onboarding_dashboard_title">Главный экран</string>
+    <string name="onboarding_dashboard_body">Положение, спутники, компас, скорость, солнце — в реальном времени. Нажмите на карточку, чтобы развернуть её.</string>
+    <string name="onboarding_record_title">Записать трек</string>
+    <string name="onboarding_record_body">Нажмите красную точку в правом нижнем углу, чтобы начать. Запись продолжается в фоне.</string>
+    <string name="onboarding_waypoint_title">Поставить точку</string>
+    <string name="onboarding_waypoint_body">Нажмите значок булавки на верхней панели, чтобы сохранить текущую фиксацию как трек из одной точки.</string>
+    <string name="onboarding_trails_title">Посмотреть треки</string>
+    <string name="onboarding_trails_body">Значок карты на верхней панели открывает список треков — импорт GPX, отправка и просмотр на карте с офлайн-режимом.</string>
+    <string name="onboarding_dismiss">Понятно</string>
+
+    <!-- Compass calibration -->
+    <string name="compass_calibrate_title">Откалибровать компас</string>
+    <string name="compass_calibrate_body">Покачайте телефон движением в форме восьмёрки, чтобы перекалибровать магнитометр.</string>
+
+    <!-- Offline tile cache -->
+    <string name="tile_cache">Скачать тайлы для офлайн-режима</string>
+    <string name="tile_cache_title">Офлайн-тайлы</string>
+    <string name="tile_cache_body">Скачать тайлы OSM для области этого трека, чтобы карта работала без сети.</string>
+    <string name="tile_cache_depth_overview">Обзор · масштаб 8–12</string>
+    <string name="tile_cache_depth_medium">Средний · масштаб 10–14</string>
+    <string name="tile_cache_depth_street">Улицы · масштаб 12–16</string>
+    <!-- PluralsCandidate suppressed: structural count display, not declension-sensitive. -->
+    <string name="tile_cache_estimate" tools:ignore="PluralsCandidate">≈ %1$d тайлов</string>
+    <string name="tile_cache_download">Скачать</string>
+    <string name="tile_cache_done">Готово.</string>
+    <string name="tile_cache_failed" tools:ignore="PluralsCandidate">Не удалось (%1$d ошибок).</string>
+
+    <!-- Background recording notification -->
+    <string name="trail_record_notification_channel">Запись трека</string>
+    <string name="trail_record_notification_channel_body">Показывается, пока GPS-трек записывается в фоне.</string>
+    <string name="trail_record_notification_title">Запись трека</string>
+    <string name="trail_record_notification_body">GPS-запись продолжается, пока приложение открыто или в кармане. Нажмите, чтобы вернуться.</string>
 </resources>

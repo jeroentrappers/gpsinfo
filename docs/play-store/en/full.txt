@@ -1,0 +1,36 @@
+GPSinfo is a focused, offline-first GPS dashboard for Android.
+
+Everything you'd want to see at once — your position, satellite signals, compass, speed, altitude, sun position — laid out on a single scrollable dashboard. No Google Maps SDK, no Play Services, no telemetry, no accounts.
+
+Built for hikers, sailors, cyclists, motorcyclists, GNSS-curious tinkerers, and anyone who wants their location data to stay on their phone.
+
+▌ DASHBOARD
+• Position in WGS84 (DMS or decimal), with altitude and per-axis accuracy
+• Live satellite count and signal strength across GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS and IRNSS
+• Sky view with constellation-coloured satellites at their real azimuth and elevation
+• Tilt-corrected compass with magnetic + true heading, declination and inclination
+• Speed gauge with auto-adapting scale and a HUD-mirror mode for windshield reflections
+• Sun position, sunrise / sunset, day length, night-side terminator on the world map
+
+▌ TRAILS
+• Record GPS trails as standard GPX 1.1 with Garmin TrackPointExtension (speed, course)
+• Foreground service keeps recording while the app is backgrounded or the screen is off
+• Render the trail on OpenStreetMap with a polyline plus tap-to-inspect markers
+• Speed + elevation chart and a scrubber to inspect any single trackpoint
+• Heading-up map mode, sun arc overlay
+• Pre-cache map tiles for an area so the trail map works fully offline
+• Simplify trails with Ramer–Douglas–Peucker to clean GPS noise
+• Import GPX from anywhere; share or save as GPX anywhere
+• One-tap waypoint capture
+
+▌ PRIVACY
+• No analytics, no crash reporting, no advertising, no third-party tracker.
+• Location data never leaves your device.
+• The only network call the app ever makes is anonymous OpenStreetMap tile fetches, and only when you open a trail map.
+• Full privacy policy: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ NO PLAY SERVICES
+This app does not depend on Google Play Services and runs on de-Googled devices (GrapheneOS, LineageOS, /e/OS, …). Location comes straight from the Android GNSS APIs.
+
+▌ OPEN SOURCE
+Source: https://github.com/jeroentrappers/gpsinfo

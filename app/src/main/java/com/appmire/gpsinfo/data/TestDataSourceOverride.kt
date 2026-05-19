@@ -15,10 +15,12 @@ object TestDataSourceOverride {
     @Volatile var location: LocationDataSource? = null
     @Volatile var sensor: SensorDataSource? = null
     @Volatile var settings: SettingsDataSource? = null
+    @Volatile var trails: TrailDataSource? = null
 
     fun clear() {
         location = null
         sensor = null
         settings = null
+        trails = null
     }
 }

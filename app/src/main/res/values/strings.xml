@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
     <!-- Permission screen -->
@@ -124,14 +124,15 @@
     <string name="screen_about">About</string>
     <string name="about_brand_alt">Appmire</string>
     <string name="about_tagline">Given to you for free.\nDonations appreciated.</string>
-    <string name="about_visit_site">Visit appmire.be</string>
+    <!-- Translations pending; suppress until localized strings land. -->
+    <string name="about_github_label" tools:ignore="MissingTranslation">Source on GitHub</string>
+    <string name="about_license_title" tools:ignore="MissingTranslation">License</string>
+    <!-- PluralsCandidate is a false positive: %1$d is the copyright year, not a count. -->
+    <string name="about_license_body" tools:ignore="MissingTranslation,PluralsCandidate">Commercial software. © %1$d Jeroen Trappers. All rights reserved.</string>
 
     <!-- Sky view -->
     <string name="sky_summary">In view %1$d   ·   In use %2$d   ·   AVG %3$.1f</string>
     <string name="sky_waiting">Waiting for satellites…</string>
-
-    <!-- World map -->
-    <string name="world_position_label">Position : Lat/Lon (WGS84)</string>
 
     <!-- Build / about footer -->
     <string name="build_badge">GPSinfo · v%1$s</string>
@@ -152,4 +153,98 @@
     <string name="unit_mph">mph</string>
     <string name="unit_ft">ft</string>
     <string name="unit_knots">kn</string>
+
+    <!-- Trails feature. Translations pending; suppress until localized. -->
+    <string name="screen_trails" tools:ignore="MissingTranslation">Trails</string>
+    <string name="trails_open" tools:ignore="MissingTranslation">Open trails</string>
+    <string name="trail_record" tools:ignore="MissingTranslation">Record trail</string>
+    <string name="trail_stop" tools:ignore="MissingTranslation">Stop recording</string>
+    <string name="trail_save_title" tools:ignore="MissingTranslation">Save trail</string>
+    <string name="trail_save_name_label" tools:ignore="MissingTranslation">Name</string>
+    <string name="trail_save" tools:ignore="MissingTranslation">Save</string>
+    <string name="trail_discard" tools:ignore="MissingTranslation">Discard</string>
+    <string name="trail_empty_title" tools:ignore="MissingTranslation">No trails yet</string>
+    <string name="trail_empty_body" tools:ignore="MissingTranslation">Tap the record button on the dashboard to capture your first GPS trail.</string>
+    <string name="trail_recording_stats" tools:ignore="MissingTranslation">%1$d pts · %2$s</string>
+    <string name="trail_list_meta" tools:ignore="MissingTranslation">%1$s · %2$d pts · %3$s</string>
+    <string name="trail_point_title" tools:ignore="MissingTranslation">Captured at %1$s</string>
+    <string name="trail_action_delete" tools:ignore="MissingTranslation">Delete</string>
+    <string name="trail_delete_confirm_title" tools:ignore="MissingTranslation">Delete trail?</string>
+    <string name="trail_delete_confirm_body" tools:ignore="MissingTranslation">This permanently removes the GPX file from this device.</string>
+    <string name="action_cancel" tools:ignore="MissingTranslation">Cancel</string>
+    <string name="trail_share" tools:ignore="MissingTranslation">Share trail</string>
+    <string name="trail_import" tools:ignore="MissingTranslation">Import GPX</string>
+    <string name="trail_import_failed" tools:ignore="MissingTranslation">Couldn\'t read that file as GPX.</string>
+    <string name="trail_simplify" tools:ignore="MissingTranslation">Simplify</string>
+    <string name="trail_simplify_title" tools:ignore="MissingTranslation">Simplify trail</string>
+    <string name="trail_simplify_body" tools:ignore="MissingTranslation">Drops points that fall within ε of the line through their neighbours. Lower ε keeps more shape; higher ε removes more noise.</string>
+    <string name="trail_simplify_preset_light" tools:ignore="MissingTranslation">Light · ε = 2 m</string>
+    <string name="trail_simplify_preset_default" tools:ignore="MissingTranslation">Default · ε = 5 m</string>
+    <string name="trail_simplify_preset_aggressive" tools:ignore="MissingTranslation">Aggressive · ε = 12 m</string>
+    <!-- PluralsCandidate is a false positive: %d is a count display in a
+         structural before/after readout, not a noun-with-quantity. -->
+    <string name="trail_simplify_preview" tools:ignore="MissingTranslation,PluralsCandidate">%1$d → %2$d points  ·  %3$d%% smaller</string>
+    <string name="trail_simplify_replace" tools:ignore="MissingTranslation">Replace</string>
+    <string name="trail_simplify_save_copy" tools:ignore="MissingTranslation">Save as copy</string>
+
+    <!-- Phase 1: trail rename, stats card, save-as-file, waypoint -->
+    <string name="trail_rename" tools:ignore="MissingTranslation">Rename</string>
+    <string name="trail_rename_title" tools:ignore="MissingTranslation">Rename trail</string>
+    <string name="trail_save_as_file" tools:ignore="MissingTranslation">Save GPX file</string>
+    <string name="trail_save_as_file_failed" tools:ignore="MissingTranslation">Could not write the GPX file.</string>
+    <string name="trail_stats_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="trail_stats_duration" tools:ignore="MissingTranslation">Duration</string>
+    <string name="trail_stats_avg_speed" tools:ignore="MissingTranslation">Avg</string>
+    <string name="trail_stats_max_speed" tools:ignore="MissingTranslation">Max</string>
+    <string name="trail_stats_ascent" tools:ignore="MissingTranslation">Ascent</string>
+    <string name="trail_stats_descent" tools:ignore="MissingTranslation">Descent</string>
+    <string name="trail_waypoint_save" tools:ignore="MissingTranslation">Save current location</string>
+    <string name="trail_waypoint_default_name" tools:ignore="MissingTranslation">Waypoint</string>
+    <string name="trail_waypoint_no_fix" tools:ignore="MissingTranslation">No fix yet — can\'t save a waypoint.</string>
+    <string name="trail_waypoint_saved" tools:ignore="MissingTranslation">Saved as waypoint.</string>
+    <string name="coords_copied" tools:ignore="MissingTranslation">Coordinates copied.</string>
+
+    <!-- Heading-up map -->
+    <string name="trail_heading_up" tools:ignore="MissingTranslation">Heading-up</string>
+    <string name="trail_north_up" tools:ignore="MissingTranslation">North-up</string>
+
+    <!-- NMEA-style raw GNSS readout -->
+    <string name="screen_nmea" tools:ignore="MissingTranslation">Raw GNSS</string>
+    <string name="open_nmea" tools:ignore="MissingTranslation">Open raw GNSS readout</string>
+
+    <!-- First-run onboarding tour -->
+    <string name="onboarding_title" tools:ignore="MissingTranslation">Welcome to GPSinfo</string>
+    <string name="onboarding_intro" tools:ignore="MissingTranslation">Everything below works offline — no Play Services, no API keys, no telemetry. Quick tour:</string>
+    <string name="onboarding_dashboard_title" tools:ignore="MissingTranslation">Dashboard</string>
+    <string name="onboarding_dashboard_body" tools:ignore="MissingTranslation">Live position, satellites, compass, speed, sun. Tap any card to expand it.</string>
+    <string name="onboarding_record_title" tools:ignore="MissingTranslation">Record a trail</string>
+    <string name="onboarding_record_body" tools:ignore="MissingTranslation">Tap the red dot at the bottom-right to start. Recording continues in the background.</string>
+    <string name="onboarding_waypoint_title" tools:ignore="MissingTranslation">Drop a pin</string>
+    <string name="onboarding_waypoint_body" tools:ignore="MissingTranslation">Tap the pin icon in the top bar to save the current fix as a one-point trail.</string>
+    <string name="onboarding_trails_title" tools:ignore="MissingTranslation">View trails</string>
+    <string name="onboarding_trails_body" tools:ignore="MissingTranslation">The map icon in the top bar opens the trails list — import GPX, share, and view on an offline-capable map.</string>
+    <string name="onboarding_dismiss" tools:ignore="MissingTranslation">Got it</string>
+
+    <!-- Compass calibration -->
+    <string name="compass_calibrate_title" tools:ignore="MissingTranslation">Calibrate compass</string>
+    <string name="compass_calibrate_body" tools:ignore="MissingTranslation">Wave the phone in a figure-8 motion to recalibrate the magnetometer.</string>
+
+    <!-- Offline tile cache -->
+    <string name="tile_cache" tools:ignore="MissingTranslation">Download tiles for offline</string>
+    <string name="tile_cache_title" tools:ignore="MissingTranslation">Offline tiles</string>
+    <string name="tile_cache_body" tools:ignore="MissingTranslation">Download OSM tiles for this trail\'s bounding box so the map renders without a network later.</string>
+    <string name="tile_cache_depth_overview" tools:ignore="MissingTranslation">Overview · zoom 8–12</string>
+    <string name="tile_cache_depth_medium" tools:ignore="MissingTranslation">Medium · zoom 10–14</string>
+    <string name="tile_cache_depth_street" tools:ignore="MissingTranslation">Street · zoom 12–16</string>
+    <!-- PluralsCandidate suppressed: structural count display, not declension-sensitive. -->
+    <string name="tile_cache_estimate" tools:ignore="MissingTranslation,PluralsCandidate">≈ %1$d tiles</string>
+    <string name="tile_cache_download" tools:ignore="MissingTranslation">Download</string>
+    <string name="tile_cache_done" tools:ignore="MissingTranslation">Done.</string>
+    <string name="tile_cache_failed" tools:ignore="MissingTranslation,PluralsCandidate">Failed (%1$d errors).</string>
+
+    <!-- Background recording notification -->
+    <string name="trail_record_notification_channel" tools:ignore="MissingTranslation">Trail recording</string>
+    <string name="trail_record_notification_channel_body" tools:ignore="MissingTranslation">Shown while a GPS trail is being recorded in the background.</string>
+    <string name="trail_record_notification_title" tools:ignore="MissingTranslation">Recording trail</string>
+    <string name="trail_record_notification_body" tools:ignore="MissingTranslation">GPS capture continues while the app is open or pocketed. Tap to return.</string>
 </resources>

@@ -1,0 +1,8 @@
+Primeira versão.
+
+• Painel GPS offline com dados GNSS brutos de 7 constelações
+• Gravação de trilhas (primeiro e segundo plano) em GPX 1.1 padrão
+• Mapa no OpenStreetMap com pré-cache offline, gráfico de velocidade/altitude e reprodução com controle deslizante
+• Arco solar, bússola com correção de inclinação, velocímetro com escala automática e modo HUD
+• Simplificar, renomear, compartilhar, importar e salvar trilhas
+• Sem Play Services. Sem telemetria. Sem contas.

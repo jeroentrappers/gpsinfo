@@ -1,0 +1,8 @@
+İlk sürüm.
+
+• 7 takımyıldızdan ham GNSS verisi sunan, çevrimdışı öncelikli GPS panosu
+• Ön planda ve arka planda iz kaydı, standart GPX 1.1 olarak
+• OpenStreetMap tabanlı iz haritası: harita karolarını önceden indirme, hız/irtifa grafiği, kaydırılabilir oynatma
+• Güneş yayı katmanı, eğim düzeltmeli pusula, otomatik ölçeklenen hız göstergesi ve HUD modu
+• İzleri basitleştirme, yeniden adlandırma, paylaşma, içe aktarma ve kaydetme
+• Play Services yok. Telemetri yok. Hesap yok.

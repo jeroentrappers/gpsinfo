@@ -1,0 +1,36 @@
+GPSinfo je věcný GPS panel pro Android, primárně offline.
+
+Vše, co chcete vidět najednou — polohu, signály satelitů, kompas, rychlost, nadmořskou výšku, polohu Slunce — na jediném rolovatelném panelu. Bez Google Maps SDK, bez Play Services, bez telemetrie, bez účtů.
+
+Pro turisty, námořníky, cyklisty, motorkáře, nadšence do GNSS a každého, kdo chce mít data o své poloze pouze ve svém telefonu.
+
+▌ PANEL
+• Poloha ve WGS84 (DMS nebo desetinný formát), s nadmořskou výškou a přesností v jednotlivých osách
+• Aktuální počet satelitů a síla signálu pro GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS a IRNSS
+• Pohled na oblohu se satelity barevně rozlišenými podle systému ve skutečném azimutu a elevaci
+• Kompas s korekcí náklonu — magnetický i skutečný kurz, deklinace a inklinace
+• Tachometr s automaticky se přizpůsobující stupnicí a režimem HUD pro zrcadlení na čelním skle
+• Poloha Slunce, východ a západ, délka dne, hranice dne a noci (terminátor) na mapě světa
+
+▌ TRASY
+• Záznam GPS tras ve standardním formátu GPX 1.1 s rozšířením Garmin TrackPointExtension (rychlost, kurz)
+• Služba v popředí: záznam pokračuje, i když je aplikace v pozadí nebo je obrazovka vypnutá
+• Vykreslení trasy na OpenStreetMap polylinií se značkami pro detail po klepnutí
+• Graf rychlosti a nadmořské výšky s posuvníkem pro prohlížení libovolného bodu trasy
+• Režim mapy „kurz nahoru", vrstva sluneční dráhy
+• Předběžné stažení dlaždic mapy pro vybranou oblast, aby mapa trasy fungovala plně offline
+• Zjednodušení trasy algoritmem Ramer–Douglas–Peucker pro odfiltrování šumu GPS
+• Import GPX odkudkoli; sdílení nebo uložení GPX kamkoli
+• Záznam trasového bodu (waypoint) jediným klepnutím
+
+▌ SOUKROMÍ
+• Žádná analytika, žádné hlášení pádů, žádná reklama, žádné sledovací nástroje třetích stran.
+• Data o poloze nikdy neopustí vaše zařízení.
+• Jediným síťovým voláním aplikace je anonymní stahování dlaždic OpenStreetMap, a to pouze když otevřete mapu trasy.
+• Úplné zásady ochrany osobních údajů: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ BEZ PLAY SERVICES
+Aplikace nezávisí na Google Play Services a běží i na de-googled zařízeních (GrapheneOS, LineageOS, /e/OS, …). Poloha přichází přímo z GNSS API systému Android.
+
+▌ OTEVŘENÝ ZDROJOVÝ KÓD
+Zdrojový kód: https://github.com/jeroentrappers/gpsinfo

@@ -3,6 +3,25 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Background recording: a Service of type `location` runs while the
+         user is recording a trail, so the app keeps capturing fixes when
+         the screen is off. The runtime permission is requested at the
+         moment the user toggles background recording — we never ask
+         on first launch. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Posting the ongoing recording notification is a runtime permission
+         from Android 13+; declared here for the system to know about it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Required by osmdroid to fetch OSM tiles. The rest of the app is
+         offline-only; tiles are the single network feature. osmdroid
+         caches them aggressively, so the trail map works after a first
+         pan even without connectivity. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <uses-feature
         android:name="android.hardware.location.gps"
@@ -43,7 +62,6 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GPSinfo">
 
@@ -57,6 +75,28 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Background trail recording. The service has type `location`
+             so Android 14+ permits it while the screen is off. We never
+             start it from a Receiver, only from a user-initiated tap on
+             the dashboard, so the system honours the foreground state. -->
+        <service
+            android:name=".data.TrailRecordingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Exposes recorded GPX files for ACTION_SEND so the user can
+             share a trail to email, cloud drives, messaging apps, etc.
+             Grants are intent-scoped — no broad access to filesDir. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

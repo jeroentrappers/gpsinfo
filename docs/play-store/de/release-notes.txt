@@ -1,0 +1,8 @@
+Erste Veröffentlichung.
+
+• Offline-first GPS-Dashboard mit Roh-GNSS-Daten über 7 Satellitensysteme
+• Track-Aufzeichnung (Vorder- und Hintergrund) als Standard-GPX 1.1
+• Track-Karte auf OpenStreetMap-Basis mit Offline-Kachel-Cache, Geschwindigkeits-/Höhendiagramm, scrubbarer Wiedergabe
+• Sonnenbogen-Overlay, neigungskorrigierter Kompass, selbstskalierender Tacho mit HUD-Modus
+• Tracks vereinfachen, umbenennen, teilen, importieren, speichern
+• Keine Play Services. Keine Telemetrie. Keine Konten.

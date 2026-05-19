@@ -1,0 +1,8 @@
+Première version.
+
+• Tableau de bord GPS hors ligne, GNSS brut sur 7 constellations
+• Enregistrement de traces (premier plan et arrière-plan) en GPX 1.1
+• Carte OpenStreetMap : pré-téléchargement des tuiles, graphique vitesse/altitude, lecture au curseur
+• Arc solaire, boussole compensée en inclinaison, compteur de vitesse auto, mode HUD
+• Simplification, renommage, partage, import et enregistrement des traces
+• Sans Play Services. Sans télémétrie. Sans compte.

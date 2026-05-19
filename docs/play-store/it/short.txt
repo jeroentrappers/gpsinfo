@@ -1,0 +1,1 @@
+Dashboard GPS offline con dati GNSS grezzi e tracce — senza Play Services.

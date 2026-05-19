@@ -1,0 +1,1 @@
+Offline-GPS-Dashboard mit Roh-GNSS und Track-Aufzeichnung. Ohne Play Services.

@@ -1,0 +1,1 @@
+オフライン GPS ダッシュボード。生 GNSS 情報、トラック記録、Play Services 不要。

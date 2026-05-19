@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPSinfo — offline GPS dashboard for Android</title>
+<meta name="description"
+      content="Focused, offline-first GPS dashboard for Android. Raw GNSS data, GPX trail recording, OpenStreetMap-backed trail map. No Play Services, no telemetry.">
+<meta name="theme-color" content="#0A0E29">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GPSinfo — offline GPS dashboard for Android">
+<meta property="og:description"
+      content="Raw GNSS data, GPX trail recording, OpenStreetMap-backed trail map. No Play Services, no telemetry.">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'><rect width='108' height='108' rx='24' fill='%230A0E29'/><circle cx='54' cy='54' r='28' fill='none' stroke='%23E67635' stroke-width='5'/><circle cx='54' cy='54' r='6' fill='%23E67635'/></svg>">
+</head>
+<body>
+
+<header class="nav">
+    <div class="nav-inner">
+        <a class="brand" href="./">
+            <svg class="brand-mark" viewBox="0 0 108 108" aria-hidden="true">
+                <rect width="108" height="108" rx="24" fill="#0A0E29"/>
+                <circle cx="54" cy="54" r="28" fill="none" stroke="#E67635" stroke-width="5"/>
+                <circle cx="54" cy="54" r="6" fill="#E67635"/>
+            </svg>
+            <span class="brand-name">GPSinfo</span>
+        </a>
+        <nav class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#privacy">Privacy</a>
+            <a href="#source">Source</a>
+            <a href="https://github.com/jeroentrappers/gpsinfo" target="_blank" rel="noopener">GitHub</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+    <div class="hero-grid">
+        <div>
+            <p class="eyebrow">Offline-first · No Play Services · GPX</p>
+            <h1>The Android GPS dashboard that <span style="color:var(--accent)">never phones home</span>.</h1>
+            <p class="hero-lead">
+                Every metric your phone's GPS chip can report — position,
+                satellites, compass, speed, altitude, sun — on one
+                scrollable screen. Trail recording, offline maps,
+                standard GPX. Nothing leaves the device.
+            </p>
+            <div class="hero-ctas">
+                <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=com.appmire.gpsinfo" target="_blank" rel="noopener">
+                    Get it on Google Play
+                </a>
+                <a class="btn btn-outline" href="https://github.com/jeroentrappers/gpsinfo/releases" target="_blank" rel="noopener">
+                    GitHub releases
+                </a>
+            </div>
+        </div>
+
+        <!-- Inline SVG mockup. Stands in for a real screenshot so the page
+             works on day-0 without any image assets in the repo. Replace
+             with a real screenshot when one's available. -->
+        <div class="hero-mockup">
+            <div class="mockup-card" role="img" aria-label="Sample dashboard panel showing speed, position and satellite data">
+                <div class="mockup-card-h">
+                    <span class="pill">3D FIX</span>
+                    <span class="badge">12 SATS · ±3 m</span>
+                </div>
+                <div class="mockup-readout">
+                    87 <span style="font-size:1rem;color:var(--text-dim);">km/h</span>
+                    <small>SPEED · 058° · NE</small>
+                </div>
+                <div class="mockup-metrics">
+                    <div>
+                        <div class="label">Lat</div>
+                        <div class="value">51.1302</div>
+                    </div>
+                    <div>
+                        <div class="label">Lon</div>
+                        <div class="value">4.3777</div>
+                    </div>
+                    <div>
+                        <div class="label">Alt</div>
+                        <div class="value">45 m</div>
+                    </div>
+                </div>
+                <div class="mockup-metrics" style="border-top:none;padding-top:0;margin-top:8px;">
+                    <div>
+                        <div class="label">GPS</div>
+                        <div class="value">4</div>
+                    </div>
+                    <div>
+                        <div class="label">Galileo</div>
+                        <div class="value">2</div>
+                    </div>
+                    <div>
+                        <div class="label">BeiDou</div>
+                        <div class="value">2</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ Features ============ -->
+<section id="features">
+    <p class="eyebrow">What it does</p>
+    <h2>Everything the GPS chip can tell you, on one screen.</h2>
+
+    <div class="features">
+
+        <div class="feature">
+            <h3>Raw GNSS, 7 constellations</h3>
+            <p>Per-satellite signal strength and sky position across
+               GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS and IRNSS — straight
+               from the Android GNSS APIs.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Trail recording</h3>
+            <p>Standard GPX 1.1 with Garmin TrackPointExtension (speed,
+               course). Foreground service keeps capture alive when the
+               app is backgrounded or the screen is off.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Offline trail map</h3>
+            <p>OpenStreetMap-backed map with on-demand tile pre-cache
+               for a region, so the trail map works fully offline once
+               you've prepared an area.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Speed + elevation chart</h3>
+            <p>Dual-axis chart over the recorded trail with a scrubber
+               that moves a cursor along the polyline. Tap any point
+               for the full sample readout.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Tilt-corrected compass</h3>
+            <p>Magnetic + true heading, declination, inclination. The
+               trail map rotates with you in heading-up mode using the
+               same compass pipeline.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Trail simplification</h3>
+            <p>3D Ramer–Douglas–Peucker over the recorded points to
+               clean GPS noise without losing route shape. Three
+               accuracy presets; preview before you commit.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Sun arc overlay</h3>
+            <p>Where the sun rose, peaked and set on the day you
+               recorded a trail, anchored to the trail's start. Same
+               solar calculator that drives the dashboard's day/night
+               world map.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Share &amp; import GPX</h3>
+            <p>Hand a recorded GPX to any app via the share sheet,
+               save it via the system file picker, or import a GPX
+               file from anywhere. Every transfer is user-initiated.</p>
+        </div>
+
+        <div class="feature">
+            <h3>No Play Services</h3>
+            <p>Runs on de-Googled devices (GrapheneOS, LineageOS,
+               /e/OS, …). Location comes straight from
+               <code>LocationManager</code> + <code>GnssStatus</code>.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ============ Privacy ============ -->
+<section id="privacy">
+    <p class="eyebrow">Privacy</p>
+    <h2>The default is silence.</h2>
+
+    <div class="privacy-block">
+        <p style="color:var(--text-dim);">
+            Most GPS apps phone home before they show you a coordinate.
+            GPSinfo is the opposite — the only network call it ever makes
+            is an anonymous OpenStreetMap tile fetch, and only when you
+            actively open a trail map.
+        </p>
+
+        <ul class="privacy-list">
+            <li>No analytics SDK</li>
+            <li>No crash reporter</li>
+            <li>No ads, no attribution SDK</li>
+            <li>No Firebase, no Google Analytics</li>
+            <li>No social SDKs, no Facebook pixel</li>
+            <li>No account, ever</li>
+            <li class="no">Doesn't read your contacts, photos, or other apps' data</li>
+            <li class="no">Doesn't send your location anywhere</li>
+        </ul>
+
+        <p class="privacy-cta">
+            <a href="privacy.html">Read the full privacy policy →</a>
+        </p>
+    </div>
+</section>
+
+<!-- ============ Open source ============ -->
+<section id="source">
+    <p class="eyebrow">Open source</p>
+    <h2>Audit it yourself.</h2>
+
+    <div class="os-grid">
+        <div>
+            <p>
+                Every dependency, every permission, every network call is
+                in the repository — same source you'd build to ship to
+                Play. The release-runtime dependency tree is one
+                command away:
+            </p>
+        </div>
+        <pre><code>./gradlew app:dependencies \
+  --configuration releaseRuntimeClasspath</code></pre>
+    </div>
+</section>
+
+</main>
+
+<footer>
+    <div class="footer-inner">
+        <div>
+            © <span id="year"></span> Appmire CommV · BE 0719.812.728
+        </div>
+        <div class="footer-links">
+            <a href="privacy.html">Privacy</a>
+            <a href="https://github.com/jeroentrappers/gpsinfo" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://appmire.be" target="_blank" rel="noopener">appmire.be</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Just the year stamp; no analytics, no anything else.
+    document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

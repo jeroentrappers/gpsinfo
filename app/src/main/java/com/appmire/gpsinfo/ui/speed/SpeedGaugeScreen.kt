@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.util.Locale
 import com.appmire.gpsinfo.R
 import com.appmire.gpsinfo.data.UnitSystem
 import com.appmire.gpsinfo.ui.components.DialZone
@@ -71,14 +72,16 @@ fun SpeedGaugeScreen(
     onBack: () -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val compass by vm.compass.collectAsStateWithLifecycle()
     val loc = state.gnss.location
     val unit = state.unitSystem
     val speedKmhRaw = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f) ?: 0f
     val altitudeMRaw = loc?.takeIf { it.hasAltitude() }?.altitude
-    val headingDeg = state.compass.magneticHeadingDeg.toInt()
-    val headingCardinal = headingToCardinal(state.compass.magneticHeadingDeg)
-    val accuracyKmhRaw = loc?.takeIf { it.hasSpeedAccuracy() && android.os.Build.VERSION.SDK_INT >= 26 }
-        ?.speedAccuracyMetersPerSecond?.times(3.6f)
+    val headingDeg = compass.magneticHeadingDeg.toInt()
+    val headingCardinal = headingToCardinal(compass.magneticHeadingDeg)
+    val accuracyKmhRaw = if (android.os.Build.VERSION.SDK_INT >= 26) {
+        loc?.takeIf { it.hasSpeedAccuracy() }?.speedAccuracyMetersPerSecond?.times(3.6f)
+    } else null
 
     val speed = UnitConverter.speedFromKmh(speedKmhRaw, unit)
     val maxSpeed = UnitConverter.speedFromKmh(state.maxSpeedKmh, unit)
@@ -324,7 +327,7 @@ private fun DialHousing(
                 )
                 if (accuracy != null && accuracy > 0f) {
                     Text(
-                        text = "± %.1f %s".format(accuracy, speedUnit),
+                        text = "± %.1f %s".format(Locale.ROOT, accuracy, speedUnit),
                         color = Color(0xFF8AA0AA),
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,

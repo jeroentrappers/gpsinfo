@@ -64,12 +64,27 @@ class LocationRepository(private val context: Context) : LocationDataSource {
         }
 
         val mainHandler = Handler(Looper.getMainLooper())
-        var latestLocation: Location? = null
+        // GPS and NETWORK are tracked separately so a coarse network fix
+        // can't briefly overwrite a fresh, accurate GPS fix. When both
+        // exist, [bestLocation] prefers GPS while it's fresh and falls
+        // back to NETWORK once GPS goes stale — that's what keeps the
+        // dashboard useful indoors when only NETWORK is available.
+        var latestGpsLocation: Location? = null
+        var latestNetworkLocation: Location? = null
         var latestSatellites: List<SatelliteInfo> = emptyList()
         var firstFixMillis: Long? = null
 
+        fun bestLocation(): Location? {
+            val gps = latestGpsLocation
+            val net = latestNetworkLocation
+            if (gps == null) return net
+            if (net == null) return gps
+            val gpsAgeNanos = SystemClock.elapsedRealtimeNanos() - gps.elapsedRealtimeNanos
+            return if (gpsAgeNanos < GPS_FRESH_NANOS) gps else net
+        }
+
         fun emit() {
-            val loc = latestLocation
+            val loc = bestLocation()
             val fix = computeFix(loc, latestSatellites)
             if (fix != FixStatus.NO_FIX && firstFixMillis == null) {
                 firstFixMillis = System.currentTimeMillis()
@@ -87,14 +102,20 @@ class LocationRepository(private val context: Context) : LocationDataSource {
 
         val locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
-                latestLocation = location
+                when (location.provider) {
+                    LocationManager.NETWORK_PROVIDER -> latestNetworkLocation = location
+                    else -> latestGpsLocation = location  // GPS_PROVIDER (default)
+                }
                 emit()
             }
             @Deprecated("Required for older API levels")
             override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
             override fun onProviderEnabled(provider: String) = emit()
             override fun onProviderDisabled(provider: String) {
-                latestLocation = null
+                when (provider) {
+                    LocationManager.GPS_PROVIDER -> latestGpsLocation = null
+                    LocationManager.NETWORK_PROVIDER -> latestNetworkLocation = null
+                }
                 emit()
             }
         }
@@ -109,6 +130,8 @@ class LocationRepository(private val context: Context) : LocationDataSource {
             }
         }
 
+        // Register both providers when available. NETWORK_PROVIDER ticks
+        // at ~1 Hz at most so we ask for it less aggressively than GPS.
         try {
             lm.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
@@ -123,20 +146,34 @@ class LocationRepository(private val context: Context) : LocationDataSource {
         } catch (_: IllegalArgumentException) {
             // Provider not available on this device.
         }
+        try {
+            lm.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER,
+                1_000L,
+                0f,
+                locationListener,
+                Looper.getMainLooper()
+            )
+        } catch (_: SecurityException) {
+            // Same as above.
+        } catch (_: IllegalArgumentException) {
+            // No network-location provider on this device.
+        }
 
         lm.registerGnssStatusCallback(gnssStatusCallback, mainHandler)
 
         // Seed: prefer the most-recent GPS fix; otherwise fall back to a
         // network-cached coarse fix so the world-map pin lands somewhere
         // plausible before the GPS first-fix lands.
-        val seed = runCatching { lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) }.getOrNull()
-            ?: runCatching { lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) }.getOrNull()
-        seed?.let {
-            latestLocation = it
-            emit()
-        }
+        latestGpsLocation =
+            runCatching { lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) }.getOrNull()
+        latestNetworkLocation =
+            runCatching { lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) }.getOrNull()
+        if (latestGpsLocation != null || latestNetworkLocation != null) emit()
 
         awaitClose {
+            // removeUpdates(listener) detaches it from every provider it
+            // was registered against.
             lm.removeUpdates(locationListener)
             lm.unregisterGnssStatusCallback(gnssStatusCallback)
         }
@@ -193,5 +230,12 @@ class LocationRepository(private val context: Context) : LocationDataSource {
         val fresh = (SystemClock.elapsedRealtimeNanos() - loc.elapsedRealtimeNanos) < 10_000_000_000L
         if (!fresh || used < 3) return FixStatus.NO_FIX
         return if (loc.hasAltitude() && used >= 4) FixStatus.THREE_D else FixStatus.TWO_D
+    }
+
+    private companion object {
+        /** How long a GPS fix stays preferred over a network fix. After
+         *  this window we fall back to NETWORK if it has something fresher.
+         *  30 s mirrors the practical "I just walked indoors" timescale. */
+        const val GPS_FRESH_NANOS = 30_000_000_000L
     }
 }

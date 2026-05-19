@@ -1,0 +1,8 @@
+First release.
+
+• Offline-first GPS dashboard surfacing raw GNSS data across 7 constellations
+• Trail recording (foreground & background) saved as standard GPX 1.1
+• OpenStreetMap-backed trail map with offline tile pre-cache, speed/elevation chart, scrubbable playback
+• Sun arc overlay, tilt-corrected compass, auto-scaling speed gauge with HUD mode
+• Trail simplification, rename, share, import, save
+• No Play Services. No telemetry. No accounts.

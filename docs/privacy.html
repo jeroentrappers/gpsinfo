@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy — GPSinfo</title>
+<meta name="description" content="GPSinfo's privacy policy: what we collect (nothing), what we store on device, what permissions we ask for, and why.">
+<meta name="theme-color" content="#0A0E29">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'><rect width='108' height='108' rx='24' fill='%230A0E29'/><circle cx='54' cy='54' r='28' fill='none' stroke='%23E67635' stroke-width='5'/><circle cx='54' cy='54' r='6' fill='%23E67635'/></svg>">
+</head>
+<body>
+
+<header class="nav">
+    <div class="nav-inner">
+        <a class="brand" href="./">
+            <svg class="brand-mark" viewBox="0 0 108 108" aria-hidden="true">
+                <rect width="108" height="108" rx="24" fill="#0A0E29"/>
+                <circle cx="54" cy="54" r="28" fill="none" stroke="#E67635" stroke-width="5"/>
+                <circle cx="54" cy="54" r="6" fill="#E67635"/>
+            </svg>
+            <span class="brand-name">GPSinfo</span>
+        </a>
+        <nav class="nav-links">
+            <a href="./">Home</a>
+            <a href="https://github.com/jeroentrappers/gpsinfo" target="_blank" rel="noopener">GitHub</a>
+        </nav>
+    </div>
+</header>
+
+<main class="legal">
+
+<p class="meta">Last updated: 2026-05-19</p>
+<h1>Privacy policy</h1>
+
+<p>
+    GPSinfo is a Belgian Android app published by <strong>Appmire CommV</strong>
+    (BE 0719.812.728). It surfaces live GNSS, sensor and astronomical data on a
+    single dashboard, with optional GPS trail recording and an offline-capable
+    trail map.
+</p>
+
+<h2>Short version</h2>
+<ul>
+    <li>Everything runs <strong>on your device</strong>. We never see your data.</li>
+    <li>We collect, store, transmit and share <strong>no personal data of our own</strong>.</li>
+    <li>We do not use any analytics, advertising, crash-reporting, social-media or tracker SDK.</li>
+    <li>The only network calls the app ever makes are anonymous map-tile fetches from <strong>OpenStreetMap.org</strong>, and only when you actively open or pan a trail map. Those requests carry your IP address to OpenStreetMap and nothing else — see <a href="#map-tiles">Map tiles</a> below.</li>
+    <li>We do not depend on Google Play Services and do not contact any Google server.</li>
+</ul>
+
+<h2>Permissions we request</h2>
+
+<table>
+    <thead>
+        <tr><th>Permission</th><th>When</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>ACCESS_FINE_LOCATION</code></td>
+            <td>Always required</td>
+            <td>Read GNSS fixes (latitude, longitude, altitude, per-satellite signal strength) directly from your device's GPS chip. Every metric the dashboard shows derives from this.</td>
+        </tr>
+        <tr>
+            <td><code>ACCESS_COARSE_LOCATION</code></td>
+            <td>Granted alongside fine</td>
+            <td>Required by the Android OS together with fine location on Android 10+. We do not request it separately.</td>
+        </tr>
+        <tr>
+            <td><code>ACCESS_BACKGROUND_LOCATION</code></td>
+            <td>Optional, prompted at recording start</td>
+            <td>Keep recording a GPS trail when the phone is locked or you switch to another app. <strong>Only used while a trail recording is in progress.</strong> Never used to read your location passively.</td>
+        </tr>
+        <tr>
+            <td><code>FOREGROUND_SERVICE</code> + <code>FOREGROUND_SERVICE_LOCATION</code></td>
+            <td>Granted at install</td>
+            <td>Permits a notification-backed service that keeps GNSS streaming while a trail is being recorded. The service exists only between Start and Stop on the record button.</td>
+        </tr>
+        <tr>
+            <td><code>POST_NOTIFICATIONS</code></td>
+            <td>Optional, prompted at recording start</td>
+            <td>Show the ongoing "Recording trail" notification. Recording works without it; you just won't see the notification on Android 13+.</td>
+        </tr>
+        <tr>
+            <td><code>INTERNET</code></td>
+            <td>Always required</td>
+            <td>Fetch OpenStreetMap tiles for the trail map. The rest of the app does not use the network.</td>
+        </tr>
+        <tr>
+            <td><code>ACCESS_NETWORK_STATE</code></td>
+            <td>Required by the tile library</td>
+            <td>Lets the tile cache decide whether to attempt a download or fall back to cached tiles.</td>
+        </tr>
+        <tr>
+            <td><code>WRITE_EXTERNAL_STORAGE</code> (Android ≤9 only)</td>
+            <td>Legacy</td>
+            <td>Required by the OpenStreetMap-tile library to write its on-disk cache on Android 9 and below. Capped at <code>maxSdkVersion="28"</code>; never declared on Android 10+.</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>We do <strong>not</strong> request:</p>
+<ul>
+    <li><code>READ_*</code> / <code>WRITE_*_STORAGE</code> on Android 10+</li>
+    <li><code>RECORD_AUDIO</code>, <code>CAMERA</code>, <code>READ_CONTACTS</code>, <code>READ_CALL_LOG</code>, <code>READ_SMS</code>, …</li>
+    <li>Any of the AD_ID / advertising / tracking permissions.</li>
+    <li>Any system-private permission requiring signature protection.</li>
+</ul>
+
+<h2>What happens with your location</h2>
+
+<p>While the app is open:</p>
+<ol>
+    <li>The Android <code>LocationManager</code> API reads the GPS chip on your device.</li>
+    <li>Each reading is delivered to GPSinfo by the operating system.</li>
+    <li>GPSinfo computes derived values (fix type, magnetic declination, sun position, day length, compass heading) <strong>in process memory</strong>.</li>
+    <li>The reading is <strong>displayed on screen</strong>.</li>
+    <li>When the screen closes, the in-memory reading is <strong>forgotten</strong>.</li>
+</ol>
+
+<p>While a trail recording is active:</p>
+<ol>
+    <li>As above, plus each accepted fix is appended to an <strong>in-memory list</strong> of trackpoints belonging to the active recording.</li>
+    <li>When you stop the recording and provide a name, the trackpoints are written to disk as a single <strong>GPX 1.1 file</strong> inside the app's private storage (see below).</li>
+    <li>The file is never transmitted anywhere by the app. You can share, export, or delete it from inside the app at any time.</li>
+</ol>
+
+<p>
+    The single exception to step 5 above is the on-disk location cache the
+    Android system itself maintains for <code>getLastKnownLocation()</code>.
+    That cache is owned by the OS, not by GPSinfo, and is documented under
+    your phone's privacy settings.
+</p>
+
+<h2>Files we store on your device</h2>
+
+<table>
+    <thead>
+        <tr><th>File</th><th>Location</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>User preferences</td>
+            <td><code>files/datastore/gpsinfo_prefs.preferences_pb</code></td>
+            <td>UI theme, units, the auto-adapted speed-dial ceiling, "onboarding seen" flag.</td>
+        </tr>
+        <tr>
+            <td>Recorded trails</td>
+            <td><code>files/trails/&lt;id&gt;.gpx</code></td>
+            <td>One GPX file per recording, in the standard GPX 1.1 format.</td>
+        </tr>
+        <tr>
+            <td>Map tile cache</td>
+            <td><code>files/osmdroid/tiles/</code></td>
+            <td>OpenStreetMap tiles you have viewed, kept so the trail map works offline. Cleared whenever you uninstall the app.</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>
+    All three live in the app's private sandbox. No other app on the device can
+    read them. They are <strong>excluded from Android's "App data" cloud backup
+    and device transfer</strong> unless you explicitly opt in via the system
+    Backup settings.
+</p>
+
+<h2>Sharing your data with other apps</h2>
+
+<p>You — and only you — control sharing. The app exposes these explicit hand-off actions:</p>
+<ul>
+    <li><strong>Share location</strong> (dashboard) → hands your current coordinates to an Android <code>ACTION_SEND</code> intent of your choosing.</li>
+    <li><strong>Open in maps</strong> (dashboard) → opens your current coordinates in the map app you choose from the system chooser.</li>
+    <li><strong>Share trail</strong> (trail map) → hands the recorded GPX file to an <code>ACTION_SEND</code> intent of your choosing. The receiving app gets read-only access to the file for the duration of that single intent.</li>
+    <li><strong>Save GPX file</strong> (trail map) → writes a copy of the trail to a location you pick via the Android system file picker (Storage Access Framework). GPSinfo can only write to the URI you pick; it cannot enumerate your storage.</li>
+    <li><strong>Import GPX</strong> (trails list) → reads a GPX file you pick via the system file picker and stores a copy in app-private storage.</li>
+</ul>
+
+<p>
+    After any of these actions, the data lives in whichever app or location you
+    sent it to, and is governed by that app's privacy policy, not ours.
+</p>
+
+<h2 id="map-tiles">Map tiles</h2>
+
+<p>
+    The trail map renders <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a>
+    raster tiles fetched anonymously over HTTPS from
+    <code>tile.openstreetmap.org</code> via the
+    <a href="https://github.com/osmdroid/osmdroid" target="_blank" rel="noopener">osmdroid</a> library.
+    Each request carries:
+</p>
+<ul>
+    <li>The URL of the requested tile (zoom + tile coordinates — equivalent to "a map square at some location and zoom level"; does not identify <em>you</em>).</li>
+    <li>Your IP address (visible to the OpenStreetMap server, as for any HTTPS request to any site).</li>
+    <li>A <code>User-Agent</code> header set to the package name <code>com.appmire.gpsinfo</code>.</li>
+</ul>
+
+<p>
+    We do not see these requests. They go directly from your device to the
+    OpenStreetMap Foundation's servers. Their privacy policy is at
+    <a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener">wiki.osmfoundation.org/wiki/Privacy_Policy</a>.
+</p>
+
+<p>
+    Once a tile has been fetched it is cached on your device, so revisiting the
+    same area generates no further network traffic. If you do not want any
+    network traffic at all, do not open the trail map. The rest of the app —
+    dashboard, satellite list, compass, speed gauge, trail recording — has no
+    network code paths.
+</p>
+
+<h2>Analytics, ads, crash reporters, tracking SDKs</h2>
+
+<p>None. The app contains:</p>
+<ul>
+    <li>No Firebase / Google Analytics / Google Mobile Ads</li>
+    <li>No Crashlytics / Sentry / Bugsnag / Datadog</li>
+    <li>No advertising SDK of any kind</li>
+    <li>No Facebook SDK or other social-media SDK</li>
+    <li>No third-party tracker, attribution SDK, or A/B-testing SDK</li>
+</ul>
+
+<p>You can verify this by inspecting the release dependency tree:</p>
+
+<pre><code>./gradlew app:dependencies --configuration releaseRuntimeClasspath</code></pre>
+
+<h2>Children</h2>
+<p>
+    The app does not collect personal data of any kind. It is therefore safe
+    for all ages with respect to data collection. Location services should be
+    used under adult supervision.
+</p>
+
+<h2>Changes</h2>
+<p>
+    If we ever start collecting any data, this file will change and the
+    previous version will remain in git history at <code>docs/privacy.md</code>.
+    The "Last updated" date at the top reflects the most recent edit.
+</p>
+
+<h2>Contact</h2>
+<ul>
+    <li><a href="mailto:privacy@appmire.be">privacy@appmire.be</a></li>
+    <li>Or the postal address on <a href="https://appmire.be" target="_blank" rel="noopener">appmire.be</a></li>
+</ul>
+
+</main>
+
+<footer>
+    <div class="footer-inner">
+        <div>© <span id="year"></span> Appmire CommV · BE 0719.812.728</div>
+        <div class="footer-links">
+            <a href="./">Home</a>
+            <a href="https://github.com/jeroentrappers/gpsinfo" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://appmire.be" target="_blank" rel="noopener">appmire.be</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

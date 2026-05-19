@@ -43,6 +43,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,6 +56,7 @@ import com.appmire.gpsinfo.util.IntentHelpers
 
 private const val APPMIRE_URL = "https://appmire.be"
 private const val PAYPAL_URL = "https://paypal.me/jeroentrappers"
+private const val GITHUB_URL = "https://github.com/jeroentrappers/gpsinfo"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +94,7 @@ fun AboutScreen(vm: DashboardViewModel, onBack: () -> Unit) {
                 onUnitSystemChange = vm::setUnitSystem,
                 onOpenSite = { IntentHelpers.openUrl(context, APPMIRE_URL) },
                 onOpenPaypal = { IntentHelpers.openUrl(context, PAYPAL_URL) },
+                onOpenGithub = { IntentHelpers.openUrl(context, GITHUB_URL) },
             )
         } else {
             AboutPortrait(
@@ -99,6 +103,7 @@ fun AboutScreen(vm: DashboardViewModel, onBack: () -> Unit) {
                 onUnitSystemChange = vm::setUnitSystem,
                 onOpenSite = { IntentHelpers.openUrl(context, APPMIRE_URL) },
                 onOpenPaypal = { IntentHelpers.openUrl(context, PAYPAL_URL) },
+                onOpenGithub = { IntentHelpers.openUrl(context, GITHUB_URL) },
             )
         }
     }
@@ -111,6 +116,7 @@ private fun AboutPortrait(
     onUnitSystemChange: (UnitSystem) -> Unit,
     onOpenSite: () -> Unit,
     onOpenPaypal: () -> Unit,
+    onOpenGithub: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -124,9 +130,13 @@ private fun AboutPortrait(
         Spacer(Modifier.height(12.dp))
         LogoCard(modifier = Modifier.fillMaxWidth(), onClick = onOpenSite)
         Spacer(Modifier.height(24.dp))
-        DonationBlock(onOpenPaypal = onOpenPaypal, onOpenSite = onOpenSite)
+        DonationBlock(onOpenPaypal = onOpenPaypal)
+        Spacer(Modifier.height(12.dp))
+        GitHubButton(onClick = onOpenGithub)
         Spacer(Modifier.height(16.dp))
         SettingsSection(unitSystem = unitSystem, onUnitSystemChange = onUnitSystemChange)
+        Spacer(Modifier.height(16.dp))
+        LicenseCard()
         Spacer(Modifier.height(16.dp))
         BuildBadge()
         Spacer(Modifier.height(8.dp))
@@ -140,6 +150,7 @@ private fun AboutLandscape(
     onUnitSystemChange: (UnitSystem) -> Unit,
     onOpenSite: () -> Unit,
     onOpenPaypal: () -> Unit,
+    onOpenGithub: () -> Unit,
 ) {
     // Two-column: logo on the left (height-constrained so it doesn't crop
     // the buttons on the right), donation copy and links on the right.
@@ -165,9 +176,13 @@ private fun AboutLandscape(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
         ) {
-            DonationBlock(onOpenPaypal = onOpenPaypal, onOpenSite = onOpenSite)
+            DonationBlock(onOpenPaypal = onOpenPaypal)
+            Spacer(Modifier.height(12.dp))
+            GitHubButton(onClick = onOpenGithub)
             Spacer(Modifier.height(16.dp))
             SettingsSection(unitSystem = unitSystem, onUnitSystemChange = onUnitSystemChange)
+            Spacer(Modifier.height(16.dp))
+            LicenseCard()
             Spacer(Modifier.height(16.dp))
             BuildBadge()
         }
@@ -211,7 +226,7 @@ private fun LogoCard(modifier: Modifier, onClick: () -> Unit) {
 }
 
 @Composable
-private fun DonationBlock(onOpenPaypal: () -> Unit, onOpenSite: () -> Unit) {
+private fun DonationBlock(onOpenPaypal: () -> Unit) {
     Text(
         text = stringResource(R.string.about_tagline),
         style = MaterialTheme.typography.titleMedium,
@@ -234,6 +249,56 @@ private fun DonationBlock(onOpenPaypal: () -> Unit, onOpenSite: () -> Unit) {
             text = PAYPAL_URL.removePrefix("https://"),
             fontFamily = FontFamily.Monospace,
         )
+    }
+}
+
+@Composable
+private fun GitHubButton(onClick: () -> Unit) {
+    // The screen-reader announcement otherwise reads the URL character-
+    // by-character. Override with the human label.
+    val label = stringResource(R.string.about_github_label)
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) { contentDescription = label },
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_github),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = GITHUB_URL.removePrefix("https://"),
+            fontFamily = FontFamily.Monospace,
+        )
+    }
+}
+
+@Composable
+private fun LicenseCard() {
+    val year = remember { java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(20.dp),
+        tonalElevation = 1.dp,
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = stringResource(R.string.about_license_title).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.about_license_body, year),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 

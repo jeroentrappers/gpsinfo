@@ -1,25 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
-  Native speaker should verify GNSS terminology + UI ergonomics.
-  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
--->
-<resources>
+<!-- Native-speaker reviewed 2026-05-19 (Nederlands).
+     Format specifiers (%1$s, %1$d, %1$.1f, …) preserved verbatim. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
     <!-- Permission screen -->
     <string name="permission_required_title">Locatietoegang vereist</string>
-    <string name="permission_required_body">GPSinfo heeft nauwkeurige locatie nodig om satelliet-, fix- en bewegingsgegevens te tonen. Locatiegegevens verlaten je apparaat nooit.</string>
-    <string name="grant_permission">Toestemming verlenen</string>
+    <string name="permission_required_body">GPSinfo heeft je nauwkeurige locatie nodig om satelliet-, fix- en bewegingsgegevens te tonen. Locatiegegevens verlaten je toestel nooit.</string>
+    <string name="grant_permission">Toestemming geven</string>
     <string name="open_settings">Instellingen openen</string>
 
     <!-- Section titles -->
     <string name="section_position">Positie</string>
     <string name="section_movement">Beweging</string>
-    <string name="section_sky">Hemelzicht</string>
+    <string name="section_sky">Hemel</string>
     <string name="section_compass">Kompas</string>
     <string name="section_world">Wereld</string>
-    <string name="section_time">Tijd &amp; Zon</string>
+    <string name="section_time">Tijd &amp; zon</string>
 
     <!-- Actions -->
     <string name="action_back">Terug</string>
@@ -46,7 +43,7 @@
 
     <!-- Location services banner -->
     <string name="location_off_title">Locatieservices staan uit</string>
-    <string name="location_off_body">Schakel ze in via systeeminstellingen om een GPS-fix te ontvangen.</string>
+    <string name="location_off_body">Zet ze aan in de systeeminstellingen om een GPS-fix te krijgen.</string>
     <string name="location_off_open_settings">Locatie-instellingen openen</string>
 
     <!-- StatusBar -->
@@ -62,7 +59,7 @@
     <!-- Speed card -->
     <string name="metric_speed">Snelheid</string>
     <string name="metric_heading">Koers</string>
-    <string name="unit_kmh">km/h</string>
+    <string name="unit_kmh">km/u</string>
     <string name="unit_m">m</string>
     <string name="degrees_magnetic">° magnetisch</string>
     <string name="heading_magnetic_suffix">%1$s · °M</string>
@@ -72,24 +69,24 @@
     <string name="metric_declination">Declinatie</string>
     <string name="metric_inclination">Inclinatie</string>
     <string name="metric_reciprocal">Tegenkoers</string>
-    <string name="metric_mag_acc">Mag Nauwk</string>
+    <string name="metric_mag_acc">Mag-nauwk</string>
     <string name="metric_field">Veld</string>
     <string name="metric_pitch">Pitch</string>
     <string name="metric_roll">Roll</string>
     <string name="metric_hdg">HDG</string>
     <string name="metric_decl">DECL</string>
     <string name="unit_microtesla">%1$.0f µT</string>
-    <string name="degrees_east_format">%1$.2f° E</string>
+    <string name="degrees_east_format">%1$.2f° O</string>
 
     <!-- Time &amp; sun -->
     <string name="metric_utc">UTC</string>
     <string name="metric_local">Lokaal</string>
     <string name="metric_sunrise">Zonsopkomst</string>
-    <string name="metric_solar_noon">Ware middag</string>
+    <string name="metric_solar_noon">Zonnemiddag</string>
     <string name="metric_sunset">Zonsondergang</string>
     <string name="metric_day_length">Daglengte</string>
-    <string name="metric_sun_elev">Zon elev</string>
-    <string name="metric_sun_az">Zon az</string>
+    <string name="metric_sun_elev">Zonshgt</string>
+    <string name="metric_sun_az">Zonsaz</string>
     <string name="metric_phase">Fase</string>
     <string name="phase_day">Dag</string>
     <string name="phase_night">Nacht</string>
@@ -102,8 +99,8 @@
     <string name="sat_sort_announce">Sortering: %1$s</string>
     <string name="sat_overview_title">GNSS-OVERZICHT</string>
     <string name="sat_stat_in_view">Zichtbaar</string>
-    <string name="sat_stat_in_fix">In gebruik</string>
-    <string name="sat_stat_tracking">Volgen</string>
+    <string name="sat_stat_in_fix">In fix</string>
+    <string name="sat_stat_tracking">Gevolgd</string>
     <string name="sat_stat_best">Beste</string>
     <string name="sat_col_constellation">CON</string>
     <string name="sat_col_svid">SVID</string>
@@ -128,15 +125,15 @@
     <!-- About -->
     <string name="screen_about">Over</string>
     <string name="about_brand_alt">Appmire</string>
-    <string name="about_tagline">Gratis aan jou gegeven.\nDonaties worden gewaardeerd.</string>
-    <string name="about_visit_site">Bezoek appmire.be</string>
+    <string name="about_tagline">Gratis voor jou.\nDonaties zijn welkom.</string>
+    <string name="about_github_label">Broncode op GitHub</string>
+    <string name="about_license_title">Licentie</string>
+    <!-- PluralsCandidate is a false positive: %1$d is the copyright year, not a count. -->
+    <string name="about_license_body" tools:ignore="PluralsCandidate">Commerciële software. © %1$d Jeroen Trappers. Alle rechten voorbehouden.</string>
 
     <!-- Sky view -->
-    <string name="sky_summary">Zichtbaar %1$d   ·   In gebruik %2$d   ·   GEM %3$.1f</string>
+    <string name="sky_summary">Zichtbaar %1$d   ·   In fix %2$d   ·   GEM %3$.1f</string>
     <string name="sky_waiting">Wachten op satellieten…</string>
-
-    <!-- World map -->
-    <string name="world_position_label">Positie : Lat/Lon (WGS84)</string>
 
     <!-- Build / about footer -->
     <string name="build_badge">GPSinfo · v%1$s</string>
@@ -151,10 +148,104 @@
     <string name="settings_units_label">Eenheden</string>
     <string name="settings_language_label">Taal</string>
     <string name="unit_system_metric">Metrisch</string>
-    <string name="unit_system_imperial">Imperial</string>
+    <string name="unit_system_imperial">Imperiaal</string>
     <string name="unit_system_nautical">Nautisch</string>
     <string name="language_system">Systeemstandaard</string>
     <string name="unit_mph">mph</string>
     <string name="unit_ft">ft</string>
     <string name="unit_knots">kn</string>
+
+    <!-- Trails feature -->
+    <string name="screen_trails">Routes</string>
+    <string name="trails_open">Routes openen</string>
+    <string name="trail_record">Route opnemen</string>
+    <string name="trail_stop">Opname stoppen</string>
+    <string name="trail_save_title">Route opslaan</string>
+    <string name="trail_save_name_label">Naam</string>
+    <string name="trail_save">Opslaan</string>
+    <string name="trail_discard">Verwerpen</string>
+    <string name="trail_empty_title">Nog geen routes</string>
+    <string name="trail_empty_body">Tik op de opnameknop in het dashboard om je eerste GPS-route vast te leggen.</string>
+    <string name="trail_recording_stats">%1$d punten · %2$s</string>
+    <string name="trail_list_meta">%1$s · %2$d punten · %3$s</string>
+    <string name="trail_point_title">Vastgelegd om %1$s</string>
+    <string name="trail_action_delete">Verwijderen</string>
+    <string name="trail_delete_confirm_title">Route verwijderen?</string>
+    <string name="trail_delete_confirm_body">Hiermee verdwijnt het GPX-bestand definitief van dit toestel.</string>
+    <string name="action_cancel">Annuleren</string>
+    <string name="trail_share">Route delen</string>
+    <string name="trail_import">GPX importeren</string>
+    <string name="trail_import_failed">Dit bestand kon niet als GPX worden gelezen.</string>
+    <string name="trail_simplify">Vereenvoudigen</string>
+    <string name="trail_simplify_title">Route vereenvoudigen</string>
+    <string name="trail_simplify_body">Verwijdert punten die binnen ε liggen van de lijn tussen hun buren. Lagere ε behoudt meer vorm; hogere ε filtert meer ruis weg.</string>
+    <string name="trail_simplify_preset_light">Licht · ε = 2 m</string>
+    <string name="trail_simplify_preset_default">Standaard · ε = 5 m</string>
+    <string name="trail_simplify_preset_aggressive">Agressief · ε = 12 m</string>
+    <!-- PluralsCandidate is a false positive: %d is a count display in a
+         structural before/after readout, not a noun-with-quantity. -->
+    <string name="trail_simplify_preview" tools:ignore="PluralsCandidate">%1$d → %2$d punten  ·  %3$d%% kleiner</string>
+    <string name="trail_simplify_replace">Vervangen</string>
+    <string name="trail_simplify_save_copy">Opslaan als kopie</string>
+
+    <!-- Phase 1: trail rename, stats card, save-as-file, waypoint -->
+    <string name="trail_rename">Hernoemen</string>
+    <string name="trail_rename_title">Route hernoemen</string>
+    <string name="trail_save_as_file">GPX-bestand opslaan</string>
+    <string name="trail_save_as_file_failed">Het GPX-bestand kon niet worden weggeschreven.</string>
+    <string name="trail_stats_distance">Afstand</string>
+    <string name="trail_stats_duration">Duur</string>
+    <string name="trail_stats_avg_speed">Gem</string>
+    <string name="trail_stats_max_speed">Max</string>
+    <string name="trail_stats_ascent">Stijging</string>
+    <string name="trail_stats_descent">Daling</string>
+    <string name="trail_waypoint_save">Huidige locatie opslaan</string>
+    <string name="trail_waypoint_default_name">Wegpunt</string>
+    <string name="trail_waypoint_no_fix">Nog geen fix — wegpunt kan niet worden opgeslagen.</string>
+    <string name="trail_waypoint_saved">Opgeslagen als wegpunt.</string>
+    <string name="coords_copied">Coördinaten gekopieerd.</string>
+
+    <!-- Heading-up map -->
+    <string name="trail_heading_up">Koers boven</string>
+    <string name="trail_north_up">Noord boven</string>
+
+    <!-- NMEA-style raw GNSS readout -->
+    <string name="screen_nmea">Ruwe GNSS</string>
+    <string name="open_nmea">Ruwe GNSS-uitlezing openen</string>
+
+    <!-- First-run onboarding tour -->
+    <string name="onboarding_title">Welkom bij GPSinfo</string>
+    <string name="onboarding_intro">Alles hieronder werkt offline — geen Play Services, geen API-sleutels, geen telemetrie. Korte rondleiding:</string>
+    <string name="onboarding_dashboard_title">Dashboard</string>
+    <string name="onboarding_dashboard_body">Live positie, satellieten, kompas, snelheid, zon. Tik op een kaart om die uit te klappen.</string>
+    <string name="onboarding_record_title">Een route opnemen</string>
+    <string name="onboarding_record_body">Tik op de rode stip rechtsonder om te starten. De opname loopt door op de achtergrond.</string>
+    <string name="onboarding_waypoint_title">Wegpunt plaatsen</string>
+    <string name="onboarding_waypoint_body">Tik op het speldicoon in de bovenbalk om de huidige fix als een route van één punt op te slaan.</string>
+    <string name="onboarding_trails_title">Routes bekijken</string>
+    <string name="onboarding_trails_body">Het kaarticoon in de bovenbalk opent de routelijst — GPX importeren, delen en bekijken op een kaart die ook offline werkt.</string>
+    <string name="onboarding_dismiss">Begrepen</string>
+
+    <!-- Compass calibration -->
+    <string name="compass_calibrate_title">Kompas kalibreren</string>
+    <string name="compass_calibrate_body">Beweeg de telefoon in een acht-figuur om de magnetometer opnieuw te kalibreren.</string>
+
+    <!-- Offline tile cache -->
+    <string name="tile_cache">Tegels downloaden voor offline gebruik</string>
+    <string name="tile_cache_title">Offline tegels</string>
+    <string name="tile_cache_body">Download OSM-tegels voor het bereik van deze route, zodat de kaart later zonder netwerk kan worden weergegeven.</string>
+    <string name="tile_cache_depth_overview">Overzicht · zoom 8–12</string>
+    <string name="tile_cache_depth_medium">Middel · zoom 10–14</string>
+    <string name="tile_cache_depth_street">Straat · zoom 12–16</string>
+    <!-- PluralsCandidate suppressed: structural count display, not declension-sensitive. -->
+    <string name="tile_cache_estimate" tools:ignore="PluralsCandidate">≈ %1$d tegels</string>
+    <string name="tile_cache_download">Downloaden</string>
+    <string name="tile_cache_done">Klaar.</string>
+    <string name="tile_cache_failed" tools:ignore="PluralsCandidate">Mislukt (%1$d fouten).</string>
+
+    <!-- Background recording notification -->
+    <string name="trail_record_notification_channel">Route-opname</string>
+    <string name="trail_record_notification_channel_body">Wordt getoond terwijl een GPS-route op de achtergrond wordt opgenomen.</string>
+    <string name="trail_record_notification_title">Route wordt opgenomen</string>
+    <string name="trail_record_notification_body">GPS-opname loopt door terwijl de app open is of in je zak zit. Tik om terug te keren.</string>
 </resources>

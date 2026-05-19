@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only the trail directory is exposed via FileProvider. Everything else
+     under filesDir stays private to the app. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <files-path name="trails" path="trails/" />
+</paths>

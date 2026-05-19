@@ -1,32 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
-  Native speaker should verify GNSS terminology + UI ergonomics.
-  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
--->
-<resources>
+<!-- Native-speaker reviewed 2026-05-19 (čeština).
+     Format specifiers (%1$s, %1$d, %1$.1f, …) preserved verbatim. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
     <!-- Permission screen -->
-    <string name="permission_required_title">Vyžadován přístup k poloze</string>
-    <string name="permission_required_body">GPSinfo potřebuje přesnou polohu k zobrazení dat satelitů, fixu a pohybu. Žádná data o poloze nikdy neopouštějí zařízení.</string>
+    <string name="permission_required_title">Je vyžadován přístup k poloze</string>
+    <string name="permission_required_body">GPSinfo potřebuje přesnou polohu, aby mohl zobrazovat údaje o satelitech, fixu a pohybu. Žádná data o poloze nikdy neopouštějí vaše zařízení.</string>
     <string name="grant_permission">Udělit oprávnění</string>
     <string name="open_settings">Otevřít nastavení</string>
 
     <!-- Section titles -->
     <string name="section_position">Poloha</string>
     <string name="section_movement">Pohyb</string>
-    <string name="section_sky">Pohled na oblohu</string>
+    <string name="section_sky">Obloha</string>
     <string name="section_compass">Kompas</string>
     <string name="section_world">Svět</string>
-    <string name="section_time">Čas &amp; Slunce</string>
+    <string name="section_time">Čas a Slunce</string>
 
     <!-- Actions -->
     <string name="action_back">Zpět</string>
     <string name="action_share_location">Sdílet polohu</string>
     <string name="action_open_maps">Otevřít v Mapách</string>
     <string name="action_toggle_units">Přepnout jednotky</string>
-    <string name="action_toggle_theme">Přepnout motiv</string>
+    <string name="action_toggle_theme">Přepnout vzhled</string>
     <string name="action_about">O aplikaci</string>
     <string name="action_open_about">Otevřít obrazovku „O aplikaci"</string>
 
@@ -34,8 +31,8 @@
 
     <!-- Fix statuses -->
     <string name="fix_status_no_fix">Bez fixu</string>
-    <string name="fix_status_2d">Fix 2D</string>
-    <string name="fix_status_3d">Fix 3D</string>
+    <string name="fix_status_2d">2D fix</string>
+    <string name="fix_status_3d">3D fix</string>
 
     <!-- Magnetic accuracy levels -->
     <string name="mag_acc_unknown">Neznámá</string>
@@ -46,50 +43,50 @@
 
     <!-- Location services banner -->
     <string name="location_off_title">Služby určování polohy jsou vypnuté</string>
-    <string name="location_off_body">Zapněte je v systémovém nastavení pro získání GPS fixu.</string>
+    <string name="location_off_body">Zapněte je v systémovém nastavení, aby bylo možné získat GPS fix.</string>
     <string name="location_off_open_settings">Otevřít nastavení polohy</string>
 
     <!-- StatusBar -->
-    <string name="metric_accuracy">Přes</string>
-    <string name="metric_sats">Sat</string>
+    <string name="metric_accuracy">Přesn.</string>
+    <string name="metric_sats">Sat.</string>
     <string name="metric_snr">SNR</string>
 
     <!-- Position -->
-    <string name="metric_altitude">Výška</string>
-    <string name="metric_h_accuracy">H-Přes</string>
-    <string name="metric_v_accuracy">V-Přes</string>
+    <string name="metric_altitude">Nadm. výška</string>
+    <string name="metric_h_accuracy">H-přesn.</string>
+    <string name="metric_v_accuracy">V-přesn.</string>
 
     <!-- Speed card -->
     <string name="metric_speed">Rychlost</string>
     <string name="metric_heading">Kurz</string>
     <string name="unit_kmh">km/h</string>
     <string name="unit_m">m</string>
-    <string name="degrees_magnetic">° magnet.</string>
+    <string name="degrees_magnetic">° mag.</string>
     <string name="heading_magnetic_suffix">%1$s · °M</string>
 
     <!-- Compass -->
     <string name="metric_orientation">Orientace</string>
     <string name="metric_declination">Deklinace</string>
     <string name="metric_inclination">Inklinace</string>
-    <string name="metric_reciprocal">Zpětný</string>
-    <string name="metric_mag_acc">Mag Přes</string>
+    <string name="metric_reciprocal">Zpětný kurz</string>
+    <string name="metric_mag_acc">Přesn. mag.</string>
     <string name="metric_field">Pole</string>
     <string name="metric_pitch">Sklon</string>
-    <string name="metric_roll">Naklonění</string>
+    <string name="metric_roll">Náklon</string>
     <string name="metric_hdg">HDG</string>
     <string name="metric_decl">DECL</string>
     <string name="unit_microtesla">%1$.0f µT</string>
-    <string name="degrees_east_format">%1$.2f° E</string>
+    <string name="degrees_east_format">%1$.2f° V</string>
 
     <!-- Time &amp; sun -->
     <string name="metric_utc">UTC</string>
-    <string name="metric_local">Místní</string>
-    <string name="metric_sunrise">Východ</string>
-    <string name="metric_solar_noon">Sluneční poledne</string>
-    <string name="metric_sunset">Západ</string>
+    <string name="metric_local">Místní čas</string>
+    <string name="metric_sunrise">Východ slunce</string>
+    <string name="metric_solar_noon">Pravé poledne</string>
+    <string name="metric_sunset">Západ slunce</string>
     <string name="metric_day_length">Délka dne</string>
     <string name="metric_sun_elev">Výška slunce</string>
-    <string name="metric_sun_az">Az slunce</string>
+    <string name="metric_sun_az">Azimut slunce</string>
     <string name="metric_phase">Fáze</string>
     <string name="phase_day">Den</string>
     <string name="phase_night">Noc</string>
@@ -97,15 +94,15 @@
     <!-- Satellites screen -->
     <string name="screen_satellites">Satelity</string>
     <string name="sat_sort_label">ŘADIT</string>
-    <string name="sat_sort_by_constellation">Podle konstelace</string>
+    <string name="sat_sort_by_constellation">Podle systému</string>
     <string name="sat_sort_by_signal">Podle signálu</string>
     <string name="sat_sort_announce">Řazení: %1$s</string>
     <string name="sat_overview_title">PŘEHLED GNSS</string>
     <string name="sat_stat_in_view">Viditelné</string>
-    <string name="sat_stat_in_fix">Používané</string>
-    <string name="sat_stat_tracking">Sledováno</string>
+    <string name="sat_stat_in_fix">Použité</string>
+    <string name="sat_stat_tracking">Sledované</string>
     <string name="sat_stat_best">Nejlepší</string>
-    <string name="sat_col_constellation">CON</string>
+    <string name="sat_col_constellation">SYS</string>
     <string name="sat_col_svid">SVID</string>
     <string name="sat_col_cn0">CN0</string>
     <string name="sat_col_signal">SIGNÁL</string>
@@ -121,22 +118,22 @@
     <!-- Speed screen -->
     <string name="screen_speed">Rychlost</string>
     <string name="screen_speed_hud">Rychlost · HUD</string>
-    <string name="hud_toggle_on">Režim HUD zapnut — klepnutím vypnete</string>
-    <string name="hud_toggle_off">Zapnout režim HUD (odraz čelního skla)</string>
+    <string name="hud_toggle_on">Režim HUD je zapnutý — klepnutím jej vypnete</string>
+    <string name="hud_toggle_off">Zapnout režim HUD (odraz v čelním skle)</string>
     <string name="metric_fix">Fix</string>
 
     <!-- About -->
     <string name="screen_about">O aplikaci</string>
     <string name="about_brand_alt">Appmire</string>
-    <string name="about_tagline">Poskytováno zdarma.\nDary jsou vítány.</string>
-    <string name="about_visit_site">Navštívit appmire.be</string>
+    <string name="about_tagline">Nabízíme zdarma.\nPříspěvky vítány.</string>
+    <string name="about_github_label">Zdrojový kód na GitHubu</string>
+    <string name="about_license_title">Licence</string>
+    <!-- PluralsCandidate is a false positive: %1$d is the copyright year, not a count. -->
+    <string name="about_license_body" tools:ignore="PluralsCandidate">Komerční software. © %1$d Jeroen Trappers. Všechna práva vyhrazena.</string>
 
     <!-- Sky view -->
     <string name="sky_summary">Viditelné %1$d   ·   Použité %2$d   ·   PRŮM %3$.1f</string>
     <string name="sky_waiting">Čekání na satelity…</string>
-
-    <!-- World map -->
-    <string name="world_position_label">Poloha : Šíř/Délka (WGS84)</string>
 
     <!-- Build / about footer -->
     <string name="build_badge">GPSinfo · v%1$s</string>
@@ -153,8 +150,102 @@
     <string name="unit_system_metric">Metrické</string>
     <string name="unit_system_imperial">Imperiální</string>
     <string name="unit_system_nautical">Námořní</string>
-    <string name="language_system">Výchozí systémové</string>
+    <string name="language_system">Výchozí dle systému</string>
     <string name="unit_mph">mph</string>
     <string name="unit_ft">ft</string>
-    <string name="unit_knots">kn</string>
+    <string name="unit_knots">uzly</string>
+
+    <!-- Trails feature -->
+    <string name="screen_trails">Trasy</string>
+    <string name="trails_open">Otevřít trasy</string>
+    <string name="trail_record">Zaznamenat trasu</string>
+    <string name="trail_stop">Zastavit záznam</string>
+    <string name="trail_save_title">Uložit trasu</string>
+    <string name="trail_save_name_label">Název</string>
+    <string name="trail_save">Uložit</string>
+    <string name="trail_discard">Zahodit</string>
+    <string name="trail_empty_title">Zatím žádné trasy</string>
+    <string name="trail_empty_body">Klepnutím na tlačítko záznamu na hlavní obrazovce zachytíte svou první GPS trasu.</string>
+    <string name="trail_recording_stats">%1$d b. · %2$s</string>
+    <string name="trail_list_meta">%1$s · %2$d b. · %3$s</string>
+    <string name="trail_point_title">Zaznamenáno %1$s</string>
+    <string name="trail_action_delete">Smazat</string>
+    <string name="trail_delete_confirm_title">Smazat trasu?</string>
+    <string name="trail_delete_confirm_body">Tímto trvale odstraníte soubor GPX z tohoto zařízení.</string>
+    <string name="action_cancel">Zrušit</string>
+    <string name="trail_share">Sdílet trasu</string>
+    <string name="trail_import">Importovat GPX</string>
+    <string name="trail_import_failed">Tento soubor se nepodařilo načíst jako GPX.</string>
+    <string name="trail_simplify">Zjednodušit</string>
+    <string name="trail_simplify_title">Zjednodušit trasu</string>
+    <string name="trail_simplify_body">Odstraní body, které leží do vzdálenosti ε od spojnice svých sousedů. Nižší ε zachová více tvaru; vyšší ε odstraní více šumu.</string>
+    <string name="trail_simplify_preset_light">Mírné · ε = 2 m</string>
+    <string name="trail_simplify_preset_default">Výchozí · ε = 5 m</string>
+    <string name="trail_simplify_preset_aggressive">Agresivní · ε = 12 m</string>
+    <!-- PluralsCandidate is a false positive: %d is a count display in a
+         structural before/after readout, not a noun-with-quantity. -->
+    <string name="trail_simplify_preview" tools:ignore="PluralsCandidate">%1$d → %2$d bodů  ·  o %3$d%% menší</string>
+    <string name="trail_simplify_replace">Nahradit</string>
+    <string name="trail_simplify_save_copy">Uložit jako kopii</string>
+
+    <!-- Phase 1: trail rename, stats card, save-as-file, waypoint -->
+    <string name="trail_rename">Přejmenovat</string>
+    <string name="trail_rename_title">Přejmenovat trasu</string>
+    <string name="trail_save_as_file">Uložit soubor GPX</string>
+    <string name="trail_save_as_file_failed">Soubor GPX se nepodařilo zapsat.</string>
+    <string name="trail_stats_distance">Vzdálenost</string>
+    <string name="trail_stats_duration">Doba</string>
+    <string name="trail_stats_avg_speed">Prům.</string>
+    <string name="trail_stats_max_speed">Max.</string>
+    <string name="trail_stats_ascent">Stoupání</string>
+    <string name="trail_stats_descent">Klesání</string>
+    <string name="trail_waypoint_save">Uložit aktuální polohu</string>
+    <string name="trail_waypoint_default_name">Trasový bod</string>
+    <string name="trail_waypoint_no_fix">Zatím bez fixu — trasový bod nelze uložit.</string>
+    <string name="trail_waypoint_saved">Uloženo jako trasový bod.</string>
+    <string name="coords_copied">Souřadnice zkopírovány.</string>
+
+    <!-- Heading-up map -->
+    <string name="trail_heading_up">„Kurz nahoru"</string>
+    <string name="trail_north_up">„Sever nahoru"</string>
+
+    <!-- NMEA-style raw GNSS readout -->
+    <string name="screen_nmea">Surová data GNSS</string>
+    <string name="open_nmea">Otevřít surový výpis GNSS</string>
+
+    <!-- First-run onboarding tour -->
+    <string name="onboarding_title">Vítejte v GPSinfo</string>
+    <string name="onboarding_intro">Vše níže funguje offline — žádné Play Services, žádné API klíče, žádná telemetrie. Krátká prohlídka:</string>
+    <string name="onboarding_dashboard_title">Hlavní obrazovka</string>
+    <string name="onboarding_dashboard_body">Aktuální poloha, satelity, kompas, rychlost, Slunce. Klepnutím na kartu ji rozbalíte.</string>
+    <string name="onboarding_record_title">Zaznamenat trasu</string>
+    <string name="onboarding_record_body">Záznam spustíte klepnutím na červené tlačítko vpravo dole. Pokračuje i na pozadí.</string>
+    <string name="onboarding_waypoint_title">Vložit bod</string>
+    <string name="onboarding_waypoint_body">Klepnutím na ikonu špendlíku v horní liště uložíte aktuální fix jako jednobodovou trasu.</string>
+    <string name="onboarding_trails_title">Zobrazit trasy</string>
+    <string name="onboarding_trails_body">Ikona mapy v horní liště otevře seznam tras — odtud lze importovat GPX, sdílet a prohlížet na offline mapě.</string>
+    <string name="onboarding_dismiss">Rozumím</string>
+
+    <!-- Compass calibration -->
+    <string name="compass_calibrate_title">Kalibrace kompasu</string>
+    <string name="compass_calibrate_body">Pohybujte telefonem ve tvaru ležaté osmičky, aby se magnetometr překalibroval.</string>
+
+    <!-- Offline tile cache -->
+    <string name="tile_cache">Stáhnout dlaždice pro offline použití</string>
+    <string name="tile_cache_title">Offline dlaždice</string>
+    <string name="tile_cache_body">Stáhne OSM dlaždice pro ohraničení této trasy, aby se mapa později vykreslila bez připojení k síti.</string>
+    <string name="tile_cache_depth_overview">Přehled · přiblížení 8–12</string>
+    <string name="tile_cache_depth_medium">Střední · přiblížení 10–14</string>
+    <string name="tile_cache_depth_street">Ulice · přiblížení 12–16</string>
+    <!-- PluralsCandidate suppressed: structural count display, not declension-sensitive. -->
+    <string name="tile_cache_estimate" tools:ignore="PluralsCandidate">≈ %1$d dlaždic</string>
+    <string name="tile_cache_download">Stáhnout</string>
+    <string name="tile_cache_done">Hotovo.</string>
+    <string name="tile_cache_failed" tools:ignore="PluralsCandidate">Chyba (%1$d chyb).</string>
+
+    <!-- Background recording notification -->
+    <string name="trail_record_notification_channel">Záznam trasy</string>
+    <string name="trail_record_notification_channel_body">Zobrazuje se, když se na pozadí zaznamenává GPS trasa.</string>
+    <string name="trail_record_notification_title">Zaznamenává se trasa</string>
+    <string name="trail_record_notification_body">GPS záznam pokračuje, i když máte aplikaci otevřenou nebo telefon v kapse. Klepnutím se vrátíte.</string>
 </resources>

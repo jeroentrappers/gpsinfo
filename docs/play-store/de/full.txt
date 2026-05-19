@@ -1,0 +1,36 @@
+GPSinfo ist ein kompromissloses, offline-first GPS-Dashboard für Android.
+
+Alles, was man auf einen Blick sehen will — Position, Satellitensignale, Kompass, Geschwindigkeit, Höhe, Sonnenstand — übersichtlich auf einem einzigen scrollbaren Dashboard. Kein Google Maps SDK, keine Play Services, keine Telemetrie, keine Konten.
+
+Entwickelt für Wanderer, Segler, Radfahrer, Motorradfahrer, GNSS-Tüftler und alle, deren Standortdaten auf dem eigenen Gerät bleiben sollen.
+
+▌ DASHBOARD
+• Position in WGS84 (DMS oder dezimal), inklusive Höhe und Genauigkeit pro Achse
+• Live-Satellitenzahl und Signalstärke für GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS und IRNSS
+• Himmelsansicht mit nach Satellitensystem eingefärbten Satelliten in echtem Azimut und echter Elevation
+• Neigungskorrigierter Kompass mit magnetischem und wahrem Kurs, Deklination und Inklination
+• Tachoanzeige mit selbstanpassender Skala und HUD-Spiegelmodus für die Windschutzscheibe
+• Sonnenstand, Sonnenauf- und -untergang, Tageslänge sowie Nacht-Terminator auf der Weltkarte
+
+▌ TRACKS
+• GPS-Tracks aufzeichnen als Standard-GPX 1.1 mit Garmin TrackPointExtension (Geschwindigkeit, Kurs)
+• Vordergrunddienst zeichnet weiter auf, auch wenn die App im Hintergrund läuft oder der Bildschirm aus ist
+• Track auf OpenStreetMap als Polylinie mit antippbaren Markern darstellen
+• Geschwindigkeits- und Höhendiagramm sowie Scrubber zum Inspizieren jedes einzelnen Trackpunkts
+• Kartenmodus „Kurs nach oben", Sonnenbogen-Overlay
+• Kartenkacheln für ein Gebiet vorab cachen — die Track-Karte funktioniert dann komplett offline
+• Tracks mit Ramer–Douglas–Peucker vereinfachen und so GPS-Rauschen entfernen
+• GPX von überall importieren; als GPX überall teilen oder speichern
+• Wegpunkt mit einem Tipp setzen
+
+▌ DATENSCHUTZ
+• Keine Analytik, keine Absturzberichte, keine Werbung, keine Tracker von Drittanbietern.
+• Standortdaten verlassen Ihr Gerät nie.
+• Der einzige Netzwerkzugriff der App sind anonyme OpenStreetMap-Kachelabrufe — und auch nur dann, wenn Sie eine Track-Karte öffnen.
+• Vollständige Datenschutzerklärung: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ OHNE PLAY SERVICES
+Diese App benötigt keine Google Play Services und läuft auch auf de-googelten Geräten (GrapheneOS, LineageOS, /e/OS, …). Die Position kommt direkt von den Android-GNSS-APIs.
+
+▌ OPEN SOURCE
+Quellcode: https://github.com/jeroentrappers/gpsinfo

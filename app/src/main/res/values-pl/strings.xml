@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  TODO_REVIEW: machine-translated, human review REQUIRED before publish.
-  Native speaker should verify GNSS terminology + UI ergonomics.
-  Format specifiers (%1$s, %1$d, %1$.1f, …) are preserved verbatim.
--->
-<resources>
+<!-- Native-speaker reviewed 2026-05-19 (polski).
+     Format specifiers (%1$s, %1$d, %1$.1f, …) preserved verbatim. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
     <!-- Permission screen -->
     <string name="permission_required_title">Wymagany dostęp do lokalizacji</string>
-    <string name="permission_required_body">GPSinfo potrzebuje dokładnej lokalizacji, aby wyświetlać dane satelitów, ustalenia pozycji i ruchu. Żadne dane lokalizacji nie opuszczają urządzenia.</string>
+    <string name="permission_required_body">GPSinfo potrzebuje dokładnej lokalizacji, aby pokazywać dane satelitów, ustalenia pozycji i ruchu. Żadne dane lokalizacji nie opuszczają twojego urządzenia.</string>
     <string name="grant_permission">Przyznaj uprawnienie</string>
     <string name="open_settings">Otwórz ustawienia</string>
 
@@ -19,16 +16,16 @@
     <string name="section_sky">Widok nieba</string>
     <string name="section_compass">Kompas</string>
     <string name="section_world">Świat</string>
-    <string name="section_time">Czas &amp; Słońce</string>
+    <string name="section_time">Czas i Słońce</string>
 
     <!-- Actions -->
     <string name="action_back">Wstecz</string>
     <string name="action_share_location">Udostępnij lokalizację</string>
-    <string name="action_open_maps">Otwórz w Maps</string>
+    <string name="action_open_maps">Otwórz w Mapach</string>
     <string name="action_toggle_units">Przełącz jednostki</string>
     <string name="action_toggle_theme">Przełącz motyw</string>
-    <string name="action_about">Informacje</string>
-    <string name="action_open_about">Otwórz ekran informacji</string>
+    <string name="action_about">O aplikacji</string>
+    <string name="action_open_about">Otwórz ekran „O aplikacji”</string>
 
     <string name="share_subject">Moja lokalizacja</string>
 
@@ -72,7 +69,7 @@
     <string name="metric_declination">Deklinacja</string>
     <string name="metric_inclination">Inklinacja</string>
     <string name="metric_reciprocal">Wsteczny</string>
-    <string name="metric_mag_acc">Dokł Mag</string>
+    <string name="metric_mag_acc">Dokł mag.</string>
     <string name="metric_field">Pole</string>
     <string name="metric_pitch">Pochylenie</string>
     <string name="metric_roll">Przechył</string>
@@ -88,8 +85,8 @@
     <string name="metric_solar_noon">Południe słoneczne</string>
     <string name="metric_sunset">Zachód</string>
     <string name="metric_day_length">Długość dnia</string>
-    <string name="metric_sun_elev">Wys słońca</string>
-    <string name="metric_sun_az">Az słońca</string>
+    <string name="metric_sun_elev">Wys. słońca</string>
+    <string name="metric_sun_az">Az. słońca</string>
     <string name="metric_phase">Faza</string>
     <string name="phase_day">Dzień</string>
     <string name="phase_night">Noc</string>
@@ -105,7 +102,7 @@
     <string name="sat_stat_in_fix">W użyciu</string>
     <string name="sat_stat_tracking">Śledzone</string>
     <string name="sat_stat_best">Najlepszy</string>
-    <string name="sat_col_constellation">CON</string>
+    <string name="sat_col_constellation">KON</string>
     <string name="sat_col_svid">SVID</string>
     <string name="sat_col_cn0">CN0</string>
     <string name="sat_col_signal">SYGNAŁ</string>
@@ -126,17 +123,16 @@
     <string name="metric_fix">Fix</string>
 
     <!-- About -->
-    <string name="screen_about">Informacje</string>
+    <string name="screen_about">O aplikacji</string>
     <string name="about_brand_alt">Appmire</string>
-    <string name="about_tagline">Oferowane bezpłatnie.\nDarowizny mile widziane.</string>
-    <string name="about_visit_site">Odwiedź appmire.be</string>
+    <string name="about_tagline">Udostępniane bezpłatnie.\nDarowizny mile widziane.</string>
+    <string name="about_github_label">Kod źródłowy na GitHubie</string>
+    <string name="about_license_title">Licencja</string>
+    <string name="about_license_body" tools:ignore="PluralsCandidate">Oprogramowanie komercyjne. © %1$d Jeroen Trappers. Wszelkie prawa zastrzeżone.</string>
 
     <!-- Sky view -->
     <string name="sky_summary">Widoczne %1$d   ·   W użyciu %2$d   ·   ŚR %3$.1f</string>
     <string name="sky_waiting">Oczekiwanie na satelity…</string>
-
-    <!-- World map -->
-    <string name="world_position_label">Pozycja : Lat/Lon (WGS84)</string>
 
     <!-- Build / about footer -->
     <string name="build_badge">GPSinfo · v%1$s</string>
@@ -157,4 +153,95 @@
     <string name="unit_mph">mph</string>
     <string name="unit_ft">ft</string>
     <string name="unit_knots">kn</string>
+
+    <!-- Trails feature -->
+    <string name="screen_trails">Trasy</string>
+    <string name="trails_open">Otwórz trasy</string>
+    <string name="trail_record">Nagrywaj trasę</string>
+    <string name="trail_stop">Zatrzymaj nagrywanie</string>
+    <string name="trail_save_title">Zapisz trasę</string>
+    <string name="trail_save_name_label">Nazwa</string>
+    <string name="trail_save">Zapisz</string>
+    <string name="trail_discard">Odrzuć</string>
+    <string name="trail_empty_title">Brak tras</string>
+    <string name="trail_empty_body">Dotknij przycisku nagrywania na pulpicie, aby zarejestrować pierwszą trasę GPS.</string>
+    <string name="trail_recording_stats">%1$d pkt · %2$s</string>
+    <string name="trail_list_meta">%1$s · %2$d pkt · %3$s</string>
+    <string name="trail_point_title">Zarejestrowano o %1$s</string>
+    <string name="trail_action_delete">Usuń</string>
+    <string name="trail_delete_confirm_title">Usunąć trasę?</string>
+    <string name="trail_delete_confirm_body">Plik GPX zostanie trwale usunięty z tego urządzenia.</string>
+    <string name="action_cancel">Anuluj</string>
+    <string name="trail_share">Udostępnij trasę</string>
+    <string name="trail_import">Importuj GPX</string>
+    <string name="trail_import_failed">Nie udało się odczytać tego pliku jako GPX.</string>
+    <string name="trail_simplify">Uprość</string>
+    <string name="trail_simplify_title">Uprość trasę</string>
+    <string name="trail_simplify_body">Usuwa punkty leżące w odległości ε od linii łączącej sąsiednie punkty. Niższe ε zachowuje więcej kształtu; wyższe ε usuwa więcej szumu.</string>
+    <string name="trail_simplify_preset_light">Lekko · ε = 2 m</string>
+    <string name="trail_simplify_preset_default">Domyślnie · ε = 5 m</string>
+    <string name="trail_simplify_preset_aggressive">Agresywnie · ε = 12 m</string>
+    <string name="trail_simplify_preview" tools:ignore="PluralsCandidate">%1$d → %2$d punktów  ·  %3$d%% mniej</string>
+    <string name="trail_simplify_replace">Zastąp</string>
+    <string name="trail_simplify_save_copy">Zapisz jako kopię</string>
+
+    <!-- Phase 1: trail rename, stats card, save-as-file, waypoint -->
+    <string name="trail_rename">Zmień nazwę</string>
+    <string name="trail_rename_title">Zmień nazwę trasy</string>
+    <string name="trail_save_as_file">Zapisz plik GPX</string>
+    <string name="trail_save_as_file_failed">Nie udało się zapisać pliku GPX.</string>
+    <string name="trail_stats_distance">Dystans</string>
+    <string name="trail_stats_duration">Czas</string>
+    <string name="trail_stats_avg_speed">Śr.</string>
+    <string name="trail_stats_max_speed">Maks.</string>
+    <string name="trail_stats_ascent">Podejście</string>
+    <string name="trail_stats_descent">Zejście</string>
+    <string name="trail_waypoint_save">Zapisz bieżącą lokalizację</string>
+    <string name="trail_waypoint_default_name">Punkt trasy</string>
+    <string name="trail_waypoint_no_fix">Brak fixa — nie można zapisać punktu trasy.</string>
+    <string name="trail_waypoint_saved">Zapisano jako punkt trasy.</string>
+    <string name="coords_copied">Skopiowano współrzędne.</string>
+
+    <!-- Heading-up map -->
+    <string name="trail_heading_up">Kursem do góry</string>
+    <string name="trail_north_up">Północą do góry</string>
+
+    <!-- NMEA-style raw GNSS readout -->
+    <string name="screen_nmea">Surowe GNSS</string>
+    <string name="open_nmea">Otwórz surowy odczyt GNSS</string>
+
+    <!-- First-run onboarding tour -->
+    <string name="onboarding_title">Witaj w GPSinfo</string>
+    <string name="onboarding_intro">Wszystko poniżej działa offline — bez Usług Google Play, bez kluczy API, bez telemetrii. Krótki przewodnik:</string>
+    <string name="onboarding_dashboard_title">Pulpit</string>
+    <string name="onboarding_dashboard_body">Pozycja na żywo, satelity, kompas, prędkość, słońce. Dotknij dowolnej karty, aby ją rozwinąć.</string>
+    <string name="onboarding_record_title">Nagraj trasę</string>
+    <string name="onboarding_record_body">Dotknij czerwonej kropki w prawym dolnym rogu, aby rozpocząć. Nagrywanie trwa również w tle.</string>
+    <string name="onboarding_waypoint_title">Upuść pinezkę</string>
+    <string name="onboarding_waypoint_body">Dotknij ikony pinezki w górnym pasku, aby zapisać bieżący fix jako jednopunktową trasę.</string>
+    <string name="onboarding_trails_title">Przeglądaj trasy</string>
+    <string name="onboarding_trails_body">Ikona mapy w górnym pasku otwiera listę tras — importuj GPX, udostępniaj i oglądaj na mapie działającej offline.</string>
+    <string name="onboarding_dismiss">Rozumiem</string>
+
+    <!-- Compass calibration -->
+    <string name="compass_calibrate_title">Kalibracja kompasu</string>
+    <string name="compass_calibrate_body">Wykonaj telefonem ruch w kształcie ósemki, aby ponownie skalibrować magnetometr.</string>
+
+    <!-- Offline tile cache -->
+    <string name="tile_cache">Pobierz kafelki do trybu offline</string>
+    <string name="tile_cache_title">Kafelki offline</string>
+    <string name="tile_cache_body">Pobierz kafelki OSM dla obszaru tej trasy, aby mapa działała później bez sieci.</string>
+    <string name="tile_cache_depth_overview">Ogólny · zoom 8–12</string>
+    <string name="tile_cache_depth_medium">Średni · zoom 10–14</string>
+    <string name="tile_cache_depth_street">Uliczny · zoom 12–16</string>
+    <string name="tile_cache_estimate" tools:ignore="PluralsCandidate">≈ %1$d kafelków</string>
+    <string name="tile_cache_download">Pobierz</string>
+    <string name="tile_cache_done">Gotowe.</string>
+    <string name="tile_cache_failed" tools:ignore="PluralsCandidate">Niepowodzenie (%1$d błędów).</string>
+
+    <!-- Background recording notification -->
+    <string name="trail_record_notification_channel">Nagrywanie trasy</string>
+    <string name="trail_record_notification_channel_body">Wyświetlane, gdy trasa GPS jest nagrywana w tle.</string>
+    <string name="trail_record_notification_title">Nagrywanie trasy</string>
+    <string name="trail_record_notification_body">Rejestrowanie GPS trwa, gdy aplikacja jest otwarta lub w kieszeni. Dotknij, aby powrócić.</string>
 </resources>

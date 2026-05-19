@@ -1,0 +1,8 @@
+Eerste release.
+
+• Offline-first GPS-dashboard met ruwe GNSS-data over 7 constellaties
+• Routes opnemen (voor- en achtergrond) als standaard GPX 1.1
+• Routekaart op OpenStreetMap met offline tile-pre-cache, snelheids-/hoogtegrafiek en scrubbare weergave
+• Zonneboog-overlay, kantelgecompenseerd kompas, automatisch schalende snelheidsmeter met HUD-modus
+• Routes vereenvoudigen, hernoemen, delen, importeren, opslaan
+• Geen Play Services. Geen telemetrie. Geen accounts.

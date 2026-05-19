@@ -1,0 +1,8 @@
+Pierwsze wydanie.
+
+• Pulpit GPS offline-first z surowymi danymi GNSS z 7 konstelacji
+• Nagrywanie tras (pierwszy plan i tło) w standardzie GPX 1.1
+• Mapa tras na OpenStreetMap, wstępne pobieranie kafelków offline, wykres prędkości i wysokości, odtwarzanie suwakiem
+• Łuk słoneczny, kompas z korekcją nachylenia, samoskalujący prędkościomierz z trybem HUD
+• Upraszczanie, zmiana nazwy, udostępnianie, import i zapis tras
+• Bez Play Services. Bez telemetrii. Bez kont.
