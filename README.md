@@ -22,6 +22,10 @@ view, sunrise/sunset, plus GPS trail recording with offline-capable map.
   the dashboard still uses a custom Canvas + Natural Earth coastline.
 - **Tilt-corrected magnetic heading** from `TYPE_ROTATION_VECTOR` with
   `GeomagneticField` for true-north declination + inclination.
+- **Custom magnetometer calibration screen** — live accuracy chip,
+  orientation-coverage bar, three 2D scatter projections of the magnetic
+  field cloud, hard-iron offset estimate, and a "move away from metal"
+  warning when the field magnitude leaves the Earth-field band.
 - **Solar Position Algorithm** (pure Kotlin) for sunrise/sunset/solar
   noon and a day/night terminator on the world map.
 - **Light / dark mode** (system-following, manual toggle in the top bar).
@@ -131,6 +135,8 @@ app/src/main/java/com/appmire/gpsinfo/
 │   ├── gpx/
 │   │   ├── GpxIo.kt                 # GPX 1.1 reader + writer
 │   │   └── TrailSimplifier.kt       # Ramer-Douglas-Peucker, 3D-aware
+│   ├── calibration/
+│   │   └── CalibrationEstimator.kt  # hard-iron offset + coverage bins
 │   ├── sun/SunPositionCalculator.kt # NOAA SPA (pure Kotlin)
 │   └── model/                       # immutable domain types
 ├── ui/
@@ -139,6 +145,7 @@ app/src/main/java/com/appmire/gpsinfo/
 │   ├── dashboard/                   # main screen + permission screen + helpers
 │   ├── components/                  # one Card per file, all Canvas-drawn
 │   ├── about/                       # About + Settings sections
+│   ├── calibration/                 # magnetometer calibration screen + VM
 │   ├── compass/                     # full-screen compass detail
 │   ├── satellite/                   # satellite list + NMEA readout
 │   ├── speed/                       # retro analog speed gauge
@@ -197,7 +204,11 @@ scope here.
 
 - Raw pseudorange UI (the field is in the GnssStatus stream but not
   currently surfaced on a card).
-- Custom magnetometer calibration UI (we surface a "calibrate" banner
-  when the sensor reports LOW accuracy and let the OS handle the rest).
+- Full ellipsoid (soft-iron) calibration fit — the dedicated calibration
+  screen estimates hard-iron offset only. Android's `TYPE_ROTATION_VECTOR`
+  fuses gyro/accelerometer/magnetometer with its own ongoing calibration,
+  so writing our estimate back into the sensor pipeline isn't useful;
+  the screen is informational, the OS does the actual correction as the
+  user moves the phone.
 - Full-tile online maps anywhere except the dedicated trail-detail
   screen.

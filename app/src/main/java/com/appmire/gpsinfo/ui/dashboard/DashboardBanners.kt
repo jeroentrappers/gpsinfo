@@ -29,11 +29,16 @@ import com.appmire.gpsinfo.R
 /**
  * Banner shown above the dashboard cards when the rotation-vector
  * accuracy is LOW or UNRELIABLE — the cue for a figure-of-eight motion.
+ * Tapping it opens the dedicated calibration screen.
  */
 @Composable
-internal fun CompassCalibrationBanner() {
+internal fun CompassCalibrationBanner(onOpenCalibration: () -> Unit) {
+    val description = stringResource(R.string.compass_calibrate_title)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpenCalibration, role = Role.Button)
+            .semantics(mergeDescendants = true) { contentDescription = description },
         color = MaterialTheme.colorScheme.tertiaryContainer,
         shape = RoundedCornerShape(16.dp),
     ) {
@@ -65,6 +70,12 @@ internal fun CompassCalibrationBanner() {
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
             }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }

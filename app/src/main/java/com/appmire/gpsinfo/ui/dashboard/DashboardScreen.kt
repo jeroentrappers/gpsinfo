@@ -98,6 +98,7 @@ fun DashboardScreen(
     vm: DashboardViewModel,
     onOpenSatellites: () -> Unit = {},
     onOpenCompass: () -> Unit = {},
+    onOpenCalibration: () -> Unit = {},
     onOpenSpeed: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenTrails: () -> Unit = {},
@@ -220,7 +221,7 @@ fun DashboardScreen(
                 compass.accuracy == MagneticAccuracy.UNRELIABLE
             ) add(
                 DashboardSection(SectionKeys.CompassCalibration) {
-                    CompassCalibrationBanner()
+                    CompassCalibrationBanner(onOpenCalibration = onOpenCalibration)
                 }
             )
             add(DashboardSection(SectionKeys.Status) {

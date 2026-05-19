@@ -25,6 +25,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.appmire.gpsinfo.data.ThemeOverride
 import com.appmire.gpsinfo.ui.about.AboutScreen
+import com.appmire.gpsinfo.ui.calibration.CalibrationViewModel
+import com.appmire.gpsinfo.ui.calibration.CompassCalibrationScreen
 import com.appmire.gpsinfo.ui.compass.CompassDetailScreen
 import com.appmire.gpsinfo.ui.dashboard.DashboardScreen
 import com.appmire.gpsinfo.ui.dashboard.PermissionRequiredScreen
@@ -41,6 +43,7 @@ private object Routes {
     const val Dashboard = "dashboard"
     const val Satellites = "satellites"
     const val Compass = "compass"
+    const val Calibration = "calibration"
     const val Speed = "speed"
     const val About = "about"
     const val Trails = "trails"
@@ -122,6 +125,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onOpenSatellites = { nav.navigate(Routes.Satellites) },
                                 onOpenCompass = { nav.navigate(Routes.Compass) },
+                                onOpenCalibration = { nav.navigate(Routes.Calibration) },
                                 onOpenSpeed = { nav.navigate(Routes.Speed) },
                                 onOpenAbout = { nav.navigate(Routes.About) },
                                 onOpenTrails = { nav.navigate(Routes.Trails) },
@@ -156,6 +160,20 @@ class MainActivity : ComponentActivity() {
                         composable(Routes.Compass) {
                             CompassDetailScreen(
                                 vm = vm,
+                                onBack = { nav.popBackStack() },
+                                onOpenCalibration = { nav.navigate(Routes.Calibration) },
+                            )
+                        }
+                        composable(Routes.Calibration) {
+                            // The calibration VM owns its own bounded
+                            // magnetometer-sample buffer; build it lazily
+                            // so the listener only registers while this
+                            // screen is on-stack.
+                            val calibrationVm: CalibrationViewModel = viewModel(
+                                factory = CalibrationViewModel.factory(application),
+                            )
+                            CompassCalibrationScreen(
+                                vm = calibrationVm,
                                 onBack = { nav.popBackStack() },
                             )
                         }

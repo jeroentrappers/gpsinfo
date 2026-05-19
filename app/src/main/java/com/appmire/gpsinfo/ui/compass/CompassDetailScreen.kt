@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,6 +73,7 @@ import kotlin.math.sin
 fun CompassDetailScreen(
     vm: DashboardViewModel,
     onBack: () -> Unit,
+    onOpenCalibration: () -> Unit = {},
 ) {
     val reading by vm.compass.collectAsStateWithLifecycle()
 
@@ -87,10 +89,19 @@ fun CompassDetailScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = onOpenCalibration) {
+                        Icon(
+                            Icons.Outlined.Loop,
+                            contentDescription = stringResource(R.string.calibration_title),
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
                     navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground,
                 ),
             )
         },

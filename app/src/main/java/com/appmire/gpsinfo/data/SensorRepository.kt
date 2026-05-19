@@ -14,6 +14,7 @@ import android.view.Display
 import android.view.Surface
 import com.appmire.gpsinfo.data.model.CompassReading
 import com.appmire.gpsinfo.data.model.MagneticAccuracy
+import com.appmire.gpsinfo.data.model.MagnetometerSample
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -278,6 +279,45 @@ class SensorRepository(private val context: Context) : SensorDataSource {
             sm.unregisterListener(magneticListener)
             displayManager.unregisterDisplayListener(displayListener)
         }
+    }
+
+    override fun magnetometerStream(): Flow<MagnetometerSample> = callbackFlow {
+        val magnetic = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        if (magnetic == null) {
+            // No magnetometer on this device — close the flow immediately
+            // so the calibration UI can render "unsupported" instead of
+            // waiting for samples that will never arrive.
+            close()
+            return@callbackFlow
+        }
+        var currentAccuracy = MagneticAccuracy.UNKNOWN
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                if (event.sensor.type != Sensor.TYPE_MAGNETIC_FIELD) return
+                trySend(
+                    MagnetometerSample(
+                        xMicroTesla = event.values[0],
+                        yMicroTesla = event.values[1],
+                        zMicroTesla = event.values[2],
+                        // Sensor `event.timestamp` is in the elapsed-realtime
+                        // domain on Android — match it here so the buffer
+                        // can sort/de-dupe by sample time later.
+                        timeNanos = event.timestamp,
+                        accuracy = currentAccuracy,
+                    ),
+                )
+            }
+            override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+                if (sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
+                    currentAccuracy = mapAccuracy(accuracy)
+                }
+            }
+        }
+        // SENSOR_DELAY_UI (~16 Hz) is enough for the calibration scatter
+        // plot — going faster would flood the channel without giving the
+        // user a visual difference at 60 fps.
+        sm.registerListener(listener, magnetic, SensorManager.SENSOR_DELAY_UI)
+        awaitClose { sm.unregisterListener(listener) }
     }
 
     private fun mapAccuracy(level: Int): MagneticAccuracy = when (level) {

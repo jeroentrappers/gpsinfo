@@ -18,9 +18,13 @@ import com.appmire.gpsinfo.data.model.Constellation
 import com.appmire.gpsinfo.data.model.FixStatus
 import com.appmire.gpsinfo.data.model.GnssSnapshot
 import com.appmire.gpsinfo.data.model.MagneticAccuracy
+import com.appmire.gpsinfo.data.model.MagnetometerSample
 import com.appmire.gpsinfo.data.model.SatelliteInfo
 import com.appmire.gpsinfo.data.model.Trail
 import com.appmire.gpsinfo.data.model.TrailPoint
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import com.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -101,6 +105,31 @@ internal object PreviewFakes {
         },
     )
 
+    /**
+     * 64 magnetometer samples on a 45 µT sphere with a small +5 µT
+     * hard-iron offset on X — what a slightly miscalibrated phone in
+     * a normal environment looks like. Used by the calibration preview.
+     */
+    val magnetometerCloud: List<MagnetometerSample> = run {
+        val radius = 45f
+        val offsetX = 5f
+        val n = 64
+        (0 until n).map { i ->
+            // Fibonacci lattice, deterministic.
+            val golden = PI * (3.0 - kotlin.math.sqrt(5.0))
+            val y01 = 1.0 - (i.toDouble() / (n - 1).toDouble()) * 2.0
+            val r = kotlin.math.sqrt(1.0 - y01 * y01)
+            val theta = golden * i
+            MagnetometerSample(
+                xMicroTesla = offsetX + (radius * r * cos(theta)).toFloat(),
+                yMicroTesla = (radius * y01).toFloat(),
+                zMicroTesla = (radius * r * sin(theta)).toFloat(),
+                timeNanos = i * 1_000_000L,
+                accuracy = MagneticAccuracy.HIGH,
+            )
+        }
+    }
+
     private fun sat(c: Constellation, svid: Int, az: Int, el: Int, cn0: Float, used: Boolean) =
         SatelliteInfo(
             svid = svid,
@@ -125,6 +154,15 @@ internal class FakeLocationDataSource : LocationDataSource {
 internal class FakeSensorDataSource : SensorDataSource {
     override fun readings(currentLocation: () -> Location?): Flow<CompassReading> =
         MutableStateFlow(PreviewFakes.compass).asStateFlow()
+
+    override fun magnetometerStream(): Flow<MagnetometerSample> {
+        // Replay the canned cloud once and stay open. The calibration
+        // VM treats this as a stream of new samples; the bounded buffer
+        // dedupe behaviour means we don't need to keep emitting forever
+        // to drive a representative preview.
+        val flow = MutableStateFlow(PreviewFakes.magnetometerCloud.last())
+        return flow.asStateFlow()
+    }
 }
 
 internal class FakeSettingsDataSource : SettingsDataSource {

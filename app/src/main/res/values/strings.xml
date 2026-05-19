@@ -247,4 +247,23 @@
     <string name="trail_record_notification_channel_body" tools:ignore="MissingTranslation">Shown while a GPS trail is being recorded in the background.</string>
     <string name="trail_record_notification_title" tools:ignore="MissingTranslation">Recording trail</string>
     <string name="trail_record_notification_body" tools:ignore="MissingTranslation">GPS capture continues while the app is open or pocketed. Tap to return.</string>
+
+    <!-- Magnetometer calibration -->
+    <string name="calibration_title" tools:ignore="MissingTranslation">Compass calibration</string>
+    <string name="calibration_reset" tools:ignore="MissingTranslation">Reset samples</string>
+    <string name="calibration_accuracy_label" tools:ignore="MissingTranslation">Sensor accuracy</string>
+    <string name="calibration_coverage_label" tools:ignore="MissingTranslation">Orientation coverage</string>
+    <string name="calibration_coverage_detail" tools:ignore="MissingTranslation">%1$d of %2$d orientation bins · %3$d samples</string>
+    <string name="calibration_scatter_label" tools:ignore="MissingTranslation">Magnetic field cloud</string>
+    <string name="calibration_scatter_hint" tools:ignore="MissingTranslation">Dots: recent readings. Ring: estimated hard-iron offset.\nA well-calibrated phone draws a tight ring centred on the cross.</string>
+    <string name="calibration_axis_xy" tools:ignore="MissingTranslation">XY</string>
+    <string name="calibration_axis_xz" tools:ignore="MissingTranslation">XZ</string>
+    <string name="calibration_axis_yz" tools:ignore="MissingTranslation">YZ</string>
+    <string name="calibration_field_label" tools:ignore="MissingTranslation">Field magnitude</string>
+    <string name="calibration_field_normal" tools:ignore="MissingTranslation">Within the expected Earth-field range (22 – 70 µT).</string>
+    <string name="calibration_field_warning" tools:ignore="MissingTranslation">Outside the expected Earth-field range. Move away from metal, magnets, speakers and laptops, then try again.</string>
+    <string name="calibration_hardiron_label" tools:ignore="MissingTranslation">Hard-iron offset</string>
+    <string name="calibration_hardiron_detail" tools:ignore="MissingTranslation">Sphere radius %1$.1f µT · RMS %2$.1f µT</string>
+    <string name="calibration_how_label" tools:ignore="MissingTranslation">How to calibrate</string>
+    <string name="calibration_how_body" tools:ignore="MissingTranslation">1. Move away from large metal objects, magnets, speakers and laptops.\n2. Hold the phone in your hand and slowly rotate it through every orientation — a figure-of-eight motion works.\n3. Keep going until the accuracy chip reads HIGH and coverage approaches 100 %%.\n\nThe phone never stops calibrating in the background; this screen just gives you a way to see what it has measured.</string>
 </resources>

@@ -3,6 +3,7 @@ package com.appmire.gpsinfo.data
 import android.location.Location
 import com.appmire.gpsinfo.data.model.CompassReading
 import com.appmire.gpsinfo.data.model.GnssSnapshot
+import com.appmire.gpsinfo.data.model.MagnetometerSample
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -27,6 +28,15 @@ interface LocationDataSource {
  */
 interface SensorDataSource {
     fun readings(currentLocation: () -> Location?): Flow<CompassReading>
+
+    /**
+     * Raw magnetometer samples in µT, in the device body frame. Used by
+     * the calibration screen to estimate hard-iron offset and orientation
+     * coverage. Independent of [readings] so the calibration UI can
+     * collect at native sensor rate without dragging the heading-smoothing
+     * pipeline along.
+     */
+    fun magnetometerStream(): Flow<MagnetometerSample>
 }
 
 /**
