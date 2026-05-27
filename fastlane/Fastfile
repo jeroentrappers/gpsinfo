@@ -66,7 +66,10 @@ platform :android do
   desc "Runs the standard staged rollout (10% by default)."
   lane :deploy_production do
     upload_to_play_store(
-      track: "production",
+      # Source track to promote FROM — deploy_internal just landed the
+      # build here. (Was "production", which has no release on a first
+      # rollout, so supply's `releases.select` hit nil and crashed.)
+      track: "internal",
       track_promote_to: "production",
       rollout: "0.1",
       skip_upload_apk: true,
