@@ -1,3 +1,1 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
-
-Panel GNSS, kompas, słońce i prędkość na żywo. 100% offline.
+Pulpit GPS offline: surowe GNSS, tętno BLE, coaching tempa, trasy GPX.

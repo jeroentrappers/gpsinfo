@@ -1,1 +1,1 @@
-Çevrimdışı GPS panosu, ham GNSS verileri ve iz kaydı — Play Services'siz.
+Çevrimdışı GPS panosu: ham GNSS, BLE nabız, tempo koçu, GPX iz.

@@ -33,15 +33,15 @@ val hasReleaseSigning =
         signingKeyAlias != null && signingKeyPassword != null
 
 android {
-    namespace = "com.appmire.gpsinfo"
+    namespace = "be.appmire.gpsinfo"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.appmire.gpsinfo"
+        applicationId = "be.appmire.gpsinfo"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3 
+        versionName = "2.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // minSdk 24 has reliable native VectorDrawable support — no support library needed.
     }
@@ -172,6 +172,14 @@ dependencies {
     // OSM-backed, no Play Services. The rest of the app still avoids
     // Maps SDKs; this one is scoped to the trail view only.
     implementation(libs.osmdroid.android)
+    // Android Auto projection-mode templates. The library is GMS-free —
+    // the system Android Auto app (or a compatible third-party head
+    // unit) is what hosts the templates we render. No new GMS surface.
+    implementation(libs.androidx.car.app)
+    // ZXing core for the "share my position" QR encoder. Pure Java,
+    // Apache-2.0, no Play Services. We only ever encode here — the
+    // scanner side is whatever app the recipient uses.
+    implementation(libs.zxing.core)
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

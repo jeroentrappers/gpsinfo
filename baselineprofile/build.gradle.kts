@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.appmire.gpsinfo.baselineprofile"
+    namespace = "be.appmire.gpsinfo.baselineprofile"
     compileSdk = 37
 
     defaultConfig {

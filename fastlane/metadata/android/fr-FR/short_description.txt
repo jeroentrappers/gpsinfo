@@ -1,3 +1,1 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
-
-Tableau de bord GNSS, boussole, soleil et vitesse en direct. Hors-ligne.
+Tableau GPS hors ligne : GNSS brut, cardio BLE, coach d'allure, traces GPX.

@@ -1,0 +1,660 @@
+package be.appmire.gpsinfo.ui.livemap
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CenterFocusStrong
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.ExploreOff
+import androidx.compose.material.icons.outlined.LocationSearching
+import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import be.appmire.gpsinfo.R
+import be.appmire.gpsinfo.data.RecordingState
+import be.appmire.gpsinfo.data.UnitSystem
+import be.appmire.gpsinfo.data.model.FixStatus
+import be.appmire.gpsinfo.ui.trails.MapnikBulkOk
+import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
+import be.appmire.gpsinfo.util.UnitConverter
+import be.appmire.gpsinfo.util.lengthUnitLabel
+import be.appmire.gpsinfo.util.speedUnitLabel
+import java.util.Locale
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
+
+/**
+ * Real-time map with the live GPS position pinned and the most
+ * relevant dashboard metrics overlaid. Auto-follows the user by
+ * default (the "Follow" toggle in the top-right controls whether new
+ * fixes recenter the map). Optional heading-up rotation rotates the
+ * map so the direction-of-travel is at the top — uses GPS
+ * course-over-ground (not the magnetometer) so the rotation stays
+ * correct when the phone is in a cradle / cupholder.
+ *
+ * If a trail recording is active, the captured polyline draws live —
+ * each accepted point extends the line so the user can watch the
+ * track grow.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LiveMapScreen(
+    vm: DashboardViewModel,
+    onBack: () -> Unit,
+) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    val recording by vm.recordingState.collectAsStateWithLifecycle()
+    val navigationTarget by vm.navigationTarget.collectAsStateWithLifecycle()
+    val loc = state.gnss.location
+    val unit = state.unitSystem
+
+    var follow by remember { mutableStateOf(true) }
+    var headingUp by remember { mutableStateOf(false) }
+    // Treat the chip's bearing as "course" only above the 3 km/h
+    // threshold — below that the Doppler reading is unstable and
+    // would jitter the heading-up rotation around the user.
+    val headingMode by vm.headingMode.collectAsStateWithLifecycle()
+    val gpsBearing: Float? = if (headingMode ==
+        be.appmire.gpsinfo.util.HeadingMode.DualWithCourse
+    ) loc?.takeIf { it.hasBearing() }?.bearing else null
+
+    // Rolling distance-over-time speed estimator — independent
+    // cross-check against Location.speed (Doppler) so the user can
+    // see when the chip is being noisy.
+    val rollingSpeed = remember { be.appmire.gpsinfo.util.RollingSpeed() }
+    if (loc != null) {
+        val ts = if (loc.time > 0) loc.time else System.currentTimeMillis()
+        rollingSpeed.push(loc.latitude, loc.longitude, ts)
+    }
+    val rollingAvgKmh: Float? = rollingSpeed.averageKmh()
+    val rollingWindowSec: Long = rollingSpeed.windowSeconds()
+
+    val mapViewRef = remember { mutableStateOf<MapView?>(null) }
+    val userMarkerRef = remember { mutableStateOf<Marker?>(null) }
+    val trailPolylineRef = remember { mutableStateOf<Polyline?>(null) }
+    val routePolylineRef = remember { mutableStateOf<Polyline?>(null) }
+    val targetMarkerRef = remember { mutableStateOf<Marker?>(null) }
+
+    val latestFollow by rememberUpdatedState(follow)
+    val latestHeadingUp by rememberUpdatedState(headingUp)
+
+    DisposableEffect(Unit) {
+        onDispose {
+            mapViewRef.value?.onDetach()
+            mapViewRef.value = null
+            userMarkerRef.value = null
+            trailPolylineRef.value = null
+            routePolylineRef.value = null
+            targetMarkerRef.value = null
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.live_map_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = stringResource(R.string.action_back),
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // osmdroid map. AndroidView is the bridge from Compose to
+            // the imperative MapView; we keep the marker + polyline
+            // references in remember-state and re-mutate them as the
+            // GNSS stream produces new fixes.
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
+                    MapView(ctx).apply {
+                        setTileSource(MapnikBulkOk)
+                        setMultiTouchControls(true)
+                        minZoomLevel = MapnikBulkOk.minimumZoomLevel.toDouble()
+                        maxZoomLevel = MapnikBulkOk.maximumZoomLevel.toDouble()
+                        controller.setZoom(16.0)
+                        val seedLat = loc?.latitude ?: 50.0
+                        val seedLon = loc?.longitude ?: 10.0
+                        controller.setCenter(GeoPoint(seedLat, seedLon))
+                        val marker = Marker(this).apply {
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                            title = "You"
+                        }
+                        overlays.add(marker)
+                        userMarkerRef.value = marker
+                        // Live polyline — populated only while recording.
+                        val poly = Polyline(this).apply {
+                            outlinePaint.strokeWidth = 8f
+                            outlinePaint.color = 0xFFE67635.toInt()
+                        }
+                        overlays.add(poly)
+                        trailPolylineRef.value = poly
+                        // Route polyline — when the active navigation
+                        // target is a Route, drawn beneath the live
+                        // trail so a track-back run shows both.
+                        val routePoly = Polyline(this).apply {
+                            outlinePaint.strokeWidth = 6f
+                            outlinePaint.color = 0x9979C2FF.toInt()
+                        }
+                        overlays.add(0, routePoly)
+                        routePolylineRef.value = routePoly
+                        // Destination marker — added on demand.
+                        val target = Marker(this).apply {
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                            title = "Destination"
+                        }
+                        overlays.add(target)
+                        targetMarkerRef.value = target
+                        mapViewRef.value = this
+                    }
+                },
+                update = { map ->
+                    val l = loc ?: return@AndroidView
+                    val point = GeoPoint(l.latitude, l.longitude)
+                    userMarkerRef.value?.position = point
+                    if (latestFollow) map.controller.animateTo(point)
+                    map.mapOrientation = if (latestHeadingUp && gpsBearing != null) -gpsBearing
+                    else 0f
+                    // Refresh the polyline from the in-flight recording.
+                    val rec = recording as? RecordingState.Recording
+                    val poly = trailPolylineRef.value
+                    if (rec != null && poly != null) {
+                        // Cheap: TrailRecordingController doesn't expose
+                        // points directly, but every accepted point ends
+                        // up reflected in `rec.pointCount`. The live
+                        // polyline grows by appending the current fix —
+                        // good enough for visual feedback even if it
+                        // misses points that were captured before the
+                        // user opened this screen.
+                        val pts = poly.actualPoints
+                        if (pts.isEmpty() || pts.last() != point) {
+                            poly.addPoint(point)
+                        }
+                    } else if (poly != null && poly.actualPoints.isNotEmpty()) {
+                        // Recording stopped — clear the live trail.
+                        poly.setPoints(emptyList())
+                    }
+                    // Sync the destination marker + (for Route)
+                    // the route polyline against the active target.
+                    val target = navigationTarget
+                    val targetMarker = targetMarkerRef.value
+                    val routePoly = routePolylineRef.value
+                    if (target != null && targetMarker != null) {
+                        targetMarker.position = GeoPoint(target.targetLatDeg, target.targetLonDeg)
+                        targetMarker.setVisible(true)
+                        if (target is be.appmire.gpsinfo.data.model.NavigationTarget.Route &&
+                            routePoly != null
+                        ) {
+                            val pts = target.points.map { GeoPoint(it.latDeg, it.lonDeg) }
+                            if (routePoly.actualPoints.size != pts.size) {
+                                routePoly.setPoints(pts)
+                            }
+                        } else if (routePoly != null && routePoly.actualPoints.isNotEmpty()) {
+                            routePoly.setPoints(emptyList())
+                        }
+                    } else {
+                        targetMarker?.setVisible(false)
+                        if (routePoly != null && routePoly.actualPoints.isNotEmpty()) {
+                            routePoly.setPoints(emptyList())
+                        }
+                    }
+                    map.invalidate()
+                },
+            )
+
+            // Top overlay — speed, heading, altitude. Translucent so
+            // the map remains visible underneath. The speed cell
+            // doubles as a sanity-cross-check: small subtext shows
+            // the rolling distance-over-time average and flags
+            // divergence from the Doppler chip reading.
+            TopOverlay(
+                speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
+                rollingAvgKmh = rollingAvgKmh,
+                rollingWindowSec = rollingWindowSec,
+                gpsBearingDeg = gpsBearing,
+                altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
+                unit = unit,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(12.dp),
+            )
+
+            // Bottom overlay — fix status + accuracy + sats. When a
+            // navigation target is active, a dedicated NavOverlay sits
+            // above it with bearing arrow + distance + ETA.
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                navigationTarget?.let { target ->
+                    NavOverlay(
+                        target = target,
+                        currentLat = loc?.latitude,
+                        currentLon = loc?.longitude,
+                        gpsBearingDeg = gpsBearing,
+                        speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
+                        unit = unit,
+                        onStop = { vm.clearNavigation() },
+                    )
+                }
+                BottomOverlay(
+                    fix = state.gnss.fix,
+                    accuracyMeters = loc?.takeIf { it.hasAccuracy() }?.accuracy,
+                    satsInUse = state.gnss.satellitesInUse,
+                    unit = unit,
+                )
+            }
+
+            // Right-side stacked controls, each captioned so the icons
+            // aren't a guessing game. The two toggles mirror the user's
+            // pick (follow / map-rotation); the bottom button recenters
+            // once. Follow and Recentre used to share the MyLocation
+            // glyph, which made them indistinguishable — Recentre now
+            // uses a distinct centre-focus icon.
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                LabeledMapControl(label = stringResource(R.string.live_map_follow_label)) {
+                    FilledIconToggleButton(
+                        checked = follow,
+                        onCheckedChange = { follow = it },
+                    ) {
+                        Icon(
+                            if (follow) Icons.Outlined.MyLocation
+                            else Icons.Outlined.LocationSearching,
+                            contentDescription = stringResource(R.string.live_map_follow),
+                        )
+                    }
+                }
+                LabeledMapControl(
+                    label = if (headingUp) stringResource(R.string.trail_heading_up)
+                    else stringResource(R.string.trail_north_up),
+                ) {
+                    FilledIconToggleButton(
+                        checked = headingUp,
+                        onCheckedChange = { headingUp = it },
+                    ) {
+                        Icon(
+                            if (headingUp) Icons.Outlined.Explore else Icons.Outlined.ExploreOff,
+                            contentDescription = stringResource(R.string.live_map_heading_up),
+                        )
+                    }
+                }
+                LabeledMapControl(label = stringResource(R.string.live_map_recenter_label)) {
+                    FilledIconButton(onClick = {
+                        val l = loc ?: return@FilledIconButton
+                        mapViewRef.value?.controller?.animateTo(GeoPoint(l.latitude, l.longitude))
+                        follow = true
+                    }) {
+                        Icon(
+                            Icons.Outlined.CenterFocusStrong,
+                            contentDescription = stringResource(R.string.live_map_recenter),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** A map control button with a small caption beneath it, drawn on a
+ *  translucent chip so the label stays legible over map tiles. */
+@Composable
+private fun LabeledMapControl(label: String, button: @Composable () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        button()
+        Spacer(Modifier.height(3.dp))
+        Surface(
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            shape = RoundedCornerShape(6.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TopOverlay(
+    speedKmh: Float?,
+    rollingAvgKmh: Float?,
+    rollingWindowSec: Long,
+    gpsBearingDeg: Float?,
+    altMeters: Double?,
+    unit: UnitSystem,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 2.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SpeedStat(
+                liveKmh = speedKmh,
+                avgKmh = rollingAvgKmh,
+                windowSec = rollingWindowSec,
+                unit = unit,
+            )
+            Stat(
+                label = stringResource(R.string.metric_heading),
+                value = gpsBearingDeg?.let { "%03d".format(Locale.ROOT, it.toInt()) } ?: "—",
+                unit = "°T",
+            )
+            Stat(
+                label = stringResource(R.string.metric_altitude),
+                value = altMeters?.let {
+                    "%d".format(Locale.ROOT, UnitConverter.lengthFromMeters(it, unit).toInt())
+                } ?: "—",
+                unit = lengthUnitLabel(unit),
+            )
+        }
+    }
+}
+
+/**
+ * Speed cell with a built-in rolling-window cross-check. The big
+ * number is the chip's Doppler-derived `Location.speed`. Underneath
+ * sits a small subtext showing the rolling distance-over-time
+ * average and the delta — colour-coded:
+ *
+ *  - green / no flag : agreement within ±2 km/h (good fix)
+ *  - amber           : ±2-6 km/h disagreement (transitional or
+ *                      mildly noisy)
+ *  - red             : > 6 km/h disagreement (multipath, signal
+ *                      bounce, the chip is lying)
+ *
+ * The window seconds shown is the actual observed span (1-second
+ * GPS cadence + occasional drops mean a "10 s window" may contain
+ * 8-12 s of data).
+ */
+@Composable
+private fun SpeedStat(
+    liveKmh: Float?,
+    avgKmh: Float?,
+    windowSec: Long,
+    unit: UnitSystem,
+) {
+    val liveDisp = liveKmh?.let { "%.0f".format(Locale.ROOT, UnitConverter.speedFromKmh(it, unit)) } ?: "—"
+    val avgDisp = avgKmh?.let { "%.0f".format(Locale.ROOT, UnitConverter.speedFromKmh(it, unit)) }
+    val deltaAbs: Float? = if (liveKmh != null && avgKmh != null) kotlin.math.abs(liveKmh - avgKmh) else null
+    val deltaTint = when {
+        deltaAbs == null -> MaterialTheme.colorScheme.onSurfaceVariant
+        deltaAbs <= 2f -> be.appmire.gpsinfo.ui.theme.SignalGreen
+        deltaAbs <= 6f -> be.appmire.gpsinfo.ui.theme.SignalYellow
+        else -> be.appmire.gpsinfo.ui.theme.SignalRed
+    }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = stringResource(R.string.metric_speed),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(2.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            be.appmire.gpsinfo.ui.components.AutoSizingText(
+                text = liveDisp,
+                maxFontSize = 28.sp,
+                minFontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = " ${speedUnitLabel(unit)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (avgDisp != null) {
+            Text(
+                text = stringResource(
+                    R.string.live_map_avg_subtext,
+                    avgDisp,
+                    speedUnitLabel(unit),
+                    windowSec,
+                ),
+                style = MaterialTheme.typography.labelSmall,
+                color = deltaTint,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+    }
+}
+
+/**
+ * Bearing arrow + destination name + distance + ETA, surfaced above
+ * the regular fix-status overlay whenever a navigation target is
+ * active. The arrow rotates by the **relative** bearing — target
+ * bearing minus current direction of travel (GPS course) — so
+ * "ahead" = up, "left/right" = literal left/right relative to motion.
+ *
+ * When the user is stationary (no GPS bearing yet), we fall back to
+ * absolute bearing — at least the arrow then points in the right
+ * compass direction once they start moving.
+ */
+@Composable
+private fun NavOverlay(
+    target: be.appmire.gpsinfo.data.model.NavigationTarget,
+    currentLat: Double?,
+    currentLon: Double?,
+    gpsBearingDeg: Float?,
+    speedKmh: Float?,
+    unit: UnitSystem,
+    onStop: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 2.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            val absoluteBearing: Double? =
+                if (currentLat != null && currentLon != null) {
+                    be.appmire.gpsinfo.util.NavigationMath.bearingDegrees(
+                        currentLat, currentLon, target.targetLatDeg, target.targetLonDeg,
+                    )
+                } else null
+            val relativeBearing: Float =
+                if (absoluteBearing != null && gpsBearingDeg != null) {
+                    be.appmire.gpsinfo.util.NavigationMath.relativeBearingDegrees(
+                        absoluteBearing, gpsBearingDeg,
+                    ).toFloat()
+                } else absoluteBearing?.toFloat() ?: 0f
+
+            Icon(
+                imageVector = Icons.Outlined.Explore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(36.dp)
+                    .rotate(relativeBearing),
+            )
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = target.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
+                val distM: Double? =
+                    if (currentLat != null && currentLon != null) {
+                        be.appmire.gpsinfo.util.NavigationMath.distanceMetres(
+                            currentLat, currentLon, target.targetLatDeg, target.targetLonDeg,
+                        )
+                    } else null
+                val distStr = distM?.let {
+                    if (it < 1000.0) "%d m".format(Locale.ROOT, it.toInt())
+                    else "%.2f km".format(Locale.ROOT, it / 1000.0)
+                } ?: "—"
+                val etaStr = if (distM != null && speedKmh != null) {
+                    val secs = be.appmire.gpsinfo.util.NavigationMath.etaSeconds(distM, speedKmh)
+                    if (secs == null) "—" else {
+                        val m = (secs / 60L).toInt()
+                        val s = (secs % 60L).toInt()
+                        "%d:%02d".format(Locale.ROOT, m, s)
+                    }
+                } else "—"
+                Text(
+                    text = "$distStr · ETA $etaStr",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+            FilledIconButton(onClick = onStop) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = stringResource(R.string.nav_stop),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BottomOverlay(
+    fix: FixStatus,
+    accuracyMeters: Float?,
+    satsInUse: Int,
+    unit: UnitSystem,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 2.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Stat(
+                label = stringResource(R.string.metric_fix),
+                value = stringResource(fix.labelRes),
+                unit = "",
+            )
+            Stat(
+                label = stringResource(R.string.metric_h_accuracy),
+                value = accuracyMeters?.let {
+                    "±%d".format(Locale.ROOT, UnitConverter.lengthFromMeters(it.toDouble(), unit).toInt())
+                } ?: "—",
+                unit = lengthUnitLabel(unit),
+            )
+            Stat(
+                label = stringResource(R.string.live_map_sats),
+                value = satsInUse.takeIf { it > 0 }?.toString() ?: "—",
+                unit = "",
+            )
+        }
+    }
+}
+
+@Composable
+private fun Stat(label: String, value: String, unit: String, big: Boolean = false) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(2.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = value,
+                style = if (big) MaterialTheme.typography.headlineMedium
+                else MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+            )
+            if (unit.isNotEmpty()) {
+                Text(
+                    text = " $unit",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}

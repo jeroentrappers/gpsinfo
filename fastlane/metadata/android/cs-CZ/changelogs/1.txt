@@ -1,8 +1,0 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
-
-První verze.
-- Integrovaný panel: fix, poloha, pohyb, pohled na oblohu, kompas, mapa světa, čas a slunce
-- Retro analogový tachometr s režimem HUD
-- Adaptivní azimut v jakékoliv orientaci
-- 12 jazyků, světlé/tmavé téma, metrické/imperiální/námořní jednotky
-- 100% offline, žádné sledování, žádné Play Services

@@ -1,36 +1,59 @@
-GPSinfo est un tableau de bord GPS pour Android, pensé pour fonctionner hors ligne.
+GPSinfo est un tableau de bord GPS et compagnon de course guidée Android, pensé pour le hors ligne.
 
-Tout ce que vous voulez voir d'un seul coup d'œil — position, signaux satellites, boussole, vitesse, altitude, position du soleil — sur un unique tableau de bord déroulant. Pas de SDK Google Maps, pas de Play Services, pas de télémétrie, pas de compte.
+Toutes les données que la puce GPS peut fournir, sur un unique écran déroulant, avec en option l'enregistrement GPX, la fréquence cardiaque Bluetooth et une vue Sport qui coache l'allure sans rien envoyer au serveur. Pas de SDK Google Maps, pas de Play Services, pas de télémétrie, pas de compte, pas d'achat intégré.
 
-Conçu pour les randonneurs, les marins, les cyclistes, les motards, les bricoleurs curieux du GNSS, et toute personne qui souhaite que ses données de localisation restent sur son téléphone.
+Pour randonneurs, marins, cyclistes, coureurs, motards, radioamateurs, curieux du GNSS, et tous ceux qui veulent garder leurs données sur leur téléphone.
 
 ▌ TABLEAU DE BORD
-• Position en WGS84 (DMS ou décimal), avec altitude et précision par axe
-• Nombre de satellites et intensité du signal en temps réel pour GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS et IRNSS
-• Vue du ciel : satellites colorés par constellation, placés à leur azimut et à leur élévation réels
-• Boussole compensée en inclinaison, avec cap magnétique et cap vrai, déclinaison et inclinaison
-• Compteur de vitesse à échelle automatique, mode miroir HUD pour affichage tête haute sur le pare-brise
-• Position du soleil, lever et coucher, durée du jour, terminateur jour/nuit sur la carte du monde
+• Position en 5 formats : DMS, décimal, Plus Code, locator Maidenhead, MGRS. Appui pour cycler, appui long pour copier.
+• Altitude, précision par axe, indicateur de qualité du fix
+• Nombre de satellites et signal pour GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS et IRNSS
+• Vue du ciel : satellites colorés par constellation, à leur azimut et élévation réels
+• Boussole compensée en inclinaison : cap magnétique et vrai, déclinaison, inclinaison
+• Écran dédié de calibration du magnétomètre, estimation de l'offset hard-iron
+• Compteur de vitesse à échelle automatique, mode miroir HUD pour le pare-brise
+• Position du soleil, lever/coucher, durée du jour, terminateur jour/nuit sur la mappemonde
 
 ▌ TRACES
-• Enregistrement des traces GPS au format standard GPX 1.1 avec Garmin TrackPointExtension (vitesse, cap)
-• Service en premier plan : l'enregistrement se poursuit même quand l'application passe en arrière-plan ou que l'écran s'éteint
-• Affichage de la trace sur OpenStreetMap : polyligne et marqueurs interactifs (appuyez pour inspecter)
-• Graphique vitesse et altitude, curseur pour examiner n'importe quel point de la trace
-• Mode carte « cap en haut », arc solaire en surimpression
-• Pré-téléchargement des tuiles cartographiques d'une zone, pour que la carte fonctionne entièrement hors ligne
-• Simplification des traces par l'algorithme de Ramer-Douglas-Peucker pour gommer le bruit GPS
-• Import GPX depuis n'importe où ; partage ou enregistrement GPX vers n'importe où
-• Capture d'un point d'intérêt en un seul appui
+• Enregistrement GPX 1.1 standard avec Garmin TrackPointExtension (vitesse, cap, cardio)
+• Service en premier plan : enregistrement maintenu en arrière-plan ou écran éteint
+• Affichage OpenStreetMap : polyligne et marqueurs interactifs
+• Graphiques vitesse, altitude, cardio ; curseur pour examiner chaque point
+• Mode « cap en haut », arc solaire en surimpression
+• Pré-téléchargement des tuiles pour un usage hors ligne
+• Simplification par Ramer–Douglas–Peucker pour gommer le bruit GPS
+• Import, partage et enregistrement GPX ; capture d'un point d'intérêt en un appui
+
+▌ NAVIGATION
+• Retour sur trace : une flèche de relèvement relatif vous ramène le long de toute trace
+• Choix d'une destination par appui sur la carte, pour un cap improvisé
+• Distance, ETA et écart d'allure en direct par point
+
+▌ VUE SPORT (courses et marches guidées)
+• Plein écran : temps, distance, allure instantanée et moyenne, vitesse, cadence, foulée (via podomètre)
+• Jauge d'écart d'allure : trop vite / dans la cible / trop lent
+• Jauge de zone cardiaque, zones configurables (surcharge possible par trace)
+• Profil d'intensité du tronçon à venir, coloré selon la pente, ETA jusqu'à la prochaine montée
+• Cibles d'allure globales ou par segment
+• Indications vocales optionnelles (TTS) ; le canal audio de guidage atténue la musique au lieu de la couper
+• Score de performance après course (0–100), respect de l'allure et des zones cardiaques
+
+▌ CARDIO BLUETOOTH
+• Appairage de tout cardiofréquencemètre BLE standard (ceintures Polar, Wahoo, Garmin, …)
+• Connexion GATT directe : aucun SDK propriétaire, aucun relais cloud, aucune clé d'API
+• BPM en direct ; échantillons enregistrés point par point dans le GPX
 
 ▌ CONFIDENTIALITÉ
-• Aucune analyse d'usage, aucun rapport de plantage, aucune publicité, aucun traqueur tiers.
-• Vos données de localisation ne quittent jamais votre appareil.
-• Le seul appel réseau émis par l'application est la récupération anonyme des tuiles OpenStreetMap, et uniquement lorsque vous ouvrez une carte de trace.
-• Politique de confidentialité complète : https://jeroentrappers.github.io/gpsinfo/privacy.html
+• Aucune analyse, aucun rapport de plantage, aucune pub, aucun traqueur tiers
+• Localisation, cardio et audio TTS restent sur l'appareil
+• Seul appel réseau : tuiles OpenStreetMap anonymes, à l'ouverture d'une carte
+• Politique : https://jeroentrappers.github.io/gpsinfo/privacy.html
 
-▌ SANS PLAY SERVICES
-L'application ne dépend pas de Google Play Services et fonctionne sur les appareils dégooglisés (GrapheneOS, LineageOS, /e/OS, etc.). La localisation provient directement des API GNSS d'Android.
+▌ SANS PLAY SERVICES, SANS PLAY BILLING
+Fonctionne sur appareils dégooglisés (GrapheneOS, LineageOS, /e/OS, …). Localisation issue directement des API GNSS d'Android. Aucun achat intégré : dons via Liberapay et GitHub Sponsors, jamais en échange d'une fonctionnalité.
+
+▌ DOUZE LANGUES
+Anglais, néerlandais, allemand, français, espagnol, italien, portugais (BR), russe, japonais, tchèque, turc, polonais — chaque traduction relue par un locuteur natif.
 
 ▌ OPEN SOURCE
-Code source : https://github.com/jeroentrappers/gpsinfo
+Code source : https://github.com/jeroentrappers/gpsinfo

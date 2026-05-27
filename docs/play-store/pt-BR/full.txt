@@ -1,36 +1,59 @@
-GPSinfo é um painel GPS para Android, direto ao ponto e offline por padrão.
+GPSinfo é um painel GPS focado, offline por padrão, e companheiro para corridas guiadas no Android.
 
-Tudo o que você quer ver de uma vez — sua posição, sinais de satélite, bússola, velocidade, altitude, posição do sol — em um único painel rolável. Sem SDK do Google Maps, sem Play Services, sem telemetria, sem contas.
+Todas as métricas que o chip GPS do seu celular reporta — em uma tela rolável, com gravação opcional de GPX, monitor cardíaco Bluetooth e uma vista Esportes que orienta seu ritmo sem enviar nada para a nuvem. Sem SDK do Google Maps, sem Play Services, sem telemetria, sem contas, sem compras no app.
 
-Feito para trilheiros, velejadores, ciclistas, motociclistas, entusiastas de GNSS e qualquer um que queira manter seus dados de localização no próprio celular.
+Para trilheiros, velejadores, ciclistas, corredores, motociclistas, radioamadores, curiosos de GNSS e quem quer manter seus dados de localização no próprio celular.
 
 ▌ PAINEL
-• Posição em WGS84 (DMS ou decimal), com altitude e precisão por eixo
-• Contagem de satélites e intensidade de sinal em tempo real para GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS e IRNSS
+• Posição em cinco formatos — DMS, decimal, Plus Code, Maidenhead, MGRS. Toque para alternar, segure para copiar.
+• Altitude, precisão por eixo e selo de qualidade do fix em tempo real
+• Satélites e intensidade de sinal em GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS e IRNSS
 • Vista do céu com satélites coloridos por constelação, no azimute e elevação reais
 • Bússola com correção de inclinação, rumo magnético e verdadeiro, declinação e inclinação
-• Velocímetro com escala automática e modo espelho HUD para reflexo no para-brisa
-• Posição do sol, nascer e pôr, duração do dia e terminador noite/dia no mapa-múndi
+• Tela dedicada de calibração do magnetômetro, com estimativa de offset hard-iron
+• Velocímetro com escala automática e modo espelho HUD para o para-brisa
+• Posição do sol, nascer e pôr, duração do dia e terminador noturno no mapa-múndi
 
 ▌ TRILHAS
-• Gravação de trilhas GPS no padrão GPX 1.1 com Garmin TrackPointExtension (velocidade, curso)
-• Serviço em primeiro plano: a gravação continua mesmo com o app em segundo plano ou a tela apagada
-• Exibição da trilha no OpenStreetMap: polilinha e marcadores com toque para inspecionar
-• Gráfico de velocidade e altitude com controle deslizante para examinar qualquer ponto da rota
-• Modo de mapa orientado pelo rumo, sobreposição do arco solar
-• Pré-cache dos tiles de mapa de uma área, para que o mapa da trilha funcione totalmente offline
-• Simplificação de trilhas com Ramer-Douglas-Peucker para limpar o ruído do GPS
-• Importe GPX de qualquer lugar; compartilhe ou salve como GPX em qualquer lugar
-• Captura de waypoint com um toque
+• Gravação em GPX 1.1 com Garmin TrackPointExtension (velocidade, curso, FC)
+• Serviço em primeiro plano: gravação continua em segundo plano ou tela apagada
+• Exibição no OpenStreetMap: polilinha e marcadores com toque para inspecionar
+• Gráficos de velocidade, altitude e FC; controle deslizante por ponto
+• Mapa orientado pelo rumo, sobreposição do arco solar
+• Pré-cache dos tiles de mapa para uso offline
+• Simplificação com Ramer–Douglas–Peucker para limpar o ruído do GPS
+• Importe, compartilhe ou salve GPX; waypoint com um toque
+
+▌ NAVEGAÇÃO
+• Volta pelo percurso: seta de rumo relativo guia você de volta por qualquer trilha gravada
+• Seletor de destino com toque no mapa para rumos pontuais
+• Distância, ETA e ritmo vs. meta em tempo real por waypoint
+
+▌ VISTA ESPORTES (corridas e caminhadas guiadas)
+• Painel em tela cheia: tempo e distância, ritmo ao vivo e médio, velocidade, cadência e passada (pelo pedômetro)
+• Indicador de desvio de ritmo — rápido demais / na meta / lento demais
+• Indicador de zona de FC com zonas configuráveis (ajuste opcional por trilha)
+• Perfil de intensidade do próximo trecho, colorido pelo declive, com ETA até a próxima subida
+• Metas de ritmo — geral ou por segmento de rota
+• Avisos sonoros de coach via TTS no aparelho; o áudio de navegação abaixa sua música em vez de cortá-la
+• Nota pós-corrida (0–100) combinando aderência ao ritmo e às zonas de FC
+
+▌ FREQUÊNCIA CARDÍACA BLUETOOTH
+• Pareie qualquer monitor cardíaco BLE (Polar, Wahoo, Garmin, …)
+• Conexão GATT direta — sem SDKs do fabricante, sem ponte na nuvem, sem chaves de API
+• Cartão de BPM ao vivo no painel; amostras salvas por trackpoint no GPX
 
 ▌ PRIVACIDADE
-• Sem analytics, sem relatórios de falha, sem publicidade, sem rastreadores de terceiros.
-• Seus dados de localização nunca saem do dispositivo.
-• A única chamada de rede que o app faz é o download anônimo de tiles do OpenStreetMap, e somente quando você abre um mapa de trilha.
-• Política de privacidade completa: https://jeroentrappers.github.io/gpsinfo/privacy.html
+• Sem analytics, relatórios de falha, publicidade ou rastreadores de terceiros
+• Localização, amostras de FC e áudio TTS ficam todos no seu aparelho
+• A única chamada de rede é o download anônimo de tiles do OpenStreetMap, e só quando você abre um mapa de trilha
+• Política completa: https://jeroentrappers.github.io/gpsinfo/privacy.html
 
-▌ SEM PLAY SERVICES
-O app não depende do Google Play Services e funciona em dispositivos sem Google (GrapheneOS, LineageOS, /e/OS, …). A localização vem direto das APIs GNSS nativas do Android.
+▌ SEM PLAY SERVICES, SEM PLAY BILLING
+Roda em dispositivos sem Google (GrapheneOS, LineageOS, /e/OS, …). A localização vem direto das APIs GNSS do Android. Sem compras no app — doações ficam no Liberapay e no GitHub Sponsors, nunca atrás de um recurso pago.
+
+▌ DOZE IDIOMAS
+Inglês, Holandês, Alemão, Francês, Espanhol, Italiano, Português (BR), Russo, Japonês, Tcheco, Turco, Polonês — cada um revisado por falante nativo.
 
 ▌ CÓDIGO ABERTO
 Código-fonte: https://github.com/jeroentrappers/gpsinfo

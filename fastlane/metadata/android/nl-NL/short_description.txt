@@ -1,3 +1,1 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
-
-Live GNSS-, kompas-, zon- en snelheidsdashboard. Volledig offline.
+Offline GPS-dashboard: ruwe GNSS, BLE-hartslag, tempocoaching, GPX-routes.

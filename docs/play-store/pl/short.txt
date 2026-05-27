@@ -1,1 +1,1 @@
-Offline pulpit GPS z surowymi danymi GNSS i nagrywaniem tras, bez Play Services.
+Pulpit GPS offline: surowe GNSS, tętno BLE, coaching tempa, trasy GPX.

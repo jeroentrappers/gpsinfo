@@ -1,3 +1,1 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
-
-Live-GNSS-, Kompass-, Sonnen- und Geschwindigkeits-Dashboard. Offline.
+Offline-GPS-Dashboard: Roh-GNSS, BLE-Puls, Pace-Coaching, GPX-Tracks.

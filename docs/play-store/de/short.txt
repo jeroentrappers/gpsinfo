@@ -1,1 +1,1 @@
-Offline-GPS-Dashboard mit Roh-GNSS und Track-Aufzeichnung. Ohne Play Services.
+Offline-GPS-Dashboard: Roh-GNSS, BLE-Puls, Pace-Coaching, GPX-Tracks.

@@ -20,6 +20,7 @@
 
     <!-- Actions -->
     <string name="action_back">Terug</string>
+    <string name="action_more" tools:ignore="MissingTranslation">Meer acties</string>
     <string name="action_share_location">Locatie delen</string>
     <string name="action_open_maps">Openen in Maps</string>
     <string name="action_toggle_units">Eenheden wisselen</string>
@@ -167,6 +168,7 @@
     <string name="trail_empty_title">Nog geen routes</string>
     <string name="trail_empty_body">Tik op de opnameknop in het dashboard om je eerste GPS-route vast te leggen.</string>
     <string name="trail_recording_stats">%1$d punten · %2$s</string>
+    <string name="trail_recording_stats_with_steps" tools:ignore="MissingTranslation">%1$d punten · %2$s · %3$d stappen</string>
     <string name="trail_list_meta">%1$s · %2$d punten · %3$s</string>
     <string name="trail_point_title">Vastgelegd om %1$s</string>
     <string name="trail_action_delete">Verwijderen</string>
@@ -248,4 +250,170 @@
     <string name="trail_record_notification_channel_body">Wordt getoond terwijl een GPS-route op de achtergrond wordt opgenomen.</string>
     <string name="trail_record_notification_title">Route wordt opgenomen</string>
     <string name="trail_record_notification_body">GPS-opname loopt door terwijl de app open is of in je zak zit. Tik om terug te keren.</string>
+
+    <!-- Magnetometer calibration -->
+    <string name="calibration_title" tools:ignore="MissingTranslation">Kompaskalibratie</string>
+    <string name="calibration_reset" tools:ignore="MissingTranslation">Metingen wissen</string>
+    <string name="calibration_accuracy_label" tools:ignore="MissingTranslation">Sensornauwkeurigheid</string>
+    <string name="calibration_coverage_label" tools:ignore="MissingTranslation">Oriëntatiedekking</string>
+    <string name="calibration_coverage_detail" tools:ignore="MissingTranslation">%1$d van %2$d oriëntatievakken · %3$d metingen</string>
+    <string name="calibration_scatter_label" tools:ignore="MissingTranslation">Magnetische-veldwolk</string>
+    <string name="calibration_scatter_hint" tools:ignore="MissingTranslation">Stippen: recente metingen. Ring: geschatte hard-iron-afwijking.\nEen goed gekalibreerde telefoon tekent een strakke ring rond het kruis.</string>
+    <string name="calibration_axis_xy" tools:ignore="MissingTranslation">XY</string>
+    <string name="calibration_axis_xz" tools:ignore="MissingTranslation">XZ</string>
+    <string name="calibration_axis_yz" tools:ignore="MissingTranslation">YZ</string>
+    <string name="calibration_field_label" tools:ignore="MissingTranslation">Veldsterkte</string>
+    <string name="calibration_field_normal" tools:ignore="MissingTranslation">Binnen het verwachte bereik van het aardmagnetisch veld (22 – 70 µT).</string>
+    <string name="calibration_field_warning" tools:ignore="MissingTranslation">Buiten het verwachte bereik van het aardmagnetisch veld. Ga weg van metaal, magneten, luidsprekers en laptops en probeer opnieuw.</string>
+    <string name="calibration_hardiron_label" tools:ignore="MissingTranslation">Hard-iron-afwijking</string>
+    <string name="calibration_hardiron_detail" tools:ignore="MissingTranslation">Bolstraal %1$.1f µT · RMS %2$.1f µT</string>
+    <string name="calibration_how_label" tools:ignore="MissingTranslation">Zo kalibreer je</string>
+    <string name="calibration_how_body" tools:ignore="MissingTranslation">1. Ga weg van grote metalen voorwerpen, magneten, luidsprekers en laptops.\n2. Houd de telefoon in je hand en draai hem langzaam door alle oriëntaties — een achtbeweging werkt goed.\n3. Ga door tot de nauwkeurigheidsindicator HOOG aangeeft en de dekking 100 %% nadert.\n\nDe telefoon kalibreert continu op de achtergrond; dit scherm laat alleen zien wat er al gemeten is.</string>
+
+    <!-- Accessibility descriptions for canvas-rendered surfaces. EN-only for now; full localization tracked separately. -->
+    <string name="a11y_sky_view" tools:ignore="MissingTranslation">Hemelaanzicht. %1$d satellieten zichtbaar, %2$d gebruikt in fix, gemiddeld signaal %3$.1f decibel.</string>
+    <string name="a11y_sky_view_empty" tools:ignore="MissingTranslation">Hemelaanzicht. Wachten op satellieten.</string>
+    <string name="a11y_compass_rose" tools:ignore="MissingTranslation">Kompaskoers %1$03d graden magnetisch, %2$s.</string>
+    <string name="a11y_compass_bowl" tools:ignore="MissingTranslation">Gestabiliseerd kompas. Koers %1$03d graden magnetisch, %2$s. Pitch %3$+.0f graden, roll %4$+.0f graden.</string>
+    <string name="a11y_satellite_row" tools:ignore="MissingTranslation">%1$s-satelliet SV %2$d. %3$s. Elevatie %4$s. Azimut %5$s. %6$s.</string>
+    <string name="a11y_sat_signal_value" tools:ignore="MissingTranslation">Signaal %1$.0f decibel</string>
+    <string name="a11y_sat_signal_none" tools:ignore="MissingTranslation">Geen signaal</string>
+    <string name="a11y_sat_unknown" tools:ignore="MissingTranslation">onbekend</string>
+    <string name="a11y_sat_degrees" tools:ignore="MissingTranslation">%1$.0f graden</string>
+    <string name="a11y_sat_in_fix" tools:ignore="MissingTranslation">Gebruikt in fix</string>
+    <string name="a11y_sat_not_in_fix" tools:ignore="MissingTranslation">Niet in fix</string>
+    <string name="a11y_calibration_plot" tools:ignore="MissingTranslation">Magnetometer-%1$s-projectie. Geschatte hard-iron-afwijking %2$+.1f, %3$+.1f microtesla.</string>
+    <string name="a11y_speed_gauge" tools:ignore="MissingTranslation">Snelheidsmeter. %1$s %2$s.</string>
+    <string name="a11y_speed_gauge_no_fix" tools:ignore="MissingTranslation">Snelheidsmeter. Geen GPS-fix.</string>
+    <string name="a11y_recording_fab" tools:ignore="MissingTranslation">Opname stoppen. %1$d punten vastgelegd in %2$s.</string>
+
+    <!-- Acquiring / no-fix captions on cards -->
+    <string name="acquiring_fix" tools:ignore="MissingTranslation">Bezig met zoeken van satellieten…</string>
+    <string name="no_fix_caption" tools:ignore="MissingTranslation">Geen GPS-fix</string>
+
+    <!-- Top-level Settings entry -->
+    <string name="action_open_settings_screen" tools:ignore="MissingTranslation">Instellingen</string>
+
+    <!-- Re-trigger the onboarding tour from Settings -->
+    <string name="settings_show_tour" tools:ignore="MissingTranslation">Rondleiding opnieuw tonen</string>
+
+    <!-- Coordinate format labels (shown under single-line codes) -->
+    <string name="coord_format_plus_code" tools:ignore="MissingTranslation">Plus Code</string>
+    <string name="coord_format_maidenhead" tools:ignore="MissingTranslation">Maidenhead</string>
+
+    <!-- Pace units (running/walking convention — minutes per unit of distance) -->
+    <string name="unit_pace_per_km" tools:ignore="MissingTranslation">/km</string>
+    <string name="unit_pace_per_mi" tools:ignore="MissingTranslation">/mi</string>
+    <string name="unit_pace_per_nm" tools:ignore="MissingTranslation">/nm</string>
+    <string name="metric_pace" tools:ignore="MissingTranslation">Tempo</string>
+    <string name="trail_stats_avg_pace" tools:ignore="MissingTranslation">Gem tempo</string>
+    <string name="trail_stats_best_pace" tools:ignore="MissingTranslation">Beste tempo</string>
+    <string name="trail_stats_avg_hr" tools:ignore="MissingTranslation">Gem hartslag</string>
+    <string name="trail_stats_max_hr" tools:ignore="MissingTranslation">Max hartslag</string>
+    <string name="trail_stats_score" tools:ignore="MissingTranslation">Score</string>
+    <string name="trail_stats_score_pace" tools:ignore="MissingTranslation">Tempo %1$s t.o.v. doel %2$s %3$s</string>
+
+    <!-- Navigation card (bearing-to-waypoint / track-back) -->
+    <string name="nav_card_title" tools:ignore="MissingTranslation">Navigatie</string>
+    <string name="nav_stop" tools:ignore="MissingTranslation">Navigatie stoppen</string>
+    <string name="nav_metric_distance" tools:ignore="MissingTranslation">Afstand</string>
+    <string name="nav_metric_bearing" tools:ignore="MissingTranslation">Peiling</string>
+    <string name="nav_metric_eta" tools:ignore="MissingTranslation">ETA</string>
+    <string name="nav_route_progress" tools:ignore="MissingTranslation">Wegpunt %1$d van %2$d resterend</string>
+    <string name="nav_start" tools:ignore="MissingTranslation">Navigeren naar…</string>
+    <string name="nav_pick_screen_title" tools:ignore="MissingTranslation">Kies een bestemming</string>
+    <string name="nav_pick_tab_map" tools:ignore="MissingTranslation">Op kaart kiezen</string>
+    <string name="nav_pick_tab_coords" tools:ignore="MissingTranslation">Coördinaten invoeren</string>
+    <string name="nav_pick_coords_lat_label" tools:ignore="MissingTranslation">Breedtegraad (decimaal)</string>
+    <string name="nav_pick_coords_lon_label" tools:ignore="MissingTranslation">Lengtegraad (decimaal)</string>
+    <string name="nav_pick_coords_name_label" tools:ignore="MissingTranslation">Naam (optioneel)</string>
+    <string name="nav_pick_confirm" tools:ignore="MissingTranslation">Dit punt gebruiken</string>
+    <string name="nav_pick_map_hint" tools:ignore="MissingTranslation">Tik op de kaart om je bestemming te plaatsen en bevestig daarna.</string>
+    <string name="nav_pick_invalid_coords" tools:ignore="MissingTranslation">Voer een breedtegraad in [-90, 90] en een lengtegraad in [-180, 180] in.</string>
+    <string name="nav_default_name" tools:ignore="MissingTranslation">Bestemming</string>
+
+    <!-- Track-back from a recorded trail -->
+    <string name="trail_track_back" tools:ignore="MissingTranslation">Terug naar start</string>
+    <string name="coord_format_mgrs">MGRS</string>
+
+    <!-- Pace goal on an active navigation target -->
+    <string name="nav_set_pace_goal" tools:ignore="MissingTranslation">Doeltempo instellen</string>
+    <string name="nav_edit_pace_goal" tools:ignore="MissingTranslation">Doeltempo aanpassen</string>
+    <string name="nav_clear_pace_goal" tools:ignore="MissingTranslation">Doel wissen</string>
+    <string name="nav_goal_label" tools:ignore="MissingTranslation">Doeltempo</string>
+    <string name="nav_goal_too_fast" tools:ignore="MissingTranslation">Te snel — rustiger aan</string>
+    <string name="nav_goal_too_slow" tools:ignore="MissingTranslation">Te traag — doorzetten</string>
+    <string name="nav_goal_on_target" tools:ignore="MissingTranslation">Op tempo</string>
+    <string name="nav_goal_acquiring" tools:ignore="MissingTranslation">Tempo meten…</string>
+    <string name="nav_goal_dialog_title" tools:ignore="MissingTranslation">Doeltempo instellen</string>
+    <string name="nav_goal_dialog_body" tools:ignore="MissingTranslation">Voer het tempo in dat je wilt aanhouden. De live afwijking verschijnt op de navigatiekaart en je krijgt een geluidssignaal zodra je de drempel overschrijdt.</string>
+    <string name="nav_goal_minutes_label" tools:ignore="MissingTranslation">Minuten</string>
+    <string name="nav_goal_seconds_label" tools:ignore="MissingTranslation">Seconden</string>
+
+    <!-- Heart-rate monitor pairing &amp; status -->
+    <string name="hr_pair_title" tools:ignore="MissingTranslation">Hartslagmeter</string>
+    <string name="hr_pair_body" tools:ignore="MissingTranslation">Tik op een toestel om te koppelen. Alleen Bluetooth-hartslagmeters die de standaard Heart Rate Service gebruiken, worden ondersteund.</string>
+    <string name="hr_pair_scanning" tools:ignore="MissingTranslation">Scannen…</string>
+    <string name="hr_pair_scan_again" tools:ignore="MissingTranslation">Opnieuw scannen</string>
+    <string name="hr_pair_no_devices_yet" tools:ignore="MissingTranslation">Op zoek naar hartslagmeters… zorg dat je sensor aanstaat en in de buurt is.</string>
+    <string name="hr_pair_unknown_device" tools:ignore="MissingTranslation">Onbekend toestel</string>
+    <string name="hr_pair_needs_permissions" tools:ignore="MissingTranslation">Bluetooth-toestemming is vereist om een meter te koppelen.</string>
+    <string name="hr_forget_device" tools:ignore="MissingTranslation">Vergeten</string>
+    <string name="hr_status_idle" tools:ignore="MissingTranslation">Geen meter gekoppeld</string>
+    <string name="hr_status_scanning" tools:ignore="MissingTranslation">Zoeken naar meters</string>
+    <string name="hr_status_connecting" tools:ignore="MissingTranslation">Verbinden met %1$s…</string>
+    <string name="hr_status_connected" tools:ignore="MissingTranslation">Verbonden · %1$d BPM</string>
+    <string name="hr_status_connected_named" tools:ignore="MissingTranslation">%1$s · %2$d BPM</string>
+    <string name="hr_status_disconnected" tools:ignore="MissingTranslation">%1$s · verbroken</string>
+    <string name="settings_pair_hr" tools:ignore="MissingTranslation">Hartslagmeter</string>
+    <string name="settings_hr_zones" tools:ignore="MissingTranslation">Hartslagzones</string>
+
+    <!-- HR zones editor screen -->
+    <string name="hr_zones_title" tools:ignore="MissingTranslation">Hartslagzones</string>
+    <string name="hr_zones_body" tools:ignore="MissingTranslation">Stel je maximale hartslag in en pas de zonegrenzen aan. De standaardwaarden volgen de gebruikelijke 60/70/80/90 %%-verdeling; getrainde sporters leggen de grenzen voor Z3–Z5 doorgaans hoger.</string>
+    <string name="hr_zones_max_label" tools:ignore="MissingTranslation">Maximale hartslag (BPM)</string>
+    <string name="hr_zones_z2_threshold" tools:ignore="MissingTranslation">Zone 2 begint bij</string>
+    <string name="hr_zones_z3_threshold" tools:ignore="MissingTranslation">Zone 3 begint bij</string>
+    <string name="hr_zones_z4_threshold" tools:ignore="MissingTranslation">Zone 4 begint bij</string>
+    <string name="hr_zones_z5_threshold" tools:ignore="MissingTranslation">Zone 5 begint bij</string>
+
+    <!-- HeartRateCard on the dashboard -->
+    <string name="hr_card_title" tools:ignore="MissingTranslation">Hartslag</string>
+    <string name="hr_card_no_paired" tools:ignore="MissingTranslation">Geen meter gekoppeld. Koppel er een via Instellingen.</string>
+    <string name="hr_card_waiting" tools:ignore="MissingTranslation">Wachten op meter…</string>
+    <string name="hr_card_zone" tools:ignore="MissingTranslation">Zone</string>
+    <string name="hr_card_disconnect" tools:ignore="MissingTranslation">Meter ontkoppelen</string>
+
+    <!-- Sports Dashboard (guided-run view) -->
+    <string name="sports_dashboard_title" tools:ignore="MissingTranslation">Sportscherm</string>
+    <string name="sports_dashboard_open" tools:ignore="MissingTranslation">Sportscherm openen</string>
+    <string name="sports_dashboard_idle_body" tools:ignore="MissingTranslation">Start een opname vanuit het dashboard en open daarna het sportscherm om live tempo, looppatroon en hartslag te zien.</string>
+    <string name="sports_metric_elapsed" tools:ignore="MissingTranslation">Verstreken</string>
+    <string name="sports_metric_distance" tools:ignore="MissingTranslation">Afstand</string>
+    <string name="sports_metric_cadence" tools:ignore="MissingTranslation">Cadans</string>
+    <string name="sports_metric_stride" tools:ignore="MissingTranslation">Paslengte</string>
+    <string name="sports_metric_now" tools:ignore="MissingTranslation">Nu</string>
+    <string name="sports_metric_avg" tools:ignore="MissingTranslation">Gem</string>
+
+    <!-- Gauge headings on the Sports view -->
+    <string name="gauge_pace_title" tools:ignore="MissingTranslation">Tempo vs doel</string>
+    <string name="gauge_hr_title" tools:ignore="MissingTranslation">Hartslagzone</string>
+
+    <!-- Audible cues (spoken by TextToSpeech during the Sports view) -->
+    <string name="cue_on_target" tools:ignore="MissingTranslation">Op tempo</string>
+    <string name="cue_slightly_slow" tools:ignore="MissingTranslation">Iets te traag</string>
+    <string name="cue_slightly_fast" tools:ignore="MissingTranslation">Iets te snel</string>
+    <string name="cue_too_slow" tools:ignore="MissingTranslation">Te traag</string>
+    <string name="cue_too_fast" tools:ignore="MissingTranslation">Te snel</string>
+    <string name="cue_zone" tools:ignore="MissingTranslation">Zone %1$d</string>
+    <string name="settings_audible_cues" tools:ignore="MissingTranslation">Gesproken signalen</string>
+    <string name="settings_audible_cues_body" tools:ignore="MissingTranslation">Gesproken feedback over tempo en zone tijdens het sportscherm. Gebruikt de tekst-naar-spraak van je toestel — geen netwerk nodig.</string>
+
+    <!-- Intensity profile (upcoming-trail elevation chart) -->
+    <string name="profile_card_title" tools:ignore="MissingTranslation">Route voor je</string>
+    <string name="profile_distance_ahead" tools:ignore="MissingTranslation">%1$s van de route</string>
+    <string name="profile_elevation_range" tools:ignore="MissingTranslation">%1$s → %2$s</string>
+    <string name="profile_next_climb" tools:ignore="MissingTranslation">Volgende klim</string>
+    <string name="profile_climb_summary" tools:ignore="MissingTranslation">%1$s · +%2$s</string>
+    <string name="profile_climb_in" tools:ignore="MissingTranslation">Over</string>
 </resources>

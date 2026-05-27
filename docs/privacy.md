@@ -1,10 +1,11 @@
 # GPSinfo — Privacy Policy
 
-_Last updated: 2026-05-19._
+_Last updated: 2026-05-21._
 
 GPSinfo is a Belgian Android app published by **Appmire CommV** (BE 0719.812.728).
 It surfaces live GNSS, sensor and astronomical data on a single dashboard, with
-optional GPS trail recording and an offline-capable trail map.
+optional GPS trail recording, an offline-capable trail map, Bluetooth heart-
+rate monitor support, and a guided-run Sports view with pace coaching.
 
 ## Short version
 
@@ -16,8 +17,11 @@ optional GPS trail recording and an offline-capable trail map.
   **OpenStreetMap.org**, and only when you actively open or pan a trail map.
   Those requests carry your IP address to OpenStreetMap and nothing else — see
   ["Map tiles"](#map-tiles) below.
+- Bluetooth heart-rate data and on-device text-to-speech for coaching cues
+  stay on the device — there is no cloud sync and no audio leaves the phone.
 - We do not depend on Google Play Services and do not contact any Google
-  server.
+  server. Donations are external links (Liberapay, GitHub Sponsors, PayPal)
+  opened in your browser — no in-app purchase, no Play Billing.
 
 ## Permissions we request
 
@@ -25,9 +29,11 @@ optional GPS trail recording and an offline-capable trail map.
 |---|---|---|
 | `ACCESS_FINE_LOCATION` | Always required | Read GNSS fixes (latitude, longitude, altitude, per-satellite signal strength) directly from your device's GPS chip. Every metric the dashboard shows derives from this. |
 | `ACCESS_COARSE_LOCATION` | Granted alongside fine | Required by the Android OS together with fine location on Android 10+. We do not request it separately. |
-| `ACCESS_BACKGROUND_LOCATION` | Optional, prompted at recording start | Keep recording a GPS trail when the phone is locked or you switch to another app. **Only used while a trail recording is in progress.** Never used to read your location passively. |
-| `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_LOCATION` | Granted at install | Permits a notification-backed service that keeps GNSS streaming while a trail is being recorded. The service exists only between Start and Stop on the record button. |
+| `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_LOCATION` | Granted at install | Permits a notification-backed service that keeps GNSS streaming while a trail is being recorded. The service exists only between Start and Stop on the record button. Because the service is `foregroundServiceType="location"`, Android grants it foreground-app status for location-access purposes — so we do **not** request `ACCESS_BACKGROUND_LOCATION` separately. |
 | `POST_NOTIFICATIONS` | Optional, prompted at recording start | Show the ongoing "Recording trail" notification. Recording works without it; you just won't see the notification on Android 13+. |
+| `ACTIVITY_RECOGNITION` | Optional, prompted at recording start | Read step counts from the device's pedometer sensor (Android 10+) so the recording can capture steps and derive cadence + stride. Recording works without it; you just won't see step / cadence data. |
+| `BLUETOOTH_SCAN` (with `neverForLocation`) + `BLUETOOTH_CONNECT` (Android 12+) | Optional, prompted when opening the heart-rate pairing screen | Discover and connect to a Bluetooth Low Energy heart-rate monitor that advertises the standard Heart Rate Service (0x180D). The `neverForLocation` flag tells Android we do not derive location from advertisements. |
+| `BLUETOOTH` + `BLUETOOTH_ADMIN` (Android ≤11 only) | Legacy | Pre-Android-12 BLE permission model. Capped at `maxSdkVersion="30"`; never declared on newer Android. |
 | `INTERNET` | Always required | Fetch OpenStreetMap tiles for the trail map. The rest of the app does not use the network. |
 | `ACCESS_NETWORK_STATE` | Required by the tile library | Lets the tile cache decide whether to attempt a download or fall back to cached tiles. |
 | `WRITE_EXTERNAL_STORAGE` (Android ≤9 only) | Legacy | Required by the OpenStreetMap-tile library to write its on-disk cache on Android 9 and below. Capped at `maxSdkVersion="28"`; never declared on Android 10+. |
@@ -65,13 +71,42 @@ Android system itself maintains for `getLastKnownLocation()`. That cache is
 owned by the OS, not by GPSinfo, and is documented under your phone's privacy
 settings.
 
+## Heart-rate monitor
+
+When you pair a Bluetooth heart-rate monitor on the pairing screen,
+GPSinfo opens a **direct GATT connection** from your phone to the
+device using the Bluetooth-SIG standard Heart Rate Service (UUID
+`0x180D`) and Heart Rate Measurement characteristic (`0x2A37`). No
+vendor SDKs, no cloud bridge, no API key. The device's MAC address
+and friendly name are stored in app preferences (see below) so the
+app can auto-reconnect on next launch. BPM samples are kept in process
+memory and, while a trail recording is active, attached to the
+trackpoints written to GPX (Garmin `gpxtpx:hr` extension). The
+samples never leave the device.
+
+You can tap the disconnect icon on the heart-rate card to drop the
+live link without forgetting the device, or "Forget" on the pairing
+screen to clear the stored MAC entirely.
+
+## Audible coaching cues
+
+When you enable "Audible cues" in Settings, the Sports view announces
+pace deviation and zone changes via the **device's on-board Text-to-
+Speech engine**. The cues are generated locally — no audio is uploaded
+or downloaded for them. The TTS engine renders with the
+`USAGE_ASSISTANCE_NAVIGATION_GUIDANCE` audio attribute, which lets the
+operating system duck any music app you have running rather than
+interrupting it.
+
+The feature is off by default.
+
 ## Files we store on your device
 
 | File | Location | Purpose |
 |---|---|---|
-| User preferences | `/data/data/com.appmire.gpsinfo/files/datastore/gpsinfo_prefs.preferences_pb` | UI theme, units, the auto-adapted speed-dial ceiling, "onboarding seen" flag. |
-| Recorded trails | `/data/data/com.appmire.gpsinfo/files/trails/<id>.gpx` | One GPX file per recording, in the standard GPX 1.1 format. |
-| Map tile cache | `/data/data/com.appmire.gpsinfo/files/osmdroid/tiles/` | OpenStreetMap tiles you have viewed, kept so the trail map works offline. Cleared whenever you uninstall the app. |
+| User preferences | `/data/data/be.appmire.gpsinfo/files/datastore/gpsinfo_prefs.preferences_pb` | UI theme, units, the auto-adapted speed-dial ceiling, "onboarding seen" flag, paired HR monitor's MAC address + friendly name, HR-zone configuration, audible-cues on/off. |
+| Recorded trails | `/data/data/be.appmire.gpsinfo/files/trails/<id>.gpx` | One GPX 1.1 file per recording. May include per-point heart rate (`gpxtpx:hr`) and a trail-level or per-segment target pace (`gpsinfo:target_pace_s_per_km`) when those were set. |
+| Map tile cache | `/data/data/be.appmire.gpsinfo/files/cache/osmdroid/tiles/` | OpenStreetMap tiles you have viewed, kept so the trail map works offline. Cleared whenever you uninstall the app. |
 
 All three live in the app's private sandbox. No other app on the device can
 read them. They are **excluded from Android's "App data" cloud backup and
@@ -113,7 +148,7 @@ tiles fetched anonymously over HTTPS from `tile.openstreetmap.org` via the
   map square at some location and zoom level"; does not identify *you*).
 - Your IP address (visible to the OpenStreetMap server, as for any HTTPS
   request to any site).
-- A `User-Agent` header set to the package name `com.appmire.gpsinfo`.
+- A `User-Agent` header set to the package name `be.appmire.gpsinfo`.
 
 We do not see these requests. They go directly from your device to the
 OpenStreetMap Foundation's servers. Their privacy policy is at
@@ -153,6 +188,18 @@ under adult supervision.
 If we ever start collecting any data, this file will change and the previous
 version will remain in git history at `docs/privacy.md`. The "Last updated"
 date at the top reflects the most recent edit.
+
+## Donations
+
+The app contains **no in-app purchase** and uses **no Play Billing**.
+The About screen offers three external donation links — Liberapay,
+GitHub Sponsors, and PayPal. Tapping any of them opens the link in
+your default browser; from that point on, the donation is governed
+by that platform's terms and privacy policy, not ours. We never see
+who donates from inside the app.
+
+No donation gates any feature — the app behaves identically whether
+you donate or not.
 
 ## Contact
 

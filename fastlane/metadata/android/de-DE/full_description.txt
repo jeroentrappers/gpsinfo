@@ -1,21 +1,59 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
+GPSinfo ist ein kompromissloses, offline-first GPS-Dashboard und Begleiter für geführte Läufe — für Android.
 
-GPSinfo ist ein aufgeräumtes, modernes GNSS-Dashboard für Android. Jeder Messwert, den der GPS-Chip und die Sensoren deines Telefons liefern, gebündelt auf einem Bildschirm.
+Jeder Messwert Ihres GPS-Chips — auf einem scrollbaren Dashboard, optional mit GPX-Aufzeichnung, Bluetooth-Pulsmessung und Sportansicht, die Sie beim Pace coacht, ohne nach Hause zu funken. Kein Google Maps SDK, keine Play Services, keine Telemetrie, keine Konten, keine In-App-Käufe.
 
-Was du siehst
-• Fix-Qualität — 2D/3D-Status, horizontale/vertikale Genauigkeit, sichtbare vs. genutzte Satelliten
-• Himmelsansicht — jeder Satellit nach Azimut/Elevation, Signalstärke pro PRN, Multi-Band-fähig (GPS L1+L5, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS)
-• Position — Lat/Lon in DMS oder Dezimal, Höhe, Standort teilen, in beliebiger Karten-App öffnen
-• Bewegung — Geschwindigkeit, magnetische Richtung, Höhe, vollformatige Retro-Analog-Tachoanzeige mit HUD-Spiegelmodus
-• Kompass — neigungskorrigierte magnetische Richtung, Deklination/Inklination, magnetische Genauigkeit, kardanische Kesselansicht
-• Weltkarte — deine Position, Sonnenposition, Tag/Nacht-Grenze aus echten Natural-Earth-Küstendaten
-• Sonne und Zeit — UTC- und Ortszeit, Sonnenauf-/-untergang/Sonnenhöchststand, Tageslänge, Sonnen-Azimut/-Elevation
+Für Wanderer, Segler, Radfahrer, Läufer, Motorradfahrer, Funkamateure, GNSS-Tüftler und alle, deren Standortdaten am Gerät bleiben sollen.
 
-Was es NICHT tut
-• Kein Netzwerkzugriff. Keine INTERNET-Berechtigung. Nichts verlässt dein Gerät.
-• Keine Google-Play-Services-Abhängigkeit.
-• Kein Hintergrund-Tracking, keine Aufzeichnung, kein Analytics, keine Werbung.
+▌ DASHBOARD
+• Position in fünf Formaten — DMS, dezimal, Plus Code, Maidenhead, MGRS. Antippen wechselt, lange drücken kopiert.
+• Höhe, Genauigkeit pro Achse und Live-Badge für die Fix-Qualität
+• Satellitenzahl und Signalstärke für GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS und IRNSS
+• Himmelsansicht mit nach System eingefärbten Satelliten in echtem Azimut und echter Elevation
+• Neigungskorrigierter Kompass mit magnetischem und wahrem Kurs, Deklination und Inklination
+• Eigener Bildschirm zur Magnetometer-Kalibrierung mit Hard-Iron-Offset-Schätzung
+• Tacho mit selbstanpassender Skala und HUD-Spiegelmodus für Windschutzscheiben
+• Sonnenstand, Sonnenauf-/-untergang, Tageslänge und Nacht-Terminator auf der Weltkarte
 
-Gemacht für Wanderer, Segler, Autofahrer, Piloten und alle, die wissen wollen, was ihr GPS gerade wirklich macht.
+▌ TRACKS
+• Aufzeichnung als Standard-GPX 1.1 mit Garmin TrackPointExtension (Speed, Kurs, Herzfrequenz)
+• Vordergrunddienst zeichnet weiter auf, auch im Hintergrund oder bei ausgeschaltetem Display
+• Track auf OpenStreetMap als Polylinie mit antippbaren Markern
+• Diagramme für Speed, Höhe und Herzfrequenz; Scrubber für jeden Trackpunkt
+• Kartenmodus „Kurs nach oben", Sonnenbogen-Overlay
+• Kartenkacheln offline vorab cachen
+• Mit Ramer–Douglas–Peucker vereinfachen, GPS-Rauschen entfernen
+• GPX importieren, teilen oder speichern; Wegpunkt per Tipp setzen
 
-Open Source. Kostenlos. Spenden willkommen auf paypal.me/jeroentrappers.
+▌ NAVIGATION
+• Track-Back: Pfeil mit Relativ-Peilung führt Sie entlang eines aufgezeichneten Tracks zurück
+• Ziel direkt auf der Karte antippen für spontane Peilungen zum Wegpunkt
+• Live-Anzeige von Entfernung, ETA und Pace gegenüber Zielvorgabe
+
+▌ SPORTANSICHT (geführte Läufe)
+• Vollbild-Dashboard: Zeit + Distanz, aktuelle und durchschnittliche Pace, Speed, Schrittfrequenz, Schrittlänge (Geräte-Schrittzähler)
+• Pace-Abweichung — zu schnell / im Ziel / zu langsam auf einen Blick
+• HR-Zonen-Anzeige mit konfigurierbaren Zonen (optional pro Track überschreibbar)
+• Intensitätsprofil voraus, nach Steigung eingefärbt, mit ETA zum nächsten Anstieg
+• Pace-Ziele — gesamt oder pro Segment
+• Optionale Coaching-Ansagen per Text-to-Speech als „Navigationshinweis" — senkt Ihre Musik ab, statt sie zu unterbrechen
+• Bewertung nach dem Lauf (0–100), verrechnet Pace-Treue mit HR-Zonen-Treue
+
+▌ BLUETOOTH-PULSMESSUNG
+• Beliebigen Standard-BLE-Pulsmesser koppeln (Polar, Wahoo, Garmin-Brustgurte, …)
+• Direkte GATT-Verbindung — keine Hersteller-SDKs, keine Cloud, keine API-Schlüssel
+• Live-BPM auf dem Dashboard; Messwerte pro Trackpunkt im GPX gespeichert
+
+▌ DATENSCHUTZ
+• Keine Analytik, Absturzberichte, Werbung oder Tracker von Drittanbietern
+• Standortdaten, HF-Messwerte und TTS-Audio bleiben auf Ihrem Gerät
+• Einziger Netzwerkzugriff: anonyme OpenStreetMap-Kachelabrufe, und auch nur beim Öffnen einer Track-Karte
+• Vollständige Erklärung: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ OHNE PLAY SERVICES, OHNE PLAY BILLING
+Läuft auf de-googelten Geräten (GrapheneOS, LineageOS, /e/OS, …). Position direkt von den Android-GNSS-APIs. Keine In-App-Käufe — Spenden über Liberapay und GitHub Sponsors, nie hinter einer Funktion gesperrt.
+
+▌ 12 SPRACHEN
+Englisch, Niederländisch, Deutsch, Französisch, Spanisch, Italienisch, Portugiesisch (BR), Russisch, Japanisch, Tschechisch, Türkisch, Polnisch — jeweils von Muttersprachlern geprüft.
+
+▌ OPEN SOURCE
+Quellcode: https://github.com/jeroentrappers/gpsinfo

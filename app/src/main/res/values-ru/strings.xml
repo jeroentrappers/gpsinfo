@@ -20,6 +20,7 @@
 
     <!-- Actions -->
     <string name="action_back">Назад</string>
+    <string name="action_more">Ещё действия</string>
     <string name="action_share_location">Отправить местоположение</string>
     <string name="action_open_maps">Открыть в Картах</string>
     <string name="action_toggle_units">Сменить единицы</string>
@@ -167,6 +168,7 @@
     <string name="trail_empty_title">Треков пока нет</string>
     <string name="trail_empty_body">Нажмите кнопку записи на главном экране, чтобы записать свой первый GPS-трек.</string>
     <string name="trail_recording_stats">%1$d точек · %2$s</string>
+    <string name="trail_recording_stats_with_steps">%1$d точек · %2$s · %3$d шагов</string>
     <string name="trail_list_meta">%1$s · %2$d точек · %3$s</string>
     <string name="trail_point_title">Записано в %1$s</string>
     <string name="trail_action_delete">Удалить</string>
@@ -248,4 +250,170 @@
     <string name="trail_record_notification_channel_body">Показывается, пока GPS-трек записывается в фоне.</string>
     <string name="trail_record_notification_title">Запись трека</string>
     <string name="trail_record_notification_body">GPS-запись продолжается, пока приложение открыто или в кармане. Нажмите, чтобы вернуться.</string>
+
+    <!-- Magnetometer calibration -->
+    <string name="calibration_title">Калибровка компаса</string>
+    <string name="calibration_reset">Сбросить выборки</string>
+    <string name="calibration_accuracy_label">Точность датчика</string>
+    <string name="calibration_coverage_label">Охват ориентаций</string>
+    <string name="calibration_coverage_detail">%1$d из %2$d секторов ориентации · %3$d выборок</string>
+    <string name="calibration_scatter_label">Облако магнитного поля</string>
+    <string name="calibration_scatter_hint">Точки: недавние измерения. Кольцо: оценка смещения от металла.\nХорошо откалиброванный телефон рисует плотное кольцо вокруг креста.</string>
+    <string name="calibration_axis_xy">XY</string>
+    <string name="calibration_axis_xz">XZ</string>
+    <string name="calibration_axis_yz">YZ</string>
+    <string name="calibration_field_label">Величина поля</string>
+    <string name="calibration_field_normal">В пределах ожидаемого диапазона поля Земли (22 – 70 мкТл).</string>
+    <string name="calibration_field_warning">Вне ожидаемого диапазона поля Земли. Отойдите от металла, магнитов, динамиков и ноутбуков и повторите.</string>
+    <string name="calibration_hardiron_label">Смещение от металла</string>
+    <string name="calibration_hardiron_detail">Радиус сферы %1$.1f мкТл · СКО %2$.1f мкТл</string>
+    <string name="calibration_how_label">Как калибровать</string>
+    <string name="calibration_how_body">1. Отойдите от крупных металлических объектов, магнитов, динамиков и ноутбуков.\n2. Держите телефон в руке и медленно поворачивайте его во всех направлениях — движение «восьмёркой» подходит.\n3. Продолжайте, пока индикатор точности не покажет ВЫСОКАЯ, а охват не приблизится к 100 %%.\n\nТелефон калибруется в фоне постоянно; этот экран лишь показывает, что он уже измерил.</string>
+
+    <!-- Accessibility descriptions for canvas-rendered surfaces. -->
+    <string name="a11y_sky_view">Небо. Видимых спутников %1$d, в фиксации %2$d, средний сигнал %3$.1f децибел.</string>
+    <string name="a11y_sky_view_empty">Небо. Ожидание спутников.</string>
+    <string name="a11y_compass_rose">Курс компаса %1$03d градусов магнитных, %2$s.</string>
+    <string name="a11y_compass_bowl">Карданный компас. Курс %1$03d градусов магнитных, %2$s. Тангаж %3$+.0f градусов, крен %4$+.0f градусов.</string>
+    <string name="a11y_satellite_row">Спутник %1$s SV %2$d. %3$s. Угол места %4$s. Азимут %5$s. %6$s.</string>
+    <string name="a11y_sat_signal_value">Сигнал %1$.0f децибел</string>
+    <string name="a11y_sat_signal_none">Нет сигнала</string>
+    <string name="a11y_sat_unknown">неизвестно</string>
+    <string name="a11y_sat_degrees">%1$.0f градусов</string>
+    <string name="a11y_sat_in_fix">Используется в фиксации</string>
+    <string name="a11y_sat_not_in_fix">Не в фиксации</string>
+    <string name="a11y_calibration_plot">Проекция магнитометра %1$s. Оценка смещения от металла %2$+.1f, %3$+.1f микротесла.</string>
+    <string name="a11y_speed_gauge">Спидометр. %1$s %2$s.</string>
+    <string name="a11y_speed_gauge_no_fix">Спидометр. Нет фиксации GPS.</string>
+    <string name="a11y_recording_fab">Остановить запись. Записано точек: %1$d за %2$s.</string>
+
+    <!-- Acquiring / no-fix captions on cards -->
+    <string name="acquiring_fix">Поиск спутников…</string>
+    <string name="no_fix_caption">Нет фиксации GPS</string>
+
+    <!-- Top-level Settings entry -->
+    <string name="action_open_settings_screen">Настройки</string>
+
+    <!-- Re-trigger the onboarding tour from Settings -->
+    <string name="settings_show_tour">Показать тур ещё раз</string>
+
+    <!-- Coordinate format labels (shown under single-line codes) -->
+    <string name="coord_format_plus_code">Plus Code</string>
+    <string name="coord_format_maidenhead">Maidenhead</string>
+
+    <!-- Pace units (running/walking convention — minutes per unit of distance) -->
+    <string name="unit_pace_per_km">/км</string>
+    <string name="unit_pace_per_mi">/ми</string>
+    <string name="unit_pace_per_nm">/мм</string>
+    <string name="metric_pace">Темп</string>
+    <string name="trail_stats_avg_pace">Сред. темп</string>
+    <string name="trail_stats_best_pace">Лучший темп</string>
+    <string name="trail_stats_avg_hr">Сред. пульс</string>
+    <string name="trail_stats_max_hr">Макс. пульс</string>
+    <string name="trail_stats_score">Оценка</string>
+    <string name="trail_stats_score_pace">Темп %1$s против цели %2$s %3$s</string>
+
+    <!-- Navigation card (bearing-to-waypoint / track-back) -->
+    <string name="nav_card_title">Навигация</string>
+    <string name="nav_stop">Остановить навигацию</string>
+    <string name="nav_metric_distance">Дистанция</string>
+    <string name="nav_metric_bearing">Пеленг</string>
+    <string name="nav_metric_eta">Прибытие</string>
+    <string name="nav_route_progress">Осталось путевых точек: %1$d из %2$d</string>
+    <string name="nav_start">Навигация к…</string>
+    <string name="nav_pick_screen_title">Выберите цель</string>
+    <string name="nav_pick_tab_map">Указать на карте</string>
+    <string name="nav_pick_tab_coords">Ввести координаты</string>
+    <string name="nav_pick_coords_lat_label">Широта (десятичная)</string>
+    <string name="nav_pick_coords_lon_label">Долгота (десятичная)</string>
+    <string name="nav_pick_coords_name_label">Название (необязательно)</string>
+    <string name="nav_pick_confirm">Использовать эту точку</string>
+    <string name="nav_pick_map_hint">Нажмите на карту, чтобы поставить цель, затем подтвердите.</string>
+    <string name="nav_pick_invalid_coords">Введите широту в диапазоне [-90, 90] и долготу в [-180, 180].</string>
+    <string name="nav_default_name">Цель</string>
+
+    <!-- Track-back from a recorded trail -->
+    <string name="trail_track_back">Обратный путь</string>
+    <string name="coord_format_mgrs">MGRS</string>
+
+    <!-- Pace goal on an active navigation target -->
+    <string name="nav_set_pace_goal">Задать целевой темп</string>
+    <string name="nav_edit_pace_goal">Изменить целевой темп</string>
+    <string name="nav_clear_pace_goal">Убрать цель</string>
+    <string name="nav_goal_label">Целевой темп</string>
+    <string name="nav_goal_too_fast">Слишком быстро — сбавьте темп</string>
+    <string name="nav_goal_too_slow">Слишком медленно — прибавьте</string>
+    <string name="nav_goal_on_target">В графике</string>
+    <string name="nav_goal_acquiring">Замер темпа…</string>
+    <string name="nav_goal_dialog_title">Задать целевой темп</string>
+    <string name="nav_goal_dialog_body">Введите темп, который хотите удерживать. Отклонение в реальном времени появится на карточке навигации, а при выходе за пределы прозвучит звуковая подсказка.</string>
+    <string name="nav_goal_minutes_label">Минуты</string>
+    <string name="nav_goal_seconds_label">Секунды</string>
+
+    <!-- Heart-rate monitor pairing &amp; status -->
+    <string name="hr_pair_title">Пульсометр</string>
+    <string name="hr_pair_body">Нажмите на устройство, чтобы подключить его. Поддерживаются только Bluetooth-пульсометры со стандартной службой Heart Rate Service.</string>
+    <string name="hr_pair_scanning">Поиск…</string>
+    <string name="hr_pair_scan_again">Искать снова</string>
+    <string name="hr_pair_no_devices_yet">Поиск пульсометров… убедитесь, что датчик включён и находится рядом.</string>
+    <string name="hr_pair_unknown_device">Неизвестное устройство</string>
+    <string name="hr_pair_needs_permissions">Для подключения пульсометра нужны разрешения Bluetooth.</string>
+    <string name="hr_forget_device">Забыть</string>
+    <string name="hr_status_idle">Пульсометр не подключён</string>
+    <string name="hr_status_scanning">Поиск пульсометров</string>
+    <string name="hr_status_connecting">Подключение к %1$s…</string>
+    <string name="hr_status_connected">Подключено · %1$d уд/мин</string>
+    <string name="hr_status_connected_named">%1$s · %2$d уд/мин</string>
+    <string name="hr_status_disconnected">%1$s · нет связи</string>
+    <string name="settings_pair_hr">Пульсометр</string>
+    <string name="settings_hr_zones">Зоны пульса</string>
+
+    <!-- HR zones editor screen -->
+    <string name="hr_zones_title">Зоны пульса</string>
+    <string name="hr_zones_body">Укажите максимальный пульс и настройте границы зон. По умолчанию используется стандартная разбивка 60/70/80/90 %; тренированные спортсмены обычно поднимают Z3–Z5 выше.</string>
+    <string name="hr_zones_max_label">Максимальный пульс (уд/мин)</string>
+    <string name="hr_zones_z2_threshold">Зона 2 начинается с</string>
+    <string name="hr_zones_z3_threshold">Зона 3 начинается с</string>
+    <string name="hr_zones_z4_threshold">Зона 4 начинается с</string>
+    <string name="hr_zones_z5_threshold">Зона 5 начинается с</string>
+
+    <!-- HeartRateCard on the dashboard -->
+    <string name="hr_card_title">Пульс</string>
+    <string name="hr_card_no_paired">Пульсометр не подключён. Подключите его в настройках.</string>
+    <string name="hr_card_waiting">Ожидание пульсометра…</string>
+    <string name="hr_card_zone">Зона</string>
+    <string name="hr_card_disconnect">Отключить пульсометр</string>
+
+    <!-- Sports Dashboard (guided-run view) -->
+    <string name="sports_dashboard_title">Спорт</string>
+    <string name="sports_dashboard_open">Открыть спортивный экран</string>
+    <string name="sports_dashboard_idle_body">Запустите запись на главном экране, затем откройте спортивный экран, чтобы видеть темп, каденс и пульс в реальном времени.</string>
+    <string name="sports_metric_elapsed">Время</string>
+    <string name="sports_metric_distance">Дистанция</string>
+    <string name="sports_metric_cadence">Каденс</string>
+    <string name="sports_metric_stride">Длина шага</string>
+    <string name="sports_metric_now">Сейчас</string>
+    <string name="sports_metric_avg">Сред.</string>
+
+    <!-- Gauge headings on the Sports view -->
+    <string name="gauge_pace_title">Темп и цель</string>
+    <string name="gauge_hr_title">Зона пульса</string>
+
+    <!-- Audible cues (spoken by TextToSpeech during the Sports view) -->
+    <string name="cue_on_target">В графике</string>
+    <string name="cue_slightly_slow">Чуть медленнее</string>
+    <string name="cue_slightly_fast">Чуть быстрее</string>
+    <string name="cue_too_slow">Слишком медленно</string>
+    <string name="cue_too_fast">Слишком быстро</string>
+    <string name="cue_zone">Зона %1$d</string>
+    <string name="settings_audible_cues">Звуковые подсказки</string>
+    <string name="settings_audible_cues_body">Голосовые подсказки о темпе и зоне во время спортивного экрана. Используется встроенный синтез речи устройства — сеть не требуется.</string>
+
+    <!-- Intensity profile (upcoming-trail elevation chart) -->
+    <string name="profile_card_title">Трек впереди</string>
+    <string name="profile_distance_ahead">%1$s трека</string>
+    <string name="profile_elevation_range">%1$s → %2$s</string>
+    <string name="profile_next_climb">Следующий подъём</string>
+    <string name="profile_climb_summary">%1$s · +%2$s</string>
+    <string name="profile_climb_in">Через</string>
 </resources>

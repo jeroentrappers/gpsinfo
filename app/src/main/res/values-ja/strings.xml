@@ -20,6 +20,7 @@
 
     <!-- Actions -->
     <string name="action_back">戻る</string>
+    <string name="action_more" tools:ignore="MissingTranslation">その他の操作</string>
     <string name="action_share_location">現在地を共有</string>
     <string name="action_open_maps">マップで開く</string>
     <string name="action_toggle_units">単位を切り替え</string>
@@ -167,6 +168,7 @@
     <string name="trail_empty_title">トラックがまだありません</string>
     <string name="trail_empty_body">ダッシュボードの記録ボタンをタップして、最初の GPS トラックを記録しましょう。</string>
     <string name="trail_recording_stats">%1$d 点 · %2$s</string>
+    <string name="trail_recording_stats_with_steps" tools:ignore="MissingTranslation">%1$d 点 · %2$s · %3$d 歩</string>
     <string name="trail_list_meta">%1$s · %2$d 点 · %3$s</string>
     <string name="trail_point_title">%1$s に記録</string>
     <string name="trail_action_delete">削除</string>
@@ -248,4 +250,170 @@
     <string name="trail_record_notification_channel_body">GPS トラックをバックグラウンドで記録中に表示されます。</string>
     <string name="trail_record_notification_title">トラックを記録中</string>
     <string name="trail_record_notification_body">アプリを開いている間、またはポケットに入れている間も GPS の記録が続きます。タップで戻ります。</string>
+
+    <!-- Magnetometer calibration -->
+    <string name="calibration_title" tools:ignore="MissingTranslation">コンパス校正</string>
+    <string name="calibration_reset" tools:ignore="MissingTranslation">サンプルをリセット</string>
+    <string name="calibration_accuracy_label" tools:ignore="MissingTranslation">センサー精度</string>
+    <string name="calibration_coverage_label" tools:ignore="MissingTranslation">姿勢カバレッジ</string>
+    <string name="calibration_coverage_detail" tools:ignore="MissingTranslation">%1$d / %2$d の姿勢ビン · %3$d サンプル</string>
+    <string name="calibration_scatter_label" tools:ignore="MissingTranslation">磁場プロット</string>
+    <string name="calibration_scatter_hint" tools:ignore="MissingTranslation">点: 最近の測定値。リング: 推定ハードアイアンオフセット。\n校正が良好な端末では、十字を中心とした密なリングが描かれます。</string>
+    <string name="calibration_axis_xy" tools:ignore="MissingTranslation">XY</string>
+    <string name="calibration_axis_xz" tools:ignore="MissingTranslation">XZ</string>
+    <string name="calibration_axis_yz" tools:ignore="MissingTranslation">YZ</string>
+    <string name="calibration_field_label" tools:ignore="MissingTranslation">磁場強度</string>
+    <string name="calibration_field_normal" tools:ignore="MissingTranslation">地磁気の想定範囲内（22〜70 µT）。</string>
+    <string name="calibration_field_warning" tools:ignore="MissingTranslation">地磁気の想定範囲外です。金属・磁石・スピーカー・ノート PC から離れてやり直してください。</string>
+    <string name="calibration_hardiron_label" tools:ignore="MissingTranslation">ハードアイアンオフセット</string>
+    <string name="calibration_hardiron_detail" tools:ignore="MissingTranslation">球面半径 %1$.1f µT · RMS %2$.1f µT</string>
+    <string name="calibration_how_label" tools:ignore="MissingTranslation">校正の方法</string>
+    <string name="calibration_how_body" tools:ignore="MissingTranslation">1. 大きな金属物・磁石・スピーカー・ノート PC から離れます。\n2. 端末を手に持ち、あらゆる向きにゆっくり回転させます — 8 の字を描く動きが効果的です。\n3. 精度チップが HIGH を示し、カバレッジが 100 %% に近づくまで続けます。\n\n端末はバックグラウンドで常に校正を続けています。この画面はその測定状況を確認するためのものです。</string>
+
+    <!-- Accessibility descriptions for canvas-rendered surfaces. EN-only for now; full localization tracked separately. -->
+    <string name="a11y_sky_view" tools:ignore="MissingTranslation">スカイビュー。受信中 %1$d、測位使用 %2$d、平均信号 %3$.1f デシベル。</string>
+    <string name="a11y_sky_view_empty" tools:ignore="MissingTranslation">スカイビュー。衛星を待機中。</string>
+    <string name="a11y_compass_rose" tools:ignore="MissingTranslation">方位 %1$03d 度（磁北基準）、%2$s。</string>
+    <string name="a11y_compass_bowl" tools:ignore="MissingTranslation">ジンバル式コンパス。方位 %1$03d 度（磁北基準）、%2$s。ピッチ %3$+.0f 度、ロール %4$+.0f 度。</string>
+    <string name="a11y_satellite_row" tools:ignore="MissingTranslation">%1$s 衛星 SV %2$d。%3$s。仰角 %4$s。方位 %5$s。%6$s。</string>
+    <string name="a11y_sat_signal_value" tools:ignore="MissingTranslation">信号 %1$.0f デシベル</string>
+    <string name="a11y_sat_signal_none" tools:ignore="MissingTranslation">信号なし</string>
+    <string name="a11y_sat_unknown" tools:ignore="MissingTranslation">不明</string>
+    <string name="a11y_sat_degrees" tools:ignore="MissingTranslation">%1$.0f 度</string>
+    <string name="a11y_sat_in_fix" tools:ignore="MissingTranslation">測位に使用中</string>
+    <string name="a11y_sat_not_in_fix" tools:ignore="MissingTranslation">測位未使用</string>
+    <string name="a11y_calibration_plot" tools:ignore="MissingTranslation">磁気センサー %1$s 投影。推定ハードアイアンオフセット %2$+.1f, %3$+.1f マイクロテスラ。</string>
+    <string name="a11y_speed_gauge" tools:ignore="MissingTranslation">スピードゲージ。%1$s %2$s。</string>
+    <string name="a11y_speed_gauge_no_fix" tools:ignore="MissingTranslation">スピードゲージ。GPS 測位なし。</string>
+    <string name="a11y_recording_fab" tools:ignore="MissingTranslation">記録を停止。%2$s で %1$d 点を記録。</string>
+
+    <!-- Acquiring / no-fix captions on cards -->
+    <string name="acquiring_fix" tools:ignore="MissingTranslation">衛星を捕捉中…</string>
+    <string name="no_fix_caption" tools:ignore="MissingTranslation">GPS 測位なし</string>
+
+    <!-- Top-level Settings entry -->
+    <string name="action_open_settings_screen" tools:ignore="MissingTranslation">設定</string>
+
+    <!-- Re-trigger the onboarding tour from Settings -->
+    <string name="settings_show_tour" tools:ignore="MissingTranslation">ツアーをもう一度見る</string>
+
+    <!-- Coordinate format labels (shown under single-line codes) -->
+    <string name="coord_format_plus_code" tools:ignore="MissingTranslation">Plus Code</string>
+    <string name="coord_format_maidenhead" tools:ignore="MissingTranslation">Maidenhead</string>
+
+    <!-- Pace units (running/walking convention — minutes per unit of distance) -->
+    <string name="unit_pace_per_km" tools:ignore="MissingTranslation">/km</string>
+    <string name="unit_pace_per_mi" tools:ignore="MissingTranslation">/mi</string>
+    <string name="unit_pace_per_nm" tools:ignore="MissingTranslation">/nm</string>
+    <string name="metric_pace" tools:ignore="MissingTranslation">ペース</string>
+    <string name="trail_stats_avg_pace" tools:ignore="MissingTranslation">平均ペース</string>
+    <string name="trail_stats_best_pace" tools:ignore="MissingTranslation">最速ペース</string>
+    <string name="trail_stats_avg_hr" tools:ignore="MissingTranslation">平均心拍</string>
+    <string name="trail_stats_max_hr" tools:ignore="MissingTranslation">最大心拍</string>
+    <string name="trail_stats_score" tools:ignore="MissingTranslation">スコア</string>
+    <string name="trail_stats_score_pace" tools:ignore="MissingTranslation">ペース %1$s（目標 %2$s %3$s）</string>
+
+    <!-- Navigation card (bearing-to-waypoint / track-back) -->
+    <string name="nav_card_title" tools:ignore="MissingTranslation">ナビゲーション</string>
+    <string name="nav_stop" tools:ignore="MissingTranslation">ナビを停止</string>
+    <string name="nav_metric_distance" tools:ignore="MissingTranslation">距離</string>
+    <string name="nav_metric_bearing" tools:ignore="MissingTranslation">方位</string>
+    <string name="nav_metric_eta" tools:ignore="MissingTranslation">ETA</string>
+    <string name="nav_route_progress" tools:ignore="MissingTranslation">残りウェイポイント %1$d / %2$d</string>
+    <string name="nav_start" tools:ignore="MissingTranslation">目的地へナビ…</string>
+    <string name="nav_pick_screen_title" tools:ignore="MissingTranslation">目的地を選択</string>
+    <string name="nav_pick_tab_map" tools:ignore="MissingTranslation">地図で選択</string>
+    <string name="nav_pick_tab_coords" tools:ignore="MissingTranslation">座標を入力</string>
+    <string name="nav_pick_coords_lat_label" tools:ignore="MissingTranslation">緯度（10 進）</string>
+    <string name="nav_pick_coords_lon_label" tools:ignore="MissingTranslation">経度（10 進）</string>
+    <string name="nav_pick_coords_name_label" tools:ignore="MissingTranslation">名前（任意）</string>
+    <string name="nav_pick_confirm" tools:ignore="MissingTranslation">この地点を使用</string>
+    <string name="nav_pick_map_hint" tools:ignore="MissingTranslation">地図をタップして目的地を置き、確定してください。</string>
+    <string name="nav_pick_invalid_coords" tools:ignore="MissingTranslation">緯度は [-90, 90]、経度は [-180, 180] の範囲で入力してください。</string>
+    <string name="nav_default_name" tools:ignore="MissingTranslation">目的地</string>
+
+    <!-- Track-back from a recorded trail -->
+    <string name="trail_track_back" tools:ignore="MissingTranslation">引き返す</string>
+    <string name="coord_format_mgrs">MGRS</string>
+
+    <!-- Pace goal on an active navigation target -->
+    <string name="nav_set_pace_goal" tools:ignore="MissingTranslation">目標ペースを設定</string>
+    <string name="nav_edit_pace_goal" tools:ignore="MissingTranslation">目標ペースを編集</string>
+    <string name="nav_clear_pace_goal" tools:ignore="MissingTranslation">目標をクリア</string>
+    <string name="nav_goal_label" tools:ignore="MissingTranslation">目標ペース</string>
+    <string name="nav_goal_too_fast" tools:ignore="MissingTranslation">速すぎ — ペースを落として</string>
+    <string name="nav_goal_too_slow" tools:ignore="MissingTranslation">遅すぎ — ペースを上げて</string>
+    <string name="nav_goal_on_target" tools:ignore="MissingTranslation">目標どおり</string>
+    <string name="nav_goal_acquiring" tools:ignore="MissingTranslation">ペース計測中…</string>
+    <string name="nav_goal_dialog_title" tools:ignore="MissingTranslation">目標ペースを設定</string>
+    <string name="nav_goal_dialog_body" tools:ignore="MissingTranslation">維持したいペースを入力してください。ナビゲーションカードにリアルタイムのずれが表示され、しきい値を越えると音声で通知します。</string>
+    <string name="nav_goal_minutes_label" tools:ignore="MissingTranslation">分</string>
+    <string name="nav_goal_seconds_label" tools:ignore="MissingTranslation">秒</string>
+
+    <!-- Heart-rate monitor pairing &amp; status -->
+    <string name="hr_pair_title" tools:ignore="MissingTranslation">心拍数モニター</string>
+    <string name="hr_pair_body" tools:ignore="MissingTranslation">デバイスをタップしてペアリングします。標準の Heart Rate Service に対応した Bluetooth 心拍計のみサポートします。</string>
+    <string name="hr_pair_scanning" tools:ignore="MissingTranslation">スキャン中…</string>
+    <string name="hr_pair_scan_again" tools:ignore="MissingTranslation">再スキャン</string>
+    <string name="hr_pair_no_devices_yet" tools:ignore="MissingTranslation">モニターを検索中… 心拍ストラップが起動していて近くにあることを確認してください。</string>
+    <string name="hr_pair_unknown_device" tools:ignore="MissingTranslation">不明なデバイス</string>
+    <string name="hr_pair_needs_permissions" tools:ignore="MissingTranslation">モニターをペアリングするには Bluetooth の権限が必要です。</string>
+    <string name="hr_forget_device" tools:ignore="MissingTranslation">削除</string>
+    <string name="hr_status_idle" tools:ignore="MissingTranslation">モニター未ペアリング</string>
+    <string name="hr_status_scanning" tools:ignore="MissingTranslation">モニターをスキャン中</string>
+    <string name="hr_status_connecting" tools:ignore="MissingTranslation">%1$s に接続中…</string>
+    <string name="hr_status_connected" tools:ignore="MissingTranslation">接続済み · %1$d BPM</string>
+    <string name="hr_status_connected_named" tools:ignore="MissingTranslation">%1$s · %2$d BPM</string>
+    <string name="hr_status_disconnected" tools:ignore="MissingTranslation">%1$s · 未接続</string>
+    <string name="settings_pair_hr" tools:ignore="MissingTranslation">心拍数モニター</string>
+    <string name="settings_hr_zones" tools:ignore="MissingTranslation">心拍数ゾーン</string>
+
+    <!-- HR zones editor screen -->
+    <string name="hr_zones_title" tools:ignore="MissingTranslation">心拍数ゾーン</string>
+    <string name="hr_zones_body" tools:ignore="MissingTranslation">最大心拍数を設定し、ゾーンの境界を調整します。デフォルトは標準的な 60/70/80/90 % の区分です。トレーニングを積んだアスリートは通常 Z3〜Z5 を高めに設定します。</string>
+    <string name="hr_zones_max_label" tools:ignore="MissingTranslation">最大心拍数 (BPM)</string>
+    <string name="hr_zones_z2_threshold" tools:ignore="MissingTranslation">ゾーン 2 の開始値</string>
+    <string name="hr_zones_z3_threshold" tools:ignore="MissingTranslation">ゾーン 3 の開始値</string>
+    <string name="hr_zones_z4_threshold" tools:ignore="MissingTranslation">ゾーン 4 の開始値</string>
+    <string name="hr_zones_z5_threshold" tools:ignore="MissingTranslation">ゾーン 5 の開始値</string>
+
+    <!-- HeartRateCard on the dashboard -->
+    <string name="hr_card_title" tools:ignore="MissingTranslation">心拍数</string>
+    <string name="hr_card_no_paired" tools:ignore="MissingTranslation">モニターがペアリングされていません。設定でペアリングしてください。</string>
+    <string name="hr_card_waiting" tools:ignore="MissingTranslation">モニターを待機中…</string>
+    <string name="hr_card_zone" tools:ignore="MissingTranslation">ゾーン</string>
+    <string name="hr_card_disconnect" tools:ignore="MissingTranslation">モニターのペアリングを解除</string>
+
+    <!-- Sports Dashboard (guided-run view) -->
+    <string name="sports_dashboard_title" tools:ignore="MissingTranslation">スポーツビュー</string>
+    <string name="sports_dashboard_open" tools:ignore="MissingTranslation">スポーツビューを開く</string>
+    <string name="sports_dashboard_idle_body" tools:ignore="MissingTranslation">ダッシュボードから記録を開始してからスポーツビューを開くと、ペース・フォーム・心拍数をリアルタイムに表示します。</string>
+    <string name="sports_metric_elapsed" tools:ignore="MissingTranslation">経過</string>
+    <string name="sports_metric_distance" tools:ignore="MissingTranslation">距離</string>
+    <string name="sports_metric_cadence" tools:ignore="MissingTranslation">ケイデンス</string>
+    <string name="sports_metric_stride" tools:ignore="MissingTranslation">ストライド</string>
+    <string name="sports_metric_now" tools:ignore="MissingTranslation">現在</string>
+    <string name="sports_metric_avg" tools:ignore="MissingTranslation">平均</string>
+
+    <!-- Gauge headings on the Sports view -->
+    <string name="gauge_pace_title" tools:ignore="MissingTranslation">ペース vs 目標</string>
+    <string name="gauge_hr_title" tools:ignore="MissingTranslation">心拍数ゾーン</string>
+
+    <!-- Audible cues (spoken by TextToSpeech during the Sports view) -->
+    <string name="cue_on_target" tools:ignore="MissingTranslation">目標どおり</string>
+    <string name="cue_slightly_slow" tools:ignore="MissingTranslation">少し遅い</string>
+    <string name="cue_slightly_fast" tools:ignore="MissingTranslation">少し速い</string>
+    <string name="cue_too_slow" tools:ignore="MissingTranslation">遅すぎ</string>
+    <string name="cue_too_fast" tools:ignore="MissingTranslation">速すぎ</string>
+    <string name="cue_zone" tools:ignore="MissingTranslation">ゾーン %1$d</string>
+    <string name="settings_audible_cues" tools:ignore="MissingTranslation">音声フィードバック</string>
+    <string name="settings_audible_cues_body" tools:ignore="MissingTranslation">スポーツビュー中にペースとゾーンを音声で読み上げます。端末内蔵の音声合成を使うため、ネットワークは不要です。</string>
+
+    <!-- Intensity profile (upcoming-trail elevation chart) -->
+    <string name="profile_card_title" tools:ignore="MissingTranslation">この先のトラック</string>
+    <string name="profile_distance_ahead" tools:ignore="MissingTranslation">残り %1$s</string>
+    <string name="profile_elevation_range" tools:ignore="MissingTranslation">%1$s → %2$s</string>
+    <string name="profile_next_climb" tools:ignore="MissingTranslation">次の登り</string>
+    <string name="profile_climb_summary" tools:ignore="MissingTranslation">%1$s · +%2$s</string>
+    <string name="profile_climb_in" tools:ignore="MissingTranslation">あと</string>
 </resources>

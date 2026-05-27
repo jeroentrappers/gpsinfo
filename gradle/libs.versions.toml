@@ -21,6 +21,15 @@ benchmark = "1.5.0-alpha06"
 baselineProfile = "1.5.0-alpha06"
 espressoCore = "3.7.0"
 osmdroid = "6.1.20"
+# Android Auto — projection-mode templates. The library is OEM-neutral
+# and doesn't require Google Play Services on the phone or the head
+# unit; the system Android Auto app or compatible third-party host
+# (e.g. an aftermarket head unit) is what connects.
+carApp = "1.7.0"
+# ZXing core — pure-Java QR encoder/decoder. Apache 2.0, no native
+# dependencies, ~400 KB. We use only the encoder side for the
+# "share my position" QR feature.
+zxingCore = "3.5.3"
 
 # Testing
 junit = "4.13.2"
@@ -43,6 +52,8 @@ androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", versi
 androidx-window = { module = "androidx.window:window", version.ref = "window" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileInstaller" }
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
+androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxingCore" }
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 

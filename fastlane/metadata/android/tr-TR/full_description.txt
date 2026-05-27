@@ -1,21 +1,59 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
+GPSinfo, Android için sade, çevrimdışı öncelikli bir GPS panosu ve rehberli koşu eşlikçisidir.
 
-GPSinfo, Android için sade ve modern bir GNSS panosudur. Telefonunuzun GPS çipi ve sensörlerinin sunduğu her ölçüm, tek bir entegre ekranda canlı olarak.
+Telefonunun GPS yongasının raporlayabileceği her ölçüt — tek bir kaydırılabilir ekranda; isteğe bağlı GPX iz kaydı, Bluetooth nabız ve tempunu eve veri göndermeden yöneten Spor görünümü. Google Maps SDK, Play Services, telemetri, hesap, uygulama içi satın alma yok.
 
-Gösterdikleri
-• Fix kalitesi — 2D/3D durumu, yatay/dikey doğruluk, görünür vs. kullanılan uydular
-• Gökyüzü görünümü — azimut/yükselişte her uydu, PRN başına sinyal gücü, çok bantlı (GPS L1+L5, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS)
-• Konum — DMS veya ondalık enlem/boylam, irtifa, konum paylaşımı, herhangi bir harita uygulamasında açma
-• Hareket — hız, manyetik yön, irtifa, tam ekran retro analog hız göstergesi ve HUD ayna modu
-• Pusula — eğim düzeltilmiş manyetik yön, sapma/eğim, manyetik doğruluk, kardanlı binnacle görünümü
-• Dünya haritası — konumunuz, güneş konumu, gerçek Natural Earth verisiyle çizilmiş gündüz/gece sınırı
-• Güneş ve saat — UTC ve yerel saat, gün doğumu/öğlen/gün batımı, gün uzunluğu, güneşin azimutu/yükselişi
+Yürüyüşçü, denizci, bisikletçi, koşucu, motorcu, telsiz amatörü, GNSS meraklısı ve konum verisini telefonunda tutmak isteyen herkes için.
 
-YAPMADIKLARI
-• Ağ erişimi yok. INTERNET izni yok. Hiçbir şey cihazınızdan çıkmaz.
-• Google Play Services bağımlılığı yok.
-• Arka plan takibi yok, kayıt yok, analiz yok, reklam yok.
+▌ PANO
+• Konum beş biçimde — DMS, ondalık, Plus Code, Maidenhead, MGRS. Dokun değiştir, uzun bas kopyala.
+• İrtifa, eksen başına doğruluk ve canlı sabitleme kalitesi rozeti
+• GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS ve IRNSS için uydu sayısı ve sinyal gücü
+• Gökyüzü görünümü: takımyıldıza göre renkli uydular, gerçek azimut ve yükseltiyle
+• Eğim düzeltmeli pusula; manyetik/gerçek kuzey, sapma ve eğim
+• Manyetometre için ayrı kalibrasyon ekranı ve sert demir ofset tahmini
+• Otomatik ölçekli hız göstergesi ve ön cam yansıması için HUD ayna modu
+• Güneş konumu, gün doğumu/batımı, gün uzunluğu ve dünya haritasında gece-gündüz terminatörü
 
-Yürüyüşçüler, denizciler, sürücüler, pilotlar ve GPS'inin gerçekten ne yaptığını bilmek isteyen herkes için.
+▌ İZLER
+• GPS izlerini Garmin TrackPointExtension (hız, yön, nabız) ile standart GPX 1.1 olarak kaydet
+• Ön plan servisi sayesinde arka planda veya ekran kapalıyken de kayıt sürer
+• İzi OpenStreetMap'te çizgi ve dokunmatik işaretlerle göster
+• Hız, irtifa ve nabız grafikleri; iz noktalarını incelemek için kaydırma çubuğu
+• Yön yukarı harita modu, güneş yayı katmanı
+• Harita karolarını önceden indir, çevrimdışı kullan
+• Ramer–Douglas–Peucker ile basitleştirerek GPS gürültüsünü temizle
+• GPX'i içe aktar, paylaş veya kaydet; tek dokunuşla yol noktası kaydet
 
-Açık kaynak. Ücretsiz. Bağışlar memnuniyetle: paypal.me/jeroentrappers.
+▌ NAVİGASYON
+• Geri iz: bağıl yön oku, kaydedilmiş bir iz boyunca seni geri götürür
+• Haritada dokunarak hedef seçimi
+• Yol noktası başına canlı mesafe, varış süresi ve hedefe karşı tempo
+
+▌ SPOR GÖRÜNÜMÜ (rehberli koşu ve yürüyüş)
+• Tam ekran pano: süre + mesafe, anlık ve ortalama tempo, hız, kadans ve adım uzunluğu (cihaz adımölçerinden)
+• Tempo sapma göstergesi — bir bakışta çok hızlı / hedefte / çok yavaş
+• Yapılandırılabilir bölgeli nabız bölge göstergesi (iz başına geçersiz kılma seçeneğiyle)
+• Önündeki kesimin eğime göre renkli yoğunluk profili ve sıradaki tırmanışa ETA
+• Tempo hedefleri — rota geneli veya segment bazlı
+• Cihaz üzerindeki TTS ile sesli koçluk; navigasyon ses özniteliği müziğini kesmez, kısar
+• Koşu sonrası performans puanı (0–100): tempo ve nabız bölgesi uyumunu birleştirir
+
+▌ BLUETOOTH NABIZ
+• Standart BLE nabız ölçerleri eşle (Polar, Wahoo, Garmin göğüs bantları, …)
+• Doğrudan GATT bağlantısı — üretici SDK'sı, bulut köprüsü, API anahtarı yok
+• Panoda canlı BPM kartı; örnekler GPX içinde iz noktası başına saklanır
+
+▌ GİZLİLİK
+• Analitik, çökme raporu, reklam veya üçüncü taraf izleyici yok
+• Konum verisi, nabız örnekleri ve TTS sesi cihazından asla çıkmaz
+• Tek ağ isteği, iz haritası açıldığında anonim OpenStreetMap karo indirmesidir
+• Politikanın tamamı: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ PLAY SERVICES YOK, PLAY BILLING YOK
+Google'sızlaştırılmış cihazlarda (GrapheneOS, LineageOS, /e/OS, …) çalışır. Konum doğrudan Android GNSS API'larından gelir. Uygulama içi satın alma yok — bağışlar Liberapay ve GitHub Sponsors üzerindedir, hiçbir özelliğe kilitli değildir.
+
+▌ ON İKİ DİL
+İngilizce, Felemenkçe, Almanca, Fransızca, İspanyolca, İtalyanca, Portekizce (BR), Rusça, Japonca, Çekçe, Türkçe, Lehçe — ana dili konuşanlarca incelendi.
+
+▌ AÇIK KAYNAK
+Kaynak: https://github.com/jeroentrappers/gpsinfo

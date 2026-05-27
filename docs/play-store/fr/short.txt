@@ -1,1 +1,1 @@
-Tableau de bord GPS hors ligne : GNSS brut, traces, sans Play Services.
+Tableau GPS hors ligne : GNSS brut, cardio BLE, coach d'allure, traces GPX.

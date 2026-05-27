@@ -1,1 +1,1 @@
-Offline GPS dashboard with raw GNSS info, trail recording, no Play Services.
+Offline GPS dashboard: raw GNSS, BLE heart-rate, pace coaching, GPX trails.

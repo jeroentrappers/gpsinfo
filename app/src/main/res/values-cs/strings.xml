@@ -20,6 +20,7 @@
 
     <!-- Actions -->
     <string name="action_back">Zpět</string>
+    <string name="action_more">Další akce</string>
     <string name="action_share_location">Sdílet polohu</string>
     <string name="action_open_maps">Otevřít v Mapách</string>
     <string name="action_toggle_units">Přepnout jednotky</string>
@@ -167,6 +168,7 @@
     <string name="trail_empty_title">Zatím žádné trasy</string>
     <string name="trail_empty_body">Klepnutím na tlačítko záznamu na hlavní obrazovce zachytíte svou první GPS trasu.</string>
     <string name="trail_recording_stats">%1$d b. · %2$s</string>
+    <string name="trail_recording_stats_with_steps">%1$d b. · %2$s · %3$d kroků</string>
     <string name="trail_list_meta">%1$s · %2$d b. · %3$s</string>
     <string name="trail_point_title">Zaznamenáno %1$s</string>
     <string name="trail_action_delete">Smazat</string>
@@ -248,4 +250,170 @@
     <string name="trail_record_notification_channel_body">Zobrazuje se, když se na pozadí zaznamenává GPS trasa.</string>
     <string name="trail_record_notification_title">Zaznamenává se trasa</string>
     <string name="trail_record_notification_body">GPS záznam pokračuje, i když máte aplikaci otevřenou nebo telefon v kapse. Klepnutím se vrátíte.</string>
+
+    <!-- Magnetometer calibration -->
+    <string name="calibration_title">Kalibrace kompasu</string>
+    <string name="calibration_reset">Resetovat vzorky</string>
+    <string name="calibration_accuracy_label">Přesnost senzoru</string>
+    <string name="calibration_coverage_label">Pokrytí orientací</string>
+    <string name="calibration_coverage_detail">%1$d z %2$d orientačních koš&#250; · %3$d vzorků</string>
+    <string name="calibration_scatter_label">Mrak magnetického pole</string>
+    <string name="calibration_scatter_hint">Tečky: nedávné měření. Kruh: odhadovaný offset tvrdého železa.\nDobře kalibrovaný telefon vykreslí těsný kruh vystředěný na křížku.</string>
+    <string name="calibration_axis_xy">XY</string>
+    <string name="calibration_axis_xz">XZ</string>
+    <string name="calibration_axis_yz">YZ</string>
+    <string name="calibration_field_label">Velikost pole</string>
+    <string name="calibration_field_normal">V očekávaném rozsahu zemského pole (22 – 70 µT).</string>
+    <string name="calibration_field_warning">Mimo očekávaný rozsah zemského pole. Vzdalte se od kovů, magnetů, reproduktorů a notebooků a zkuste to znovu.</string>
+    <string name="calibration_hardiron_label">Offset tvrdého železa</string>
+    <string name="calibration_hardiron_detail">Poloměr koule %1$.1f µT · RMS %2$.1f µT</string>
+    <string name="calibration_how_label">Jak kalibrovat</string>
+    <string name="calibration_how_body">1. Vzdalte se od velkých kovových předmětů, magnetů, reproduktorů a notebooků.\n2. Držte telefon v ruce a pomalu jím otáčejte ve všech orientacích — funguje pohyb ve tvaru ležaté osmičky.\n3. Pokračujte, dokud ukazatel přesnosti nezobrazí VYSOKÁ a pokrytí se neblíží 100 %%.\n\nTelefon na pozadí nikdy nepřestává kalibrovat; tato obrazovka jen ukazuje, co změřil.</string>
+
+    <!-- Accessibility descriptions for canvas-rendered surfaces. -->
+    <string name="a11y_sky_view">Pohled na oblohu. %1$d satelitů viditelných, %2$d použitých ve fixu, průměrný signál %3$.1f decibelů.</string>
+    <string name="a11y_sky_view_empty">Pohled na oblohu. Čekání na satelity.</string>
+    <string name="a11y_compass_rose">Kurz kompasu %1$03d stupňů magneticky, %2$s.</string>
+    <string name="a11y_compass_bowl">Kardanový kompas. Kurz %1$03d stupňů magneticky, %2$s. Sklon %3$+.0f stupňů, náklon %4$+.0f stupňů.</string>
+    <string name="a11y_satellite_row">%1$s satelit SV %2$d. %3$s. Výška %4$s. Azimut %5$s. %6$s.</string>
+    <string name="a11y_sat_signal_value">Signál %1$.0f decibelů</string>
+    <string name="a11y_sat_signal_none">Bez signálu</string>
+    <string name="a11y_sat_unknown">neznámý</string>
+    <string name="a11y_sat_degrees">%1$.0f stupňů</string>
+    <string name="a11y_sat_in_fix">Použit ve fixu</string>
+    <string name="a11y_sat_not_in_fix">Nepoužit ve fixu</string>
+    <string name="a11y_calibration_plot">Projekce magnetometru %1$s. Odhadovaný offset tvrdého železa %2$+.1f, %3$+.1f mikrotesla.</string>
+    <string name="a11y_speed_gauge">Rychloměr. %1$s %2$s.</string>
+    <string name="a11y_speed_gauge_no_fix">Rychloměr. Bez GPS fixu.</string>
+    <string name="a11y_recording_fab">Zastavit záznam. %1$d bodů zachyceno za %2$s.</string>
+
+    <!-- Acquiring / no-fix captions on cards -->
+    <string name="acquiring_fix">Vyhledávání satelitů…</string>
+    <string name="no_fix_caption">Bez GPS fixu</string>
+
+    <!-- Top-level Settings entry -->
+    <string name="action_open_settings_screen">Nastavení</string>
+
+    <!-- Re-trigger the onboarding tour from Settings -->
+    <string name="settings_show_tour">Znovu zobrazit prohlídku</string>
+
+    <!-- Coordinate format labels (shown under single-line codes) -->
+    <string name="coord_format_plus_code">Plus Code</string>
+    <string name="coord_format_maidenhead">Maidenhead</string>
+
+    <!-- Pace units (running/walking convention — minutes per unit of distance) -->
+    <string name="unit_pace_per_km">/km</string>
+    <string name="unit_pace_per_mi">/mi</string>
+    <string name="unit_pace_per_nm">/nm</string>
+    <string name="metric_pace">Tempo</string>
+    <string name="trail_stats_avg_pace">Prům. tempo</string>
+    <string name="trail_stats_best_pace">Nejlepší tempo</string>
+    <string name="trail_stats_avg_hr">Prům. TF</string>
+    <string name="trail_stats_max_hr">Max. TF</string>
+    <string name="trail_stats_score">Skóre</string>
+    <string name="trail_stats_score_pace">Tempo %1$s vs. cíl %2$s %3$s</string>
+
+    <!-- Navigation card (bearing-to-waypoint / track-back) -->
+    <string name="nav_card_title">Navigace</string>
+    <string name="nav_stop">Zastavit navigaci</string>
+    <string name="nav_metric_distance">Vzdálenost</string>
+    <string name="nav_metric_bearing">Azimut</string>
+    <string name="nav_metric_eta">ETA</string>
+    <string name="nav_route_progress">Zbývá trasový bod %1$d z %2$d</string>
+    <string name="nav_start">Navigovat do…</string>
+    <string name="nav_pick_screen_title">Vyberte cíl</string>
+    <string name="nav_pick_tab_map">Vybrat na mapě</string>
+    <string name="nav_pick_tab_coords">Zadat souřadnice</string>
+    <string name="nav_pick_coords_lat_label">Zeměpisná šířka (desetinně)</string>
+    <string name="nav_pick_coords_lon_label">Zeměpisná délka (desetinně)</string>
+    <string name="nav_pick_coords_name_label">Název (volitelné)</string>
+    <string name="nav_pick_confirm">Použít tento bod</string>
+    <string name="nav_pick_map_hint">Klepnutím na mapu umístíte cíl, poté potvrďte.</string>
+    <string name="nav_pick_invalid_coords">Zadejte šířku v [-90, 90] a délku v [-180, 180].</string>
+    <string name="nav_default_name">Cíl</string>
+
+    <!-- Track-back from a recorded trail -->
+    <string name="trail_track_back">Návrat po trase</string>
+    <string name="coord_format_mgrs">MGRS</string>
+
+    <!-- Pace goal on an active navigation target -->
+    <string name="nav_set_pace_goal">Nastavit cílové tempo</string>
+    <string name="nav_edit_pace_goal">Upravit cílové tempo</string>
+    <string name="nav_clear_pace_goal">Zrušit cílové tempo</string>
+    <string name="nav_goal_label">Cílové tempo</string>
+    <string name="nav_goal_too_fast">Příliš rychle — zvolněte</string>
+    <string name="nav_goal_too_slow">Příliš pomalu — přidejte</string>
+    <string name="nav_goal_on_target">V tempu</string>
+    <string name="nav_goal_acquiring">Zjišťování tempa…</string>
+    <string name="nav_goal_dialog_title">Nastavit cílové tempo</string>
+    <string name="nav_goal_dialog_body">Zadejte tempo, které chcete držet. Na kartě navigace se zobrazí aktuální odchylka a při překročení prahu zazní zvukový signál.</string>
+    <string name="nav_goal_minutes_label">Minuty</string>
+    <string name="nav_goal_seconds_label">Sekundy</string>
+
+    <!-- Heart-rate monitor pairing &amp; status -->
+    <string name="hr_pair_title">Snímač tepové frekvence</string>
+    <string name="hr_pair_body">Klepnutím na zařízení jej spárujete. Podporovány jsou pouze Bluetooth snímače tepové frekvence používající standardní Heart Rate Service.</string>
+    <string name="hr_pair_scanning">Vyhledávání…</string>
+    <string name="hr_pair_scan_again">Vyhledat znovu</string>
+    <string name="hr_pair_no_devices_yet">Hledání snímačů… ujistěte se, že je snímač zapnutý a v dosahu.</string>
+    <string name="hr_pair_unknown_device">Neznámé zařízení</string>
+    <string name="hr_pair_needs_permissions">Ke spárování snímače jsou vyžadována oprávnění Bluetooth.</string>
+    <string name="hr_forget_device">Zapomenout</string>
+    <string name="hr_status_idle">Žádný snímač není spárován</string>
+    <string name="hr_status_scanning">Vyhledávání snímačů</string>
+    <string name="hr_status_connecting">Připojování k %1$s…</string>
+    <string name="hr_status_connected">Připojeno · %1$d BPM</string>
+    <string name="hr_status_connected_named">%1$s · %2$d BPM</string>
+    <string name="hr_status_disconnected">%1$s · odpojeno</string>
+    <string name="settings_pair_hr">Snímač tepové frekvence</string>
+    <string name="settings_hr_zones">Zóny tepové frekvence</string>
+
+    <!-- HR zones editor screen -->
+    <string name="hr_zones_title">Zóny tepové frekvence</string>
+    <string name="hr_zones_body">Nastavte maximální TF a dolaďte hranice zón. Výchozí hodnoty odpovídají standardnímu rozdělení 60/70/80/90 %%; trénovaní sportovci obvykle posouvají Z3–Z5 výše.</string>
+    <string name="hr_zones_max_label">Maximální TF (BPM)</string>
+    <string name="hr_zones_z2_threshold">Zóna 2 začíná na</string>
+    <string name="hr_zones_z3_threshold">Zóna 3 začíná na</string>
+    <string name="hr_zones_z4_threshold">Zóna 4 začíná na</string>
+    <string name="hr_zones_z5_threshold">Zóna 5 začíná na</string>
+
+    <!-- HeartRateCard on the dashboard -->
+    <string name="hr_card_title">Tepová frekvence</string>
+    <string name="hr_card_no_paired">Žádný snímač není spárován. Spárujte jej v nastavení.</string>
+    <string name="hr_card_waiting">Čekání na snímač…</string>
+    <string name="hr_card_zone">Zóna</string>
+    <string name="hr_card_disconnect">Odpojit snímač</string>
+
+    <!-- Sports Dashboard (guided-run view) -->
+    <string name="sports_dashboard_title">Sportovní zobrazení</string>
+    <string name="sports_dashboard_open">Otevřít sportovní zobrazení</string>
+    <string name="sports_dashboard_idle_body">Spusťte záznam z hlavní obrazovky a poté otevřete sportovní zobrazení pro sledování aktuálního tempa, kadence a tepové frekvence.</string>
+    <string name="sports_metric_elapsed">Uplynulý čas</string>
+    <string name="sports_metric_distance">Vzdálenost</string>
+    <string name="sports_metric_cadence">Kadence</string>
+    <string name="sports_metric_stride">Délka kroku</string>
+    <string name="sports_metric_now">Nyní</string>
+    <string name="sports_metric_avg">Prům.</string>
+
+    <!-- Gauge headings on the Sports view -->
+    <string name="gauge_pace_title">Tempo vs. cíl</string>
+    <string name="gauge_hr_title">Zóna tepové frekvence</string>
+
+    <!-- Audible cues (spoken by TextToSpeech during the Sports view) -->
+    <string name="cue_on_target">V tempu</string>
+    <string name="cue_slightly_slow">Mírně pomalu</string>
+    <string name="cue_slightly_fast">Mírně rychle</string>
+    <string name="cue_too_slow">Příliš pomalu</string>
+    <string name="cue_too_fast">Příliš rychle</string>
+    <string name="cue_zone">Zóna %1$d</string>
+    <string name="settings_audible_cues">Hlasové pokyny</string>
+    <string name="settings_audible_cues_body">Mluvená zpětná vazba o tempu a zóně během sportovního zobrazení. Používá vestavěný převod textu na řeč v zařízení — bez nutnosti připojení k síti.</string>
+
+    <!-- Intensity profile (upcoming-trail elevation chart) -->
+    <string name="profile_card_title">Trasa před vámi</string>
+    <string name="profile_distance_ahead">%1$s trasy</string>
+    <string name="profile_elevation_range">%1$s → %2$s</string>
+    <string name="profile_next_climb">Další stoupání</string>
+    <string name="profile_climb_summary">%1$s · +%2$s</string>
+    <string name="profile_climb_in">Za</string>
 </resources>

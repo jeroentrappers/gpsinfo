@@ -1,36 +1,59 @@
-GPSinfo is een compact, offline-first GPS-dashboard voor Android.
+GPSinfo is een compact, offline-first GPS-dashboard en hardloopcoach voor Android.
 
-Alles wat je in één oogopslag wilt zien — je positie, satellietsignalen, kompas, snelheid, hoogte, zonpositie — op één scrollbaar dashboard. Geen Google Maps SDK, geen Play Services, geen telemetrie, geen accounts.
+Alles wat de GPS-chip van je telefoon kan rapporteren — op één scrollbaar scherm, met optionele GPX-routeopname, Bluetooth-hartslag en een Sportweergave die je tempo coacht zonder thuis te bellen. Geen Google Maps SDK, geen Play Services, geen telemetrie, geen accounts, geen in-app-aankopen.
 
-Gemaakt voor wandelaars, zeilers, fietsers, motorrijders, GNSS-knutselaars en iedereen die zijn locatiedata op het eigen toestel wil houden.
+Voor wandelaars, zeilers, fietsers, hardlopers, motorrijders, zendamateurs, GNSS-knutselaars en iedereen die zijn locatiedata op het eigen toestel wil houden.
 
 ▌ DASHBOARD
-• Positie in WGS84 (DMS of decimaal), met hoogte en nauwkeurigheid per as
-• Live aantal satellieten en signaalsterkte voor GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS en IRNSS
-• Hemelaanzicht met satellieten gekleurd per constellatie, op hun werkelijke azimut en elevatie
+• Positie in vijf formaten — DMS, decimaal, Plus Code, Maidenhead-grid, MGRS. Tik om te wisselen, lang indrukken om te kopiëren.
+• Hoogte, nauwkeurigheid per as en een live fix-kwaliteitsbadge
+• Aantal satellieten en signaalsterkte voor GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS en IRNSS
+• Hemelaanzicht met satellieten per constellatie gekleurd, op echte azimut en elevatie
 • Kantelgecompenseerd kompas met magnetische én ware koers, declinatie en inclinatie
+• Apart kalibratiescherm voor de magnetometer met schatting van de hard-iron-offset
 • Snelheidsmeter met automatisch schalende verdeling en HUD-spiegelmodus voor reflectie op de voorruit
 • Zonpositie, zonsopgang en -ondergang, daglengte en dag-/nachtgrens op de wereldkaart
 
 ▌ ROUTES
-• Neem routes op als standaard GPX 1.1 met Garmin TrackPointExtension (snelheid, koers)
+• Neem routes op als standaard GPX 1.1 met Garmin TrackPointExtension (snelheid, koers, hartslag)
 • Opname loopt door op de achtergrond, ook als het scherm uit staat (foreground service)
-• Toon de route op OpenStreetMap als polylijn met markers die je kunt aantikken voor details
-• Snelheids- en hoogtegrafiek met schuifregelaar om elk trackpunt na te lopen
-• Kaartmodus "koers boven" en overlay met zonneboog
-• Pre-cache de kaarttegels voor een gebied, zodat de routekaart volledig offline werkt
-• Vereenvoudig routes met Ramer–Douglas–Peucker om GPS-ruis op te schonen
-• Importeer GPX uit eender welke bron; deel of bewaar als GPX waar je wil
-• Waypoints vastleggen met één tik
+• Toon de route op OpenStreetMap als polylijn met aantikbare markers
+• Grafieken voor snelheid, hoogte en hartslag; schuifregelaar om elk trackpunt na te lopen
+• Kaartmodus "koers boven" en zonneboog-overlay
+• Pre-cache kaarttegels voor offline gebruik
+• Vereenvoudig met Ramer–Douglas–Peucker om GPS-ruis op te schonen
+• Importeer, deel of bewaar GPX waar je wil; waypoints met één tik
+
+▌ NAVIGATIE
+• Terugroute: een richtingpijl loodst je terug langs elke opgenomen route
+• Tik-op-de-kaart om ad-hoc een bestemming als waypoint te kiezen
+• Live afstand, ETA en tempo-vs-doel per waypoint
+
+▌ SPORTWEERGAVE (begeleide lopen & wandelingen)
+• Volledig-scherm dashboard: tijd + afstand, live en gemiddeld tempo, snelheid, cadans en paslengte (uit de stappenteller)
+• Tempoafwijkingsmeter — te snel / op tempo / te traag in één oogopslag
+• Hartslagzonemeter met instelbare zones (en optionele override per route)
+• Intensiteitsprofiel vooruit, gekleurd naar helling, met ETA tot de volgende klim
+• Tempodoelen — voor de hele route of per segment
+• Optionele gesproken coachaanwijzingen via tekst-naar-spraak; het navigatie-audioattribuut dempt je muziek in plaats van ze te onderbreken
+• Prestatiescore na afloop (0–100) op basis van tempo- en hartslagzonenauwgezetheid
+
+▌ BLUETOOTH-HARTSLAG
+• Koppel elke standaard BLE-hartslagmeter (Polar, Wahoo, Garmin-borstbanden, …)
+• Directe GATT-verbinding — geen vendor-SDK's, geen cloudbruggen, geen API-sleutels
+• Live BPM-kaart op het dashboard; per trackpunt in GPX
 
 ▌ PRIVACY
-• Geen analytics, geen crashrapporten, geen advertenties, geen externe trackers.
-• Je locatiedata verlaat nooit je toestel.
-• De enige netwerkoproep die de app ooit doet, is het anoniem ophalen van OpenStreetMap-tegels, en enkel wanneer je een routekaart opent.
+• Geen analytics, geen crashrapporten, geen advertenties, geen externe trackers
+• Locatiedata, hartslagmetingen en TTS-audio blijven allemaal op je toestel
+• De enige netwerkoproep die de app ooit doet, is het anoniem ophalen van OpenStreetMap-tegels, en enkel wanneer je een routekaart opent
 • Volledig privacybeleid: https://jeroentrappers.github.io/gpsinfo/privacy.html
 
-▌ ZONDER PLAY SERVICES
-Deze app heeft Google Play Services niet nodig en draait op de-googled toestellen (GrapheneOS, LineageOS, /e/OS, …). De locatie komt rechtstreeks uit de Android GNSS-API's.
+▌ GEEN PLAY SERVICES, GEEN PLAY BILLING
+Draait op de-googled toestellen (GrapheneOS, LineageOS, /e/OS, …). Locatie komt rechtstreeks uit de Android GNSS-API's. Geen in-app-aankopen — donaties lopen via Liberapay en GitHub Sponsors, nooit voor een functie geplaatst.
+
+▌ TWAALF TALEN
+Engels, Nederlands, Duits, Frans, Spaans, Italiaans, Portugees (BR), Russisch, Japans, Tsjechisch, Turks, Pools — elk nagelezen door een moedertaalspreker.
 
 ▌ OPEN SOURCE
 Broncode: https://github.com/jeroentrappers/gpsinfo

@@ -20,6 +20,7 @@
 
     <!-- Actions -->
     <string name="action_back">Voltar</string>
+    <string name="action_more">Mais ações</string>
     <string name="action_share_location">Compartilhar localização</string>
     <string name="action_open_maps">Abrir no Maps</string>
     <string name="action_toggle_units">Alternar unidades</string>
@@ -167,6 +168,7 @@
     <string name="trail_empty_title">Nenhuma trilha ainda</string>
     <string name="trail_empty_body">Toque no botão de gravação no painel para capturar sua primeira trilha GPS.</string>
     <string name="trail_recording_stats">%1$d pts · %2$s</string>
+    <string name="trail_recording_stats_with_steps">%1$d pts · %2$s · %3$d passos</string>
     <string name="trail_list_meta">%1$s · %2$d pts · %3$s</string>
     <string name="trail_point_title">Capturada em %1$s</string>
     <string name="trail_action_delete">Excluir</string>
@@ -248,4 +250,170 @@
     <string name="trail_record_notification_channel_body">Exibido enquanto uma trilha GPS está sendo gravada em segundo plano.</string>
     <string name="trail_record_notification_title">Gravando trilha</string>
     <string name="trail_record_notification_body">A captura de GPS continua enquanto o app estiver aberto ou no bolso. Toque para voltar.</string>
+
+    <!-- Magnetometer calibration -->
+    <string name="calibration_title">Calibração da bússola</string>
+    <string name="calibration_reset">Redefinir amostras</string>
+    <string name="calibration_accuracy_label">Precisão do sensor</string>
+    <string name="calibration_coverage_label">Cobertura de orientação</string>
+    <string name="calibration_coverage_detail">%1$d de %2$d setores de orientação · %3$d amostras</string>
+    <string name="calibration_scatter_label">Nuvem do campo magnético</string>
+    <string name="calibration_scatter_hint">Pontos: leituras recentes. Anel: deslocamento estimado de hard-iron.\nUm aparelho bem calibrado desenha um anel justo centrado na cruz.</string>
+    <string name="calibration_axis_xy">XY</string>
+    <string name="calibration_axis_xz">XZ</string>
+    <string name="calibration_axis_yz">YZ</string>
+    <string name="calibration_field_label">Magnitude do campo</string>
+    <string name="calibration_field_normal">Dentro da faixa esperada do campo da Terra (22 – 70 µT).</string>
+    <string name="calibration_field_warning">Fora da faixa esperada do campo da Terra. Afaste-se de metais, ímãs, alto-falantes e notebooks, e tente de novo.</string>
+    <string name="calibration_hardiron_label">Deslocamento hard-iron</string>
+    <string name="calibration_hardiron_detail">Raio da esfera %1$.1f µT · RMS %2$.1f µT</string>
+    <string name="calibration_how_label">Como calibrar</string>
+    <string name="calibration_how_body">1. Afaste-se de grandes objetos metálicos, ímãs, alto-falantes e notebooks.\n2. Segure o aparelho na mão e gire-o lentamente em todas as orientações — um movimento em forma de oito funciona bem.\n3. Continue até o indicador de precisão chegar a ALTA e a cobertura se aproximar de 100 %%.\n\nO aparelho nunca para de calibrar em segundo plano; esta tela apenas mostra o que ele já mediu.</string>
+
+    <!-- Accessibility descriptions for canvas-rendered surfaces. -->
+    <string name="a11y_sky_view">Vista do céu. %1$d satélites à vista, %2$d em uso no fix, sinal médio %3$.1f decibéis.</string>
+    <string name="a11y_sky_view_empty">Vista do céu. Aguardando satélites.</string>
+    <string name="a11y_compass_rose">Rumo da bússola %1$03d graus magnéticos, %2$s.</string>
+    <string name="a11y_compass_bowl">Bússola estabilizada. Rumo %1$03d graus magnéticos, %2$s. Arfagem %3$+.0f graus, rolagem %4$+.0f graus.</string>
+    <string name="a11y_satellite_row">Satélite %1$s SV %2$d. %3$s. Elevação %4$s. Azimute %5$s. %6$s.</string>
+    <string name="a11y_sat_signal_value">Sinal %1$.0f decibéis</string>
+    <string name="a11y_sat_signal_none">Sem sinal</string>
+    <string name="a11y_sat_unknown">desconhecido</string>
+    <string name="a11y_sat_degrees">%1$.0f graus</string>
+    <string name="a11y_sat_in_fix">Em uso no fix</string>
+    <string name="a11y_sat_not_in_fix">Fora do fix</string>
+    <string name="a11y_calibration_plot">Projeção %1$s do magnetômetro. Deslocamento hard-iron estimado %2$+.1f, %3$+.1f microtesla.</string>
+    <string name="a11y_speed_gauge">Velocímetro. %1$s %2$s.</string>
+    <string name="a11y_speed_gauge_no_fix">Velocímetro. Sem fix de GPS.</string>
+    <string name="a11y_recording_fab">Parar gravação. %1$d pontos capturados em %2$s.</string>
+
+    <!-- Acquiring / no-fix captions on cards -->
+    <string name="acquiring_fix">Adquirindo satélites…</string>
+    <string name="no_fix_caption">Sem fix de GPS</string>
+
+    <!-- Top-level Settings entry -->
+    <string name="action_open_settings_screen">Configurações</string>
+
+    <!-- Re-trigger the onboarding tour from Settings -->
+    <string name="settings_show_tour">Mostrar o tour novamente</string>
+
+    <!-- Coordinate format labels (shown under single-line codes) -->
+    <string name="coord_format_plus_code">Plus Code</string>
+    <string name="coord_format_maidenhead">Maidenhead</string>
+
+    <!-- Pace units (running/walking convention — minutes per unit of distance) -->
+    <string name="unit_pace_per_km">/km</string>
+    <string name="unit_pace_per_mi">/mi</string>
+    <string name="unit_pace_per_nm">/nm</string>
+    <string name="metric_pace">Pace</string>
+    <string name="trail_stats_avg_pace">Pace médio</string>
+    <string name="trail_stats_best_pace">Melhor pace</string>
+    <string name="trail_stats_avg_hr">FC média</string>
+    <string name="trail_stats_max_hr">FC máx</string>
+    <string name="trail_stats_score">Pontuação</string>
+    <string name="trail_stats_score_pace">Pace %1$s vs meta %2$s %3$s</string>
+
+    <!-- Navigation card (bearing-to-waypoint / track-back) -->
+    <string name="nav_card_title">Navegação</string>
+    <string name="nav_stop">Parar navegação</string>
+    <string name="nav_metric_distance">Distância</string>
+    <string name="nav_metric_bearing">Azimute</string>
+    <string name="nav_metric_eta">ETA</string>
+    <string name="nav_route_progress">Waypoint %1$d de %2$d restantes</string>
+    <string name="nav_start">Navegar para…</string>
+    <string name="nav_pick_screen_title">Escolher destino</string>
+    <string name="nav_pick_tab_map">Escolher no mapa</string>
+    <string name="nav_pick_tab_coords">Inserir coordenadas</string>
+    <string name="nav_pick_coords_lat_label">Latitude (decimal)</string>
+    <string name="nav_pick_coords_lon_label">Longitude (decimal)</string>
+    <string name="nav_pick_coords_name_label">Nome (opcional)</string>
+    <string name="nav_pick_confirm">Usar este ponto</string>
+    <string name="nav_pick_map_hint">Toque no mapa para posicionar o destino e confirme.</string>
+    <string name="nav_pick_invalid_coords">Informe uma latitude em [-90, 90] e uma longitude em [-180, 180].</string>
+    <string name="nav_default_name">Destino</string>
+
+    <!-- Track-back from a recorded trail -->
+    <string name="trail_track_back">Refazer trajeto</string>
+    <string name="coord_format_mgrs">MGRS</string>
+
+    <!-- Pace goal on an active navigation target -->
+    <string name="nav_set_pace_goal">Definir meta de pace</string>
+    <string name="nav_edit_pace_goal">Editar meta de pace</string>
+    <string name="nav_clear_pace_goal">Remover meta</string>
+    <string name="nav_goal_label">Meta de pace</string>
+    <string name="nav_goal_too_fast">Rápido demais — diminua o ritmo</string>
+    <string name="nav_goal_too_slow">Lento demais — acelere</string>
+    <string name="nav_goal_on_target">No pace certo</string>
+    <string name="nav_goal_acquiring">Aguardando pace…</string>
+    <string name="nav_goal_dialog_title">Definir meta de pace</string>
+    <string name="nav_goal_dialog_body">Informe o pace que você quer manter. O desvio em tempo real aparece no cartão de navegação e avisos sonoros tocam quando você cruza o limite.</string>
+    <string name="nav_goal_minutes_label">Minutos</string>
+    <string name="nav_goal_seconds_label">Segundos</string>
+
+    <!-- Heart-rate monitor pairing &amp; status -->
+    <string name="hr_pair_title">Monitor de frequência cardíaca</string>
+    <string name="hr_pair_body">Toque em um dispositivo para parear. Só há suporte para monitores Bluetooth de frequência cardíaca que usem o Heart Rate Service padrão.</string>
+    <string name="hr_pair_scanning">Buscando…</string>
+    <string name="hr_pair_scan_again">Buscar novamente</string>
+    <string name="hr_pair_no_devices_yet">Procurando monitores… verifique se sua cinta está ativa e por perto.</string>
+    <string name="hr_pair_unknown_device">Dispositivo desconhecido</string>
+    <string name="hr_pair_needs_permissions">É preciso permitir o Bluetooth para parear um monitor.</string>
+    <string name="hr_forget_device">Esquecer</string>
+    <string name="hr_status_idle">Nenhum monitor pareado</string>
+    <string name="hr_status_scanning">Buscando monitores</string>
+    <string name="hr_status_connecting">Conectando a %1$s…</string>
+    <string name="hr_status_connected">Conectado · %1$d BPM</string>
+    <string name="hr_status_connected_named">%1$s · %2$d BPM</string>
+    <string name="hr_status_disconnected">%1$s · desconectado</string>
+    <string name="settings_pair_hr">Monitor de frequência cardíaca</string>
+    <string name="settings_hr_zones">Zonas de frequência cardíaca</string>
+
+    <!-- HR zones editor screen -->
+    <string name="hr_zones_title">Zonas de frequência cardíaca</string>
+    <string name="hr_zones_body">Defina sua FC máxima e ajuste os limites das zonas. Os valores padrão seguem a divisão de 60/70/80/90 %; atletas treinados costumam deixar as Z3–Z5 mais altas.</string>
+    <string name="hr_zones_max_label">FC máxima (BPM)</string>
+    <string name="hr_zones_z2_threshold">Z2 começa em</string>
+    <string name="hr_zones_z3_threshold">Z3 começa em</string>
+    <string name="hr_zones_z4_threshold">Z4 começa em</string>
+    <string name="hr_zones_z5_threshold">Z5 começa em</string>
+
+    <!-- HeartRateCard on the dashboard -->
+    <string name="hr_card_title">Frequência cardíaca</string>
+    <string name="hr_card_no_paired">Nenhum monitor pareado. Conecte um nas Configurações.</string>
+    <string name="hr_card_waiting">Aguardando monitor…</string>
+    <string name="hr_card_zone">Zona</string>
+    <string name="hr_card_disconnect">Desconectar monitor</string>
+
+    <!-- Sports Dashboard (guided-run view) -->
+    <string name="sports_dashboard_title">Modo esportivo</string>
+    <string name="sports_dashboard_open">Abrir modo esportivo</string>
+    <string name="sports_dashboard_idle_body">Inicie uma gravação pelo painel e abra o modo esportivo para ver pace, passada e frequência cardíaca em tempo real.</string>
+    <string name="sports_metric_elapsed">Decorrido</string>
+    <string name="sports_metric_distance">Distância</string>
+    <string name="sports_metric_cadence">Cadência</string>
+    <string name="sports_metric_stride">Passada</string>
+    <string name="sports_metric_now">Agora</string>
+    <string name="sports_metric_avg">Méd</string>
+
+    <!-- Gauge headings on the Sports view -->
+    <string name="gauge_pace_title">Pace vs meta</string>
+    <string name="gauge_hr_title">Zona de frequência cardíaca</string>
+
+    <!-- Audible cues (spoken by TextToSpeech during the Sports view) -->
+    <string name="cue_on_target">No pace certo</string>
+    <string name="cue_slightly_slow">Um pouco lento</string>
+    <string name="cue_slightly_fast">Um pouco rápido</string>
+    <string name="cue_too_slow">Lento demais</string>
+    <string name="cue_too_fast">Rápido demais</string>
+    <string name="cue_zone">Zona %1$d</string>
+    <string name="settings_audible_cues">Avisos sonoros</string>
+    <string name="settings_audible_cues_body">Avisos falados de pace e zona durante o modo esportivo. Usa a síntese de voz do próprio aparelho — não precisa de rede.</string>
+
+    <!-- Intensity profile (upcoming-trail elevation chart) -->
+    <string name="profile_card_title">Trilha à frente</string>
+    <string name="profile_distance_ahead">%1$s de trilha</string>
+    <string name="profile_elevation_range">%1$s → %2$s</string>
+    <string name="profile_next_climb">Próxima subida</string>
+    <string name="profile_climb_summary">%1$s · +%2$s</string>
+    <string name="profile_climb_in">Em</string>
 </resources>

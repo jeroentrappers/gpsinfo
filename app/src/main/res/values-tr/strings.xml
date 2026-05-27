@@ -20,6 +20,7 @@
 
     <!-- Actions -->
     <string name="action_back">Geri</string>
+    <string name="action_more">Diğer eylemler</string>
     <string name="action_share_location">Konumu paylaş</string>
     <string name="action_open_maps">Haritalar\'da aç</string>
     <string name="action_toggle_units">Birimleri değiştir</string>
@@ -167,6 +168,7 @@
     <string name="trail_empty_title">Henüz iz yok</string>
     <string name="trail_empty_body">İlk GPS izini yakalamak için panodaki kayıt düğmesine dokun.</string>
     <string name="trail_recording_stats">%1$d nokta · %2$s</string>
+    <string name="trail_recording_stats_with_steps">%1$d nokta · %2$s · %3$d adım</string>
     <string name="trail_list_meta">%1$s · %2$d nokta · %3$s</string>
     <string name="trail_point_title">%1$s tarihinde kaydedildi</string>
     <string name="trail_action_delete">Sil</string>
@@ -248,4 +250,172 @@
     <string name="trail_record_notification_channel_body">Arka planda bir GPS izi kaydedilirken gösterilir.</string>
     <string name="trail_record_notification_title">İz kaydediliyor</string>
     <string name="trail_record_notification_body">Uygulama açıkken veya cepteyken GPS yakalaması sürer. Geri dönmek için dokun.</string>
+
+    <!-- Magnetometer calibration -->
+    <string name="calibration_title">Pusula kalibrasyonu</string>
+    <string name="calibration_reset">Örnekleri sıfırla</string>
+    <string name="calibration_accuracy_label">Sensör hassasiyeti</string>
+    <string name="calibration_coverage_label">Yönelim kapsaması</string>
+    <string name="calibration_coverage_detail">%2$d yönelim biriminin %1$d\'si · %3$d örnek</string>
+    <string name="calibration_scatter_label">Manyetik alan bulutu</string>
+    <string name="calibration_scatter_hint">Noktalar: son okumalar. Halka: tahmini sert demir kayması.\nİyi kalibre edilmiş bir telefon, artının ortasına oturmuş sıkı bir halka çizer.</string>
+    <string name="calibration_axis_xy">XY</string>
+    <string name="calibration_axis_xz">XZ</string>
+    <string name="calibration_axis_yz">YZ</string>
+    <string name="calibration_field_label">Alan büyüklüğü</string>
+    <string name="calibration_field_normal">Beklenen Dünya alanı aralığında (22 – 70 µT).</string>
+    <string name="calibration_field_warning">Beklenen Dünya alanı aralığının dışında. Metalden, mıknatıslardan, hoparlörlerden ve dizüstü bilgisayarlardan uzaklaş ve yeniden dene.</string>
+    <string name="calibration_hardiron_label">Sert demir kayması</string>
+    <string name="calibration_hardiron_detail">Küre yarıçapı %1$.1f µT · RMS %2$.1f µT</string>
+    <string name="calibration_how_label">Nasıl kalibre edilir</string>
+    <string name="calibration_how_body">1. Büyük metal nesnelerden, mıknatıslardan, hoparlörlerden ve dizüstü bilgisayarlardan uzaklaş.\n2. Telefonu elinde tut ve tüm yönelimlerden geçecek şekilde yavaşça döndür — sekiz çizme hareketi işe yarar.\n3. Hassasiyet etiketi YÜKSEK okuyana ve kapsama %%100\'e yaklaşana kadar devam et.\n\nTelefon arka planda kalibrasyonu hiç bırakmaz; bu ekran sadece ölçtüklerini görmenin bir yolunu sunar.</string>
+
+    <!-- Accessibility descriptions for canvas-rendered surfaces. -->
+    <string name="a11y_sky_view">Gökyüzü görünümü. Görüşte %1$d uydu, sabitlemede kullanılan %2$d, ortalama sinyal %3$.1f desibel.</string>
+    <string name="a11y_sky_view_empty">Gökyüzü görünümü. Uydular bekleniyor.</string>
+    <string name="a11y_compass_rose">Pusula yönü %1$03d derece manyetik, %2$s.</string>
+    <string name="a11y_compass_bowl">Yalpa askılı pusula. Yön %1$03d derece manyetik, %2$s. Eğiklik %3$+.0f derece, yatış %4$+.0f derece.</string>
+    <string name="a11y_satellite_row">%1$s uydu SV %2$d. %3$s. Yükseklik %4$s. Azimut %5$s. %6$s.</string>
+    <string name="a11y_sat_signal_value">Sinyal %1$.0f desibel</string>
+    <string name="a11y_sat_signal_none">Sinyal yok</string>
+    <string name="a11y_sat_unknown">bilinmiyor</string>
+    <string name="a11y_sat_degrees">%1$.0f derece</string>
+    <string name="a11y_sat_in_fix">Sabitlemede kullanılıyor</string>
+    <string name="a11y_sat_not_in_fix">Sabitlemede değil</string>
+    <string name="a11y_calibration_plot">Manyetometre %1$s izdüşümü. Tahmini sert demir kayması %2$+.1f, %3$+.1f mikrotesla.</string>
+    <string name="a11y_speed_gauge">Hız göstergesi. %1$s %2$s.</string>
+    <string name="a11y_speed_gauge_no_fix">Hız göstergesi. GPS sabitlemesi yok.</string>
+    <string name="a11y_recording_fab">Kaydı durdur. %2$s içinde %1$d nokta yakalandı.</string>
+
+    <!-- Acquiring / no-fix captions on cards -->
+    <string name="acquiring_fix">Uydular alınıyor…</string>
+    <string name="no_fix_caption">GPS sabitlemesi yok</string>
+
+    <!-- Top-level Settings entry -->
+    <string name="action_open_settings_screen">Ayarlar</string>
+
+    <!-- Re-trigger the onboarding tour from Settings -->
+    <string name="settings_show_tour">Turu yeniden göster</string>
+
+    <!-- Coordinate format labels (shown under single-line codes) -->
+    <string name="coord_format_plus_code">Plus Code</string>
+    <string name="coord_format_maidenhead">Maidenhead</string>
+
+    <!-- Pace units (running/walking convention — minutes per unit of distance) -->
+    <string name="unit_pace_per_km">/km</string>
+    <string name="unit_pace_per_mi">/mi</string>
+    <string name="unit_pace_per_nm">/nm</string>
+    <string name="metric_pace">Tempo</string>
+    <string name="trail_stats_avg_pace">Ort. tempo</string>
+    <string name="trail_stats_best_pace">En iyi tempo</string>
+
+    <!-- Navigation card (bearing-to-waypoint / track-back) -->
+    <string name="nav_card_title">Navigasyon</string>
+    <string name="nav_stop">Navigasyonu durdur</string>
+    <string name="nav_metric_distance">Mesafe</string>
+    <string name="nav_metric_bearing">Kerteriz</string>
+    <string name="nav_metric_eta">VTV</string>
+    <string name="nav_route_progress">%2$d yol noktasının %1$d\'i kaldı</string>
+    <string name="nav_start">Şuraya git…</string>
+    <string name="nav_pick_screen_title">Hedef seç</string>
+    <string name="nav_pick_tab_map">Haritadan seç</string>
+    <string name="nav_pick_tab_coords">Koordinat gir</string>
+    <string name="nav_pick_coords_lat_label">Enlem (ondalık)</string>
+    <string name="nav_pick_coords_lon_label">Boylam (ondalık)</string>
+    <string name="nav_pick_coords_name_label">Ad (isteğe bağlı)</string>
+    <string name="nav_pick_confirm">Bu noktayı kullan</string>
+    <string name="nav_pick_map_hint">Hedefini yerleştirmek için haritaya dokun, ardından onayla.</string>
+    <string name="nav_pick_invalid_coords">[-90, 90] aralığında enlem ve [-180, 180] aralığında boylam gir.</string>
+    <string name="nav_default_name">Hedef</string>
+
+    <!-- Track-back from a recorded trail -->
+    <string name="trail_track_back">Geri izle</string>
+    <string name="coord_format_mgrs">MGRS</string>
+
+    <!-- Pace goal on an active navigation target -->
+    <string name="nav_set_pace_goal">Hedef tempo belirle</string>
+    <string name="nav_edit_pace_goal">Hedef tempoyu düzenle</string>
+    <string name="nav_clear_pace_goal">Hedefi temizle</string>
+    <string name="nav_goal_label">Hedef tempo</string>
+    <string name="nav_goal_too_fast">Çok hızlı — yavaşla</string>
+    <string name="nav_goal_too_slow">Çok yavaş — hızlan</string>
+    <string name="nav_goal_on_target">Hedefte</string>
+    <string name="nav_goal_acquiring">Tempo hesaplanıyor…</string>
+    <string name="nav_goal_dialog_title">Hedef tempo belirle</string>
+    <string name="nav_goal_dialog_body">Tutmak istediğin tempoyu gir. Canlı sapma navigasyon kartında görünür ve eşik geçildiğinde sesli uyarı verilir.</string>
+    <string name="nav_goal_minutes_label">Dakika</string>
+    <string name="nav_goal_seconds_label">Saniye</string>
+
+    <!-- Heart-rate monitor pairing &amp; status -->
+    <string name="hr_pair_title">Nabız ölçer</string>
+    <string name="hr_pair_body">Eşleştirmek için bir cihaza dokun. Yalnızca standart Heart Rate Service profilini kullanan Bluetooth nabız ölçerler desteklenir.</string>
+    <string name="hr_pair_scanning">Taranıyor…</string>
+    <string name="hr_pair_scan_again">Yeniden tara</string>
+    <string name="hr_pair_no_devices_yet">Ölçer aranıyor… sensörün uyanık ve yakında olduğundan emin ol.</string>
+    <string name="hr_pair_unknown_device">Bilinmeyen cihaz</string>
+    <string name="hr_pair_needs_permissions">Ölçer eşleştirmek için Bluetooth izinleri gerekli.</string>
+    <string name="hr_forget_device">Unut</string>
+    <string name="hr_status_idle">Eşleştirilmiş ölçer yok</string>
+    <string name="hr_status_scanning">Ölçer taranıyor</string>
+    <string name="hr_status_connecting">%1$s cihazına bağlanılıyor…</string>
+    <string name="hr_status_connected">Bağlı · %1$d BPM</string>
+    <string name="hr_status_connected_named">%1$s · %2$d BPM</string>
+    <string name="hr_status_disconnected">%1$s · bağlantı kesildi</string>
+    <string name="settings_pair_hr">Nabız ölçer</string>
+    <string name="settings_hr_zones">Nabız bölgeleri</string>
+
+    <!-- HR zones editor screen -->
+    <string name="hr_zones_title">Nabız bölgeleri</string>
+    <string name="hr_zones_body">Maksimum nabzını gir ve bölge sınırlarını ayarla. Varsayılanlar standart %%60/70/80/90 dağılımını izler; antrenmanlı sporcular Z3–Z5\'i genellikle daha yukarı çeker.</string>
+    <string name="hr_zones_max_label">Maksimum nabız (BPM)</string>
+    <string name="hr_zones_z2_threshold">Z2 başlangıcı</string>
+    <string name="hr_zones_z3_threshold">Z3 başlangıcı</string>
+    <string name="hr_zones_z4_threshold">Z4 başlangıcı</string>
+    <string name="hr_zones_z5_threshold">Z5 başlangıcı</string>
+
+    <!-- HeartRateCard on the dashboard -->
+    <string name="hr_card_title">Nabız</string>
+    <string name="hr_card_no_paired">Eşleştirilmiş ölçer yok. Ayarlardan bir tane eşleştir.</string>
+    <string name="hr_card_waiting">Ölçer bekleniyor…</string>
+    <string name="hr_card_zone">Bölge</string>
+    <string name="hr_card_disconnect">Ölçer bağlantısını kes</string>
+
+    <!-- Sports Dashboard (guided-run view) -->
+    <string name="sports_dashboard_title">Antrenman görünümü</string>
+    <string name="sports_dashboard_open">Antrenman görünümünü aç</string>
+    <string name="sports_dashboard_idle_body">Panodan bir kayıt başlat, ardından canlı tempo, adım ve nabzı görmek için antrenman görünümünü aç.</string>
+    <string name="sports_metric_elapsed">Geçen süre</string>
+    <string name="sports_metric_distance">Mesafe</string>
+    <string name="sports_metric_cadence">Kadans</string>
+    <string name="sports_metric_stride">Adım uzunluğu</string>
+    <string name="sports_metric_now">Şimdi</string>
+    <string name="sports_metric_avg">Ort.</string>
+
+    <!-- Gauge headings on the Sports view -->
+    <string name="gauge_pace_title">Tempo ve hedef</string>
+    <string name="gauge_hr_title">Nabız bölgesi</string>
+
+    <!-- Audible cues (spoken by TextToSpeech during the Sports view) -->
+    <string name="cue_on_target">Hedefte</string>
+    <string name="cue_slightly_slow">Biraz yavaş</string>
+    <string name="cue_slightly_fast">Biraz hızlı</string>
+    <string name="cue_too_slow">Çok yavaş</string>
+    <string name="cue_too_fast">Çok hızlı</string>
+    <string name="cue_zone">Bölge %1$d</string>
+    <string name="settings_audible_cues">Sesli uyarılar</string>
+    <string name="settings_audible_cues_body">Antrenman görünümü sırasında sesli tempo ve bölge geri bildirimi. Cihazın yerleşik metinden konuşmaya motorunu kullanır — ağ gerekmez.</string>
+
+    <!-- Intensity profile (upcoming-trail elevation chart) -->
+    <string name="profile_card_title">Önündeki iz</string>
+    <string name="profile_distance_ahead">%1$s iz</string>
+    <string name="profile_elevation_range">%1$s → %2$s</string>
+    <string name="profile_next_climb">Sıradaki tırmanış</string>
+    <string name="profile_climb_summary">%1$s · +%2$s</string>
+    <string name="profile_climb_in">İçinde</string>
+
+    <!-- Trail stats: heart-rate and score -->
+    <string name="trail_stats_avg_hr">Ort. nabız</string>
+    <string name="trail_stats_max_hr">Maks. nabız</string>
+    <string name="trail_stats_score">Puan</string>
+    <string name="trail_stats_score_pace">Tempo %1$s, hedef %2$s %3$s</string>
 </resources>

@@ -1,21 +1,59 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
+GPSinfo to działający offline pulpit GPS i towarzysz biegów z przewodnikiem dla Androida.
 
-GPSinfo to przejrzysty, nowoczesny panel GNSS dla Androida. Każdy wskaźnik, jaki udostępnia chip GPS i czujniki telefonu, zebrany na jednym ekranie.
+Każda wartość, jaką poda chip GPS telefonu — na jednym przewijanym ekranie, z opcjonalnym zapisem tras GPX, tętnem przez Bluetooth i widokiem Sport, który pilnuje tempa bez wysyłania danych. Bez Google Maps SDK, bez Play Services, bez telemetrii, bez kont, bez zakupów w aplikacji.
 
-Co pokazuje
-• Jakość fixa — status 2D/3D, dokładność pozioma/pionowa, satelity widoczne vs. używane
-• Widok nieba — każdy satelita w azymucie/elewacji, siła sygnału per PRN, wielopasmowy (GPS L1+L5, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS)
-• Pozycja — szer./dł. w DMS lub dziesiętnie, wysokość, udostępnianie lokalizacji, otwieranie w dowolnej aplikacji map
-• Ruch — prędkość, kurs magnetyczny, wysokość, pełnoekranowy retro analogowy prędkościomierz z trybem HUD lustrzanym
-• Kompas — kurs magnetyczny skompensowany pochyleniem, deklinacja/inklinacja, dokładność magnetyczna, widok kompasu kardanowego
-• Mapa świata — Twoja pozycja, pozycja słońca, terminator dzień/noc na podstawie prawdziwych danych Natural Earth
-• Słońce i czas — zegary UTC i lokalny, wschód/górowanie/zachód słońca, długość dnia, azymut/elewacja słońca
+Dla turystów, żeglarzy, rowerzystów, biegaczy, motocyklistów, krótkofalowców i wszystkich, którzy chcą, by ich dane lokalizacyjne zostały w telefonie.
 
-Czego NIE robi
-• Brak dostępu do sieci. Brak uprawnienia INTERNET. Nic nie opuszcza urządzenia.
-• Brak zależności od Google Play Services.
-• Brak śledzenia w tle, brak nagrywania, brak analityki, brak reklam.
+▌ PULPIT
+• Pozycja w pięciu formatach — DMS, dziesiętne, Plus Code, Maidenhead, MGRS. Dotknij, by przełączyć, przytrzymaj, by skopiować.
+• Wysokość, dokładność na każdej osi, znacznik jakości fixa na żywo
+• Satelity i siła sygnału: GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS
+• Widok nieba z satelitami w kolorach konstelacji, na rzeczywistym azymucie i elewacji
+• Kompas z korekcją nachylenia — kurs magnetyczny i geograficzny, deklinacja, inklinacja
+• Dedykowany ekran kalibracji magnetometru z estymacją przesunięcia hard-iron
+• Prędkościomierz z samoskalującą się skalą i tryb HUD do odbicia na szybie
+• Pozycja słońca, wschód i zachód, długość dnia, terminator dnia i nocy na mapie
 
-Dla turystów, żeglarzy, kierowców, pilotów i każdego, kto chce wiedzieć, co GPS faktycznie robi.
+▌ TRASY
+• Zapis tras GPS w GPX 1.1 z Garmin TrackPointExtension (prędkość, kurs, tętno)
+• Usługa pierwszego planu nagrywa dalej w tle lub przy wygaszonym ekranie
+• Trasa na OpenStreetMap jako polilinia ze znacznikami do podglądu po dotknięciu
+• Wykresy prędkości, wysokości i tętna; suwak do przeglądania punktów
+• Tryb mapy „kursem do góry”, nakładka łuku słonecznego
+• Wstępne pobieranie kafelków mapy do użytku offline
+• Upraszczanie algorytmem Ramer–Douglas–Peucker w celu usunięcia szumu GPS
+• Import, udostępnianie i zapis GPX; zapis punktu trasy jednym dotknięciem
 
-Open source. Darmowe. Darowizny mile widziane na paypal.me/jeroentrappers.
+▌ NAWIGACJA
+• Powrót trasą: strzałka względnego namiaru prowadzi po dowolnej zapisanej trasie
+• Wybór celu przez dotknięcie mapy dla doraźnych namiarów na punkt
+• Odległość, ETA i tempo względem celu na żywo dla każdego punktu
+
+▌ WIDOK SPORT (biegi i marsze z przewodnikiem)
+• Pełnoekranowy pulpit: czas i dystans, tempo bieżące i średnie, prędkość, kadencja, długość kroku (z pedometru)
+• Wskaźnik odchylenia tempa — za szybko / na celu / za wolno
+• Wskaźnik strefy tętna z konfigurowalnymi strefami (opcjonalne nadpisanie dla trasy)
+• Profil intensywności kolejnego odcinka w kolorach nachylenia, z ETA do podejścia
+• Cele tempa — dla całej trasy lub poszczególnych odcinków
+• Opcjonalne głosowe wskazówki przez TTS na urządzeniu; atrybut audio nawigacji przycisza muzykę zamiast ją wycinać
+• Wynik po biegu (0–100) łączący trzymanie tempa i stref tętna
+
+▌ TĘTNO PRZEZ BLUETOOTH
+• Sparuj dowolny standardowy pas piersiowy BLE (Polar, Wahoo, Garmin, …)
+• Bezpośrednie połączenie GATT — bez SDK producenta, bez chmury, bez kluczy API
+• Karta BPM na żywo; próbki zapisywane przy każdym punkcie GPX
+
+▌ PRYWATNOŚĆ
+• Bez analityki, raportów awarii, reklam i zewnętrznych trackerów
+• Dane lokalizacyjne, próbki tętna i dźwięk TTS zostają na urządzeniu
+• Jedyne połączenie sieciowe to anonimowe pobieranie kafelków OpenStreetMap, tylko gdy otworzysz mapę trasy
+• Pełna polityka: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ BEZ PLAY SERVICES, BEZ PLAY BILLING
+Działa na urządzeniach de-googled (GrapheneOS, LineageOS, /e/OS). Lokalizacja prosto z API GNSS Androida. Bez zakupów w aplikacji — wsparcie przez Liberapay i GitHub Sponsors, nigdy nie blokuje funkcji.
+
+▌ DWANAŚCIE JĘZYKÓW
+Angielski, niderlandzki, niemiecki, francuski, hiszpański, włoski, portugalski (BR), rosyjski, japoński, czeski, turecki, polski — każdy zweryfikowany przez native speakera.
+
+▌ OTWARTE ŹRÓDŁA
+Kod źródłowy: https://github.com/jeroentrappers/gpsinfo

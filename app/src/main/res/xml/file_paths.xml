@@ -3,4 +3,8 @@
      under filesDir stays private to the app. -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <files-path name="trails" path="trails/" />
+    <!-- Waypoint media (voice notes + photos). Exposed so the user can
+         share an attachment from the waypoint list, and so the camera /
+         audio capture intents can write into our private storage. -->
+    <files-path name="waypoints" path="waypoints/" />
 </paths>

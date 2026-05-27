@@ -3,21 +3,57 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Background recording: a Service of type `location` runs while the
-         user is recording a trail, so the app keeps capturing fixes when
-         the screen is off. The runtime permission is requested at the
-         moment the user toggles background recording — we never ask
-         on first launch. -->
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Background trail recording runs as a foreground service of type
+         `location`, which Android treats as foreground for location-
+         access purposes. ACCESS_BACKGROUND_LOCATION would only be
+         required if we accessed location outside an active foreground
+         service (e.g. via WorkManager or geofences); we don't, so it's
+         deliberately omitted. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <!-- Posting the ongoing recording notification is a runtime permission
          from Android 13+; declared here for the system to know about it. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Step counter sensor (Sensor.TYPE_STEP_COUNTER) needs this
+         runtime permission from API 29+. Requested at trail recording
+         start; if denied, recording still works without step counts. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+    <!-- BLE heart-rate monitor pairing + measurement.
+         API 31+ uses BLUETOOTH_SCAN (with neverForLocation since we
+         don't derive location from advertisements) and BLUETOOTH_CONNECT.
+         Older API levels still need the legacy BLUETOOTH +
+         BLUETOOTH_ADMIN duo. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
     <!-- Required by osmdroid to fetch OSM tiles. The rest of the app is
          offline-only; tiles are the single network feature. osmdroid
          caches them aggressively, so the trail map works after a first
          pan even without connectivity. -->
+    <!-- Vibration cues during a guided run — distinct patterns for
+         pace and HR threshold crosses. Install-time permission, no
+         runtime prompt. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Voice waypoints. Runtime permission requested at first use; if
+         denied, the voice option is hidden on the capture sheet. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Photo waypoints use ActionImageCapture which delegates to the
+         system camera app; we never read the camera ourselves so the
+         CAMERA permission is unnecessary. Declaring it would only
+         trigger an extra runtime prompt for no functional gain. -->
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -84,6 +120,53 @@
             android:name=".data.TrailRecordingService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- Quick Settings tile so the user can start / open a recording
+             from the system shade without opening the app. Stopping
+             still routes through MainActivity so the save dialog can
+             collect a name. -->
+        <service
+            android:name=".RecordingTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_qs_record"
+            android:label="@string/qs_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Android Auto projection-mode entry. The host is the system
+             Android Auto app on the phone (or a compatible third-party
+             head unit). No Google Play Services dependency — Car App
+             Library is androidx and the templates render on the head
+             unit's own renderer.
+
+             Category POI, not navigation: we surface a passive trip
+             dashboard plus recording controls, not turn-by-turn
+             routing. Declaring navigation would trigger Google review
+             requirements we don't meet. -->
+        <service
+            android:name=".car.GpsInfoCarAppService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.POI" />
+            </intent-filter>
+        </service>
+
+        <!-- Declares supported AA categories. Referenced from the
+             template-uses meta-data above. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+        <!-- Minimum CarApi level the templates above target — picks the
+             lowest that supports PaneTemplate + ActionStrip, so older
+             head units still get our screen. -->
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="1" />
 
         <!-- Exposes recorded GPX files for ACTION_SEND so the user can
              share a trail to email, cloud drives, messaging apps, etc.

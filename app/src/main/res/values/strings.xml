@@ -2,6 +2,14 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPSinfo</string>
 
+    <!-- Navigation drawer -->
+    <string name="drawer_open" tools:ignore="MissingTranslation">Open menu</string>
+    <string name="drawer_subtitle" tools:ignore="MissingTranslation">GPS dashboard &amp; tracker</string>
+    <string name="drawer_section_quick" tools:ignore="MissingTranslation">Quick actions</string>
+    <string name="drawer_section_navigate" tools:ignore="MissingTranslation">Go to</string>
+    <string name="drawer_section_dashboard" tools:ignore="MissingTranslation">Dashboard layout</string>
+    <string name="drawer_section_app" tools:ignore="MissingTranslation">App</string>
+
     <!-- Permission screen -->
     <string name="permission_required_title">Location access required</string>
     <string name="permission_required_body">GPSinfo needs precise location to surface satellite, fix and movement data. No location data ever leaves your device.</string>
@@ -18,6 +26,7 @@
 
     <!-- Actions -->
     <string name="action_back">Back</string>
+    <string name="action_more" tools:ignore="MissingTranslation">More actions</string>
     <string name="action_share_location">Share location</string>
     <string name="action_open_maps">Open in Maps</string>
     <string name="action_toggle_units">Toggle units</string>
@@ -60,7 +69,25 @@
     <string name="unit_kmh">km/h</string>
     <string name="unit_m">m</string>
     <string name="degrees_magnetic">° magnetic</string>
+    <string name="degrees_true" tools:ignore="MissingTranslation">° true</string>
+    <string name="compass_card_heading" tools:ignore="MissingTranslation">Heading</string>
+    <string name="compass_card_course" tools:ignore="MissingTranslation">Course</string>
+    <string name="metric_elapsed" tools:ignore="MissingTranslation">Elapsed</string>
+    <string name="metric_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="metric_heart_rate" tools:ignore="MissingTranslation">Heart rate</string>
+    <string name="metric_power" tools:ignore="MissingTranslation">Power</string>
+    <string name="metric_cadence" tools:ignore="MissingTranslation">Cadence</string>
+    <string name="metric_stride" tools:ignore="MissingTranslation">Stride</string>
+    <string name="persona_runner_idle_hint" tools:ignore="MissingTranslation">Tap the record button on the dashboard to start a run.</string>
+    <string name="persona_runner_recording_hint" tools:ignore="MissingTranslation">Recording — tap the Sports view icon for guided coaching.</string>
+    <string name="persona_hiker_until_sunset" tools:ignore="MissingTranslation">UNTIL SUNSET</string>
+    <string name="persona_hiker_sunset_at" tools:ignore="MissingTranslation">Sunset at %1$s</string>
+    <string name="persona_sailor_sog" tools:ignore="MissingTranslation">SOG</string>
+    <string name="persona_sailor_cog" tools:ignore="MissingTranslation">COG</string>
+    <string name="persona_runner_target_pace" tools:ignore="MissingTranslation">Target %1$s</string>
+    <string name="persona_geocacher_no_target" tools:ignore="MissingTranslation">No target set. Use the menu\'s “Navigate to…” entry to enter coordinates of the cache.</string>
     <string name="heading_magnetic_suffix">%1$s · °M</string>
+    <string name="heading_true_suffix" tools:ignore="MissingTranslation">%1$s · °T</string>
 
     <!-- Compass -->
     <string name="metric_orientation">Orientation</string>
@@ -128,7 +155,7 @@
     <string name="about_github_label" tools:ignore="MissingTranslation">Source on GitHub</string>
     <string name="about_license_title" tools:ignore="MissingTranslation">License</string>
     <!-- PluralsCandidate is a false positive: %1$d is the copyright year, not a count. -->
-    <string name="about_license_body" tools:ignore="MissingTranslation,PluralsCandidate">Commercial software. © %1$d Jeroen Trappers. All rights reserved.</string>
+    <string name="about_license_body" tools:ignore="MissingTranslation,PluralsCandidate">© %1$d Appmire CommV. Dual-licensed under GNU AGPL-3.0 (see the LICENSE file in the repository) and under separate commercial terms — contact jeroen@appmire.be for non-AGPL use.</string>
 
     <!-- Sky view -->
     <string name="sky_summary">In view %1$d   ·   In use %2$d   ·   AVG %3$.1f</string>
@@ -164,8 +191,155 @@
     <string name="trail_save" tools:ignore="MissingTranslation">Save</string>
     <string name="trail_discard" tools:ignore="MissingTranslation">Discard</string>
     <string name="trail_empty_title" tools:ignore="MissingTranslation">No trails yet</string>
-    <string name="trail_empty_body" tools:ignore="MissingTranslation">Tap the record button on the dashboard to capture your first GPS trail.</string>
+    <string name="trail_empty_body" tools:ignore="MissingTranslation">Record your first trail from the dashboard, or import an existing GPX file from another device or app.</string>
+    <string name="trail_empty_action_record" tools:ignore="MissingTranslation">Record your first trail</string>
+    <string name="trail_empty_action_import" tools:ignore="MissingTranslation">Import a GPX file</string>
+    <string name="pr_section_title" tools:ignore="MissingTranslation">Personal records</string>
+    <string name="pr_total_distance" tools:ignore="MissingTranslation">Total distance</string>
+    <string name="pr_total_time" tools:ignore="MissingTranslation">Total time</string>
+    <string name="pr_trail_count" tools:ignore="MissingTranslation">Trails</string>
+    <string name="pr_longest" tools:ignore="MissingTranslation">Longest</string>
+    <string name="pr_fastest_avg" tools:ignore="MissingTranslation">Fastest avg</string>
+    <string name="pr_biggest_climb" tools:ignore="MissingTranslation">Biggest climb</string>
+    <string name="pr_longest_duration" tools:ignore="MissingTranslation">Longest run</string>
+    <string name="settings_density_label" tools:ignore="MissingTranslation">Dashboard density</string>
+    <string name="settings_density_standard" tools:ignore="MissingTranslation">Standard</string>
+    <string name="settings_density_glanceable" tools:ignore="MissingTranslation">Glanceable</string>
+    <string name="trip_computer_title" tools:ignore="MissingTranslation">TRIP — since last reset</string>
+    <string name="trip_computer_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="trip_computer_time" tools:ignore="MissingTranslation">Time</string>
+    <string name="trip_computer_trails" tools:ignore="MissingTranslation">Trails</string>
+    <string name="trip_computer_reset" tools:ignore="MissingTranslation">Reset trip</string>
+    <string name="qs_tile_label" tools:ignore="MissingTranslation">GPSinfo trail</string>
+    <string name="qs_tile_state_recording" tools:ignore="MissingTranslation">Recording — tap to open</string>
+    <string name="qs_tile_state_idle" tools:ignore="MissingTranslation">Tap to start recording</string>
+    <string name="settings_vibration_cues" tools:ignore="MissingTranslation">Vibration cues</string>
+    <string name="settings_vibration_cues_body" tools:ignore="MissingTranslation">Distinct vibration patterns when pace drifts or HR crosses a zone boundary. Independent of audible cues.</string>
+    <string name="sports_tutorial_title" tools:ignore="MissingTranslation">Welcome to the Sports view</string>
+    <string name="sports_tutorial_lede" tools:ignore="MissingTranslation">Four glanceable instruments coach you through the run. Here\'s what each one tells you.</string>
+    <string name="sports_tutorial_pace_title" tools:ignore="MissingTranslation">Pace-deviation gauge</string>
+    <string name="sports_tutorial_pace_body" tools:ignore="MissingTranslation">Needle centred = on target. Left of centre = too slow. Right = too fast. Numeric label inside is the seconds offset.</string>
+    <string name="sports_tutorial_hr_title" tools:ignore="MissingTranslation">Heart-rate zone gauge</string>
+    <string name="sports_tutorial_hr_body" tools:ignore="MissingTranslation">Coloured bands are Z1-Z5 from your configured zones. BPM in the bowl, current zone tag on the right.</string>
+    <string name="sports_tutorial_intensity_title" tools:ignore="MissingTranslation">Intensity profile</string>
+    <string name="sports_tutorial_intensity_body" tools:ignore="MissingTranslation">Colour-graded preview of the next stretch by climb steepness, with ETA to the next big climb.</string>
+    <string name="sports_tutorial_cues_title" tools:ignore="MissingTranslation">Audible &amp; vibration cues</string>
+    <string name="sports_tutorial_cues_body" tools:ignore="MissingTranslation">Enable from Settings to get voice / vibration nudges when pace drifts or HR crosses zones. Music ducks instead of cutting.</string>
+    <string name="sports_tutorial_dismiss" tools:ignore="MissingTranslation">Got it</string>
+    <string name="lap_action" tools:ignore="MissingTranslation">Mark lap</string>
+    <string name="lap_recorded_toast" tools:ignore="MissingTranslation">Lap %1$d · %2$.2f km in %3$d:%4$02d</string>
+    <string name="laps_section_title" tools:ignore="MissingTranslation">Laps</string>
+    <string name="laps_column_lap" tools:ignore="MissingTranslation">#</string>
+    <string name="laps_column_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="laps_column_time" tools:ignore="MissingTranslation">Time</string>
+    <string name="laps_column_pace" tools:ignore="MissingTranslation">Pace</string>
+    <string name="laps_column_hr" tools:ignore="MissingTranslation">HR</string>
+    <string name="tags_editor_title" tools:ignore="MissingTranslation">Trail tags</string>
+    <string name="tags_editor_body" tools:ignore="MissingTranslation">Free-form labels — useful for grouping morning runs, group rides, races. Persisted in the GPX file\'s &lt;keywords&gt; field.</string>
+    <string name="tags_editor_empty" tools:ignore="MissingTranslation">No tags yet.</string>
+    <string name="tags_editor_input_hint" tools:ignore="MissingTranslation">Add a tag and press Done</string>
+    <string name="trail_action_edit_tags" tools:ignore="MissingTranslation">Edit tags</string>
+    <string name="trails_search_hint" tools:ignore="MissingTranslation">Search by name</string>
+    <string name="trails_sort_label" tools:ignore="MissingTranslation">Sort</string>
+    <string name="trails_sort_date_desc" tools:ignore="MissingTranslation">Newest first</string>
+    <string name="trails_sort_date_asc" tools:ignore="MissingTranslation">Oldest first</string>
+    <string name="trails_sort_distance_desc" tools:ignore="MissingTranslation">Longest first</string>
+    <string name="trails_sort_distance_asc" tools:ignore="MissingTranslation">Shortest first</string>
+    <string name="trails_filter_all" tools:ignore="MissingTranslation">All</string>
+    <string name="trails_no_results" tools:ignore="MissingTranslation">No trails match your filters.</string>
+    <string name="auto_pause_idle_title" tools:ignore="MissingTranslation">Looks stationary</string>
+    <string name="auto_pause_idle_body" tools:ignore="MissingTranslation">No meaningful movement for 30 s. Tap to pause manually — recording auto-pauses after the next idle window anyway.</string>
+    <string name="auto_pause_paused_title" tools:ignore="MissingTranslation">Recording paused</string>
+    <string name="auto_pause_paused_body" tools:ignore="MissingTranslation">Distance &amp; duration are frozen. Auto-resumes the moment you move &gt; 2 m, or tap to resume now.</string>
+    <string name="stride_calibration_title" tools:ignore="MissingTranslation">Stride calibration</string>
+    <string name="stride_calibration_body" tools:ignore="MissingTranslation">Walk a measured distance (a running track straight is exactly 100 m; a 25-m pool is 25 m). The step counter divides into your distance to derive a personal stride length.</string>
+    <string name="stride_calibration_saved_label" tools:ignore="MissingTranslation">Current calibration</string>
+    <string name="stride_calibration_distance_label" tools:ignore="MissingTranslation">Walk distance</string>
+    <string name="stride_calibration_walking" tools:ignore="MissingTranslation">Walking — keep counting</string>
+    <string name="stride_calibration_steps" tools:ignore="MissingTranslation">steps</string>
+    <string name="stride_calibration_start" tools:ignore="MissingTranslation">Start walking</string>
+    <string name="stride_calibration_save" tools:ignore="MissingTranslation">Save calibration</string>
+    <string name="stride_calibration_clear" tools:ignore="MissingTranslation">Clear calibration</string>
+    <string name="settings_stride_calibration" tools:ignore="MissingTranslation">Calibrate stride</string>
+    <string name="dashboard_profile_switch" tools:ignore="MissingTranslation">Switch dashboard profile</string>
+    <string name="share_nav_context" tools:ignore="MissingTranslation">Heading to waypoint %1$s away · ETA %2$s</string>
+    <string name="car_row_speed" tools:ignore="MissingTranslation">Speed</string>
+    <string name="car_row_heading" tools:ignore="MissingTranslation">Heading</string>
+    <string name="car_row_altitude" tools:ignore="MissingTranslation">Altitude</string>
+    <string name="car_row_trip" tools:ignore="MissingTranslation">Trip</string>
+    <string name="car_row_trip_idle" tools:ignore="MissingTranslation">Not recording</string>
+    <string name="car_action_start" tools:ignore="MissingTranslation">Start trail</string>
+    <string name="car_action_open_phone" tools:ignore="MissingTranslation">Open on phone to save</string>
+    <string name="profile_editor_title" tools:ignore="MissingTranslation">Customise dashboard</string>
+    <string name="profile_editor_body" tools:ignore="MissingTranslation">Pick which cards to show and in what order. Saves as your Custom profile and activates it.</string>
+    <string name="profile_editor_save" tools:ignore="MissingTranslation">Save Custom</string>
+    <string name="profile_editor_reset" tools:ignore="MissingTranslation">Reset</string>
+    <string name="profile_editor_section_status" tools:ignore="MissingTranslation">Status bar</string>
+    <string name="profile_editor_section_speed" tools:ignore="MissingTranslation">Speed gauge</string>
+    <string name="profile_editor_accent_label" tools:ignore="MissingTranslation">Accent colour</string>
+    <string name="profile_editor_chrome_label" tools:ignore="MissingTranslation">Chrome</string>
+    <string name="profile_editor_chrome_normal" tools:ignore="MissingTranslation">Normal</string>
+    <string name="profile_editor_chrome_night" tools:ignore="MissingTranslation">Night dim-red</string>
+    <string name="live_map_title" tools:ignore="MissingTranslation">Live map</string>
+    <string name="live_map_follow" tools:ignore="MissingTranslation">Follow my position</string>
+    <string name="live_map_heading_up" tools:ignore="MissingTranslation">Heading-up rotation</string>
+    <string name="live_map_recenter" tools:ignore="MissingTranslation">Recentre on me</string>
+    <!-- Short captions shown beneath the live-map control buttons. -->
+    <string name="live_map_follow_label" tools:ignore="MissingTranslation">Follow</string>
+    <string name="live_map_recenter_label" tools:ignore="MissingTranslation">Recentre</string>
+    <string name="live_map_sats" tools:ignore="MissingTranslation">Sats</string>
+    <string name="live_map_open" tools:ignore="MissingTranslation">Open live map</string>
+    <string name="live_map_avg_subtext" tools:ignore="MissingTranslation">avg %1$s %2$s · %3$d s</string>
+    <string name="settings_dashboard_editor" tools:ignore="MissingTranslation">Customise dashboard cards</string>
+    <string name="dashboard_profile_custom" tools:ignore="MissingTranslation">Custom</string>
+    <string name="cue_off_route" tools:ignore="MissingTranslation">Off route</string>
+    <string name="cue_back_on_route" tools:ignore="MissingTranslation">Back on route</string>
+    <string name="car_action_recent_trails" tools:ignore="MissingTranslation">Recent trails</string>
+    <string name="car_recent_title" tools:ignore="MissingTranslation">Recent trails</string>
+    <string name="car_recent_empty" tools:ignore="MissingTranslation">No trails recorded yet</string>
+    <string name="ghost_card_title" tools:ignore="MissingTranslation">Racing past self</string>
+    <string name="ghost_card_you" tools:ignore="MissingTranslation">You</string>
+    <string name="ghost_card_ghost" tools:ignore="MissingTranslation">Ghost</string>
+    <string name="ghost_card_delta" tools:ignore="MissingTranslation">Δ</string>
+    <string name="ghost_card_clear" tools:ignore="MissingTranslation">Stop</string>
+    <string name="ghost_card_finished" tools:ignore="MissingTranslation">Ghost has finished.</string>
+    <string name="trail_action_race_ghost" tools:ignore="MissingTranslation">Race against this</string>
+    <string name="ghost_set_toast" tools:ignore="MissingTranslation">Racing against %1$s — start a recording.</string>
+
+    <!-- Distance unit short labels -->
+    <string name="unit_km" tools:ignore="MissingTranslation">km</string>
+    <string name="unit_mi" tools:ignore="MissingTranslation">mi</string>
+
+    <!-- Ghost-runner picker -->
+    <string name="ghost_picker_title" tools:ignore="MissingTranslation">Ghost runner</string>
+    <string name="ghost_picker_body" tools:ignore="MissingTranslation">Race a virtual partner. Pick an even pace, a goal time over a distance, or a past run — then start recording on the Runner dashboard.</string>
+    <string name="ghost_mode_off" tools:ignore="MissingTranslation">Off</string>
+    <string name="ghost_mode_pace" tools:ignore="MissingTranslation">Pace</string>
+    <string name="ghost_mode_goal" tools:ignore="MissingTranslation">Goal</string>
+    <string name="ghost_mode_run" tools:ignore="MissingTranslation">Past run</string>
+    <string name="ghost_off_body" tools:ignore="MissingTranslation">No ghost — you\'re running solo.</string>
+    <string name="ghost_turn_off" tools:ignore="MissingTranslation">Turn off ghost</string>
+    <string name="ghost_pace_hint" tools:ignore="MissingTranslation">Hold an even pace (%1$s).</string>
+    <string name="ghost_minutes" tools:ignore="MissingTranslation">min</string>
+    <string name="ghost_seconds" tools:ignore="MissingTranslation">sec</string>
+    <string name="ghost_apply" tools:ignore="MissingTranslation">Set ghost</string>
+    <string name="ghost_goal_hint" tools:ignore="MissingTranslation">Cover a distance in a target time — the ghost holds the average pace needed.</string>
+    <string name="ghost_goal_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="ghost_run_empty" tools:ignore="MissingTranslation">No saved runs to race yet. Record one first.</string>
+    <string name="settings_ghost" tools:ignore="MissingTranslation">Ghost runner</string>
+    <!-- Runner ghost hero -->
+    <string name="runner_ghost_label" tools:ignore="MissingTranslation">Ghost</string>
+    <string name="runner_ghost_ahead" tools:ignore="MissingTranslation">%1$s ahead</string>
+    <string name="runner_ghost_behind" tools:ignore="MissingTranslation">%1$s behind</string>
+    <string name="runner_ghost_finished" tools:ignore="MissingTranslation">Ghost finished</string>
+    <string name="settings_nmea_logging" tools:ignore="MissingTranslation">Log raw NMEA (diagnostic)</string>
+    <string name="settings_nmea_logging_body" tools:ignore="MissingTranslation">Write the GPS chip\'s raw NMEA sentences to cache/nmea/ during recordings. Off by default; for debugging chip behaviour.</string>
+    <string name="settings_nmea_bt_bridge" tools:ignore="MissingTranslation">NMEA over Bluetooth (SPP)</string>
+    <string name="settings_nmea_bt_bridge_body" tools:ignore="MissingTranslation">Rebroadcast raw NMEA sentences over Bluetooth Serial Port (RFCOMM) during recordings, so a paired chart-plotter or desktop tool can use the phone as an external GPS puck.</string>
+    <string name="nav_pick_coords_plus_label" tools:ignore="MissingTranslation">Plus Code (optional)</string>
+    <string name="nav_pick_coords_alt_label" tools:ignore="MissingTranslation">Plus Code or Maidenhead (optional)</string>
     <string name="trail_recording_stats" tools:ignore="MissingTranslation">%1$d pts · %2$s</string>
+    <string name="trail_recording_stats_with_steps" tools:ignore="MissingTranslation">%1$d pts · %2$s · %3$d steps</string>
     <string name="trail_list_meta" tools:ignore="MissingTranslation">%1$s · %2$d pts · %3$s</string>
     <string name="trail_point_title" tools:ignore="MissingTranslation">Captured at %1$s</string>
     <string name="trail_action_delete" tools:ignore="MissingTranslation">Delete</string>
@@ -216,7 +390,7 @@
     <string name="onboarding_title" tools:ignore="MissingTranslation">Welcome to GPSinfo</string>
     <string name="onboarding_intro" tools:ignore="MissingTranslation">Everything below works offline — no Play Services, no API keys, no telemetry. Quick tour:</string>
     <string name="onboarding_dashboard_title" tools:ignore="MissingTranslation">Dashboard</string>
-    <string name="onboarding_dashboard_body" tools:ignore="MissingTranslation">Live position, satellites, compass, speed, sun. Tap any card to expand it.</string>
+    <string name="onboarding_dashboard_body" tools:ignore="MissingTranslation">Live position, satellites, compass, speed, sun. Tap any card to open its detail screen.</string>
     <string name="onboarding_record_title" tools:ignore="MissingTranslation">Record a trail</string>
     <string name="onboarding_record_body" tools:ignore="MissingTranslation">Tap the red dot at the bottom-right to start. Recording continues in the background.</string>
     <string name="onboarding_waypoint_title" tools:ignore="MissingTranslation">Drop a pin</string>
@@ -266,4 +440,220 @@
     <string name="calibration_hardiron_detail" tools:ignore="MissingTranslation">Sphere radius %1$.1f µT · RMS %2$.1f µT</string>
     <string name="calibration_how_label" tools:ignore="MissingTranslation">How to calibrate</string>
     <string name="calibration_how_body" tools:ignore="MissingTranslation">1. Move away from large metal objects, magnets, speakers and laptops.\n2. Hold the phone in your hand and slowly rotate it through every orientation — a figure-of-eight motion works.\n3. Keep going until the accuracy chip reads HIGH and coverage approaches 100 %%.\n\nThe phone never stops calibrating in the background; this screen just gives you a way to see what it has measured.</string>
+
+    <!-- Accessibility descriptions for canvas-rendered surfaces. EN-only for now; full localization tracked separately. -->
+    <string name="a11y_sky_view" tools:ignore="MissingTranslation">Sky view. %1$d satellites in view, %2$d used in fix, average signal %3$.1f decibels.</string>
+    <string name="a11y_sky_view_empty" tools:ignore="MissingTranslation">Sky view. Waiting for satellites.</string>
+    <string name="a11y_compass_rose" tools:ignore="MissingTranslation">Compass heading %1$03d degrees magnetic, %2$s.</string>
+    <string name="a11y_compass_bowl" tools:ignore="MissingTranslation">Gimballed compass. Heading %1$03d degrees magnetic, %2$s. Pitch %3$+.0f degrees, roll %4$+.0f degrees.</string>
+    <string name="a11y_satellite_row" tools:ignore="MissingTranslation">%1$s satellite SV %2$d. %3$s. Elevation %4$s. Azimuth %5$s. %6$s.</string>
+    <string name="a11y_sat_signal_value" tools:ignore="MissingTranslation">Signal %1$.0f decibels</string>
+    <string name="a11y_sat_signal_none" tools:ignore="MissingTranslation">No signal</string>
+    <string name="a11y_sat_unknown" tools:ignore="MissingTranslation">unknown</string>
+    <string name="a11y_sat_degrees" tools:ignore="MissingTranslation">%1$.0f degrees</string>
+    <string name="a11y_sat_in_fix" tools:ignore="MissingTranslation">Used in fix</string>
+    <string name="a11y_sat_not_in_fix" tools:ignore="MissingTranslation">Not in fix</string>
+    <string name="a11y_calibration_plot" tools:ignore="MissingTranslation">Magnetometer %1$s projection. Estimated hard-iron offset %2$+.1f, %3$+.1f microtesla.</string>
+    <string name="a11y_speed_gauge" tools:ignore="MissingTranslation">Speed gauge. %1$s %2$s.</string>
+    <string name="a11y_speed_gauge_no_fix" tools:ignore="MissingTranslation">Speed gauge. No GPS fix.</string>
+    <string name="a11y_recording_fab" tools:ignore="MissingTranslation">Stop recording. %1$d points captured in %2$s.</string>
+
+    <!-- Acquiring / no-fix captions on cards -->
+    <string name="acquiring_fix" tools:ignore="MissingTranslation">Acquiring satellites…</string>
+    <string name="no_fix_caption" tools:ignore="MissingTranslation">No GPS fix</string>
+
+    <!-- Top-level Settings entry -->
+    <string name="action_open_settings_screen" tools:ignore="MissingTranslation">Settings</string>
+
+    <!-- Re-trigger the onboarding tour from Settings -->
+    <string name="settings_show_tour" tools:ignore="MissingTranslation">Show the tour again</string>
+
+    <!-- Coordinate format labels (shown under single-line codes) -->
+    <string name="coord_format_plus_code" tools:ignore="MissingTranslation">Plus Code</string>
+    <string name="coord_format_maidenhead" tools:ignore="MissingTranslation">Maidenhead</string>
+    <string name="coord_format_mgrs" tools:ignore="MissingTranslation">MGRS</string>
+
+    <!-- Pace units (running/walking convention — minutes per unit of distance) -->
+    <string name="unit_pace_per_km" tools:ignore="MissingTranslation">/km</string>
+    <string name="unit_pace_per_mi" tools:ignore="MissingTranslation">/mi</string>
+    <string name="unit_pace_per_nm" tools:ignore="MissingTranslation">/nm</string>
+    <string name="metric_pace" tools:ignore="MissingTranslation">Pace</string>
+    <string name="trail_stats_avg_pace" tools:ignore="MissingTranslation">Avg pace</string>
+    <string name="trail_stats_best_pace" tools:ignore="MissingTranslation">Best pace</string>
+    <string name="trail_stats_avg_hr" tools:ignore="MissingTranslation">Avg HR</string>
+    <string name="trail_stats_max_hr" tools:ignore="MissingTranslation">Max HR</string>
+    <string name="trail_stats_score" tools:ignore="MissingTranslation">Score</string>
+    <string name="trail_stats_score_pace" tools:ignore="MissingTranslation">Pace %1$s vs target %2$s %3$s</string>
+    <string name="trail_stats_score_breakdown" tools:ignore="MissingTranslation">Pace %1$d · HR zone %2$d</string>
+
+    <!-- Per-segment pace target editor -->
+    <string name="pace_targets_title" tools:ignore="MissingTranslation">Pace targets</string>
+    <string name="pace_targets_body" tools:ignore="MissingTranslation">Set a target pace for the segment leading to each waypoint. The Sports view will follow these per-segment targets instead of the overall one.</string>
+    <string name="pace_targets_waypoint" tools:ignore="MissingTranslation">%1$d%% along the trail</string>
+    <string name="pace_targets_apply_all" tools:ignore="MissingTranslation">Apply first to all</string>
+    <string name="trail_pace_targets" tools:ignore="MissingTranslation">Pace targets…</string>
+
+    <!-- Donation buttons in About screen. Three platforms — pick whichever
+         fits the donor's habits; no Play Billing, no feature gating. -->
+    <string name="about_liberapay_label" tools:ignore="MissingTranslation">Donate via Liberapay (recurring)</string>
+    <string name="about_github_sponsors_label" tools:ignore="MissingTranslation">Donate via GitHub Sponsors</string>
+    <string name="about_paypal_label" tools:ignore="MissingTranslation">Donate via PayPal (one-shot)</string>
+
+    <!-- Navigation card (bearing-to-waypoint / track-back) -->
+    <string name="nav_card_title" tools:ignore="MissingTranslation">Navigation</string>
+    <string name="nav_stop" tools:ignore="MissingTranslation">Stop navigation</string>
+    <string name="nav_metric_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="nav_metric_bearing" tools:ignore="MissingTranslation">Bearing</string>
+    <string name="nav_metric_eta" tools:ignore="MissingTranslation">ETA</string>
+    <string name="nav_route_progress" tools:ignore="MissingTranslation">Waypoint %1$d of %2$d remaining</string>
+    <string name="nav_start" tools:ignore="MissingTranslation">Navigate to…</string>
+    <string name="nav_pick_screen_title" tools:ignore="MissingTranslation">Pick a destination</string>
+    <string name="nav_pick_tab_map" tools:ignore="MissingTranslation">Pick on map</string>
+    <string name="nav_pick_tab_coords" tools:ignore="MissingTranslation">Enter coordinates</string>
+    <string name="nav_pick_coords_lat_label" tools:ignore="MissingTranslation">Latitude (decimal)</string>
+    <string name="nav_pick_coords_lon_label" tools:ignore="MissingTranslation">Longitude (decimal)</string>
+    <string name="nav_pick_coords_name_label" tools:ignore="MissingTranslation">Name (optional)</string>
+    <string name="nav_pick_confirm" tools:ignore="MissingTranslation">Use this point</string>
+    <string name="nav_pick_map_hint" tools:ignore="MissingTranslation">Tap the map to place your destination, then confirm.</string>
+    <string name="nav_pick_invalid_coords" tools:ignore="MissingTranslation">Enter a latitude in [-90, 90] and a longitude in [-180, 180].</string>
+    <string name="nav_default_name" tools:ignore="MissingTranslation">Destination</string>
+
+    <!-- Track-back from a recorded trail -->
+    <string name="trail_track_back" tools:ignore="MissingTranslation">Track back</string>
+
+    <!-- Pace target on an active navigation target -->
+    <string name="nav_set_pace_goal" tools:ignore="MissingTranslation">Set pace target</string>
+    <string name="nav_edit_pace_goal" tools:ignore="MissingTranslation">Edit pace target</string>
+    <string name="nav_clear_pace_goal" tools:ignore="MissingTranslation">Clear target</string>
+    <string name="nav_goal_label" tools:ignore="MissingTranslation">Target pace</string>
+    <string name="nav_goal_too_fast" tools:ignore="MissingTranslation">Too fast — ease off</string>
+    <string name="nav_goal_too_slow" tools:ignore="MissingTranslation">Too slow — push</string>
+    <string name="nav_goal_on_target" tools:ignore="MissingTranslation">On target</string>
+    <string name="nav_goal_acquiring" tools:ignore="MissingTranslation">Acquiring pace…</string>
+    <string name="nav_goal_dialog_title" tools:ignore="MissingTranslation">Set pace target</string>
+    <string name="nav_goal_dialog_body" tools:ignore="MissingTranslation">Enter the pace you want to hold. Live deviation will appear on the navigation card and audible cues will fire on threshold cross.</string>
+    <string name="nav_goal_minutes_label" tools:ignore="MissingTranslation">Minutes</string>
+    <string name="nav_goal_seconds_label" tools:ignore="MissingTranslation">Seconds</string>
+
+    <!-- Heart-rate monitor pairing & status -->
+    <string name="hr_pair_title" tools:ignore="MissingTranslation">Heart rate monitor</string>
+    <string name="hr_pair_body" tools:ignore="MissingTranslation">Tap a device to pair. Only Bluetooth heart-rate monitors using the standard Heart Rate Service are supported.</string>
+    <string name="hr_pair_scanning" tools:ignore="MissingTranslation">Scanning…</string>
+    <string name="hr_pair_scan_again" tools:ignore="MissingTranslation">Scan again</string>
+    <string name="hr_pair_no_devices_yet" tools:ignore="MissingTranslation">Looking for monitors… make sure your strap is awake and nearby.</string>
+    <string name="hr_pair_unknown_device" tools:ignore="MissingTranslation">Unknown device</string>
+    <string name="hr_pair_needs_permissions" tools:ignore="MissingTranslation">Bluetooth permissions are required to pair a monitor.</string>
+    <string name="hr_forget_device" tools:ignore="MissingTranslation">Forget</string>
+    <string name="hr_status_idle" tools:ignore="MissingTranslation">No monitor paired</string>
+    <string name="hr_status_scanning" tools:ignore="MissingTranslation">Scanning for monitors</string>
+    <string name="hr_status_connecting" tools:ignore="MissingTranslation">Connecting to %1$s…</string>
+    <string name="hr_status_connected" tools:ignore="MissingTranslation">Connected · %1$d BPM</string>
+    <string name="hr_status_connected_named" tools:ignore="MissingTranslation">%1$s · %2$d BPM</string>
+    <string name="hr_status_disconnected" tools:ignore="MissingTranslation">%1$s · disconnected</string>
+    <string name="settings_pair_hr" tools:ignore="MissingTranslation">Heart rate monitor</string>
+    <string name="settings_hr_zones" tools:ignore="MissingTranslation">Heart rate zones</string>
+
+    <!-- Cycling power meter pairing & status (BLE 0x1818 / 0x2A63) -->
+    <string name="cp_pair_title" tools:ignore="MissingTranslation">Cycling power meter</string>
+    <string name="cp_pair_body" tools:ignore="MissingTranslation">Tap a device to pair. Only Bluetooth power meters using the standard Cycling Power Service are supported.</string>
+    <string name="cp_pair_scanning" tools:ignore="MissingTranslation">Scanning…</string>
+    <string name="cp_pair_scan_again" tools:ignore="MissingTranslation">Scan again</string>
+    <string name="cp_pair_no_devices_yet" tools:ignore="MissingTranslation">Looking for power meters… spin the crank or wake the meter and keep it nearby.</string>
+    <string name="cp_pair_unknown_device" tools:ignore="MissingTranslation">Unknown device</string>
+    <string name="cp_pair_needs_permissions" tools:ignore="MissingTranslation">Bluetooth permissions are required to pair a power meter.</string>
+    <string name="cp_forget_device" tools:ignore="MissingTranslation">Forget</string>
+    <string name="cp_status_idle" tools:ignore="MissingTranslation">No power meter paired</string>
+    <string name="cp_status_scanning" tools:ignore="MissingTranslation">Scanning for power meters</string>
+    <string name="cp_status_connecting" tools:ignore="MissingTranslation">Connecting to %1$s…</string>
+    <string name="cp_status_connected" tools:ignore="MissingTranslation">Connected · %1$d W</string>
+    <string name="cp_status_connected_named" tools:ignore="MissingTranslation">%1$s · %2$d W</string>
+    <string name="cp_status_disconnected" tools:ignore="MissingTranslation">%1$s · disconnected</string>
+    <string name="settings_pair_cp" tools:ignore="MissingTranslation">Cycling power meter</string>
+
+    <!-- Share-my-position via QR -->
+    <string name="share_position_title" tools:ignore="MissingTranslation">Share my position</string>
+    <string name="share_position_body" tools:ignore="MissingTranslation">Have a friend scan this QR with their camera or QR app — it opens their default maps app pinned to your current spot.</string>
+    <string name="share_position_waiting_fix" tools:ignore="MissingTranslation">Waiting for a GPS fix to share…</string>
+    <string name="share_position_qr_alt" tools:ignore="MissingTranslation">QR code containing the geo URI for the current position</string>
+    <string name="share_position_qr_error" tools:ignore="MissingTranslation">Could not encode QR</string>
+    <string name="share_position_share_button" tools:ignore="MissingTranslation">Share link</string>
+    <string name="share_position_chooser_title" tools:ignore="MissingTranslation">Share position</string>
+    <string name="settings_share_position" tools:ignore="MissingTranslation">Share my position</string>
+
+    <!-- Waypoints — user-captured POIs with optional voice / photo -->
+    <string name="waypoint_capture_title" tools:ignore="MissingTranslation">New waypoint</string>
+    <string name="waypoint_capture_note_label" tools:ignore="MissingTranslation">Note (optional)</string>
+    <string name="waypoint_capture_save_note" tools:ignore="MissingTranslation">Save note</string>
+    <string name="waypoint_capture_take_photo" tools:ignore="MissingTranslation">Take photo</string>
+    <string name="waypoint_capture_record_voice" tools:ignore="MissingTranslation">Record voice</string>
+    <string name="waypoint_capture_stop_voice" tools:ignore="MissingTranslation">Stop</string>
+    <string name="waypoint_capture_voice_perm_hint" tools:ignore="MissingTranslation">Microphone permission required</string>
+    <string name="waypoint_capture_needs_fix" tools:ignore="MissingTranslation">Waiting for a GPS fix before capturing a waypoint…</string>
+    <string name="waypoint_capture_fix_summary" tools:ignore="MissingTranslation">At %1$s, %2$s</string>
+    <string name="waypoint_list_title" tools:ignore="MissingTranslation">Waypoints</string>
+    <string name="waypoint_list_empty" tools:ignore="MissingTranslation">No waypoints yet. Tap the + button below to drop one at your current spot.</string>
+    <string name="waypoint_share" tools:ignore="MissingTranslation">Share</string>
+    <string name="waypoint_delete" tools:ignore="MissingTranslation">Delete</string>
+    <string name="waypoint_voice_play" tools:ignore="MissingTranslation">Play voice note</string>
+    <string name="waypoint_voice_stop" tools:ignore="MissingTranslation">Stop playback</string>
+    <string name="waypoint_photo_missing" tools:ignore="MissingTranslation">Photo file missing</string>
+    <string name="waypoint_share_chooser_title" tools:ignore="MissingTranslation">Share waypoint</string>
+    <string name="settings_waypoints" tools:ignore="MissingTranslation">Waypoints</string>
+
+    <!-- Trail FIT export -->
+    <string name="trail_share_fit" tools:ignore="MissingTranslation">Share as FIT</string>
+    <string name="trail_share_fit_failed" tools:ignore="MissingTranslation">Could not encode FIT file</string>
+
+    <!-- Altitude smoothing -->
+    <string name="settings_altitude_smooth" tools:ignore="MissingTranslation">Smooth altitude</string>
+    <string name="settings_altitude_smooth_body" tools:ignore="MissingTranslation">Filter raw GPS altitude through a low-pass to suppress per-sample jitter. The readout still tracks real climbs but stops bouncing on a level walk.</string>
+
+    <!-- HR zones editor screen -->
+    <string name="hr_zones_title" tools:ignore="MissingTranslation">Heart rate zones</string>
+    <string name="hr_zones_body" tools:ignore="MissingTranslation">Set your maximum HR and tune the zone boundaries. The defaults follow the standard 60/70/80/90 % breakdown; trained athletes typically push Z3–Z5 higher.</string>
+    <string name="hr_zones_max_label" tools:ignore="MissingTranslation">Maximum HR (BPM)</string>
+    <string name="hr_zones_z2_threshold" tools:ignore="MissingTranslation">Z2 starts at</string>
+    <string name="hr_zones_z3_threshold" tools:ignore="MissingTranslation">Z3 starts at</string>
+    <string name="hr_zones_z4_threshold" tools:ignore="MissingTranslation">Z4 starts at</string>
+    <string name="hr_zones_z5_threshold" tools:ignore="MissingTranslation">Z5 starts at</string>
+
+    <!-- HeartRateCard on the dashboard -->
+    <string name="hr_card_title" tools:ignore="MissingTranslation">Heart rate</string>
+    <string name="hr_card_no_paired" tools:ignore="MissingTranslation">No monitor paired. Pair one in Settings.</string>
+    <string name="hr_card_waiting" tools:ignore="MissingTranslation">Waiting for monitor…</string>
+    <string name="hr_card_zone" tools:ignore="MissingTranslation">Zone</string>
+    <string name="hr_card_disconnect" tools:ignore="MissingTranslation">Disconnect monitor</string>
+
+    <!-- Sports Dashboard (guided-run view) -->
+    <string name="sports_dashboard_title" tools:ignore="MissingTranslation">Sports view</string>
+    <string name="sports_dashboard_open" tools:ignore="MissingTranslation">Open sports view</string>
+    <string name="sports_dashboard_idle_body" tools:ignore="MissingTranslation">Start a recording from the dashboard, then open the sports view to see live pace, gait and heart-rate.</string>
+    <string name="sports_metric_elapsed" tools:ignore="MissingTranslation">Elapsed</string>
+    <string name="sports_metric_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="sports_metric_cadence" tools:ignore="MissingTranslation">Cadence</string>
+    <string name="sports_metric_stride" tools:ignore="MissingTranslation">Stride</string>
+    <string name="sports_metric_now" tools:ignore="MissingTranslation">Now</string>
+    <string name="sports_metric_avg" tools:ignore="MissingTranslation">Avg</string>
+
+    <!-- Gauge headings on the Sports view -->
+    <string name="gauge_pace_title" tools:ignore="MissingTranslation">Pace vs goal</string>
+    <string name="gauge_hr_title" tools:ignore="MissingTranslation">Heart rate zone</string>
+
+    <!-- Audible cues (spoken by TextToSpeech during the Sports view) -->
+    <string name="cue_on_target" tools:ignore="MissingTranslation">On target</string>
+    <string name="cue_slightly_slow" tools:ignore="MissingTranslation">A little slow</string>
+    <string name="cue_slightly_fast" tools:ignore="MissingTranslation">A little fast</string>
+    <string name="cue_too_slow" tools:ignore="MissingTranslation">Too slow</string>
+    <string name="cue_too_fast" tools:ignore="MissingTranslation">Too fast</string>
+    <string name="cue_zone" tools:ignore="MissingTranslation">Zone %1$d</string>
+    <string name="settings_audible_cues" tools:ignore="MissingTranslation">Audible cues</string>
+    <string name="settings_audible_cues_body" tools:ignore="MissingTranslation">Spoken pace and zone feedback during the Sports view. Uses the device\'s on-board text-to-speech — no network required.</string>
+
+    <!-- Intensity profile (upcoming-trail elevation chart) -->
+    <string name="profile_card_title" tools:ignore="MissingTranslation">Trail ahead</string>
+    <string name="profile_distance_ahead" tools:ignore="MissingTranslation">%1$s of trail</string>
+    <string name="profile_elevation_range" tools:ignore="MissingTranslation">%1$s → %2$s</string>
+    <string name="profile_next_climb" tools:ignore="MissingTranslation">Next climb</string>
+    <string name="profile_climb_summary" tools:ignore="MissingTranslation">%1$s · +%2$s</string>
+    <string name="profile_climb_in" tools:ignore="MissingTranslation">In</string>
 </resources>

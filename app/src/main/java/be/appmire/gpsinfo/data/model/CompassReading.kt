@@ -1,0 +1,35 @@
+package be.appmire.gpsinfo.data.model
+
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
+import be.appmire.gpsinfo.R
+
+@Immutable
+enum class MagneticAccuracy(@StringRes val labelRes: Int) {
+    UNRELIABLE(R.string.mag_acc_unreliable),
+    LOW(R.string.mag_acc_low),
+    MEDIUM(R.string.mag_acc_medium),
+    HIGH(R.string.mag_acc_high),
+    UNKNOWN(R.string.mag_acc_unknown),
+}
+
+@Immutable
+data class CompassReading(
+    /** Wrapped magnetic heading in [0°, 360°). Use for text readouts and cardinal lookup. */
+    val magneticHeadingDeg: Float = 0f,
+    /** Cumulative magnetic heading in degrees, NOT wrapped. Each spin past
+     *  north monotonically increases (or decreases) this value. Use it to
+     *  drive rotation animations so they never reverse direction at the
+     *  0°/360° boundary when the input wobbles across it. */
+    val continuousMagneticHeadingDeg: Float = 0f,
+    val trueHeadingDeg: Float = 0f,
+    val pitchDeg: Float = 0f,
+    val rollDeg: Float = 0f,
+    val declinationDeg: Float = 0f,
+    val inclinationDeg: Float = 0f,
+    val fieldStrengthNanoTesla: Float = 0f,
+    val accuracy: MagneticAccuracy = MagneticAccuracy.UNKNOWN
+) {
+    val reciprocalHeadingDeg: Float
+        get() = ((magneticHeadingDeg + 180f) % 360f + 360f) % 360f
+}

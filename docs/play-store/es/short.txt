@@ -1,1 +1,1 @@
-Panel GPS sin conexión: datos GNSS en bruto y rutas. Sin Play Services.
+Panel GPS sin conexión: GNSS, pulsómetro BLE, coach de ritmo y rutas GPX.

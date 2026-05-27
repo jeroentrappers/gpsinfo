@@ -1,3 +1,1 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
-
-Panel GNSS, brújula, sol y velocidad en vivo. 100% sin conexión.
+Panel GPS sin conexión: GNSS, pulsómetro BLE, coach de ritmo y rutas GPX.

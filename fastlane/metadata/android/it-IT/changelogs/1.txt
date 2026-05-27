@@ -1,8 +1,0 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
-
-Rilascio iniziale.
-- Cruscotto integrato: fix, posizione, movimento, vista cielo, bussola, mappa mondiale, ora e sole
-- Tachimetro analogico retro con modalità HUD
-- Azimut adattivo in qualsiasi orientamento
-- 12 lingue, tema chiaro/scuro, unità metriche/imperiali/nautiche
-- 100% offline, niente tracciamento, niente Play Services

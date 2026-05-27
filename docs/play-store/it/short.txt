@@ -1,1 +1,1 @@
-Dashboard GPS offline con dati GNSS grezzi e tracce — senza Play Services.
+Dashboard GPS offline: GNSS grezzo, cardio BLE, coaching passo, tracce GPX.

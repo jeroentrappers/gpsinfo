@@ -1,1 +1,1 @@
-Painel GPS offline com dados GNSS brutos e trilhas — sem Play Services.
+Painel GPS offline: GNSS bruto, freq. cardíaca BLE, coach de ritmo, GPX.

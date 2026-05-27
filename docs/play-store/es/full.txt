@@ -1,36 +1,59 @@
-GPSinfo es un panel GPS para Android, directo y pensado para funcionar sin conexión.
+GPSinfo es un panel GPS para Android, sin conexión, que te acompaña también en carreras guiadas.
 
-Todo lo que quieres ver de un vistazo —tu posición, las señales de satélite, la brújula, la velocidad, la altitud, la posición del sol— en un único panel desplazable. Sin SDK de Google Maps, sin Play Services, sin telemetría, sin cuentas.
+Todas las métricas que el chip GPS de tu móvil puede dar, en una sola pantalla desplazable, con grabación opcional de rutas GPX, pulso por Bluetooth y una vista deportiva que guía tu ritmo sin enviar nada a la nube. Sin SDK de Google Maps, sin Play Services, sin telemetría, sin cuentas, sin compras.
 
-Diseñado para senderistas, navegantes, ciclistas, motociclistas, aficionados al GNSS y cualquiera que prefiera mantener sus datos de ubicación dentro del teléfono.
+Para senderistas, navegantes, ciclistas, corredores, motoristas, radioaficionados, curiosos del GNSS y quien quiera mantener sus datos en el teléfono.
 
 ▌ PANEL
-• Posición en WGS84 (DMS o decimal), con altitud y precisión por eje
-• Número de satélites y potencia de señal en tiempo real para GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS e IRNSS
-• Vista del cielo con satélites coloreados por constelación, en su azimut y elevación reales
+• Posición en cinco formatos: DMS, decimal, Plus Code, Maidenhead y MGRS. Toca para cambiar, mantén pulsado para copiar.
+• Altitud, precisión por eje e indicador de calidad de fix en vivo
+• Satélites y señal en GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS e IRNSS
+• Vista del cielo con satélites por constelación en su azimut y elevación reales
 • Brújula con compensación de inclinación, rumbo magnético y verdadero, declinación e inclinación
-• Velocímetro con escala autoadaptable y modo espejo HUD para reflejarlo en el parabrisas
-• Posición del sol, amanecer y atardecer, duración del día y terminador noche/día sobre el mapamundi
+• Pantalla de calibración del magnetómetro con estimación del desfase hard-iron
+• Velocímetro con escala autoadaptable y modo espejo HUD para el parabrisas
+• Posición del sol, amanecer, atardecer, duración del día y terminador noche/día en el mapamundi
 
 ▌ RUTAS
-• Grabación de rutas GPS en formato GPX 1.1 estándar con Garmin TrackPointExtension (velocidad y rumbo)
-• Servicio en primer plano que mantiene la grabación con la app en segundo plano o la pantalla apagada
-• Visualización de la ruta sobre OpenStreetMap como polilínea, con marcadores que se pueden tocar para inspeccionarlos
-• Gráfico de velocidad y altitud, con un deslizador para inspeccionar cualquier punto de la traza
-• Modo de mapa con rumbo arriba y capa de arco solar
-• Precarga de teselas de una zona para que el mapa de la ruta funcione totalmente sin conexión
-• Simplificación de rutas con Ramer-Douglas-Peucker para limpiar el ruido GPS
-• Importa GPX desde cualquier origen; comparte o guarda como GPX donde quieras
-• Captura de waypoint con un solo toque
+• Grabación en GPX 1.1 con Garmin TrackPointExtension (velocidad, rumbo, pulso)
+• Servicio en primer plano que sigue grabando con la pantalla apagada
+• Visualización sobre OpenStreetMap como polilínea, con marcadores tocables
+• Gráficos de velocidad, altitud y pulso; deslizador para inspeccionar cualquier punto
+• Mapa con rumbo arriba y capa de arco solar
+• Precarga de teselas para uso sin conexión
+• Simplificación con Ramer-Douglas-Peucker para limpiar el ruido GPS
+• Importa, comparte o guarda GPX; captura de waypoint con un solo toque
+
+▌ NAVEGACIÓN
+• Regreso por la ruta: flecha de rumbo relativo que te devuelve por cualquier ruta grabada
+• Selector de destino tocando el mapa para tramos puntuales hacia un waypoint
+• Distancia, ETA y ritmo frente al objetivo en vivo por cada waypoint
+
+▌ VISTA DEPORTIVA (carreras y caminatas guiadas)
+• Panel a pantalla completa: tiempo y distancia, ritmo en vivo y medio, velocidad, cadencia y zancada (desde el podómetro)
+• Indicador de desviación de ritmo: demasiado rápido / en objetivo / demasiado lento
+• Indicador de zona de pulso configurable (con anulación opcional por ruta)
+• Perfil de intensidad del siguiente tramo, coloreado por pendiente, con ETA a la próxima subida
+• Objetivos de ritmo: globales o por segmento de una ruta
+• Avisos de coach por voz opcionales con síntesis de voz local; el atributo de audio de guía baja tu música en lugar de cortarla
+• Puntuación posterior (0-100) que combina cumplimiento de ritmo y de zonas de pulso
+
+▌ PULSO POR BLUETOOTH
+• Empareja cualquier pulsómetro BLE estándar (bandas Polar, Wahoo, Garmin…)
+• Conexión GATT directa: sin SDK de fabricante, sin pasarelas en la nube, sin claves de API
+• Tarjeta de BPM en vivo en el panel; muestras guardadas por punto en el GPX
 
 ▌ PRIVACIDAD
-• Sin analítica, sin informes de fallos, sin publicidad, sin rastreadores de terceros.
-• Los datos de ubicación nunca salen de tu dispositivo.
-• La única conexión de red que hace la app son descargas anónimas de teselas de OpenStreetMap, y solo cuando abres un mapa de ruta.
-• Política de privacidad completa: https://jeroentrappers.github.io/gpsinfo/privacy.html
+• Sin analítica, informes de fallos, publicidad ni rastreadores de terceros
+• Ubicación, pulso y audio TTS no salen del dispositivo
+• La única conexión de red son descargas anónimas de teselas de OpenStreetMap, solo al abrir un mapa de ruta
+• Política completa: https://jeroentrappers.github.io/gpsinfo/privacy.html
 
-▌ SIN PLAY SERVICES
-La app no depende de Google Play Services y funciona en dispositivos sin Google (GrapheneOS, LineageOS, /e/OS…). La ubicación se obtiene directamente de las APIs GNSS de Android.
+▌ SIN PLAY SERVICES, SIN PLAY BILLING
+Funciona en dispositivos sin Google (GrapheneOS, LineageOS, /e/OS…). La ubicación viene de las APIs GNSS de Android. Sin compras: las donaciones están en Liberapay y GitHub Sponsors, nunca detrás de una función.
+
+▌ DOCE IDIOMAS
+Inglés, neerlandés, alemán, francés, español, italiano, portugués (BR), ruso, japonés, checo, turco y polaco, revisados por nativos.
 
 ▌ CÓDIGO ABIERTO
 Código fuente: https://github.com/jeroentrappers/gpsinfo

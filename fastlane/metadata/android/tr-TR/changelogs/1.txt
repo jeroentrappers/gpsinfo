@@ -1,8 +1,0 @@
-[TODO_REVIEW: machine translation, native-speaker review required before publish]
-
-İlk sürüm.
-- Entegre pano: fix, konum, hareket, gökyüzü görünümü, pusula, dünya haritası, saat ve güneş
-- HUD modlu retro analog hız göstergesi
-- Tüm yönlerde çalışan uyarlanabilir azimut
-- 12 dil, açık/koyu tema, metrik/imperial/denizcilik birimleri
-- %100 çevrimdışı, takip yok, Play Services yok

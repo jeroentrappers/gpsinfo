@@ -1,36 +1,59 @@
-GPSinfo je věcný GPS panel pro Android, primárně offline.
+GPSinfo je věcný GPS panel a průvodce běhu pro Android, primárně offline.
 
-Vše, co chcete vidět najednou — polohu, signály satelitů, kompas, rychlost, nadmořskou výšku, polohu Slunce — na jediném rolovatelném panelu. Bez Google Maps SDK, bez Play Services, bez telemetrie, bez účtů.
+Každá metrika z GPS čipu telefonu — na jediné rolovatelné obrazovce, s volitelným záznamem GPX, tepem přes Bluetooth a sportovním režimem, který vás vede tempem bez odesílání dat. Bez Google Maps SDK, bez Play Services, bez telemetrie, bez účtů, bez nákupů v aplikaci.
 
-Pro turisty, námořníky, cyklisty, motorkáře, nadšence do GNSS a každého, kdo chce mít data o své poloze pouze ve svém telefonu.
+Pro turisty, námořníky, cyklisty, běžce, motorkáře, radioamatéry, nadšence do GNSS a každého, kdo chce mít polohové údaje pouze ve svém telefonu.
 
 ▌ PANEL
-• Poloha ve WGS84 (DMS nebo desetinný formát), s nadmořskou výškou a přesností v jednotlivých osách
-• Aktuální počet satelitů a síla signálu pro GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS a IRNSS
-• Pohled na oblohu se satelity barevně rozlišenými podle systému ve skutečném azimutu a elevaci
+• Poloha v 5 formátech — DMS, desetinný, Plus Code, Maidenhead, MGRS. Klepnutím přepínáte, dlouhým podržením kopírujete.
+• Nadmořská výška, přesnost v osách a živý indikátor kvality fixu
+• Počet satelitů a síla signálu pro GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS a IRNSS
+• Pohled na oblohu se satelity barevně podle systému ve skutečném azimutu a elevaci
 • Kompas s korekcí náklonu — magnetický i skutečný kurz, deklinace a inklinace
-• Tachometr s automaticky se přizpůsobující stupnicí a režimem HUD pro zrcadlení na čelním skle
-• Poloha Slunce, východ a západ, délka dne, hranice dne a noci (terminátor) na mapě světa
+• Samostatná obrazovka pro kalibraci magnetometru s odhadem hard-iron offsetu
+• Tachometr s adaptivní stupnicí a režimem HUD pro zrcadlení na čelním skle
+• Poloha Slunce, východ a západ, délka dne, terminátor na mapě světa
 
 ▌ TRASY
-• Záznam GPS tras ve standardním formátu GPX 1.1 s rozšířením Garmin TrackPointExtension (rychlost, kurz)
-• Služba v popředí: záznam pokračuje, i když je aplikace v pozadí nebo je obrazovka vypnutá
+• Záznam ve formátu GPX 1.1 s rozšířením Garmin TrackPointExtension (rychlost, kurz, tep)
+• Služba v popředí: záznam pokračuje na pozadí i při vypnuté obrazovce
 • Vykreslení trasy na OpenStreetMap polylinií se značkami pro detail po klepnutí
-• Graf rychlosti a nadmořské výšky s posuvníkem pro prohlížení libovolného bodu trasy
+• Grafy rychlosti, výšky a tepu s posuvníkem pro libovolný bod trasy
 • Režim mapy „kurz nahoru", vrstva sluneční dráhy
-• Předběžné stažení dlaždic mapy pro vybranou oblast, aby mapa trasy fungovala plně offline
-• Zjednodušení trasy algoritmem Ramer–Douglas–Peucker pro odfiltrování šumu GPS
-• Import GPX odkudkoli; sdílení nebo uložení GPX kamkoli
-• Záznam trasového bodu (waypoint) jediným klepnutím
+• Předběžné stažení dlaždic mapy pro offline použití
+• Zjednodušení Ramer–Douglas–Peuckerem pro odfiltrování šumu GPS
+• Import, sdílení nebo uložení GPX; záznam waypointu jediným klepnutím
+
+▌ NAVIGACE
+• Návrat po trase: šipka relativního azimutu vás dovede zpět po libovolné zaznamenané trase
+• Volba cíle klepnutím na mapu pro ad-hoc běh k waypointu
+• Živá vzdálenost, ETA a tempo vůči cíli pro každý waypoint
+
+▌ SPORTOVNÍ REŽIM (vedené běhy a chůze)
+• Celoobrazovkový panel: čas a vzdálenost, aktuální i průměrné tempo, rychlost, kadence a délka kroku (z krokoměru)
+• Indikátor odchylky tempa — příliš rychle / na cíli / pomalu
+• Indikátor zóny tepové frekvence s konfigurovatelnými zónami (volitelně pro každou trasu)
+• Profil intenzity dalšího úseku barevně podle sklonu a ETA k dalšímu stoupání
+• Cíle tempa — pro celou trasu nebo jednotlivé úseky
+• Volitelné zvukové pokyny přes hlasovou syntézu; atribut navigačního zvuku ztiší hudbu místo jejího přerušení
+• Skóre výkonu po běhu (0–100) kombinující dodržení tempa a zóny tepu
+
+▌ BLUETOOTH TEPOVÁ FREKVENCE
+• Spárování libovolného standardního BLE snímače tepu (hrudní pásy Polar, Wahoo, Garmin, …)
+• Přímé GATT spojení — bez SDK výrobce, bez cloudu, bez API klíčů
+• Karta s živým BPM na panelu; vzorky uložené u každého bodu v GPX
 
 ▌ SOUKROMÍ
-• Žádná analytika, žádné hlášení pádů, žádná reklama, žádné sledovací nástroje třetích stran.
-• Data o poloze nikdy neopustí vaše zařízení.
-• Jediným síťovým voláním aplikace je anonymní stahování dlaždic OpenStreetMap, a to pouze když otevřete mapu trasy.
-• Úplné zásady ochrany osobních údajů: https://jeroentrappers.github.io/gpsinfo/privacy.html
+• Žádná analytika, hlášení pádů, reklama ani sledovací nástroje třetích stran
+• Poloha, vzorky tepu i zvuk hlasové syntézy zůstávají ve vašem zařízení
+• Jediným síťovým voláním je anonymní stahování dlaždic OpenStreetMap, a to jen při otevření mapy trasy
+• Úplné zásady: https://jeroentrappers.github.io/gpsinfo/privacy.html
 
-▌ BEZ PLAY SERVICES
-Aplikace nezávisí na Google Play Services a běží i na de-googled zařízeních (GrapheneOS, LineageOS, /e/OS, …). Poloha přichází přímo z GNSS API systému Android.
+▌ BEZ PLAY SERVICES, BEZ PLAY BILLING
+Běží na de-googled zařízeních (GrapheneOS, LineageOS, /e/OS, …). Poloha přímo z GNSS API Androidu. Žádné nákupy v aplikaci — dary jsou na Liberapay a GitHub Sponsors, nikdy nejsou podmínkou funkce.
+
+▌ DVANÁCT JAZYKŮ
+EN, NL, DE, FR, ES, IT, PT (BR), RU, JA, CS, TR, PL — každý jazyk zkontrolován rodilým mluvčím.
 
 ▌ OTEVŘENÝ ZDROJOVÝ KÓD
 Zdrojový kód: https://github.com/jeroentrappers/gpsinfo

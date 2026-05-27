@@ -1,19 +1,59 @@
-GPSinfo is a clean, modern GNSS dashboard for Android. Every metric your phone's GPS chip and sensors expose, surfaced live on a single integrated screen.
+GPSinfo is a focused, offline-first GPS dashboard and guided-run companion for Android.
 
-What it shows
-• Fix quality — 2D/3D status, horizontal/vertical accuracy, satellite counts in view vs. in use
-• Sky view — every satellite in azimuth/elevation, signal strength per PRN, multi-band aware (GPS L1+L5, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS)
-• Position — lat/lon in DMS or decimal, altitude, share location, open in any maps app
-• Movement — speed, magnetic heading, altitude, full-screen retro analog speed gauge with HUD mirror mode
-• Compass — tilt-corrected magnetic heading, declination/inclination, magnetic accuracy, gimballed binnacle view
-• World map — your position, sun position, day/night terminator drawn from real Natural Earth coastline data
-• Sun & time — UTC and local clock, sunrise/solar noon/sunset, day length, sun azimuth/elevation
+Every metric your phone's GPS chip can report — laid out on a single scrollable screen, with optional GPX trail recording, Bluetooth heart-rate, and a Sports view that coaches your pace without phoning home. No Google Maps SDK, no Play Services, no telemetry, no accounts, no in-app purchases.
 
-What it does NOT do
-• No network access. No INTERNET permission. Nothing leaves your device.
-• No Google Play Services dependency.
-• No background tracking, no recording, no analytics, no ads.
+Built for hikers, sailors, cyclists, runners, motorcyclists, ham operators, GNSS-curious tinkerers, and anyone who wants their location data to stay on their phone.
 
-Built for hikers, sailors, drivers, aviators and anyone who needs to know what their GPS is actually doing right now.
+▌ DASHBOARD
+• Position in five formats — DMS, decimal, Plus Code, Maidenhead grid, MGRS. Tap to cycle, long-press to copy.
+• Altitude, per-axis accuracy and a live fix-quality badge
+• Satellite count and signal strength across GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS and IRNSS
+• Sky view with constellation-coloured satellites at their real azimuth and elevation
+• Tilt-corrected compass with magnetic + true heading, declination and inclination
+• Dedicated magnetometer calibration screen with hard-iron offset estimate
+• Speed gauge with auto-adapting scale and a HUD-mirror mode for windshield reflections
+• Sun position, sunrise / sunset, day length, night-side terminator on the world map
 
-Open source. Free of charge. Donations welcomed at paypal.me/jeroentrappers.
+▌ TRAILS
+• Record GPS trails as standard GPX 1.1 with Garmin TrackPointExtension (speed, course, heart rate)
+• Foreground service keeps recording while the app is backgrounded or the screen is off
+• Render the trail on OpenStreetMap with polyline and tap-to-inspect markers
+• Speed, elevation and heart-rate charts; scrubber to inspect any trackpoint
+• Heading-up map mode, sun arc overlay
+• Pre-cache map tiles for offline use
+• Simplify with Ramer–Douglas–Peucker to clean GPS noise
+• Import, share or save GPX anywhere; one-tap waypoint capture
+
+▌ NAVIGATION
+• Track-back: relative-bearing arrow walks you back along any recorded trail
+• Tap-on-map destination picker for ad-hoc bearing-to-waypoint runs
+• Live distance, ETA and pace-vs-target read-out per waypoint
+
+▌ SPORTS VIEW (guided runs & walks)
+• Full-screen dashboard: elapsed + distance, live and average pace, speed, cadence and stride (from the device pedometer)
+• Pace-deviation gauge — too fast / on target / too slow at a glance
+• Heart-rate zone gauge with configurable zones (and optional per-trail override)
+• Intensity profile of the next stretch, coloured by grade, with ETA to the next climb
+• Pace targets — overall or per-segment along a route
+• Optional audible coaching cues via on-device text-to-speech; the navigation-guidance audio attribute ducks your music instead of cutting it
+• Post-run performance score (0–100) blending pace adherence with HR-zone adherence
+
+▌ BLUETOOTH HEART-RATE
+• Pair any standard BLE heart-rate monitor (Polar, Wahoo, Garmin chest belts, …)
+• Direct GATT connection — no vendor SDKs, no cloud bridges, no API keys
+• Live BPM card on the dashboard; samples persisted per trackpoint in GPX
+
+▌ PRIVACY
+• No analytics, crash reporting, advertising or third-party tracker
+• Location data, heart-rate samples and TTS audio all stay on your device
+• The only network call the app ever makes is anonymous OpenStreetMap tile fetches, and only when you open a trail map
+• Full policy: https://jeroentrappers.github.io/gpsinfo/privacy.html
+
+▌ NO PLAY SERVICES, NO PLAY BILLING
+Runs on de-Googled devices (GrapheneOS, LineageOS, /e/OS, …). Location comes straight from the Android GNSS APIs. No in-app purchase — donations live on Liberapay and GitHub Sponsors, never gated behind a feature.
+
+▌ TWELVE LANGUAGES
+English, Dutch, German, French, Spanish, Italian, Portuguese (BR), Russian, Japanese, Czech, Turkish, Polish — each native-speaker reviewed.
+
+▌ OPEN SOURCE
+Source: https://github.com/jeroentrappers/gpsinfo

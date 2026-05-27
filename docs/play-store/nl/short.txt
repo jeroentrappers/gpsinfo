@@ -1,1 +1,1 @@
-Offline GPS-dashboard met ruwe GNSS-data en routeopname — zonder Play Services.
+Offline GPS-dashboard: ruwe GNSS, BLE-hartslag, tempocoaching, GPX-routes.
