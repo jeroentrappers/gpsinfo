@@ -416,4 +416,15 @@
     <string name="profile_next_climb">Следующий подъём</string>
     <string name="profile_climb_summary">%1$s · +%2$s</string>
     <string name="profile_climb_in">Через</string>
+
+    <!-- Play Store rating + update nudge (2.1.0) -->
+    <string name="rate_nudge_title" tools:ignore="MissingTranslation">Нравится GPSinfo?</string>
+    <string name="rate_nudge_body" tools:ignore="MissingTranslation">Если приложение оказалось полезным, оценка 5 звёзд в Play Маркете поможет другим его найти. Это займёт всего минуту.</string>
+    <string name="rate_nudge_rate" tools:ignore="MissingTranslation">Оценить</string>
+    <string name="rate_nudge_later" tools:ignore="MissingTranslation">Не сейчас</string>
+    <string name="rate_nudge_never" tools:ignore="MissingTranslation">Больше не спрашивать</string>
+    <string name="about_rate_label" tools:ignore="MissingTranslation">Оценить в Play Маркете</string>
+    <string name="update_available_title" tools:ignore="MissingTranslation">Доступно обновление</string>
+    <string name="update_available_body" tools:ignore="MissingTranslation">Версия %1$s доступна в Play Маркете — нажмите, чтобы обновить.</string>
+    <string name="update_dismiss" tools:ignore="MissingTranslation">Закрыть</string>
 </resources>

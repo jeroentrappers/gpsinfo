@@ -1,5 +1,5 @@
 Güncel kalın ve bizi başkalarına önerin.
 
 • Yeni: Uygulama içindeki istemden veya Hakkında ekranından tek dokunuşla GPSinfo'yu Play Store'da puanlayın.
-• Yeni: Daha yeni bir sürüm çıktığında uygulama içinde bildirim; tek dokunuşla güncelleyin.
-• Ek izleme yok, Play Services yok: güncelleme kontrolü tek ve hafif bir istektir.
+• Yeni: Daha yeni bir sürüm çıktığında uygulama içi bildirim; tek dokunuşla güncelleyin.
+• Ek izleme yok, Play Services yok: güncelleme kontrolü tek ve hafif bir istekten ibaret.

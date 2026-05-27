@@ -1,5 +1,5 @@
 Blijf up-to-date en deel je waardering.
 
-• Nieuw: beoordeel GPSinfo in één tik in de Play Store — via de melding in de app of het scherm Over.
-• Nieuw: een melding in de app wanneer er een nieuwere versie beschikbaar is, met één tik om bij te werken.
-• Geen extra tracking en geen Play Services: de updatecontrole is één lichte aanvraag.
+• Nieuw: beoordeel GPSinfo in één tik in de Play Store — via de melding in de app of het Over-scherm.
+• Nieuw: een melding in de app zodra er een nieuwere versie klaarstaat, met één tik om bij te werken.
+• Geen extra tracking en geen Play Services: de updatecontrole is één licht verzoek.

@@ -1,5 +1,5 @@
 Bleib aktuell und empfiehl uns weiter.
 
-• Neu: Bewerte GPSinfo mit einem Tippen im Play Store — über die Meldung in der App oder den Info-Bildschirm.
-• Neu: ein Hinweis in der App, wenn eine neuere Version verfügbar ist, mit einem Tippen zum Aktualisieren.
+• Neu: Bewerte GPSinfo mit einem Tippen im Play Store — direkt über die Meldung in der App oder den Info-Bildschirm.
+• Neu: ein Hinweis in der App, sobald eine neuere Version verfügbar ist — zum Aktualisieren einfach antippen.
 • Kein zusätzliches Tracking und keine Play Services: Die Update-Prüfung ist eine einzige schlanke Anfrage.

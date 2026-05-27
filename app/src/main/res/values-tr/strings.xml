@@ -418,4 +418,15 @@
     <string name="trail_stats_max_hr">Maks. nabız</string>
     <string name="trail_stats_score">Puan</string>
     <string name="trail_stats_score_pace">Tempo %1$s, hedef %2$s %3$s</string>
+
+    <!-- Play Store rating + update nudge (2.1.0) -->
+    <string name="rate_nudge_title" tools:ignore="MissingTranslation">GPSinfo\'yu beğendin mi?</string>
+    <string name="rate_nudge_body" tools:ignore="MissingTranslation">Uygulama işine yaradıysa, Play Store\'da vereceğin 5 yıldız başkalarının onu bulmasına yardımcı olur. Yalnızca bir anını alır.</string>
+    <string name="rate_nudge_rate" tools:ignore="MissingTranslation">Puan ver</string>
+    <string name="rate_nudge_later" tools:ignore="MissingTranslation">Şimdi değil</string>
+    <string name="rate_nudge_never" tools:ignore="MissingTranslation">Bir daha sorma</string>
+    <string name="about_rate_label" tools:ignore="MissingTranslation">Play Store\'da puanla</string>
+    <string name="update_available_title" tools:ignore="MissingTranslation">Güncelleme var</string>
+    <string name="update_available_body" tools:ignore="MissingTranslation">Sürüm %1$s Play Store\'da — güncellemek için dokun.</string>
+    <string name="update_dismiss" tools:ignore="MissingTranslation">Kapat</string>
 </resources>

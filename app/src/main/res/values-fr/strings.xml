@@ -418,4 +418,15 @@
     <string name="profile_next_climb">Prochaine montée</string>
     <string name="profile_climb_summary">%1$s · +%2$s</string>
     <string name="profile_climb_in">Dans</string>
+
+    <!-- Play Store rating + update nudge (2.1.0) -->
+    <string name="rate_nudge_title" tools:ignore="MissingTranslation">Vous aimez GPSinfo ?</string>
+    <string name="rate_nudge_body" tools:ignore="MissingTranslation">Si l\'application vous a été utile, une note de 5 étoiles sur le Play Store aide d\'autres personnes à la découvrir. Cela ne prend qu\'un instant.</string>
+    <string name="rate_nudge_rate" tools:ignore="MissingTranslation">Noter</string>
+    <string name="rate_nudge_later" tools:ignore="MissingTranslation">Plus tard</string>
+    <string name="rate_nudge_never" tools:ignore="MissingTranslation">Ne plus demander</string>
+    <string name="about_rate_label" tools:ignore="MissingTranslation">Noter sur le Play Store</string>
+    <string name="update_available_title" tools:ignore="MissingTranslation">Mise à jour disponible</string>
+    <string name="update_available_body" tools:ignore="MissingTranslation">La version %1$s est disponible sur le Play Store — touchez pour mettre à jour.</string>
+    <string name="update_dismiss" tools:ignore="MissingTranslation">Fermer</string>
 </resources>

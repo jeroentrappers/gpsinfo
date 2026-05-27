@@ -416,4 +416,15 @@
     <string name="profile_next_climb">Další stoupání</string>
     <string name="profile_climb_summary">%1$s · +%2$s</string>
     <string name="profile_climb_in">Za</string>
+
+    <!-- Play Store rating + update nudge (2.1.0) -->
+    <string name="rate_nudge_title" tools:ignore="MissingTranslation">Spokojeni s GPSinfo?</string>
+    <string name="rate_nudge_body" tools:ignore="MissingTranslation">Pokud vám aplikace byla užitečná, hodnocení 5 hvězdičkami na Google Play pomůže ostatním ji najít. Zabere to jen chvilku.</string>
+    <string name="rate_nudge_rate" tools:ignore="MissingTranslation">Ohodnotit</string>
+    <string name="rate_nudge_later" tools:ignore="MissingTranslation">Teď ne</string>
+    <string name="rate_nudge_never" tools:ignore="MissingTranslation">Příště se neptat</string>
+    <string name="about_rate_label" tools:ignore="MissingTranslation">Ohodnotit na Google Play</string>
+    <string name="update_available_title" tools:ignore="MissingTranslation">Dostupná aktualizace</string>
+    <string name="update_available_body" tools:ignore="MissingTranslation">Verze %1$s je na Google Play — klepnutím aktualizujete.</string>
+    <string name="update_dismiss" tools:ignore="MissingTranslation">Zavřít</string>
 </resources>

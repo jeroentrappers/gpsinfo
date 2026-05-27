@@ -416,4 +416,15 @@
     <string name="profile_next_climb" tools:ignore="MissingTranslation">Volgende klim</string>
     <string name="profile_climb_summary" tools:ignore="MissingTranslation">%1$s · +%2$s</string>
     <string name="profile_climb_in" tools:ignore="MissingTranslation">Over</string>
+
+    <!-- Play Store rating + update nudge (2.1.0) -->
+    <string name="rate_nudge_title" tools:ignore="MissingTranslation">Tevreden over GPSinfo?</string>
+    <string name="rate_nudge_body" tools:ignore="MissingTranslation">Als de app nuttig is geweest, helpt een beoordeling met 5 sterren in de Play Store anderen om hem te vinden. Het kost maar een momentje.</string>
+    <string name="rate_nudge_rate" tools:ignore="MissingTranslation">Beoordelen</string>
+    <string name="rate_nudge_later" tools:ignore="MissingTranslation">Niet nu</string>
+    <string name="rate_nudge_never" tools:ignore="MissingTranslation">Niet meer vragen</string>
+    <string name="about_rate_label" tools:ignore="MissingTranslation">Beoordelen in de Play Store</string>
+    <string name="update_available_title" tools:ignore="MissingTranslation">Update beschikbaar</string>
+    <string name="update_available_body" tools:ignore="MissingTranslation">Versie %1$s staat in de Play Store — tik om bij te werken.</string>
+    <string name="update_dismiss" tools:ignore="MissingTranslation">Sluiten</string>
 </resources>

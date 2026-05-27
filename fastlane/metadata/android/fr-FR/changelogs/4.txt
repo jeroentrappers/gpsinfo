@@ -1,5 +1,5 @@
 Restez à jour et faites passer le mot.
 
-• Nouveau : notez GPSinfo sur le Play Store en un geste, depuis l'invite dans l'app ou l'écran À propos.
-• Nouveau : une alerte dans l'app quand une nouvelle version est disponible, avec une mise à jour en un geste.
-• Aucun pistage supplémentaire ni Play Services : la vérification se résume à une seule requête légère.
+• Notez GPSinfo sur le Play Store en un geste, depuis l'invite intégrée ou l'écran À propos.
+• Une alerte dans l'application vous prévient dès qu'une nouvelle version est disponible, avec mise à jour directe.
+• Toujours aucun pistage ni Play Services : la vérification se résume à une seule requête légère.

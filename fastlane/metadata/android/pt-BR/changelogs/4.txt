@@ -1,5 +1,5 @@
 Fique em dia e espalhe a novidade.
 
 • Novo: avalie o GPSinfo na Play Store com um toque — pelo aviso no app ou pela tela Sobre.
-• Novo: um aviso dentro do app quando há uma versão mais recente, com atualização em um toque.
+• Novo: um aviso dentro do app quando há uma versão mais recente, para atualizar com um toque.
 • Sem rastreamento extra e sem Play Services: a verificação de atualizações é uma única requisição leve.
