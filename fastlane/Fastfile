@@ -1,6 +1,7 @@
 # Fastlane runbook for GPSinfo.
 #
 # Quick reference:
+#   bundle exec fastlane bump             # Bump versionCode (+ changelog stubs)
 #   bundle exec fastlane verify           # Run unit tests
 #   bundle exec fastlane bundle           # Build a signed AAB (release)
 #   bundle exec fastlane screenshots      # Generate Play Store screenshots
@@ -12,6 +13,8 @@
 # does NOT pass keystore credentials around — gradle reads them from
 # keystore.properties (gitignored) or the FASTLANE_GPSINFO_* env vars.
 
+require "fileutils"
+
 default_platform(:android)
 
 LOCALES = %w[
@@ -19,6 +22,49 @@ LOCALES = %w[
 ]
 
 platform :android do
+
+  desc "Bump versionCode (+ optional versionName) and scaffold changelog files."
+  desc "  fastlane bump                        # versionCode + 1"
+  desc "  fastlane bump version:2.2.0          # versionCode + 1, set versionName"
+  desc "  fastlane bump code:10 version:2.2.0  # set versionCode explicitly"
+  lane :bump do |options|
+    gradle_file = "app/build.gradle.kts"
+    contents = File.read(gradle_file)
+
+    # Pull the current values straight out of the Kotlin DSL.
+    current_code = contents[/versionCode\s*=\s*(\d+)/, 1]&.to_i
+    UI.user_error!("No versionCode found in #{gradle_file}") if current_code.nil?
+    current_name = contents[/versionName\s*=\s*"([^"]+)"/, 1]
+
+    new_code = options[:code] ? options[:code].to_i : current_code + 1
+    if new_code <= current_code
+      UI.user_error!("versionCode must increase: #{new_code} is not greater than #{current_code}")
+    end
+    new_name = options[:version] || current_name
+
+    # Rewrite both lines in place; the leading indentation is outside the
+    # match, so it's preserved.
+    contents = contents.sub(/(versionCode\s*=\s*)\d+/, "\\1#{new_code}")
+    contents = contents.sub(/(versionName\s*=\s*")[^"]+(")/, "\\1#{new_name}\\2")
+    File.write(gradle_file, contents)
+    UI.success("versionCode #{current_code} → #{new_code}   versionName #{current_name} → #{new_name}")
+
+    # Scaffold an empty changelog per locale so the new versionCode has
+    # release notes to attach to on upload. Existing files are never
+    # clobbered — a bump you've already started keeps its text.
+    created = []
+    LOCALES.each do |locale|
+      dir = "fastlane/metadata/android/#{locale}/changelogs"
+      FileUtils.mkdir_p(dir)
+      path = "#{dir}/#{new_code}.txt"
+      next if File.exist?(path)
+      File.write(path, "• \n")
+      created << path
+    end
+    UI.important("Scaffolded #{created.length} changelog stub(s).") if created.any?
+    UI.message("Fill in: fastlane/metadata/android/*/changelogs/#{new_code}.txt")
+    UI.important("Then commit, e.g.: Bump to #{new_name} (vc #{new_code})")
+  end
 
   desc "Run unit tests"
   lane :verify do
