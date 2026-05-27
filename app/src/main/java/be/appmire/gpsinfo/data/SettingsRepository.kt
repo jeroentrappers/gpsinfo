@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import be.appmire.gpsinfo.data.model.HrZoneConfig
@@ -114,6 +115,25 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         /** Chrome style for the Custom profile —
          *  [be.appmire.gpsinfo.data.model.ChromeStyle] key. */
         val CustomProfileChrome = stringPreferencesKey("custom_profile_chrome")
+        /** Number of cold starts so far — used to time the Play Store
+         *  rating nudge (and nothing else). Incremented once per process
+         *  launch, never reset. */
+        val AppLaunchCount = intPreferencesKey("app_launch_count")
+        /** Set once the user taps "Rate" or "Don't ask again" on the
+         *  rating nudge. Permanent — the prompt never returns. */
+        val RateNudgeDismissed = booleanPreferencesKey("rate_nudge_dismissed")
+        /** Launch count below which the rating nudge stays hidden after a
+         *  "Not now". Lets the prompt come back later without nagging. */
+        val RateNudgeSnoozeUntilLaunch = intPreferencesKey("rate_nudge_snooze_until_launch")
+        /** Epoch millis of the last GitHub-releases update check. Debounces
+         *  the probe to ~once a day. */
+        val UpdateCheckLastMillis = longPreferencesKey("update_check_last_millis")
+        /** Newest release version name seen on the last successful check.
+         *  Cached so the banner shows without re-fetching. Null = unknown. */
+        val UpdateLatestVersion = stringPreferencesKey("update_latest_version")
+        /** Version the user dismissed the update banner for. When the
+         *  latest release is newer than this, the banner returns. */
+        val UpdateDismissedVersion = stringPreferencesKey("update_dismissed_version")
     }
 
     override val maxSpeedKmh: Flow<Float> = context.dataStore.data
@@ -304,6 +324,58 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setCustomProfileChrome(value: be.appmire.gpsinfo.data.model.ChromeStyle) {
         context.dataStore.edit { it[Keys.CustomProfileChrome] = value.key }
+    }
+
+    // ---------- Play Store rating nudge ----------
+
+    val appLaunchCount: Flow<Int> = context.dataStore.data
+        .map { it[Keys.AppLaunchCount] ?: 0 }
+
+    /** Bump the cold-start counter by one and return the new total. */
+    suspend fun incrementAppLaunchCount(): Int {
+        var updated = 0
+        context.dataStore.edit { prefs ->
+            updated = (prefs[Keys.AppLaunchCount] ?: 0) + 1
+            prefs[Keys.AppLaunchCount] = updated
+        }
+        return updated
+    }
+
+    val rateNudgeDismissed: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.RateNudgeDismissed] ?: false }
+
+    suspend fun setRateNudgeDismissed(value: Boolean) {
+        context.dataStore.edit { it[Keys.RateNudgeDismissed] = value }
+    }
+
+    val rateNudgeSnoozeUntilLaunch: Flow<Int> = context.dataStore.data
+        .map { it[Keys.RateNudgeSnoozeUntilLaunch] ?: 0 }
+
+    suspend fun setRateNudgeSnoozeUntilLaunch(value: Int) {
+        context.dataStore.edit { it[Keys.RateNudgeSnoozeUntilLaunch] = value }
+    }
+
+    // ---------- Update nudge (GitHub Releases) ----------
+
+    val updateCheckLastMillis: Flow<Long> = context.dataStore.data
+        .map { it[Keys.UpdateCheckLastMillis] ?: 0L }
+
+    suspend fun setUpdateCheckLastMillis(value: Long) {
+        context.dataStore.edit { it[Keys.UpdateCheckLastMillis] = value }
+    }
+
+    val updateLatestVersion: Flow<String?> = context.dataStore.data
+        .map { it[Keys.UpdateLatestVersion] }
+
+    suspend fun setUpdateLatestVersion(value: String) {
+        context.dataStore.edit { it[Keys.UpdateLatestVersion] = value }
+    }
+
+    val updateDismissedVersion: Flow<String?> = context.dataStore.data
+        .map { it[Keys.UpdateDismissedVersion] }
+
+    suspend fun setUpdateDismissedVersion(value: String) {
+        context.dataStore.edit { it[Keys.UpdateDismissedVersion] = value }
     }
 
     suspend fun setHrZoneConfig(cfg: HrZoneConfig) {

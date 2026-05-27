@@ -98,6 +98,7 @@ import kotlinx.coroutines.launch
  * state — index-based keys silently break this.
  */
 private object SectionKeys {
+    const val UpdateAvailable = "section-update-available"
     const val LocationDisabled = "section-location-disabled"
     const val CompassCalibration = "section-compass-calibration"
     const val AutoPause = "section-auto-pause"
@@ -140,6 +141,8 @@ fun DashboardScreen(
     val compass by vm.compass.collectAsStateWithLifecycle()
     val recording by vm.recordingState.collectAsStateWithLifecycle()
     val onboardingSeen by vm.onboardingSeen.collectAsStateWithLifecycle()
+    val showRateNudge by vm.showRateNudge.collectAsStateWithLifecycle()
+    val updateAvailable by vm.updateAvailable.collectAsStateWithLifecycle()
     val navigationTarget by vm.navigationTarget.collectAsStateWithLifecycle()
     val hrState by vm.hrState.collectAsStateWithLifecycle()
     val hrZoneConfig by vm.hrZoneConfig.collectAsStateWithLifecycle()
@@ -385,6 +388,20 @@ fun DashboardScreen(
     ) { padding ->
         val loc = state.gnss.location
         val sections = buildList {
+            // Update-available banner — surfaced when the GitHub-releases
+            // check has seen a newer version than this build and the user
+            // hasn't dismissed it. Tapping opens the Play Store listing.
+            updateAvailable?.let { newVersion ->
+                add(DashboardSection(SectionKeys.UpdateAvailable) {
+                    UpdateAvailableBanner(
+                        versionName = newVersion,
+                        onUpdate = {
+                            be.appmire.gpsinfo.util.IntentHelpers.openPlayStoreListing(ctx)
+                        },
+                        onDismiss = { vm.dismissUpdate() },
+                    )
+                })
+            }
             // Banner when system Location toggle is off — without this the
             // user just sees perpetual NO_FIX with no actionable text.
             if (!state.locationEnabled) add(
@@ -621,6 +638,7 @@ fun DashboardScreen(
             // scaled-up (tablet) arrangement from its own constraints,
             // so we no longer divert wide screens to the generic grid.
             val bannerKeys = setOf(
+                SectionKeys.UpdateAvailable,
                 SectionKeys.LocationDisabled,
                 SectionKeys.CompassCalibration,
                 SectionKeys.AutoPause,
@@ -704,6 +722,16 @@ fun DashboardScreen(
     OnboardingDialog(
         hasSeen = onboardingSeen,
         onDismiss = { vm.markOnboardingSeen() },
+    )
+
+    be.appmire.gpsinfo.ui.rating.RateNudgeDialog(
+        show = showRateNudge,
+        onRate = {
+            vm.onRateNudgeAccepted()
+            be.appmire.gpsinfo.util.IntentHelpers.openPlayStoreListing(ctx)
+        },
+        onSnooze = { vm.onRateNudgeSnoozed() },
+        onDecline = { vm.onRateNudgeDeclined() },
     )
 
     if (showPaceGoalDialog) {

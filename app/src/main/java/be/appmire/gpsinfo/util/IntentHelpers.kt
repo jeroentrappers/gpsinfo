@@ -117,6 +117,33 @@ object IntentHelpers {
     }
 
     /**
+     * Opens this app's Play Store listing so the user can leave a rating.
+     *
+     * Tries the Play Store app directly via the `market://` scheme; on a
+     * Play-less device (or a sideloaded build) that throws, so we fall back
+     * to the https listing in whatever browser the user has. Deliberately a
+     * plain intent — no Play Core / In-App-Review dependency, which keeps the
+     * app's no-Play-Services stance intact (and the In-App-Review flow can't
+     * ask for "5 stars" anyway).
+     */
+    fun openPlayStoreListing(context: Context) {
+        val pkg = context.packageName
+        try {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, "market://details?id=$pkg".toUri())
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        } catch (_: android.content.ActivityNotFoundException) {
+            context.startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    "https://play.google.com/store/apps/details?id=$pkg".toUri(),
+                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+    }
+
+    /**
      * Puts the given text on the system clipboard, labelled for the
      * clipboard manager UI. Android 13+ shows a system toast on copy
      * automatically, so we deliberately don't surface our own.

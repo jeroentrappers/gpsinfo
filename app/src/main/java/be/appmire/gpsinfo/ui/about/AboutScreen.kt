@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -145,6 +146,7 @@ fun AboutScreen(
                 onOpenLiberapay = { IntentHelpers.openUrl(context, LIBERAPAY_URL) },
                 onOpenGithubSponsors = { IntentHelpers.openUrl(context, GITHUB_SPONSORS_URL) },
                 onOpenGithub = { IntentHelpers.openUrl(context, GITHUB_URL) },
+                onRateApp = { IntentHelpers.openPlayStoreListing(context) },
             )
         } else {
             AboutPortrait(
@@ -176,6 +178,7 @@ fun AboutScreen(
                 onOpenLiberapay = { IntentHelpers.openUrl(context, LIBERAPAY_URL) },
                 onOpenGithubSponsors = { IntentHelpers.openUrl(context, GITHUB_SPONSORS_URL) },
                 onOpenGithub = { IntentHelpers.openUrl(context, GITHUB_URL) },
+                onRateApp = { IntentHelpers.openPlayStoreListing(context) },
             )
         }
     }
@@ -211,6 +214,7 @@ private fun AboutPortrait(
     onOpenLiberapay: () -> Unit,
     onOpenGithubSponsors: () -> Unit,
     onOpenGithub: () -> Unit,
+    onRateApp: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -231,6 +235,8 @@ private fun AboutPortrait(
         )
         Spacer(Modifier.height(12.dp))
         GitHubButton(onClick = onOpenGithub)
+        Spacer(Modifier.height(12.dp))
+        RateButton(onClick = onRateApp)
         Spacer(Modifier.height(16.dp))
         SettingsSection(
             unitSystem = unitSystem,
@@ -294,6 +300,7 @@ private fun AboutLandscape(
     onOpenLiberapay: () -> Unit,
     onOpenGithubSponsors: () -> Unit,
     onOpenGithub: () -> Unit,
+    onRateApp: () -> Unit,
 ) {
     // Two-column: logo on the left (height-constrained so it doesn't crop
     // the buttons on the right), donation copy and links on the right.
@@ -326,6 +333,8 @@ private fun AboutLandscape(
         )
             Spacer(Modifier.height(12.dp))
             GitHubButton(onClick = onOpenGithub)
+            Spacer(Modifier.height(12.dp))
+            RateButton(onClick = onRateApp)
             Spacer(Modifier.height(16.dp))
             SettingsSection(
             unitSystem = unitSystem,
@@ -452,6 +461,25 @@ private fun DonationButton(url: String, contentDescription: String, onClick: () 
             text = url.removePrefix("https://"),
             fontFamily = FontFamily.Monospace,
         )
+    }
+}
+
+@Composable
+private fun RateButton(onClick: () -> Unit) {
+    val label = stringResource(R.string.about_rate_label)
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) { contentDescription = label },
+    ) {
+        Icon(
+            Icons.Outlined.Star,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(text = label)
     }
 }
 

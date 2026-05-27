@@ -43,13 +43,16 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.ceil
 
 /**
@@ -895,6 +898,113 @@ class DashboardViewModel(
         viewModelScope.launch { settings.setOnboardingSeen(false) }
     }
 
+    // ---------- Play Store rating nudge ----------
+
+    /** Cold-start count, persisted. Drives [showRateNudge]; bumped once
+     *  per process via [registerColdStart]. */
+    private val appLaunchCount: StateFlow<Int> =
+        (settings as? SettingsRepository)?.appLaunchCount
+            ?.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+            ?: MutableStateFlow(0)
+
+    /** True once the user has launched the app enough times, hasn't
+     *  permanently dismissed the prompt, and any "Not now" snooze has
+     *  elapsed. The dashboard observes this to show its one-shot
+     *  [be.appmire.gpsinfo.ui.rating.RateNudgeDialog]. */
+    val showRateNudge: StateFlow<Boolean> =
+        (settings as? SettingsRepository)?.let { s ->
+            combine(
+                appLaunchCount,
+                s.rateNudgeDismissed,
+                s.rateNudgeSnoozeUntilLaunch,
+            ) { count, dismissed, snoozeUntil ->
+                !dismissed && count >= maxOf(RATE_NUDGE_FIRST_LAUNCH, snoozeUntil)
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        } ?: MutableStateFlow(false)
+
+    /** Count this process launch toward the rating-nudge threshold.
+     *  Caller is responsible for invoking exactly once per cold start. */
+    fun registerColdStart() {
+        viewModelScope.launch {
+            (settings as? SettingsRepository)?.incrementAppLaunchCount()
+        }
+    }
+
+    /** User tapped "Rate" — never prompt again. Opening the Play listing
+     *  is the UI's job. */
+    fun onRateNudgeAccepted() {
+        viewModelScope.launch {
+            (settings as? SettingsRepository)?.setRateNudgeDismissed(true)
+        }
+    }
+
+    /** "Not now" — push the prompt [RATE_NUDGE_SNOOZE_LAUNCHES] cold
+     *  starts into the future. */
+    fun onRateNudgeSnoozed() {
+        viewModelScope.launch {
+            val s = settings as? SettingsRepository ?: return@launch
+            s.setRateNudgeSnoozeUntilLaunch(appLaunchCount.value + RATE_NUDGE_SNOOZE_LAUNCHES)
+        }
+    }
+
+    /** "Don't ask again" — permanent dismissal. */
+    fun onRateNudgeDeclined() {
+        viewModelScope.launch {
+            (settings as? SettingsRepository)?.setRateNudgeDismissed(true)
+        }
+    }
+
+    // ---------- Update nudge (GitHub Releases) ----------
+
+    /** This build's version name (e.g. "2.0.1"), read once from the
+     *  package manager. Empty string if it can't be resolved — which
+     *  makes every release look "newer", so we fail toward showing the
+     *  banner rather than hiding a real update. */
+    private val installedVersionName: String = runCatching {
+        app.packageManager.getPackageInfo(app.packageName, 0).versionName
+    }.getOrNull() ?: ""
+
+    /** The newer release version to advertise, or null when we're already
+     *  current or the user dismissed this version. Drives the dashboard's
+     *  [be.appmire.gpsinfo.ui.dashboard.UpdateAvailableBanner]. */
+    val updateAvailable: StateFlow<String?> =
+        (settings as? SettingsRepository)?.let { s ->
+            combine(s.updateLatestVersion, s.updateDismissedVersion) { latest, dismissed ->
+                if (latest != null &&
+                    latest != dismissed &&
+                    be.appmire.gpsinfo.util.VersionCompare.isNewer(latest, installedVersionName)
+                ) latest else null
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        } ?: MutableStateFlow(null)
+
+    /** Probe GitHub for a newer release, at most once per
+     *  [UPDATE_CHECK_INTERVAL_MS]. Network runs on IO and any failure is
+     *  silent — the timestamp advances regardless so a flaky connection
+     *  can't turn this into a per-launch hammer. Safe to call on every
+     *  cold start. */
+    fun maybeCheckForUpdate() {
+        val s = settings as? SettingsRepository ?: return
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            if (now - s.updateCheckLastMillis.first() < UPDATE_CHECK_INTERVAL_MS) return@launch
+            s.setUpdateCheckLastMillis(now)
+            val latest = withContext(Dispatchers.IO) {
+                be.appmire.gpsinfo.data.GithubReleaseChecker.fetchLatestVersionName(GITHUB_REPO)
+            }
+            if (latest != null) s.setUpdateLatestVersion(latest)
+        }
+    }
+
+    /** Hide the update banner for the current latest version. A later
+     *  release (newer than what was dismissed) brings it back. */
+    fun dismissUpdate() {
+        val s = settings as? SettingsRepository ?: return
+        viewModelScope.launch {
+            val latest = s.updateLatestVersion.first() ?: return@launch
+            s.setUpdateDismissedVersion(latest)
+        }
+    }
+
     /**
      * Save the latest GPS fix as a one-point trail. Useful for marking a
      * specific spot without leaving the dashboard. Returns the new id,
@@ -947,6 +1057,22 @@ class DashboardViewModel(
          *  jitter (~5 m good fix, ~10 m mediocre) but tight enough that
          *  the user isn't told "you've arrived" from across the road. */
         private const val ROUTE_PROXIMITY_M = 20.0
+
+        /** Cold-start count at which the Play Store rating prompt first
+         *  appears. Five launches is enough that the user has formed an
+         *  opinion of the app without being nagged on day one. */
+        private const val RATE_NUDGE_FIRST_LAUNCH = 5
+
+        /** A "Not now" tap pushes the next prompt this many cold starts
+         *  into the future. */
+        private const val RATE_NUDGE_SNOOZE_LAUNCHES = 5
+
+        /** Minimum gap between GitHub-releases update checks. */
+        private const val UPDATE_CHECK_INTERVAL_MS = 24L * 60 * 60 * 1000
+
+        /** "owner/name" of the public repo whose releases we compare
+         *  against. Matches the GitHub link on the About screen. */
+        private const val GITHUB_REPO = "jeroentrappers/gpsinfo"
 
         fun factory(application: Application): ViewModelProvider.Factory = viewModelFactory {
             initializer {

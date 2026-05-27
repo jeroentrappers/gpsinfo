@@ -1,0 +1,5 @@
+Mějte aktuální verzi a doporučte nás dál.
+
+• Novinka: ohodnoťte GPSinfo na Google Play jedním klepnutím — z výzvy v aplikaci nebo z obrazovky O aplikaci.
+• Novinka: upozornění v aplikaci, když je dostupná novější verze, s aktualizací jedním klepnutím.
+• Žádné další sledování ani služby Google Play: kontrola aktualizací je jediný nenáročný požadavek.

@@ -399,6 +399,20 @@
     <string name="onboarding_trails_body" tools:ignore="MissingTranslation">The map icon in the top bar opens the trails list — import GPX, share, and view on an offline-capable map.</string>
     <string name="onboarding_dismiss" tools:ignore="MissingTranslation">Got it</string>
 
+    <!-- Play Store rating nudge -->
+    <string name="rate_nudge_title" tools:ignore="MissingTranslation">Enjoying GPSinfo?</string>
+    <string name="rate_nudge_body" tools:ignore="MissingTranslation">If the app has been useful, a 5-star rating on the Play Store helps other people find it. It only takes a moment.</string>
+    <string name="rate_nudge_rate" tools:ignore="MissingTranslation">Rate it</string>
+    <string name="rate_nudge_later" tools:ignore="MissingTranslation">Not now</string>
+    <string name="rate_nudge_never" tools:ignore="MissingTranslation">Don\'t ask again</string>
+    <!-- Rate entry in the About screen -->
+    <string name="about_rate_label" tools:ignore="MissingTranslation">Rate on Play Store</string>
+
+    <!-- Update-available banner (GitHub releases check) -->
+    <string name="update_available_title" tools:ignore="MissingTranslation">Update available</string>
+    <string name="update_available_body" tools:ignore="MissingTranslation">Version %1$s is on the Play Store — tap to update.</string>
+    <string name="update_dismiss" tools:ignore="MissingTranslation">Dismiss</string>
+
     <!-- Compass calibration -->
     <string name="compass_calibrate_title" tools:ignore="MissingTranslation">Calibrate compass</string>
     <string name="compass_calibrate_body" tools:ignore="MissingTranslation">Wave the phone in a figure-8 motion to recalibrate the magnetometer.</string>

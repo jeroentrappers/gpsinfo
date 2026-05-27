@@ -1,0 +1,5 @@
+Resta aggiornato e fai girare la voce.
+
+• Novità: valuta GPSinfo sul Play Store con un tocco, dal messaggio nell'app o dalla schermata Informazioni.
+• Novità: un avviso nell'app quando è disponibile una versione più recente, con un tocco per aggiornare.
+• Nessun tracciamento aggiuntivo né Play Services: il controllo aggiornamenti è una singola richiesta leggera.

@@ -123,6 +123,18 @@ class MainActivity : ComponentActivity() {
                 }
 
                 LaunchedEffect(Unit) {
+                    // Count this cold start toward the rating nudge. The
+                    // process-static guard keeps config changes (which
+                    // re-run LaunchedEffect(Unit)) from double-counting;
+                    // a fresh process resets it, which is exactly what we
+                    // want to call a "launch".
+                    if (!coldStartCounted) {
+                        coldStartCounted = true
+                        vm.registerColdStart()
+                        // Debounced (~once/day) GitHub-releases probe; silent
+                        // on failure. Surfaces the update banner when newer.
+                        vm.maybeCheckForUpdate()
+                    }
                     val granted = ContextCompat.checkSelfPermission(
                         this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION
                     ) == PackageManager.PERMISSION_GRANTED
@@ -351,5 +363,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        /** Guards the once-per-process cold-start count. Static, so it
+         *  survives Activity recreation (config changes) but resets when
+         *  the process is killed and relaunched. */
+        @Volatile
+        private var coldStartCounted = false
     }
 }

@@ -1,0 +1,5 @@
+Mantente al día y corre la voz.
+
+• Nuevo: valora GPSinfo en Google Play con un toque, desde el aviso en la app o la pantalla Acerca de.
+• Nuevo: un aviso dentro de la app cuando hay una versión más reciente, con un toque para actualizar.
+• Sin seguimiento adicional ni Play Services: la comprobación de actualizaciones es una sola petición ligera.

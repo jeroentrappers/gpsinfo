@@ -1,0 +1,5 @@
+Stay current, and spread the word.
+
+• New: rate GPSinfo on the Play Store in a tap — from the in-app prompt or the About screen.
+• New: a heads-up inside the app when a newer version is available, with one tap to update.
+• No new tracking and no Play Services: the update check is a single lightweight request.

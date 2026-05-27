@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.LocationOff
 import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material.icons.outlined.PauseCircle
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -134,6 +137,65 @@ internal fun AutoPausedBanner(paused: Boolean, onResume: () -> Unit, onPauseManu
                     imageVector = if (paused) Icons.Outlined.PlayArrow else Icons.Outlined.PauseCircle,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Banner shown when a newer release has been seen on GitHub than the
+ * installed build. Tapping the banner opens the Play Store listing; the
+ * trailing close button dismisses it for this version (a later release
+ * brings it back). Availability is decided upstream by the ViewModel —
+ * this composable only renders when there's genuinely something newer.
+ */
+@Composable
+internal fun UpdateAvailableBanner(
+    versionName: String,
+    onUpdate: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val description = stringResource(R.string.update_available_title)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onUpdate, role = Role.Button)
+            .semantics(mergeDescendants = true) { contentDescription = description },
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, top = 14.dp, bottom = 14.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.SystemUpdate,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(24.dp),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.update_available_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                Text(
+                    text = stringResource(R.string.update_available_body, versionName),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = stringResource(R.string.update_dismiss),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
