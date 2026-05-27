@@ -74,8 +74,13 @@ platform :android do
       rollout: "0.1",
       skip_upload_apk: true,
       skip_upload_aab: true,
-      skip_upload_metadata: false,
-      skip_upload_changelogs: false,
+      # Promote only. The listing metadata, screenshots and the
+      # per-versionCode changelog were already attached to this release by
+      # deploy_internal and travel with it on promote. Re-uploading the
+      # changelog here fails ("no version code given") because a promote
+      # carries no versionCode of its own.
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
