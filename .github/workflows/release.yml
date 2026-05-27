@@ -111,11 +111,15 @@ jobs:
           PROMOTE: ${{ inputs.promote }}
         run: |
           set -euo pipefail
-          if [ "$TRACK" = "production" ] || [ "$PROMOTE" = "true" ]; then
-            # Production deploy: bundle, push to internal, then promote.
-            # The Fastfile's `deploy_production` lane assumes the build
-            # is already on internal, so we chain through deploy_internal
-            # first to land the new AAB.
+          if [ "$PROMOTE" = "true" ]; then
+            # Promote-only. The AAB is already on the internal track from a
+            # previous run; re-uploading the same versionCode would fail
+            # ("Version code N has already been used"). So skip the upload
+            # and just promote what's already on internal → production.
+            bundle exec fastlane deploy_production
+          elif [ "$TRACK" = "production" ]; then
+            # Fresh production release: build + push to internal, then
+            # promote the build we just landed.
             bundle exec fastlane deploy_internal
             bundle exec fastlane deploy_production
           else
