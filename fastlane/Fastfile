@@ -28,7 +28,10 @@ platform :android do
   desc "  fastlane bump version:2.2.0          # versionCode + 1, set versionName"
   desc "  fastlane bump code:10 version:2.2.0  # set versionCode explicitly"
   lane :bump do |options|
-    gradle_file = "app/build.gradle.kts"
+    # Fastlane chdir's into the fastlane/ folder before running lanes, so
+    # resolve repo paths absolutely from the Fastfile's own location.
+    repo_root = File.expand_path("..", __dir__)
+    gradle_file = File.join(repo_root, "app", "build.gradle.kts")
     contents = File.read(gradle_file)
 
     # Pull the current values straight out of the Kotlin DSL.
@@ -54,7 +57,7 @@ platform :android do
     # clobbered — a bump you've already started keeps its text.
     created = []
     LOCALES.each do |locale|
-      dir = "fastlane/metadata/android/#{locale}/changelogs"
+      dir = File.join(repo_root, "fastlane", "metadata", "android", locale, "changelogs")
       FileUtils.mkdir_p(dir)
       path = "#{dir}/#{new_code}.txt"
       next if File.exist?(path)

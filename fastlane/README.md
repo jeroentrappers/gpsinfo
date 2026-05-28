@@ -15,6 +15,20 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## Android
 
+### android bump
+
+```sh
+[bundle exec] fastlane android bump
+```
+
+Bump versionCode (+ optional versionName) and scaffold changelog files.
+
+  fastlane bump                        # versionCode + 1
+
+  fastlane bump version:2.2.0          # versionCode + 1, set versionName
+
+  fastlane bump code:10 version:2.2.0  # set versionCode explicitly
+
 ### android verify
 
 ```sh
