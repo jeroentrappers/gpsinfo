@@ -104,7 +104,11 @@ platform :android do
     bundle
     upload_to_play_store(
       track: "internal",
-      release_status: "draft",
+      # "completed" so internal testers receive the build the moment it
+      # lands. The previous "draft" left the old internal release live,
+      # which broke promotes: with two releases on the track, supply's
+      # status-based selection promoted the stale completed one.
+      release_status: "completed",
       skip_upload_apk: true,
       skip_upload_screenshots: false,
       validate_only: false
@@ -114,12 +118,23 @@ platform :android do
   desc "Promote the current internal release to production."
   desc "Runs the standard staged rollout (10% by default)."
   lane :deploy_production do
+    # Pin the promote to the versionCode currently in the repo. Without
+    # it, supply selects the release by status and can promote a stale
+    # one when the track holds more than one release (2026-06-04: tried
+    # to push v2 onto production users running v4 → Play rejected with
+    # "does not allow any existing users to upgrade").
+    repo_root = File.expand_path("..", __dir__)
+    gradle = File.read(File.join(repo_root, "app", "build.gradle.kts"))
+    version_code = gradle[/versionCode\s*=\s*(\d+)/, 1]&.to_i
+    UI.user_error!("No versionCode found in app/build.gradle.kts") if version_code.nil?
+
     upload_to_play_store(
       # Source track to promote FROM — deploy_internal just landed the
       # build here. (Was "production", which has no release on a first
       # rollout, so supply's `releases.select` hit nil and crashed.)
       track: "internal",
       track_promote_to: "production",
+      version_code: version_code,
       # Default to a cautious 10% staged rollout. Override with
       # ROLLOUT=1.0 when a release must supersede a noncompliant build
       # everywhere at once (Play policy fixes require 100%).
