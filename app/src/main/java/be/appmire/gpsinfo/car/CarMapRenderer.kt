@@ -629,8 +629,11 @@ class CarMapRenderer(
                     else -> RALLY_OFF
                 }
                 val deltaText = "%+.0f s".format(Locale.ROOT, delta)
-                val subText = "→ %.0f km/h   %.2f km".format(
-                    Locale.ROOT, r.targetSpeedKmh, r.drivenKm,
+                val subText = "→ %.0f km/h   %.2f km · %s".format(
+                    Locale.ROOT,
+                    r.targetSpeedKmh,
+                    r.drivenKm,
+                    if (r.usingWheel) "WHEEL" else "GPS",
                 )
                 val cx = w / 2f
                 hudTextPaint.textAlign = Paint.Align.CENTER

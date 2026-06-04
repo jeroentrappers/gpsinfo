@@ -78,6 +78,7 @@ private object Routes {
     const val PaceTargets = "pace-targets/{trailId}"
     fun paceTargets(id: String) = "pace-targets/$id"
     const val Rally = "rally"
+    const val WheelPair = "wheel-pair"
 }
 
 class MainActivity : ComponentActivity() {
@@ -195,6 +196,12 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Routes.Rally) {
                             be.appmire.gpsinfo.ui.rally.RallyScreen(
+                                onBack = { nav.popBackStack() },
+                                onOpenWheelPair = { nav.navigate(Routes.WheelPair) },
+                            )
+                        }
+                        composable(Routes.WheelPair) {
+                            be.appmire.gpsinfo.ui.rally.WheelPairingScreen(
                                 onBack = { nav.popBackStack() },
                             )
                         }

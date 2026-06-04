@@ -84,6 +84,13 @@ class TripDashboardScreen(
      *  from onStart and again after a mid-session permission grant. */
     private fun startCollecting() {
         if (collectJob != null) return
+        // Re-link the paired wheel probe so RT distance comes from
+        // wheel revolutions even when the phone app never opened.
+        be.appmire.gpsinfo.data.WheelSensorRepository
+            .getInstance(carContext.applicationContext)
+            .connectIfPaired(
+                be.appmire.gpsinfo.data.SettingsRepository(carContext.applicationContext)
+            )
         val locRepo = LocationRepository(carContext.applicationContext)
         collectJob = combine(
             locRepo.snapshots(),

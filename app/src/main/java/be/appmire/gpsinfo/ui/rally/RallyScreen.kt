@@ -49,6 +49,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import be.appmire.gpsinfo.R
+import be.appmire.gpsinfo.data.SettingsRepository
+import be.appmire.gpsinfo.data.WheelSensorRepository
+import be.appmire.gpsinfo.data.model.WheelSensorState
 import be.appmire.gpsinfo.data.rally.RallyController
 import be.appmire.gpsinfo.data.rally.RallyStageRepository
 import be.appmire.gpsinfo.data.rally.RallyState
@@ -79,15 +82,23 @@ import kotlinx.coroutines.launch
 @Composable
 fun RallyScreen(
     onBack: () -> Unit,
+    onOpenWheelPair: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val repo = remember { RallyStageRepository(context) }
+    val wheelRepo = remember { WheelSensorRepository.getInstance(context) }
     val scope = rememberCoroutineScope()
     val stages by repo.stages.collectAsStateWithLifecycle()
     val rallyState by RallyController.state.collectAsStateWithLifecycle()
+    val wheelState by wheelRepo.state.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<RegularityStage?>(null) }
 
-    LaunchedEffect(Unit) { repo.loadIfNeeded() }
+    LaunchedEffect(Unit) {
+        repo.loadIfNeeded()
+        // Re-link the paired wheel probe whenever the rally centre
+        // opens — autoConnect keeps it alive from there.
+        wheelRepo.connectIfPaired(SettingsRepository(context))
+    }
 
     Scaffold(
         topBar = {
@@ -109,7 +120,10 @@ fun RallyScreen(
         ) {
             when (val s = rallyState) {
                 is RallyState.Running -> RunningPanel(s)
-                is RallyState.Armed -> ArmedPanel(s)
+                is RallyState.Armed -> {
+                    WheelStatusCard(wheelState, onOpenWheelPair)
+                    ArmedPanel(s)
+                }
                 RallyState.Idle -> {
                     val toEdit = editing
                     if (toEdit != null) {
@@ -124,6 +138,7 @@ fun RallyScreen(
                             onCancel = { editing = null },
                         )
                     } else {
+                        WheelStatusCard(wheelState, onOpenWheelPair)
                         StageLibrary(
                             stages = stages ?: emptyList(),
                             onArm = { RallyController.arm(it) },
@@ -139,6 +154,38 @@ fun RallyScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/** One-line wheel-probe status with a Pair/Manage shortcut. Shown in
+ *  the library and Armed views — mid-stage the [RunningPanel]'s
+ *  source badge takes over. */
+@Composable
+private fun WheelStatusCard(
+    state: WheelSensorState,
+    onOpenWheelPair: () -> Unit,
+) {
+    val label = when (state) {
+        is WheelSensorState.Connected ->
+            stringResource(R.string.rally_wheel_connected, state.deviceName ?: state.deviceMac)
+        is WheelSensorState.Connecting -> stringResource(R.string.rally_wheel_connecting)
+        is WheelSensorState.Disconnected -> stringResource(R.string.rally_wheel_disconnected)
+        else -> stringResource(R.string.rally_wheel_none)
+    }
+    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            androidx.compose.material3.TextButton(onClick = onOpenWheelPair) {
+                Text(stringResource(R.string.rally_wheel_pair))
             }
         }
     }
@@ -199,6 +246,16 @@ private fun RunningPanel(s: RallyState.Running) {
                     "%.2f km".format(Locale.ROOT, s.drivenKm),
                     style = MaterialTheme.typography.headlineMedium,
                     fontFamily = FontFamily.Monospace,
+                )
+                // Which probe is feeding the tripmeter right now.
+                Text(
+                    stringResource(
+                        if (s.usingWheel) R.string.rally_source_wheel
+                        else R.string.rally_source_gps
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (s.usingWheel) Color(0xFF2E7D32)
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

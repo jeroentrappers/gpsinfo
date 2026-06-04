@@ -44,6 +44,10 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         // without re-querying the GATT cache.
         val CpDeviceMac = stringPreferencesKey("cp_device_mac")
         val CpDeviceName = stringPreferencesKey("cp_device_name")
+        // BLE wheel-speed sensor (CSC service 0x1816) — a bike speed
+        // sensor on a car wheel hub acting as the rally wheel probe.
+        val WheelDeviceMac = stringPreferencesKey("wheel_device_mac")
+        val WheelDeviceName = stringPreferencesKey("wheel_device_name")
         // HR zone config — max HR plus four zone boundaries (fractions
         // of max). Defaults defined on HrZoneConfig itself.
         val HrMaxBpm = intPreferencesKey("hr_max_bpm")
@@ -162,6 +166,10 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
     /** Paired BLE cycling power meter — same persistence pattern as HR. */
     val cpDeviceMac: Flow<String?> = context.dataStore.data.map { it[Keys.CpDeviceMac] }
     val cpDeviceName: Flow<String?> = context.dataStore.data.map { it[Keys.CpDeviceName] }
+
+    /** Paired BLE wheel-speed sensor (rally wheel probe) — same pattern. */
+    val wheelDeviceMac: Flow<String?> = context.dataStore.data.map { it[Keys.WheelDeviceMac] }
+    val wheelDeviceName: Flow<String?> = context.dataStore.data.map { it[Keys.WheelDeviceName] }
 
     /** Active heart-rate zone configuration. Reads back the default
      *  [HrZoneConfig] when nothing has been persisted yet. */
@@ -410,6 +418,19 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
                 prefs[Keys.CpDeviceMac] = macAddress
                 if (friendlyName != null) prefs[Keys.CpDeviceName] = friendlyName
                 else prefs.remove(Keys.CpDeviceName)
+            }
+        }
+    }
+
+    suspend fun setWheelDevice(macAddress: String?, friendlyName: String?) {
+        context.dataStore.edit { prefs ->
+            if (macAddress == null) {
+                prefs.remove(Keys.WheelDeviceMac)
+                prefs.remove(Keys.WheelDeviceName)
+            } else {
+                prefs[Keys.WheelDeviceMac] = macAddress
+                if (friendlyName != null) prefs[Keys.WheelDeviceName] = friendlyName
+                else prefs.remove(Keys.WheelDeviceName)
             }
         }
     }
