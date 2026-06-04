@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Perspective-grid glyph for the 2.5D tilt toggle: a road
+         receding to the horizon. No tint attribute: the Android Auto
+         host tints these itself. -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M4,19L9,5h2L7.5,19H4zM20,19h-3.5L13,5h2L20,19zM11.2,8h1.6l0.3,2h-2.2L11.2,8zM10.4,13h3.2l0.4,2.5h-4L10.4,13z" />
+</vector>

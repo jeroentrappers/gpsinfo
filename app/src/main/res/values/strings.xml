@@ -269,7 +269,7 @@
     <string name="car_row_trip" tools:ignore="MissingTranslation">Trip</string>
     <string name="car_row_trip_idle" tools:ignore="MissingTranslation">Not recording</string>
     <string name="car_action_start" tools:ignore="MissingTranslation">Start trail</string>
-    <string name="car_action_open_phone" tools:ignore="MissingTranslation">Open on phone to save</string>
+    <string name="car_action_stop" tools:ignore="MissingTranslation">Stop &amp; save</string>
     <string name="profile_editor_title" tools:ignore="MissingTranslation">Customise dashboard</string>
     <string name="profile_editor_body" tools:ignore="MissingTranslation">Pick which cards to show and in what order. Saves as your Custom profile and activates it.</string>
     <string name="profile_editor_save" tools:ignore="MissingTranslation">Save Custom</string>
@@ -299,8 +299,9 @@
     <string name="car_recent_empty" tools:ignore="MissingTranslation">No trails recorded yet</string>
     <string name="car_permission_message" tools:ignore="MissingTranslation">GPSinfo needs location access to show speed, heading and altitude.</string>
     <string name="car_permission_grant" tools:ignore="MissingTranslation">Grant access</string>
-    <string name="car_toast_open_phone" tools:ignore="MissingTranslation">Open GPSinfo on your phone to save the trail</string>
     <string name="car_toast_record_failed" tools:ignore="MissingTranslation">Couldn\'t start recording</string>
+    <string name="car_toast_saved" tools:ignore="MissingTranslation">Saved: %1$s</string>
+    <string name="car_toast_save_empty" tools:ignore="MissingTranslation">No points captured — nothing saved</string>
     <string name="car_waiting_fix" tools:ignore="MissingTranslation">Waiting for GPS fix…</string>
     <string name="ghost_card_title" tools:ignore="MissingTranslation">Racing past self</string>
     <string name="ghost_card_you" tools:ignore="MissingTranslation">You</string>

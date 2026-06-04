@@ -1,7 +1,6 @@
 package be.appmire.gpsinfo.car
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.car.app.CarContext
 import androidx.car.app.CarToast
@@ -22,10 +21,13 @@ import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.LocationRepository
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.TrailRecordingController
+import be.appmire.gpsinfo.data.TrailRepository
+import be.appmire.gpsinfo.util.TrailNaming
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 /**
  * Android Auto main screen: a [NavigationTemplate] whose entire body is
@@ -101,14 +103,14 @@ class TripDashboardScreen(
 
         val recordAction = Action.Builder()
             .setIcon(
-                carIcon(if (isRecording) R.drawable.ic_car_phone else R.drawable.ic_car_record)
+                carIcon(if (isRecording) R.drawable.ic_car_stop else R.drawable.ic_car_record)
             )
             .setTitle(
-                if (isRecording) carContext.getString(R.string.car_action_open_phone)
+                if (isRecording) carContext.getString(R.string.car_action_stop)
                 else carContext.getString(R.string.car_action_start)
             )
             .setOnClickListener {
-                if (isRecording) openPhoneApp() else startRecordingSafely()
+                if (isRecording) stopAndSave() else startRecordingSafely()
             }
             .build()
         val trailsAction = Action.Builder()
@@ -118,8 +120,10 @@ class TripDashboardScreen(
             }
             .build()
 
-        // Zoom lives on the map action strip (anchored to the map edge
-        // by the host). Icon-only is mandatory here.
+        // Zoom + tilt live on the map action strip (anchored to the map
+        // edge by the host). Icon-only is mandatory here. The zoom
+        // buttons nudge a bias on top of the speed-adaptive level
+        // rather than fighting it.
         val mapActionStrip = ActionStrip.Builder()
             .addAction(
                 Action.Builder()
@@ -131,6 +135,12 @@ class TripDashboardScreen(
                 Action.Builder()
                     .setIcon(carIcon(R.drawable.ic_car_zoom_out))
                     .setOnClickListener { renderer.zoomOut() }
+                    .build()
+            )
+            .addAction(
+                Action.Builder()
+                    .setIcon(carIcon(R.drawable.ic_car_tilt))
+                    .setOnClickListener { renderer.toggleTilt() }
                     .build()
             )
             .build()
@@ -198,27 +208,34 @@ class TripDashboardScreen(
         invalidate()
     }
 
-    /** Stop-from-car opens the phone app — we can't show the save-name
-     *  dialog on the head unit, so naming + persistence happen on the
-     *  phone. Android 10+ background-activity-launch rules may swallow
-     *  the startActivity silently, so we always also show a toast
-     *  telling the user where to go. */
-    private fun openPhoneApp() {
-        CarToast.makeText(
-            carContext,
-            carContext.getString(R.string.car_toast_open_phone),
-            CarToast.LENGTH_LONG,
-        ).show()
-        try {
-            carContext.startActivity(
-                Intent(Intent.ACTION_MAIN).apply {
-                    setClassName(carContext.packageName, "be.appmire.gpsinfo.MainActivity")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
+    /** Stop the recording and persist it under the default timestamp
+     *  name ([TrailNaming]) — no keyboards in the car, and the user
+     *  can rename on the phone whenever. An empty recording (no
+     *  accepted points) is dropped with a toast instead of producing
+     *  a zero-length GPX. */
+    private fun stopAndSave() {
+        val result = TrailRecordingController.stopRecording(carContext)
+        invalidate()
+        if (result.points.isEmpty()) {
+            CarToast.makeText(
+                carContext,
+                carContext.getString(R.string.car_toast_save_empty),
+                CarToast.LENGTH_LONG,
+            ).show()
+            return
+        }
+        val name = TrailNaming.defaultTrailName(System.currentTimeMillis())
+        lifecycleScope.launch {
+            TrailRepository(carContext.applicationContext).save(
+                name = name,
+                points = result.points,
+                laps = result.laps,
             )
-        } catch (_: Exception) {
-            // BAL restriction or missing activity — the toast above
-            // already told the user what to do.
+            CarToast.makeText(
+                carContext,
+                carContext.getString(R.string.car_toast_saved, name),
+                CarToast.LENGTH_LONG,
+            ).show()
         }
     }
 

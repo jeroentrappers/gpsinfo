@@ -1,11 +1,16 @@
 package be.appmire.gpsinfo.car
 
+import android.graphics.Bitmap
+import android.graphics.Camera
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.Shader
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
@@ -27,7 +32,9 @@ import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.ln
+import kotlin.math.log2
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.tan
 import org.osmdroid.config.Configuration
@@ -39,6 +46,20 @@ import org.osmdroid.util.MapTileIndex
  * trail breadcrumb, a position marker, and a HUD cluster (speed bubble
  * + bottom info strip) — all straight onto the Android Auto video
  * surface that navigation-category apps get via [AppManager].
+ *
+ * Camera model:
+ *   - **2.5D tilt** (default on, toggleable): the flat map layer is
+ *     rendered into an oversized offscreen bitmap, then drawn through
+ *     a [Camera].rotateX perspective matrix pivoted on the position
+ *     anchor — near field magnified, far field receding to a hazed
+ *     horizon. Pure raster trick: no vector tiles, no GL.
+ *   - **Speed-adaptive zoom**: a continuous (fractional) zoom level
+ *     glides between [ZOOM_STANDSTILL] and [ZOOM_FAST] as ground speed
+ *     rises — zoomed in while crawling, wide while cruising. The
+ *     +/- buttons and pinch gestures nudge a persistent manual bias
+ *     on top of the automatic level rather than fighting it.
+ *     Fractional zoom renders integer-zoom tiles scaled by
+ *     2^frac (1..2), so there's never a level-snap.
  *
  * Rendering model: the screen feeds every GNSS/recording emission into
  * [update]; we redraw at most once per main-loop pass (renders are
@@ -53,9 +74,9 @@ import org.osmdroid.util.MapTileIndex
  * [tileArrivedHandler], which repaints.
  *
  * Heading-up rotation uses GPS course-over-ground (never the
- * magnetometer — see TripDashboardScreen.formatHeading for why) and
- * engages above a walking pace, holding the last rotation while
- * stationary so the map doesn't snap back to north at every red light.
+ * magnetometer — see the phone dashboard for why) and engages above a
+ * walking pace, holding the last rotation while stationary so the map
+ * doesn't snap back to north at every red light.
  */
 class CarMapRenderer(
     private val carContext: CarContext,
@@ -79,15 +100,29 @@ class CarMapRenderer(
     private var breadcrumbMinStepM = 3f
     private var wasRecording = false
 
-    private var zoom = DEFAULT_ZOOM
+    /** Continuous zoom level actually rendered; glides toward the
+     *  speed-derived target a step per GNSS tick. */
+    private var currentZoom = ZOOM_STANDSTILL
+    /** Manual nudge from buttons/pinch on top of the automatic level. */
+    private var zoomBias = 0.0
+    /** 2.5D perspective on/off — flipped from the map action strip. */
+    private var tilted = true
+
     /** Smoothed course-over-ground driving the heading-up rotation. */
     private var smoothedBearingDeg = 0f
     private var hasBearing = false
-    /** Accumulated pinch factor from [onScale]; crossing ±[SCALE_STEP]
-     *  commits a zoom level. */
+    /** Accumulated pinch factor from [onScale]; folded into [zoomBias]. */
     private var pinchAccumulator = 1f
 
     private var renderPending = false
+
+    /** Offscreen layer the flat map is drawn into before the
+     *  perspective pass. Oversized: the tilt narrows the far field, so
+     *  the viewport's top corners sample outside the screen rect. */
+    private var mapLayer: Bitmap? = null
+
+    private val camera = Camera()
+    private val tiltMatrix = Matrix()
 
     /** Repaint when an async tile download lands. */
     private val tileArrivedHandler = Handler(Looper.getMainLooper()) {
@@ -118,6 +153,8 @@ class CarMapRenderer(
     override fun onDestroy(owner: LifecycleOwner) {
         tileProvider.tileRequestCompleteHandlers.remove(tileArrivedHandler)
         tileProvider.detach()
+        mapLayer?.recycle()
+        mapLayer = null
     }
 
     // ── Data in ────────────────────────────────────────────────────
@@ -148,22 +185,39 @@ class CarMapRenderer(
             }
             if (isRecording) appendBreadcrumb(loc)
         }
+        stepAutoZoom(loc)
         scheduleRender()
     }
 
-    fun zoomIn() = setZoom(zoom + 1)
+    /** Glide the rendered zoom toward the speed target. One bounded
+     *  step per GNSS tick (~1 Hz) ≈ a smooth two-to-three-second ease
+     *  across the whole speed range. */
+    private fun stepAutoZoom(loc: Location?) {
+        val kmh = if (loc != null && loc.hasSpeed()) loc.speed * 3.6 else 0.0
+        val t = (kmh.coerceIn(0.0, ZOOM_FAST_KMH) / ZOOM_FAST_KMH)
+        val target = (ZOOM_STANDSTILL - (ZOOM_STANDSTILL - ZOOM_FAST) * t + zoomBias)
+            .coerceIn(MIN_ZOOM, MAX_ZOOM)
+        val delta = (target - currentZoom).coerceIn(-ZOOM_STEP_PER_TICK, ZOOM_STEP_PER_TICK)
+        currentZoom += delta
+    }
 
-    fun zoomOut() = setZoom(zoom - 1)
+    fun zoomIn() = nudgeZoom(+0.5)
+
+    fun zoomOut() = nudgeZoom(-0.5)
+
+    fun toggleTilt() {
+        tilted = !tilted
+        scheduleRender()
+    }
 
     /** Repaint with current state — e.g. after a day/night flip. */
     fun repaint() = scheduleRender()
 
-    private fun setZoom(z: Int) {
-        val clamped = z.coerceIn(MIN_ZOOM, MAX_ZOOM)
-        if (clamped != zoom) {
-            zoom = clamped
-            scheduleRender()
-        }
+    private fun nudgeZoom(delta: Double) {
+        zoomBias = (zoomBias + delta).coerceIn(-ZOOM_BIAS_RANGE, ZOOM_BIAS_RANGE)
+        // Apply immediately rather than waiting for the next GNSS tick.
+        currentZoom = (currentZoom + delta).coerceIn(MIN_ZOOM, MAX_ZOOM)
+        scheduleRender()
     }
 
     private fun appendBreadcrumb(loc: Location) {
@@ -215,12 +269,9 @@ class CarMapRenderer(
     override fun onScale(focusX: Float, focusY: Float, scaleFactor: Float) {
         mainHandler.post {
             pinchAccumulator *= scaleFactor
-            if (pinchAccumulator > SCALE_STEP) {
+            if (pinchAccumulator > SCALE_STEP || pinchAccumulator < 1f / SCALE_STEP) {
+                nudgeZoom(log2(pinchAccumulator.toDouble()))
                 pinchAccumulator = 1f
-                zoomIn()
-            } else if (pinchAccumulator < 1f / SCALE_STEP) {
-                pinchAccumulator = 1f
-                zoomOut()
             }
         }
     }
@@ -262,7 +313,8 @@ class CarMapRenderer(
 
     private fun drawFrame(canvas: Canvas, w: Int, h: Int) {
         val dark = carContext.isDarkMode
-        canvas.drawColor(if (dark) BG_DARK else BG_LIGHT)
+        val bg = if (dark) BG_DARK else BG_LIGHT
+        canvas.drawColor(bg)
 
         val loc = snapshot.location ?: lastDrawnLocation
         // Anchor: centre for north-up; pushed to the lower third when
@@ -272,16 +324,13 @@ class CarMapRenderer(
         val ay = if (headingUp) h * 0.66f else h / 2f
 
         if (loc != null) {
-            val cx = lonToWorldX(loc.longitude, zoom)
-            val cy = latToWorldY(loc.latitude, zoom)
-
-            canvas.save()
-            if (headingUp) canvas.rotate(-smoothedBearingDeg, ax, ay)
-            drawTiles(canvas, ax, ay, cx, cy, w, h)
-            if (dark) canvas.drawColor(TILE_DARK_SCRIM)
-            drawBreadcrumb(canvas, ax, ay, cx, cy)
-            canvas.restore()
-
+            if (tilted) {
+                drawTiltedMap(canvas, w, h, ax, ay, loc, headingUp, dark, bg)
+            } else {
+                canvas.save()
+                drawMapLayer(canvas, ax, ay, w, h, loc, headingUp, dark)
+                canvas.restore()
+            }
             drawPositionMarker(canvas, ax, ay, headingUp)
         } else {
             drawWaitingForFix(canvas, w, h, dark)
@@ -290,11 +339,122 @@ class CarMapRenderer(
         drawHud(canvas, w, h, loc, dark)
     }
 
-    private fun drawTiles(canvas: Canvas, ax: Float, ay: Float, cx: Double, cy: Double, w: Int, h: Int) {
-        // Cover the rotated viewport: half the diagonal in every
-        // direction from the anchor, padded by one tile.
-        val half = hypot(w.toDouble(), h.toDouble()) / 2.0 + TILE_SIZE
-        val n = 1 shl zoom
+    /** Flat map → oversized offscreen layer → perspective draw. The
+     *  margins exist because rotateX narrows the far field: the
+     *  viewport's top corners sample map content from outside the
+     *  screen rect. A haze gradient hides the layer's far edge. */
+    private fun drawTiltedMap(
+        canvas: Canvas,
+        w: Int,
+        h: Int,
+        ax: Float,
+        ay: Float,
+        loc: Location,
+        headingUp: Boolean,
+        dark: Boolean,
+        bg: Int,
+    ) {
+        val mx = (w * TILT_MARGIN_X).toInt()
+        val mt = (h * TILT_MARGIN_TOP).toInt()
+        val layer = obtainMapLayer(w + 2 * mx, h + mt)
+        layer.eraseColor(bg)
+        val layerCanvas = Canvas(layer)
+        drawMapLayer(
+            layerCanvas,
+            ax = mx + ax,
+            ay = mt + ay,
+            w = layer.width,
+            h = layer.height,
+            loc = loc,
+            headingUp = headingUp,
+            dark = dark,
+        )
+
+        // Perspective: rotate the map plane about the horizontal axis
+        // through the anchor. Camera distance scales with the surface
+        // so the foreshortening looks the same on every head unit.
+        camera.save()
+        camera.setLocation(0f, 0f, -(h * TILT_CAMERA_DISTANCE) / 72f)
+        camera.rotateX(TILT_DEG)
+        camera.getMatrix(tiltMatrix)
+        camera.restore()
+        tiltMatrix.preTranslate(-ax, -ay)
+        tiltMatrix.postTranslate(ax, ay)
+
+        canvas.save()
+        canvas.concat(tiltMatrix)
+        canvas.drawBitmap(layer, -mx.toFloat(), -mt.toFloat(), layerPaint)
+        canvas.restore()
+
+        // Haze the horizon so the layer's far edge never shows as a
+        // hard line. Shader is cached per (height, palette).
+        ensureHazePaint(h, bg)
+        canvas.drawRect(0f, 0f, w.toFloat(), h * HAZE_DEPTH, hazePaint)
+    }
+
+    private fun obtainMapLayer(lw: Int, lh: Int): Bitmap {
+        val existing = mapLayer
+        if (existing != null && existing.width == lw && existing.height == lh) return existing
+        existing?.recycle()
+        return Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).also { mapLayer = it }
+    }
+
+    private var hazeKey = 0L
+    private fun ensureHazePaint(h: Int, bg: Int) {
+        val key = h.toLong() shl 32 or (bg.toLong() and 0xFFFFFFFFL)
+        if (key == hazeKey) return
+        hazeKey = key
+        hazePaint.shader = LinearGradient(
+            0f, 0f, 0f, h * HAZE_DEPTH,
+            bg, bg and 0x00FFFFFF,
+            Shader.TileMode.CLAMP,
+        )
+    }
+
+    /** The flat (untilted) map: tiles + dark scrim + breadcrumb, with
+     *  heading-up rotation and fractional-zoom scaling applied around
+     *  the anchor. Draws onto whatever canvas it's given — the surface
+     *  directly (top-down mode) or the offscreen layer (tilt mode). */
+    private fun drawMapLayer(
+        canvas: Canvas,
+        ax: Float,
+        ay: Float,
+        w: Int,
+        h: Int,
+        loc: Location,
+        headingUp: Boolean,
+        dark: Boolean,
+    ) {
+        val tileZoom = floor(currentZoom).toInt().coerceIn(MIN_ZOOM.toInt(), MAX_ZOOM.toInt())
+        val scale = 2.0.pow(currentZoom - tileZoom).toFloat()
+        val cx = lonToWorldX(loc.longitude, tileZoom)
+        val cy = latToWorldY(loc.latitude, tileZoom)
+
+        canvas.save()
+        if (headingUp) canvas.rotate(-smoothedBearingDeg, ax, ay)
+        canvas.scale(scale, scale, ax, ay)
+        drawTiles(canvas, ax, ay, cx, cy, w, h, tileZoom, scale)
+        if (dark) canvas.drawColor(TILE_DARK_SCRIM)
+        drawBreadcrumb(canvas, ax, ay, cx, cy, tileZoom, scale)
+        canvas.restore()
+    }
+
+    private fun drawTiles(
+        canvas: Canvas,
+        ax: Float,
+        ay: Float,
+        cx: Double,
+        cy: Double,
+        w: Int,
+        h: Int,
+        tileZoom: Int,
+        scale: Float,
+    ) {
+        // Cover the rotated+scaled viewport: half the diagonal in every
+        // direction from the anchor (in pre-scale units), padded by one
+        // tile.
+        val half = hypot(w.toDouble(), h.toDouble()) / (2.0 * scale) + TILE_SIZE
+        val n = 1 shl tileZoom
         val minTx = floor((cx - half) / TILE_SIZE).toInt()
         val maxTx = floor((cx + half) / TILE_SIZE).toInt()
         val minTy = floor((cy - half) / TILE_SIZE).toInt().coerceAtLeast(0)
@@ -305,7 +465,7 @@ class CarMapRenderer(
             val wrappedTx = ((tx % n) + n) % n
             for (ty in minTy..maxTy) {
                 val drawable = tileProvider
-                    .getMapTile(MapTileIndex.getTileIndex(zoom, wrappedTx, ty))
+                    .getMapTile(MapTileIndex.getTileIndex(tileZoom, wrappedTx, ty))
                     ?: continue
                 val left = (ax + (tx.toDouble() * TILE_SIZE - cx)).roundToInt()
                 val top = (ay + (ty.toDouble() * TILE_SIZE - cy)).roundToInt()
@@ -315,17 +475,29 @@ class CarMapRenderer(
         }
     }
 
-    private fun drawBreadcrumb(canvas: Canvas, ax: Float, ay: Float, cx: Double, cy: Double) {
+    private fun drawBreadcrumb(
+        canvas: Canvas,
+        ax: Float,
+        ay: Float,
+        cx: Double,
+        cy: Double,
+        tileZoom: Int,
+        scale: Float,
+    ) {
         if (breadcrumb.size < 2) return
         val path = Path()
         breadcrumb.forEachIndexed { i, p ->
-            val x = (ax + (lonToWorldX(p[1], zoom) - cx)).toFloat()
-            val y = (ay + (latToWorldY(p[0], zoom) - cy)).toFloat()
+            val x = (ax + (lonToWorldX(p[1], tileZoom) - cx)).toFloat()
+            val y = (ay + (latToWorldY(p[0], tileZoom) - cy)).toFloat()
             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }
         // Connect the decimated tail to the live position so the line
         // never visibly detaches from the marker.
         path.lineTo(ax, ay)
+        // Counter the fractional-zoom canvas scale so stroke widths
+        // stay constant on screen.
+        trailCasingPaint.strokeWidth = 15f / scale
+        trailPaint.strokeWidth = 9f / scale
         canvas.drawPath(path, trailCasingPaint)
         canvas.drawPath(path, trailPaint)
     }
@@ -438,7 +610,7 @@ class CarMapRenderer(
         )
     }
 
-    // ── Web-Mercator helpers (slippy tiles, world pixels at [zoom]) ──
+    // ── Web-Mercator helpers (slippy tiles, world pixels at zoom) ──
 
     private fun lonToWorldX(lon: Double, zoom: Int): Double =
         (lon + 180.0) / 360.0 * TILE_SIZE * (1 shl zoom)
@@ -486,17 +658,37 @@ class CarMapRenderer(
     }
     private val hudTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val recDotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    /** FILTER_BITMAP so the perspective resample stays smooth. */
+    private val layerPaint = Paint(Paint.FILTER_BITMAP_FLAG)
+    private val hazePaint = Paint()
 
     private companion object {
         const val TILE_SIZE = 256
-        const val DEFAULT_ZOOM = 16
-        const val MIN_ZOOM = 3
-        const val MAX_ZOOM = 19
+        const val MIN_ZOOM = 3.0
+        const val MAX_ZOOM = 19.0
         const val MAX_MERCATOR_LAT = 85.05112878
+
+        /** Speed-adaptive zoom: glide between these levels as ground
+         *  speed goes 0 → [ZOOM_FAST_KMH]. */
+        const val ZOOM_STANDSTILL = 17.5
+        const val ZOOM_FAST = 13.8
+        const val ZOOM_FAST_KMH = 120.0
+        const val ZOOM_STEP_PER_TICK = 0.18
+        const val ZOOM_BIAS_RANGE = 3.0
+
+        /** 2.5D tilt geometry. Margins are fractions of the viewport
+         *  added to the offscreen layer so the narrowed far field
+         *  still has map content to sample. */
+        const val TILT_DEG = 42f
+        const val TILT_MARGIN_X = 0.35f
+        const val TILT_MARGIN_TOP = 0.30f
+        const val TILT_CAMERA_DISTANCE = 1.2f
+        const val HAZE_DEPTH = 0.22f
+
         /** Above ~1.1 m/s (walking pace) course-over-ground is stable
          *  enough to rotate the map by. */
         const val MIN_HEADING_UP_SPEED_MPS = 1.1f
-        const val SCALE_STEP = 1.30f
+        const val SCALE_STEP = 1.15f
         const val BREADCRUMB_CAP = 4000
         const val MARKER_RADIUS = 26f
 
