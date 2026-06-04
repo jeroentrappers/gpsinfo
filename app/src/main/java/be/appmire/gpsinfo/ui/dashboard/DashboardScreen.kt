@@ -36,6 +36,7 @@ import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.PinDrop
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.SportsScore
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -136,6 +137,7 @@ fun DashboardScreen(
     onOpenSports: () -> Unit = {},
     onOpenWaypoints: () -> Unit = {},
     onOpenGhost: () -> Unit = {},
+    onOpenRally: () -> Unit = {},
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val compass by vm.compass.collectAsStateWithLifecycle()
@@ -293,6 +295,7 @@ fun DashboardScreen(
                 onOpenWaypoints = { closeDrawer(); onOpenWaypoints() },
                 onOpenSports = { closeDrawer(); onOpenSports() },
                 onOpenGhost = { closeDrawer(); onOpenGhost() },
+                onOpenRally = { closeDrawer(); onOpenRally() },
                 onToggleTheme = onToggleTheme,
                 onOpenSettings = { closeDrawer(); onOpenAbout() },
             )
@@ -819,6 +822,7 @@ private fun DashboardDrawerContent(
     onOpenWaypoints: () -> Unit,
     onOpenSports: () -> Unit,
     onOpenGhost: () -> Unit,
+    onOpenRally: () -> Unit,
     onToggleTheme: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -902,6 +906,11 @@ private fun DashboardDrawerContent(
                 label = stringResource(R.string.settings_ghost),
                 icon = Icons.Outlined.SportsScore,
                 onClick = onOpenGhost,
+            )
+            DrawerItem(
+                label = stringResource(R.string.drawer_rally),
+                icon = Icons.Outlined.Timer,
+                onClick = onOpenRally,
             )
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp))

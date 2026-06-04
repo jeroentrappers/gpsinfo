@@ -303,6 +303,32 @@
     <string name="car_toast_saved" tools:ignore="MissingTranslation">Saved: %1$s</string>
     <string name="car_toast_save_empty" tools:ignore="MissingTranslation">No points captured — nothing saved</string>
     <string name="car_waiting_fix" tools:ignore="MissingTranslation">Waiting for GPS fix…</string>
+    <string name="rally_title" tools:ignore="MissingTranslation">Regularity rally</string>
+    <string name="rally_new_stage" tools:ignore="MissingTranslation">New stage</string>
+    <string name="rally_empty" tools:ignore="MissingTranslation">No stages yet. Enter the roadbook speed table as “from km / speed” rows.</string>
+    <string name="rally_arm" tools:ignore="MissingTranslation">Arm</string>
+    <string name="rally_disarm" tools:ignore="MissingTranslation">Disarm</string>
+    <string name="rally_edit" tools:ignore="MissingTranslation">Edit</string>
+    <string name="rally_delete" tools:ignore="MissingTranslation">Delete</string>
+    <string name="rally_stage_name" tools:ignore="MissingTranslation">Stage name</string>
+    <string name="rally_changes_header" tools:ignore="MissingTranslation">Speed changes</string>
+    <string name="rally_from_km" tools:ignore="MissingTranslation">From km</string>
+    <string name="rally_speed_kmh" tools:ignore="MissingTranslation">km/h</string>
+    <string name="rally_add_change" tools:ignore="MissingTranslation">Add speed change</string>
+    <string name="rally_length_km" tools:ignore="MissingTranslation">Total length (km, optional)</string>
+    <string name="rally_save" tools:ignore="MissingTranslation">Save stage</string>
+    <string name="rally_cancel" tools:ignore="MissingTranslation">Cancel</string>
+    <string name="rally_start" tools:ignore="MissingTranslation">START</string>
+    <string name="rally_stop" tools:ignore="MissingTranslation">Stop RT</string>
+    <string name="rally_finished" tools:ignore="MissingTranslation">Stage distance reached</string>
+    <string name="rally_target_speed" tools:ignore="MissingTranslation">Target</string>
+    <string name="rally_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="rally_late_speed_up" tools:ignore="MissingTranslation">LATE — speed up</string>
+    <string name="rally_early_slow_down" tools:ignore="MissingTranslation">EARLY — slow down</string>
+    <string name="drawer_rally" tools:ignore="MissingTranslation">Regularity rally</string>
+    <string name="car_rally_armed" tools:ignore="MissingTranslation">RT armed — tap Start on the marshal\'s go</string>
+    <string name="car_action_rally_start" tools:ignore="MissingTranslation">Start RT</string>
+    <string name="car_action_rally_stop" tools:ignore="MissingTranslation">Stop RT</string>
     <string name="ghost_card_title" tools:ignore="MissingTranslation">Racing past self</string>
     <string name="ghost_card_you" tools:ignore="MissingTranslation">You</string>
     <string name="ghost_card_ghost" tools:ignore="MissingTranslation">Ghost</string>

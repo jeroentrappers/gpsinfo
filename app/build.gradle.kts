@@ -186,6 +186,9 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // android.jar's org.json is a throwing stub in local unit tests;
+    // the real artifact lets rally-stage JSON round-trips run.
+    testImplementation(libs.org.json)
 
     // Instrumented test + Fastlane screengrab support.
     //

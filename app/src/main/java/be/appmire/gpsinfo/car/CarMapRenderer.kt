@@ -23,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.model.GnssSnapshot
+import be.appmire.gpsinfo.data.rally.RallyState
 import be.appmire.gpsinfo.ui.trails.MapnikBulkOk
 import java.io.File
 import java.util.Locale
@@ -91,6 +92,7 @@ class CarMapRenderer(
 
     private var snapshot: GnssSnapshot = GnssSnapshot()
     private var recording: RecordingState = RecordingState.Idle
+    private var rally: RallyState = RallyState.Idle
     private var lastDrawnLocation: Location? = null
 
     /** Breadcrumb of the active recording as lat/lon pairs. Appended
@@ -159,10 +161,11 @@ class CarMapRenderer(
 
     // ── Data in ────────────────────────────────────────────────────
 
-    /** Feed the latest GNSS + recording state; repaints the surface. */
-    fun update(gnss: GnssSnapshot, rec: RecordingState) {
+    /** Feed the latest GNSS + recording + rally state; repaints. */
+    fun update(gnss: GnssSnapshot, rec: RecordingState, rallyState: RallyState = RallyState.Idle) {
         snapshot = gnss
         recording = rec
+        rally = rallyState
 
         val isRecording = rec is RecordingState.Recording
         if (isRecording && !wasRecording) {
@@ -337,6 +340,7 @@ class CarMapRenderer(
         }
 
         drawHud(canvas, w, h, loc, dark)
+        drawRallyPanel(canvas, w, h, dark)
     }
 
     /** Flat map → oversized offscreen layer → perspective draw. The
@@ -610,6 +614,66 @@ class CarMapRenderer(
         )
     }
 
+    /** Regularity-test panel, top-centre: the early/late delta is THE
+     *  number during an RT, so it gets the biggest type on the screen.
+     *  Armed shows a one-line "waiting for the marshal" banner. */
+    private fun drawRallyPanel(canvas: Canvas, w: Int, h: Int, dark: Boolean) {
+        val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+        val pad = h * 0.03f
+        when (val r = rally) {
+            is RallyState.Running -> {
+                val delta = r.deltaSeconds
+                val deltaColor = when {
+                    abs(delta) < 1.0 -> RALLY_ON_TIME
+                    abs(delta) < 3.0 -> RALLY_NEAR
+                    else -> RALLY_OFF
+                }
+                val deltaText = "%+.0f s".format(Locale.ROOT, delta)
+                val subText = "→ %.0f km/h   %.2f km".format(
+                    Locale.ROOT, r.targetSpeedKmh, r.drivenKm,
+                )
+                val cx = w / 2f
+                hudTextPaint.textAlign = Paint.Align.CENTER
+                hudTextPaint.isFakeBoldText = true
+                hudTextPaint.textSize = h * 0.14f
+                val deltaWidth = hudTextPaint.measureText(deltaText)
+                hudTextPaint.textSize = h * 0.045f
+                val subWidth = hudTextPaint.measureText(subText)
+                val panelW = maxOf(deltaWidth, subWidth) + pad * 3
+                val panelH = h * 0.14f + h * 0.045f + pad * 2.5f
+                val top = inset.top + pad
+                bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+                val rect = RectF(cx - panelW / 2, top, cx + panelW / 2, top + panelH)
+                canvas.drawRoundRect(rect, pad, pad, bubblePaint)
+                canvas.drawRoundRect(rect, pad, pad, bubbleStrokePaint)
+                hudTextPaint.textSize = h * 0.14f
+                hudTextPaint.color = deltaColor
+                canvas.drawText(deltaText, cx, top + pad * 0.6f + h * 0.12f, hudTextPaint)
+                hudTextPaint.isFakeBoldText = false
+                hudTextPaint.textSize = h * 0.045f
+                hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+                canvas.drawText(subText, cx, top + panelH - pad, hudTextPaint)
+            }
+            is RallyState.Armed -> {
+                val text = carContext.getString(be.appmire.gpsinfo.R.string.car_rally_armed)
+                val cx = w / 2f
+                hudTextPaint.textAlign = Paint.Align.CENTER
+                hudTextPaint.isFakeBoldText = false
+                hudTextPaint.textSize = h * 0.04f
+                val tw = hudTextPaint.measureText(text)
+                val top = inset.top + pad
+                val panelH = h * 0.04f + pad * 1.5f
+                bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+                val rect = RectF(cx - tw / 2 - pad, top, cx + tw / 2 + pad, top + panelH)
+                canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubblePaint)
+                canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubbleStrokePaint)
+                hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+                canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
+            }
+            RallyState.Idle -> Unit
+        }
+    }
+
     // ── Web-Mercator helpers (slippy tiles, world pixels at zoom) ──
 
     private fun lonToWorldX(lon: Double, zoom: Int): Double =
@@ -705,5 +769,8 @@ class CarMapRenderer(
         const val HUD_MUTED_LIGHT = 0xFF5F6B76.toInt()
         const val REC_ACTIVE = 0xFFE53935.toInt()
         const val REC_PAUSED = 0xFFFFB300.toInt()
+        const val RALLY_ON_TIME = 0xFF43A047.toInt()
+        const val RALLY_NEAR = 0xFFF9A825.toInt()
+        const val RALLY_OFF = 0xFFE53935.toInt()
     }
 }

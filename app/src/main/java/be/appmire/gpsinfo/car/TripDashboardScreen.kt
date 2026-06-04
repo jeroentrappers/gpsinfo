@@ -22,6 +22,8 @@ import be.appmire.gpsinfo.data.LocationRepository
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.TrailRecordingController
 import be.appmire.gpsinfo.data.TrailRepository
+import be.appmire.gpsinfo.data.rally.RallyController
+import be.appmire.gpsinfo.data.rally.RallyState
 import be.appmire.gpsinfo.util.TrailNaming
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
@@ -54,6 +56,7 @@ class TripDashboardScreen(
 ) : Screen(carContext), DefaultLifecycleObserver {
 
     private var recording: RecordingState = RecordingState.Idle
+    private var rally: RallyState = RallyState.Idle
     private var collectJob: Job? = null
 
     init {
@@ -74,10 +77,10 @@ class TripDashboardScreen(
             carContext, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-    /** Pipe GNSS + recording state into the surface renderer. The
-     *  template itself only changes when the recording toggles (the
-     *  action strip flips between Start and Open-on-phone), so that's
-     *  the only thing that triggers [invalidate]. Idempotent: called
+    /** Pipe GNSS + recording + rally state into the surface renderer.
+     *  The template itself only changes when the recording toggles or
+     *  the rally state changes phase (the action strips swap), so
+     *  those are the only [invalidate] triggers. Idempotent: called
      *  from onStart and again after a mid-session permission grant. */
     private fun startCollecting() {
         if (collectJob != null) return
@@ -85,13 +88,20 @@ class TripDashboardScreen(
         collectJob = combine(
             locRepo.snapshots(),
             TrailRecordingController.state,
-        ) { gnss, rec -> gnss to rec }
-            .onEach { (gnss, rec) ->
+            RallyController.state,
+        ) { gnss, rec, rallyState -> Triple(gnss, rec, rallyState) }
+            .onEach { (gnss, rec, rallyState) ->
+                // Rally distance keeps integrating from the car's own
+                // GNSS stream; the controller dedupes if the phone or
+                // the recording service also feed it.
+                RallyController.offer(gnss)
                 val recordingToggled =
                     (rec is RecordingState.Recording) != (recording is RecordingState.Recording)
+                val rallyPhaseChanged = rallyState::class != rally::class
                 recording = rec
-                renderer.update(gnss, rec)
-                if (recordingToggled) invalidate()
+                rally = rallyState
+                renderer.update(gnss, rec, rallyState)
+                if (recordingToggled || rallyPhaseChanged) invalidate()
             }
             .launchIn(lifecycleScope)
     }
@@ -120,6 +130,57 @@ class TripDashboardScreen(
             }
             .build()
 
+        // The main strip is contextual on the rally phase. During a
+        // running RT the ±10 m distance-sync nudges take the slots —
+        // they're the controls a co-driver actually needs mid-stage.
+        val actionStrip = when (rally) {
+            is RallyState.Running -> ActionStrip.Builder()
+                .addAction(
+                    Action.Builder()
+                        .setIcon(carIcon(R.drawable.ic_car_stop))
+                        .setTitle(carContext.getString(R.string.car_action_rally_stop))
+                        .setOnClickListener {
+                            RallyController.stop()
+                            invalidate()
+                        }
+                        .build()
+                )
+                .addAction(
+                    Action.Builder()
+                        .setTitle("−10 m")
+                        .setOnClickListener { RallyController.nudge(-10.0) }
+                        .build()
+                )
+                .addAction(
+                    Action.Builder()
+                        .setTitle("+10 m")
+                        .setOnClickListener { RallyController.nudge(+10.0) }
+                        .build()
+                )
+                .build()
+            is RallyState.Armed -> ActionStrip.Builder()
+                .addAction(
+                    Action.Builder()
+                        .setIcon(carIcon(R.drawable.ic_car_record))
+                        .setTitle(carContext.getString(R.string.car_action_rally_start))
+                        .setOnClickListener {
+                            // Marshal's go. Also make sure the trail is
+                            // being recorded — an RT without its
+                            // evidence GPX is a wasted stage.
+                            RallyController.start()
+                            if (!isRecording) startRecordingSafely()
+                            invalidate()
+                        }
+                        .build()
+                )
+                .addAction(trailsAction)
+                .build()
+            RallyState.Idle -> ActionStrip.Builder()
+                .addAction(recordAction)
+                .addAction(trailsAction)
+                .build()
+        }
+
         // Zoom + tilt live on the map action strip (anchored to the map
         // edge by the host). Icon-only is mandatory here. The zoom
         // buttons nudge a bias on top of the speed-adaptive level
@@ -146,12 +207,7 @@ class TripDashboardScreen(
             .build()
 
         return NavigationTemplate.Builder()
-            .setActionStrip(
-                ActionStrip.Builder()
-                    .addAction(recordAction)
-                    .addAction(trailsAction)
-                    .build()
-            )
+            .setActionStrip(actionStrip)
             .setMapActionStrip(mapActionStrip)
             .build()
     }

@@ -120,6 +120,9 @@ class DashboardViewModel(
         .onEach {
             locationStateFlow.value = it.location
             TrailRecordingController.offer(it)
+            // Rally RT delta — no-op unless a stage is running; the
+            // controller dedupes against the service's feed.
+            be.appmire.gpsinfo.data.rally.RallyController.offer(it)
             // Track-back auto-advance: when the user gets within
             // ROUTE_PROXIMITY_M of the current route point, step to the
             // previous one. Cheap (one haversine per snapshot) and a

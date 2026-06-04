@@ -99,7 +99,12 @@ class TrailRecordingService : Service() {
         // background-only recording (the dashboard never opened during
         // a recording session) self-contained.
         collectJob = LocationRepository(applicationContext).snapshots()
-            .onEach { TrailRecordingController.offer(it) }
+            .onEach {
+                TrailRecordingController.offer(it)
+                // Rally distance keeps integrating while backgrounded —
+                // the controller dedupes if the activity also feeds it.
+                be.appmire.gpsinfo.data.rally.RallyController.offer(it)
+            }
             .launchIn(scope)
         // Step counter alongside GNSS — silently no-ops if the device
         // lacks the sensor or if ACTIVITY_RECOGNITION wasn't granted.

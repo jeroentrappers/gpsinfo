@@ -34,6 +34,9 @@ zxingCore = "3.5.3"
 # Testing
 junit = "4.13.2"
 coroutinesTest = "1.11.0"
+# Real org.json for local unit tests — android.jar's copy is a
+# throwing stub off-device.
+orgJson = "20250517"
 androidxTestCore = "1.7.0"
 androidxTestRunner = "1.7.0"
 androidxTestRules = "1.7.0"
@@ -72,6 +75,7 @@ compose-animation = { module = "androidx.compose.animation:animation" }
 # Test
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+org-json = { module = "org.json:json", version.ref = "orgJson" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
