@@ -19,6 +19,10 @@ on:
         description: "Promote internal → production (10% rollout)"
         type: boolean
         default: false
+      rollout:
+        description: "Production rollout fraction (0.1 = 10%, 1.0 = full)"
+        type: string
+        default: "0.1"
 
 # A second deploy queued behind the first would race against the Play
 # Console's edit lock. Serialise instead.
@@ -109,6 +113,7 @@ jobs:
           FASTLANE_HIDE_CHANGELOG: "1"
           TRACK: ${{ inputs.track }}
           PROMOTE: ${{ inputs.promote }}
+          ROLLOUT: ${{ inputs.rollout }}
         run: |
           set -euo pipefail
           if [ "$PROMOTE" = "true" ]; then

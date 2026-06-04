@@ -120,7 +120,10 @@ platform :android do
       # rollout, so supply's `releases.select` hit nil and crashed.)
       track: "internal",
       track_promote_to: "production",
-      rollout: "0.1",
+      # Default to a cautious 10% staged rollout. Override with
+      # ROLLOUT=1.0 when a release must supersede a noncompliant build
+      # everywhere at once (Play policy fixes require 100%).
+      rollout: ENV.fetch("ROLLOUT", "0.1"),
       skip_upload_apk: true,
       skip_upload_aab: true,
       # Promote only. The listing metadata, screenshots and the
