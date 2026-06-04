@@ -1,0 +1,2 @@
+• Android Auto'da GPSinfo açılırken oluşan çökme düzeltildi
+• Konum izni artık araçtan istenebilir

@@ -1,0 +1,2 @@
+• Correction d'un plantage à l'ouverture de GPSinfo sur Android Auto
+• Demande d'autorisation de localisation depuis la voiture

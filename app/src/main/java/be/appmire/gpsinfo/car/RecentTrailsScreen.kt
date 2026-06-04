@@ -60,10 +60,15 @@ class RecentTrailsScreen(carContext: CarContext) : Screen(carContext), DefaultLi
     }
 
     override fun onGetTemplate(): Template {
-        val limit = carContext
-            .getCarService(ConstraintManager::class.java)
-            .getContentLimit(ConstraintManager.CONTENT_LIMIT_TYPE_LIST)
-            .coerceAtLeast(1)
+        // ConstraintManager needs Car API level >= 2; the manifest
+        // declares minCarApiLevel=1, so a level-1 host would throw
+        // here. Fall back to the documented minimum list quota (6)
+        // rather than crash the session on older head units.
+        val limit = runCatching {
+            carContext
+                .getCarService(ConstraintManager::class.java)
+                .getContentLimit(ConstraintManager.CONTENT_LIMIT_TYPE_LIST)
+        }.getOrDefault(FALLBACK_LIST_LIMIT).coerceAtLeast(1)
         val rows = summaries.take(limit).map { trailRow(it) }
         val itemList = ItemList.Builder().apply {
             if (rows.isEmpty()) {
@@ -105,5 +110,11 @@ class RecentTrailsScreen(carContext: CarContext) : Screen(carContext), DefaultLi
         val minutes = (totalSeconds % 3600) / 60
         return if (hours > 0) "%dh %02dm".format(Locale.ROOT, hours, minutes)
         else "%dm".format(Locale.ROOT, minutes)
+    }
+
+    private companion object {
+        /** The smallest list quota any host guarantees — used when
+         *  ConstraintManager isn't available (Car API level 1). */
+        const val FALLBACK_LIST_LIMIT = 6
     }
 }

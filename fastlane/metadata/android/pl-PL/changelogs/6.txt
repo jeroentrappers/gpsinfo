@@ -1,0 +1,2 @@
+• Naprawiono awarię podczas otwierania GPSinfo w Android Auto
+• Prośba o uprawnienia lokalizacji dostępna w samochodzie

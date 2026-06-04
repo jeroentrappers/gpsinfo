@@ -1,0 +1,2 @@
+• Crash opgelost bij het openen van GPSinfo op Android Auto
+• Locatietoestemming kan nu in de auto worden gevraagd

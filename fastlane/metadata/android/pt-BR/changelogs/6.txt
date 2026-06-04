@@ -1,0 +1,2 @@
+• Corrigida uma falha ao abrir o GPSinfo no Android Auto
+• Solicitação de permissão de localização no carro

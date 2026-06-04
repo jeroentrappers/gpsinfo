@@ -1,0 +1,2 @@
+• Opraven pád při otevření GPSinfo v Android Auto
+• Žádost o oprávnění k poloze přímo v autě

@@ -1,0 +1,2 @@
+• Absturz beim Öffnen von GPSinfo auf Android Auto behoben
+• Standortberechtigung kann jetzt im Auto angefragt werden

@@ -1,0 +1,2 @@
+• Fixed a crash when opening GPSinfo on Android Auto
+• Added an in-car location permission prompt

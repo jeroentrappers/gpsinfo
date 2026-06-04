@@ -1,0 +1,2 @@
+• Risolto un arresto anomalo all'apertura di GPSinfo su Android Auto
+• Richiesta del permesso di localizzazione dall'auto
