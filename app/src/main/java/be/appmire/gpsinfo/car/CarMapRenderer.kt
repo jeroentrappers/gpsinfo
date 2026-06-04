@@ -633,7 +633,11 @@ class CarMapRenderer(
                     Locale.ROOT,
                     r.targetSpeedKmh,
                     r.drivenKm,
-                    if (r.usingWheel) "WHEEL" else "GPS",
+                    when {
+                        r.wheelSensorsFresh > 1 -> "WHEEL ×${r.wheelSensorsFresh}"
+                        r.usingWheel -> "WHEEL"
+                        else -> "GPS"
+                    },
                 )
                 val cx = w / 2f
                 hudTextPaint.textAlign = Paint.Align.CENTER

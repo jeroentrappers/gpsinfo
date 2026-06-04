@@ -8,13 +8,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -45,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -53,17 +52,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.SettingsRepository
 import be.appmire.gpsinfo.data.WheelSensorRepository
-import be.appmire.gpsinfo.data.model.WheelSensorState
+import be.appmire.gpsinfo.data.model.WheelDeviceStatus
 import kotlinx.coroutines.launch
 
 /**
- * Pair-a-wheel-speed-sensor screen. Mirrors the HR/CP pairing flows —
- * same permission dance, same scan-then-tap-to-pair UX — filtered to
- * the Bluetooth-SIG Cycling Speed and Cadence service (0x1816).
+ * Wheel-probe management screen: the paired set on top (live status +
+ * forget), scan-to-add below. Mirrors the HR/CP pairing flows' UX but
+ * supports **multiple sensors** — two probes on the same axle measure
+ * the vehicle-centreline distance, so adding a second one is the
+ * normal setup, not an edge case.
  *
  * Self-contained on [WheelSensorRepository] + [SettingsRepository]
- * rather than threading through DashboardViewModel: the wheel sensor
- * exists for the rally subsystem, not the dashboard.
+ * rather than threading through DashboardViewModel: the wheel probes
+ * exist for the rally subsystem, not the dashboard.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +75,8 @@ fun WheelPairingScreen(
     val repo = remember { WheelSensorRepository.getInstance(context) }
     val settings = remember { SettingsRepository(context) }
     val scope = rememberCoroutineScope()
-    val wheelState by repo.state.collectAsStateWithLifecycle()
+    val devices by repo.devices.collectAsStateWithLifecycle()
+    val scanning by repo.scanning.collectAsStateWithLifecycle()
     var permissionRequested by remember { mutableStateOf(false) }
     var permissionGranted by remember { mutableStateOf(false) }
 
@@ -82,7 +84,10 @@ fun WheelPairingScreen(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { grants ->
         permissionGranted = grants.values.all { it }
-        if (permissionGranted) repo.startScan()
+        if (permissionGranted) {
+            repo.connectIfPaired(settings)
+            repo.startScan()
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -96,6 +101,7 @@ fun WheelPairingScreen(
             )
         } else {
             permissionGranted = true
+            repo.connectIfPaired(settings)
             repo.startScan()
         }
     }
@@ -138,14 +144,6 @@ fun WheelPairingScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            ConnectionStatusRow(
-                wheelState = wheelState,
-                onForget = {
-                    repo.disconnect()
-                    scope.launch { settings.setWheelDevice(null, null) }
-                },
-            )
-
             if (!permissionGranted && permissionRequested) {
                 Text(
                     text = stringResource(R.string.wheel_pair_needs_permissions),
@@ -155,54 +153,67 @@ fun WheelPairingScreen(
                 return@Column
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (wheelState is WheelSensorState.Scanning) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(8.dp))
-                    Text(
-                        text = stringResource(R.string.wheel_pair_scanning),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    Button(onClick = repo::startScan) {
-                        Text(stringResource(R.string.wheel_pair_scan_again))
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // ── Paired probes ──
+                if (devices.isNotEmpty()) {
+                    item {
+                        Text(
+                            stringResource(R.string.wheel_pair_paired_header),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
                     }
-                }
-            }
-
-            val devices = repo.lastScanResultsView.values.sortedByDescending { it.rssi }
-            if (devices.isEmpty() && wheelState is WheelSensorState.Scanning) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.wheel_pair_no_devices_yet),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(devices, key = { it.device.address }) { result ->
-                        DeviceRow(
-                            result = result,
-                            onPair = {
-                                repo.stopScan()
-                                val name = friendlyNameOf(result)
-                                scope.launch {
-                                    settings.setWheelDevice(result.device.address, name)
-                                }
-                                repo.connect(result.device.address, name)
-                                onBack()
+                    items(devices.values.toList(), key = { "paired-${it.mac}" }) { d ->
+                        PairedRow(
+                            status = d,
+                            onForget = {
+                                repo.forget(d.mac)
+                                scope.launch { settings.removeWheelDevice(d.mac) }
                             },
                         )
                     }
+                }
+
+                // ── Add a probe ──
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (scanning) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.size(8.dp))
+                            Text(
+                                text = stringResource(R.string.wheel_pair_scanning),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            Button(onClick = repo::startScan) {
+                                Text(stringResource(R.string.wheel_pair_scan_again))
+                            }
+                        }
+                    }
+                }
+                val candidates = repo.lastScanResultsView.values
+                    .filterNot { devices.containsKey(it.device.address) }
+                    .sortedByDescending { it.rssi }
+                if (candidates.isEmpty() && scanning) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.wheel_pair_no_devices_yet),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                items(candidates, key = { "found-${it.device.address}" }) { result ->
+                    DeviceRow(
+                        result = result,
+                        onPair = {
+                            val name = friendlyNameOf(result)
+                            scope.launch {
+                                settings.addWheelDevice(result.device.address, name)
+                            }
+                            repo.connect(result.device.address, name)
+                        },
+                    )
                 }
             }
         }
@@ -210,28 +221,10 @@ fun WheelPairingScreen(
 }
 
 @Composable
-private fun ConnectionStatusRow(
-    wheelState: WheelSensorState,
+private fun PairedRow(
+    status: WheelDeviceStatus,
     onForget: () -> Unit,
 ) {
-    val (label, action) = when (wheelState) {
-        WheelSensorState.Idle -> stringResource(R.string.wheel_status_idle) to null
-        WheelSensorState.Scanning -> stringResource(R.string.wheel_status_scanning) to null
-        is WheelSensorState.Connecting ->
-            stringResource(R.string.wheel_status_connecting, wheelState.deviceMac) to onForget
-        is WheelSensorState.Connected -> {
-            val nameOrMac = wheelState.deviceName ?: wheelState.deviceMac
-            stringResource(
-                R.string.wheel_status_connected,
-                nameOrMac,
-                wheelState.lastCumulativeRevs ?: 0L,
-            ) to onForget
-        }
-        is WheelSensorState.Disconnected -> {
-            val nameOrMac = wheelState.deviceName ?: wheelState.deviceMac
-            stringResource(R.string.wheel_status_disconnected, nameOrMac) to onForget
-        }
-    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -240,15 +233,31 @@ private fun ConnectionStatusRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(label, style = MaterialTheme.typography.bodyMedium)
-            if (action != null) {
-                TextButton(onClick = action) {
-                    Text(stringResource(R.string.wheel_forget_device))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    status.name ?: status.mac,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                val detail = if (status.connected) {
+                    stringResource(
+                        R.string.wheel_paired_connected,
+                        status.lastCumulativeRevs ?: 0L,
+                    )
+                } else {
+                    stringResource(R.string.wheel_paired_disconnected)
                 }
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (status.connected) Color(0xFF2E7D32)
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            TextButton(onClick = onForget) {
+                Text(stringResource(R.string.wheel_forget_device))
             }
         }
     }

@@ -18,8 +18,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
 import androidx.core.content.ContextCompat
+import be.appmire.gpsinfo.data.model.WheelDeviceStatus
 import be.appmire.gpsinfo.data.model.WheelReading
-import be.appmire.gpsinfo.data.model.WheelSensorState
 import be.appmire.gpsinfo.data.rally.RallyController
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
  * Bluetooth-SIG Cycling Speed and Cadence service ([CSC_SERVICE_UUID])
  * and its mandatory measurement characteristic ([CSC_MEASUREMENT_UUID]).
  * Garmin/Wahoo/Magene speed sensors and the whole commodity long tail
- * speak it — strapped to a car wheel hub, any of them becomes a
+ * speak it — strapped to car wheel hubs, any of them becomes a
  * wireless rally wheel probe.
  */
 private val CSC_SERVICE_UUID: UUID = UUID.fromString("00001816-0000-1000-8000-00805f9b34fb")
@@ -43,22 +43,28 @@ private val CSC_MEASUREMENT_UUID: UUID = UUID.fromString("00002a5b-0000-1000-800
 private val CCC_DESCRIPTOR_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
 /**
- * BLE wheel-speed-sensor manager — same shape as
- * [CyclingPowerRepository] / [HeartRateRepository]: one GATT
- * connection at a time, paired MAC persisted via [SettingsRepository],
- * `autoConnect=true` so the OS owns the reconnect loop.
+ * BLE wheel-speed-sensor manager. Unlike the HR/CP repositories this
+ * one owns **N concurrent GATT connections** — the rally computer
+ * averages every fresh probe, and two probes on one axle measure the
+ * vehicle-centreline distance. Same per-link pattern otherwise:
+ * `autoConnect=true` so the OS owns each reconnect loop, paired MACs
+ * persisted via [SettingsRepository].
  *
  * Every decoded wheel-revolution sample is pushed straight into
- * [RallyController.offerWheelRevolutions] — the regularity computer is
- * the consumer this sensor exists for.
+ * [RallyController.offerWheelRevolutions] keyed by the device MAC —
+ * the regularity computer is the consumer this sensor exists for.
  */
 class WheelSensorRepository(private val appContext: Context) {
 
-    private val _state = MutableStateFlow<WheelSensorState>(WheelSensorState.Idle)
-    val state: StateFlow<WheelSensorState> = _state.asStateFlow()
+    /** Live status per paired/connected device, keyed by MAC. */
+    private val _devices = MutableStateFlow<Map<String, WheelDeviceStatus>>(emptyMap())
+    val devices: StateFlow<Map<String, WheelDeviceStatus>> = _devices.asStateFlow()
+
+    private val _scanning = MutableStateFlow(false)
+    val scanning: StateFlow<Boolean> = _scanning.asStateFlow()
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private var gatt: BluetoothGatt? = null
+    private val connections = HashMap<String, BluetoothGatt>()
     private var scanCallback: ScanCallback? = null
     private var lastScanResults: MutableMap<String, ScanResult> = mutableMapOf()
 
@@ -85,24 +91,24 @@ class WheelSensorRepository(private val appContext: Context) {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    /** Scan for CSC devices. Existing connections stay up — adding a
+     *  second probe shouldn't drop the first. */
     @SuppressLint("MissingPermission")
     fun startScan() {
         if (!hasScanPermission()) return
         val adapter = bluetoothAdapter ?: return
         val scanner = adapter.bluetoothLeScanner ?: return
-        disconnect()
+        stopScan()
         lastScanResults.clear()
         val cb = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 lastScanResults[result.device.address] = result
-                _state.value = WheelSensorState.Scanning
             }
             override fun onBatchScanResults(results: MutableList<ScanResult>) {
                 results.forEach { lastScanResults[it.device.address] = it }
-                _state.value = WheelSensorState.Scanning
             }
             override fun onScanFailed(errorCode: Int) {
-                _state.value = WheelSensorState.Idle
+                _scanning.value = false
             }
         }
         scanCallback = cb
@@ -113,11 +119,12 @@ class WheelSensorRepository(private val appContext: Context) {
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
         scanner.startScan(listOf(filter), settings, cb)
-        _state.value = WheelSensorState.Scanning
+        _scanning.value = true
     }
 
     @SuppressLint("MissingPermission")
     fun stopScan() {
+        _scanning.value = false
         val adapter = bluetoothAdapter ?: return
         val scanner = adapter.bluetoothLeScanner ?: return
         val cb = scanCallback ?: return
@@ -130,48 +137,64 @@ class WheelSensorRepository(private val appContext: Context) {
         if (!hasConnectPermission()) return
         val adapter = bluetoothAdapter ?: return
         if (!adapter.isEnabled) return
-        stopScan()
-        val existing = gatt
-        if (existing != null && existing.device.address == mac) return
-        existing?.close()
-        gatt = null
+        if (connections.containsKey(mac)) return
 
         val device = runCatching { adapter.getRemoteDevice(mac) }.getOrNull() ?: return
-        _state.value = WheelSensorState.Connecting(mac)
-        gatt = device.connectGatt(
+        updateStatus(mac) {
+            (it ?: blankStatus(mac, friendlyName)).copy(name = friendlyName ?: it?.name)
+        }
+        connections[mac] = device.connectGatt(
             appContext,
             // autoConnect=true so the OS retries reconnects without us
             // running our own back-off loop. Same rationale as HR/CP.
             true,
-            gattCallback(friendlyName),
+            gattCallback(mac, friendlyName),
         )
     }
 
+    /** Re-establish links to every stored probe. */
     fun connectIfPaired(settings: SettingsRepository) {
         scope.launch {
-            val mac = settings.wheelDeviceMac.first() ?: return@launch
-            val name = settings.wheelDeviceName.first()
-            connect(mac, name)
+            settings.wheelDevices.first().forEach { (mac, name) -> connect(mac, name) }
         }
     }
 
+    /** Drop one probe: close its link and forget its status. */
     @SuppressLint("MissingPermission")
-    fun disconnect() {
-        gatt?.let {
+    fun forget(mac: String) {
+        connections.remove(mac)?.let {
             if (hasConnectPermission()) it.disconnect()
             it.close()
         }
-        gatt = null
-        val current = _state.value
-        _state.value = when (current) {
-            is WheelSensorState.Connecting -> WheelSensorState.Disconnected(current.deviceMac, null)
-            is WheelSensorState.Connected -> WheelSensorState.Disconnected(current.deviceMac, current.deviceName)
-            is WheelSensorState.Disconnected -> current
-            else -> WheelSensorState.Idle
-        }
+        _devices.value = _devices.value - mac
     }
 
-    private fun gattCallback(friendlyName: String?) = object : BluetoothGattCallback() {
+    @SuppressLint("MissingPermission")
+    fun disconnectAll() {
+        connections.values.forEach {
+            if (hasConnectPermission()) it.disconnect()
+            it.close()
+        }
+        connections.clear()
+        _devices.value = _devices.value.mapValues { (_, d) -> d.copy(connected = false) }
+    }
+
+    private fun blankStatus(mac: String, name: String?) = WheelDeviceStatus(
+        mac = mac,
+        name = name,
+        connected = false,
+        lastCumulativeRevs = null,
+        lastSampleAt = 0L,
+    )
+
+    private fun updateStatus(
+        mac: String,
+        transform: (WheelDeviceStatus?) -> WheelDeviceStatus,
+    ) {
+        _devices.value = _devices.value + (mac to transform(_devices.value[mac]))
+    }
+
+    private fun gattCallback(mac: String, friendlyName: String?) = object : BluetoothGattCallback() {
 
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -180,7 +203,9 @@ class WheelSensorRepository(private val appContext: Context) {
                     if (hasConnectPermission()) gatt.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
-                    _state.value = WheelSensorState.Disconnected(gatt.device.address, friendlyName)
+                    updateStatus(mac) {
+                        (it ?: blankStatus(mac, friendlyName)).copy(connected = false)
+                    }
                 }
             }
         }
@@ -201,12 +226,9 @@ class WheelSensorRepository(private val appContext: Context) {
                 @Suppress("DEPRECATION")
                 gatt.writeDescriptor(ccc)
             }
-            _state.value = WheelSensorState.Connected(
-                deviceMac = gatt.device.address,
-                deviceName = friendlyName,
-                lastCumulativeRevs = null,
-                lastSampleAt = System.currentTimeMillis(),
-            )
+            updateStatus(mac) {
+                (it ?: blankStatus(mac, friendlyName)).copy(connected = true)
+            }
         }
 
         override fun onCharacteristicChanged(
@@ -216,7 +238,7 @@ class WheelSensorRepository(private val appContext: Context) {
             if (characteristic.uuid != CSC_MEASUREMENT_UUID) return
             @Suppress("DEPRECATION")
             val data = characteristic.value ?: return
-            handleCscPayload(gatt, data, friendlyName)
+            handleCscPayload(mac, data)
         }
 
         override fun onCharacteristicChanged(
@@ -225,19 +247,20 @@ class WheelSensorRepository(private val appContext: Context) {
             value: ByteArray,
         ) {
             if (characteristic.uuid != CSC_MEASUREMENT_UUID) return
-            handleCscPayload(gatt, value, friendlyName)
+            handleCscPayload(mac, value)
         }
     }
 
-    private fun handleCscPayload(gatt: BluetoothGatt, data: ByteArray, friendlyName: String?) {
+    private fun handleCscPayload(mac: String, data: ByteArray) {
         val reading = parseCscMeasurement(data) ?: return
-        _state.value = WheelSensorState.Connected(
-            deviceMac = gatt.device.address,
-            deviceName = friendlyName,
-            lastCumulativeRevs = reading.cumulativeRevs,
-            lastSampleAt = System.currentTimeMillis(),
-        )
-        RallyController.offerWheelRevolutions(reading.cumulativeRevs)
+        updateStatus(mac) {
+            (it ?: blankStatus(mac, null)).copy(
+                connected = true,
+                lastCumulativeRevs = reading.cumulativeRevs,
+                lastSampleAt = System.currentTimeMillis(),
+            )
+        }
+        RallyController.offerWheelRevolutions(mac, reading.cumulativeRevs)
     }
 
     companion object {

@@ -51,7 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.SettingsRepository
 import be.appmire.gpsinfo.data.WheelSensorRepository
-import be.appmire.gpsinfo.data.model.WheelSensorState
+import be.appmire.gpsinfo.data.model.WheelDeviceStatus
 import be.appmire.gpsinfo.data.rally.RallyController
 import be.appmire.gpsinfo.data.rally.RallyStageRepository
 import be.appmire.gpsinfo.data.rally.RallyState
@@ -90,7 +90,7 @@ fun RallyScreen(
     val scope = rememberCoroutineScope()
     val stages by repo.stages.collectAsStateWithLifecycle()
     val rallyState by RallyController.state.collectAsStateWithLifecycle()
-    val wheelState by wheelRepo.state.collectAsStateWithLifecycle()
+    val wheelDevices by wheelRepo.devices.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<RegularityStage?>(null) }
 
     LaunchedEffect(Unit) {
@@ -121,7 +121,7 @@ fun RallyScreen(
             when (val s = rallyState) {
                 is RallyState.Running -> RunningPanel(s)
                 is RallyState.Armed -> {
-                    WheelStatusCard(wheelState, onOpenWheelPair)
+                    WheelStatusCard(wheelDevices, onOpenWheelPair)
                     ArmedPanel(s)
                 }
                 RallyState.Idle -> {
@@ -138,7 +138,7 @@ fun RallyScreen(
                             onCancel = { editing = null },
                         )
                     } else {
-                        WheelStatusCard(wheelState, onOpenWheelPair)
+                        WheelStatusCard(wheelDevices, onOpenWheelPair)
                         StageLibrary(
                             stages = stages ?: emptyList(),
                             onArm = { RallyController.arm(it) },
@@ -164,15 +164,13 @@ fun RallyScreen(
  *  source badge takes over. */
 @Composable
 private fun WheelStatusCard(
-    state: WheelSensorState,
+    devices: Map<String, WheelDeviceStatus>,
     onOpenWheelPair: () -> Unit,
 ) {
-    val label = when (state) {
-        is WheelSensorState.Connected ->
-            stringResource(R.string.rally_wheel_connected, state.deviceName ?: state.deviceMac)
-        is WheelSensorState.Connecting -> stringResource(R.string.rally_wheel_connecting)
-        is WheelSensorState.Disconnected -> stringResource(R.string.rally_wheel_disconnected)
-        else -> stringResource(R.string.rally_wheel_none)
+    val connected = devices.values.count { it.connected }
+    val label = when {
+        devices.isEmpty() -> stringResource(R.string.rally_wheel_none)
+        else -> stringResource(R.string.rally_wheel_status, devices.size, connected)
     }
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
@@ -247,12 +245,14 @@ private fun RunningPanel(s: RallyState.Running) {
                     style = MaterialTheme.typography.headlineMedium,
                     fontFamily = FontFamily.Monospace,
                 )
-                // Which probe is feeding the tripmeter right now.
+                // Which probe(s) feed the tripmeter right now.
                 Text(
-                    stringResource(
-                        if (s.usingWheel) R.string.rally_source_wheel
-                        else R.string.rally_source_gps
-                    ),
+                    when {
+                        s.wheelSensorsFresh > 1 ->
+                            stringResource(R.string.rally_source_wheel_n, s.wheelSensorsFresh)
+                        s.usingWheel -> stringResource(R.string.rally_source_wheel)
+                        else -> stringResource(R.string.rally_source_gps)
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = if (s.usingWheel) Color(0xFF2E7D32)
                     else MaterialTheme.colorScheme.onSurfaceVariant,

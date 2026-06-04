@@ -17,10 +17,18 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Distance model — two sources, built for *continuous recalibration
  * while driving*:
- *   - **Wheel** (preferred): a BLE CSC speed sensor on a wheel hub
- *     feeds cumulative revolutions via [offerWheelRevolutions] —
- *     the same physical measurement a Halda/Brantz/Blunik takes from
- *     its probes. Wins whenever its data is fresh (<[WHEEL_FRESH_MS]).
+ *   - **Wheel** (preferred): one or more BLE CSC speed sensors on
+ *     wheel hubs feed cumulative revolutions via
+ *     [offerWheelRevolutions] — the same physical measurement a
+ *     Halda/Brantz/Blunik takes from its probes. Wins whenever any
+ *     sensor's data is fresh (<[WHEEL_FRESH_MS]).
+ *
+ *     With multiple sensors each delta contributes `1/nFresh` of its
+ *     distance, so the combined value approximates the *mean* wheel
+ *     path. Mounted left + right on the same axle that mean IS the
+ *     vehicle-centreline distance — cornering asymmetry cancels
+ *     geometrically (the reason pro tripmeters take two probes). A
+ *     sensor dropping out degrades smoothly: N → N−1 → GPS.
  *   - **GPS** ([offer]): always-available fallback; accuracy/hop
  *     filters reject multipath teleports.
  *
@@ -56,8 +64,21 @@ object RallyController {
 
     private var lastLocation: Location? = null
     private var lastFixElapsedNanos = 0L
-    private var lastWheelRevs: Long? = null
-    private var lastWheelAtMillis = 0L
+    /** Per-sensor revolution counters + last-heard stamps, keyed by MAC. */
+    private val wheelLastRevs = HashMap<String, Long>()
+    private val wheelLastAtMillis = HashMap<String, Long>()
+
+    /** Injectable monotonic clock — JVM unit tests can't touch
+     *  [SystemClock]; production uses the real thing. */
+    internal var elapsedRealtime: () -> Long = { SystemClock.elapsedRealtime() }
+
+    /** Drop session calibration back to 1.0 — new tires, new day, or
+     *  test isolation. Not exposed in UI yet. */
+    @Synchronized
+    internal fun resetCalibration() {
+        gpsFactor = 1.0
+        wheelFactor = 1.0
+    }
 
     /** Stage the user picked in the editor; survives Idle→Armed→Running. */
     @Synchronized
@@ -84,7 +105,8 @@ object RallyController {
         rawWheelKm = 0.0
         pendingNudgeKm = 0.0
         lastLocation = null
-        lastWheelRevs = null
+        wheelLastRevs.clear()
+        wheelLastAtMillis.clear()
         _state.value = RallyState.Running(
             stage = stage,
             startedAtMillis = nowMillis,
@@ -92,7 +114,7 @@ object RallyController {
             deltaSeconds = 0.0,
             targetSpeedKmh = stage.targetSpeedKmhAt(0.0),
             calibrationFactor = activeFactor(),
-            usingWheel = wheelFresh(),
+            wheelSensorsFresh = 0,
             finished = false,
         )
     }
@@ -148,19 +170,24 @@ object RallyController {
         publish(s, System.currentTimeMillis())
     }
 
-    /** Feed the wheel sensor's cumulative revolution counter. The
-     *  wheel is the preferred distance source — every fresh sample
-     *  shadows GPS integration until the sensor goes quiet. */
+    /** Feed one wheel sensor's cumulative revolution counter, keyed by
+     *  [sensorId] (the device MAC). Wheel data is the preferred
+     *  distance source — every fresh sample shadows GPS integration
+     *  until all sensors go quiet. Each delta contributes `1/nFresh`
+     *  of its distance so multiple probes average toward the
+     *  vehicle-centreline path. The dropout transient is bounded: a
+     *  dying sensor undercounts at most [WHEEL_FRESH_MS] of half (one
+     *  of two probes) the distance before nFresh adjusts. */
     @Synchronized
-    fun offerWheelRevolutions(cumulativeRevs: Long) {
+    fun offerWheelRevolutions(sensorId: String, cumulativeRevs: Long) {
         val s = _state.value as? RallyState.Running ?: return
-        val prev = lastWheelRevs
-        lastWheelRevs = cumulativeRevs
-        lastWheelAtMillis = SystemClock.elapsedRealtime()
+        val prev = wheelLastRevs[sensorId]
+        wheelLastRevs[sensorId] = cumulativeRevs
+        wheelLastAtMillis[sensorId] = elapsedRealtime()
         if (prev != null) {
             val deltaRevs = wheelRevsDelta(prev, cumulativeRevs)
             if (deltaRevs != null && deltaRevs > 0) {
-                val km = deltaRevs * WHEEL_CIRCUMFERENCE_M / 1000.0
+                val km = deltaRevs * WHEEL_CIRCUMFERENCE_M / 1000.0 / freshSensorCount()
                 rawWheelKm += km
                 drivenKmAcc += km * wheelFactor
             }
@@ -168,21 +195,28 @@ object RallyController {
         publish(s, System.currentTimeMillis())
     }
 
-    private fun wheelFresh(): Boolean =
-        lastWheelRevs != null &&
-            SystemClock.elapsedRealtime() - lastWheelAtMillis < WHEEL_FRESH_MS
+    private fun freshSensorCount(): Int {
+        val now = elapsedRealtime()
+        return wheelLastAtMillis.values.count { now - it < WHEEL_FRESH_MS }.coerceAtLeast(1)
+    }
+
+    private fun wheelFresh(): Boolean {
+        val now = elapsedRealtime()
+        return wheelLastAtMillis.values.any { now - it < WHEEL_FRESH_MS }
+    }
 
     private fun activeFactor(): Double = if (wheelFresh()) wheelFactor else gpsFactor
 
     private fun publish(s: RallyState.Running, nowMillis: Long) {
         val elapsed = (nowMillis - s.startedAtMillis) / 1000.0
         val delta = elapsed - s.stage.targetElapsedSecondsAt(drivenKmAcc)
+        val now = elapsedRealtime()
         _state.value = s.copy(
             drivenKm = drivenKmAcc,
             deltaSeconds = delta,
             targetSpeedKmh = s.stage.targetSpeedKmhAt(drivenKmAcc),
             calibrationFactor = activeFactor(),
-            usingWheel = wheelFresh(),
+            wheelSensorsFresh = wheelLastAtMillis.values.count { now - it < WHEEL_FRESH_MS },
             finished = s.stage.isComplete(drivenKmAcc),
         )
     }
@@ -224,8 +258,9 @@ sealed interface RallyState {
     /**
      * Clock running. [deltaSeconds] is elapsed − ideal: **positive =
      * late (speed up), negative = early (slow down)**. [drivenKm] is
-     * the calibration-corrected rally distance; [usingWheel] tells
-     * the UI whether it's wheel-probe or GPS distance right now.
+     * the calibration-corrected rally distance;
+     * [wheelSensorsFresh] is how many wheel probes are currently
+     * feeding it (0 = GPS distance).
      */
     data class Running(
         val stage: RegularityStage,
@@ -234,7 +269,9 @@ sealed interface RallyState {
         val deltaSeconds: Double,
         val targetSpeedKmh: Double,
         val calibrationFactor: Double,
-        val usingWheel: Boolean,
+        val wheelSensorsFresh: Int,
         val finished: Boolean,
-    ) : RallyState
+    ) : RallyState {
+        val usingWheel: Boolean get() = wheelSensorsFresh > 0
+    }
 }

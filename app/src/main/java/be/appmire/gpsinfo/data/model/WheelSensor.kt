@@ -3,40 +3,30 @@ package be.appmire.gpsinfo.data.model
 import androidx.compose.runtime.Immutable
 
 /**
- * Live state of the BLE wheel-speed-sensor subsystem (Bluetooth SIG
- * Cycling Speed and Cadence service, `0x1816`). Mirrors
- * [CyclingPowerState]'s shape so the pairing flow shares its UX.
+ * Per-device status of one paired BLE wheel-speed sensor (Bluetooth
+ * SIG Cycling Speed and Cadence service, `0x1816`).
  *
- * In GPSinfo this isn't a bike accessory: a CSC speed sensor strapped
- * to a *car* wheel hub is a wireless wheel probe — the same physical
+ * In GPSinfo this isn't a bike accessory: CSC speed sensors strapped
+ * to *car* wheel hubs are wireless wheel probes — the same physical
  * measurement a rally tripmeter (Halda/Brantz/Blunik) takes from its
- * magnetic sensors, feeding the regularity computer's distance.
+ * magnetic sensors. The rally computer averages every fresh probe:
+ * two probes on one axle measure the vehicle-centreline distance
+ * (cornering asymmetry cancels), which is why the repository supports
+ * any number of simultaneous connections.
  */
-sealed interface WheelSensorState {
-
-    @Immutable data object Idle : WheelSensorState
-    @Immutable data object Scanning : WheelSensorState
-    @Immutable data class Connecting(val deviceMac: String) : WheelSensorState
-
-    /**
-     * Active connection. [lastCumulativeRevs] is the sensor's
-     * monotonically increasing wheel-revolution counter (uint32 on
-     * the wire; null before the first sample). [lastSampleAt] is the
-     * wall-clock time of that sample — consumers treat stale data as
-     * "wheel source lost" and fall back to GPS.
-     */
-    @Immutable data class Connected(
-        val deviceMac: String,
-        val deviceName: String?,
-        val lastCumulativeRevs: Long?,
-        val lastSampleAt: Long,
-    ) : WheelSensorState
-
-    @Immutable data class Disconnected(
-        val deviceMac: String,
-        val deviceName: String?,
-    ) : WheelSensorState
-}
+@Immutable
+data class WheelDeviceStatus(
+    val mac: String,
+    val name: String?,
+    /** GATT link currently established. */
+    val connected: Boolean,
+    /** The sensor's monotonically increasing wheel-revolution counter
+     *  (uint32 on the wire; null before the first sample). */
+    val lastCumulativeRevs: Long?,
+    /** Wall-clock time of the last sample; 0 = never heard. Consumers
+     *  treat stale data as "probe lost" and drop it from the average. */
+    val lastSampleAt: Long,
+)
 
 /** One decoded CSC Measurement (0x2A5B) wheel-revolution sample. */
 @Immutable

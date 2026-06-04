@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import be.appmire.gpsinfo.data.model.HrZoneConfig
 import kotlinx.coroutines.flow.Flow
@@ -44,8 +45,12 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         // without re-querying the GATT cache.
         val CpDeviceMac = stringPreferencesKey("cp_device_mac")
         val CpDeviceName = stringPreferencesKey("cp_device_name")
-        // BLE wheel-speed sensor (CSC service 0x1816) — a bike speed
-        // sensor on a car wheel hub acting as the rally wheel probe.
+        // BLE wheel-speed sensors (CSC service 0x1816) — bike speed
+        // sensors on car wheel hubs acting as rally wheel probes.
+        // Multiple sensors supported (two on one axle measure the
+        // vehicle centreline); each entry is "MAC|FriendlyName".
+        val WheelDevices = stringSetPreferencesKey("wheel_devices")
+        // Legacy single-sensor keys, read once as a migration source.
         val WheelDeviceMac = stringPreferencesKey("wheel_device_mac")
         val WheelDeviceName = stringPreferencesKey("wheel_device_name")
         // HR zone config — max HR plus four zone boundaries (fractions
@@ -167,9 +172,23 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
     val cpDeviceMac: Flow<String?> = context.dataStore.data.map { it[Keys.CpDeviceMac] }
     val cpDeviceName: Flow<String?> = context.dataStore.data.map { it[Keys.CpDeviceName] }
 
-    /** Paired BLE wheel-speed sensor (rally wheel probe) — same pattern. */
-    val wheelDeviceMac: Flow<String?> = context.dataStore.data.map { it[Keys.WheelDeviceMac] }
-    val wheelDeviceName: Flow<String?> = context.dataStore.data.map { it[Keys.WheelDeviceName] }
+    /** Paired BLE wheel-speed sensors (rally wheel probes), MAC →
+     *  friendly name. Falls back to the legacy single-sensor keys so
+     *  a probe paired before multi-sensor support keeps working. */
+    val wheelDevices: Flow<Map<String, String?>> = context.dataStore.data.map { prefs ->
+        val set = prefs[Keys.WheelDevices]
+        if (set != null) {
+            set.associate { entry ->
+                val sep = entry.indexOf('|')
+                if (sep < 0) entry to null
+                else entry.take(sep) to entry.drop(sep + 1).ifBlank { null }
+            }
+        } else {
+            val legacyMac = prefs[Keys.WheelDeviceMac]
+            if (legacyMac != null) mapOf(legacyMac to prefs[Keys.WheelDeviceName])
+            else emptyMap()
+        }
+    }
 
     /** Active heart-rate zone configuration. Reads back the default
      *  [HrZoneConfig] when nothing has been persisted yet. */
@@ -422,17 +441,34 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         }
     }
 
-    suspend fun setWheelDevice(macAddress: String?, friendlyName: String?) {
+    suspend fun addWheelDevice(macAddress: String, friendlyName: String?) {
         context.dataStore.edit { prefs ->
-            if (macAddress == null) {
-                prefs.remove(Keys.WheelDeviceMac)
-                prefs.remove(Keys.WheelDeviceName)
-            } else {
-                prefs[Keys.WheelDeviceMac] = macAddress
-                if (friendlyName != null) prefs[Keys.WheelDeviceName] = friendlyName
-                else prefs.remove(Keys.WheelDeviceName)
-            }
+            val current = currentWheelSet(prefs)
+            prefs[Keys.WheelDevices] =
+                current.filterNot { it.startsWith("$macAddress|") || it == macAddress }
+                    .toSet() + "$macAddress|${friendlyName.orEmpty()}"
+            // Migration complete — the legacy keys are now stale.
+            prefs.remove(Keys.WheelDeviceMac)
+            prefs.remove(Keys.WheelDeviceName)
         }
+    }
+
+    suspend fun removeWheelDevice(macAddress: String) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.WheelDevices] = currentWheelSet(prefs)
+                .filterNot { it.startsWith("$macAddress|") || it == macAddress }
+                .toSet()
+            prefs.remove(Keys.WheelDeviceMac)
+            prefs.remove(Keys.WheelDeviceName)
+        }
+    }
+
+    /** The stored entry set, folding the legacy single-sensor keys in
+     *  when the set was never written. */
+    private fun currentWheelSet(prefs: Preferences): Set<String> {
+        prefs[Keys.WheelDevices]?.let { return it }
+        val legacyMac = prefs[Keys.WheelDeviceMac] ?: return emptySet()
+        return setOf("$legacyMac|${prefs[Keys.WheelDeviceName].orEmpty()}")
     }
 
     override suspend fun setMaxSpeedKmh(value: Float) {

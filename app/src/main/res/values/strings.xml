@@ -329,26 +329,23 @@
     <string name="car_rally_armed" tools:ignore="MissingTranslation">RT armed — tap Start on the marshal\'s go</string>
     <string name="car_action_rally_start" tools:ignore="MissingTranslation">Start RT</string>
     <string name="car_action_rally_stop" tools:ignore="MissingTranslation">Stop RT</string>
-    <string name="rally_wheel_connected" tools:ignore="MissingTranslation">Wheel sensor: %1$s</string>
-    <string name="rally_wheel_connecting" tools:ignore="MissingTranslation">Wheel sensor: connecting…</string>
-    <string name="rally_wheel_disconnected" tools:ignore="MissingTranslation">Wheel sensor: disconnected</string>
+    <string name="rally_wheel_status" tools:ignore="MissingTranslation">Wheel probes: %1$d paired · %2$d connected</string>
     <string name="rally_wheel_none" tools:ignore="MissingTranslation">No wheel sensor paired — distance uses GPS</string>
-    <string name="rally_wheel_pair" tools:ignore="MissingTranslation">Pair</string>
+    <string name="rally_wheel_pair" tools:ignore="MissingTranslation">Manage</string>
     <string name="rally_source_wheel" tools:ignore="MissingTranslation">WHEEL</string>
+    <string name="rally_source_wheel_n" tools:ignore="MissingTranslation">WHEEL ×%1$d</string>
     <string name="rally_source_gps" tools:ignore="MissingTranslation">GPS</string>
-    <string name="wheel_pair_title" tools:ignore="MissingTranslation">Pair wheel sensor</string>
-    <string name="wheel_pair_body" tools:ignore="MissingTranslation">Strap a Bluetooth bike speed sensor (CSC) to a wheel hub — it becomes the rally wheel probe. Distance from wheel revolutions beats GPS in forests and tunnels.</string>
+    <string name="wheel_pair_title" tools:ignore="MissingTranslation">Wheel probes</string>
+    <string name="wheel_pair_body" tools:ignore="MissingTranslation">Strap Bluetooth bike speed sensors (CSC) to wheel hubs — they become rally wheel probes. Two on the same axle measure the exact vehicle centreline; mount on a non-driven axle.</string>
+    <string name="wheel_pair_paired_header" tools:ignore="MissingTranslation">Paired probes</string>
+    <string name="wheel_paired_connected" tools:ignore="MissingTranslation">Connected · %1$d revs</string>
+    <string name="wheel_paired_disconnected" tools:ignore="MissingTranslation">Disconnected — reconnects automatically</string>
     <string name="wheel_pair_needs_permissions" tools:ignore="MissingTranslation">Bluetooth permissions are required to scan for sensors.</string>
     <string name="wheel_pair_scanning" tools:ignore="MissingTranslation">Scanning…</string>
     <string name="wheel_pair_scan_again" tools:ignore="MissingTranslation">Scan again</string>
     <string name="wheel_pair_no_devices_yet" tools:ignore="MissingTranslation">No sensors found yet — spin the wheel to wake the sensor.</string>
     <string name="wheel_pair_unknown_device" tools:ignore="MissingTranslation">Unknown sensor</string>
     <string name="wheel_forget_device" tools:ignore="MissingTranslation">Forget</string>
-    <string name="wheel_status_idle" tools:ignore="MissingTranslation">No sensor paired</string>
-    <string name="wheel_status_scanning" tools:ignore="MissingTranslation">Scanning for sensors…</string>
-    <string name="wheel_status_connecting" tools:ignore="MissingTranslation">Connecting to %1$s…</string>
-    <string name="wheel_status_connected" tools:ignore="MissingTranslation">Connected: %1$s (%2$d revs)</string>
-    <string name="wheel_status_disconnected" tools:ignore="MissingTranslation">Disconnected from %1$s</string>
     <string name="ghost_card_title" tools:ignore="MissingTranslation">Racing past self</string>
     <string name="ghost_card_you" tools:ignore="MissingTranslation">You</string>
     <string name="ghost_card_ghost" tools:ignore="MissingTranslation">Ghost</string>
