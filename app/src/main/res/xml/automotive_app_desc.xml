@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Android Auto / Car App Library categories we support.
-
-    We declare "weather"-adjacent POI / IOT semantics, not "navigation"
-    — claiming navigation requires us to ship a real turn-by-turn
-    routing engine, which we don't and won't. Trip dashboard +
-    recording controls fit the POI bucket cleanly.
+    Android Auto capability declaration: "template" = we're a Car App
+    Library (templated) app. The category itself (navigation) lives on
+    the CarAppService intent-filter in AndroidManifest.xml.
 
     For the Car App Library to actually surface our service to a head
     unit, this file must be referenced from the application's

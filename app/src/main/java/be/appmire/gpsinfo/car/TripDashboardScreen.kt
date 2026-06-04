@@ -3,7 +3,6 @@ package be.appmire.gpsinfo.car
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
 import androidx.car.app.CarContext
 import androidx.car.app.CarToast
 import androidx.car.app.Screen
@@ -11,11 +10,9 @@ import androidx.car.app.model.Action
 import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.MessageTemplate
-import androidx.car.app.model.Pane
-import androidx.car.app.model.PaneTemplate
 import androidx.car.app.model.ParkedOnlyOnClickListener
-import androidx.car.app.model.Row
 import androidx.car.app.model.Template
+import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -25,34 +22,35 @@ import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.LocationRepository
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.TrailRecordingController
-import be.appmire.gpsinfo.data.model.GnssSnapshot
-import java.util.Locale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 /**
- * Live trip dashboard surfaced via Android Auto. PaneTemplate is the
- * cleanest fit for a four-row glanceable readout — Speed, Heading,
- * Altitude, Distance — with recording controls in the ActionStrip.
+ * Android Auto main screen: a [NavigationTemplate] whose entire body is
+ * the video surface painted by [CarMapRenderer] (map tiles + trail
+ * breadcrumb + HUD). Template UI is reduced to the two action strips —
+ * recording controls top-right, zoom on the map strip — everything else
+ * is drawn by us.
  *
- * No full-screen map (that would mean claiming "navigation" category,
- * which means owning turn-by-turn routing). We're a passive trip
- * dashboard + recording remote.
+ * Navigation category, not POI: it's the only category granted surface
+ * access, and a live trip map + driving readouts is squarely the
+ * "maps / driver assistance" bucket Google opened the category to in
+ * 2024. We still ship no turn-by-turn and never claim routing.
  *
- * Host-constraint gotchas this screen must respect (all enforced with
- * an IllegalArgumentException at template-build time, i.e. a crash):
- *   - PaneTemplate's ActionStrip allows at most ONE action with a
- *     custom title (ACTIONS_CONSTRAINTS_SIMPLE). Every other action
- *     must be icon-only.
+ * Host-constraint gotchas (enforced with an IllegalArgumentException at
+ * template-build time, i.e. a crash):
+ *   - Map ActionStrip actions must be icon-only (no custom titles).
  *   - Location permission is NOT granted by the host: without it we
- *     show a grant-access message template instead of a dead "—"
- *     dashboard, using CarContext.requestPermissions (parked only).
+ *     show a grant-access message template instead of a dead map,
+ *     using CarContext.requestPermissions (parked only).
  */
-class TripDashboardScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleObserver {
+class TripDashboardScreen(
+    carContext: CarContext,
+    private val renderer: CarMapRenderer,
+) : Screen(carContext), DefaultLifecycleObserver {
 
-    private var snapshot: GnssSnapshot = GnssSnapshot()
     private var recording: RecordingState = RecordingState.Idle
     private var collectJob: Job? = null
 
@@ -74,66 +72,33 @@ class TripDashboardScreen(carContext: CarContext) : Screen(carContext), DefaultL
             carContext, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-    /** Combine the GNSS stream with the recording state so the pane is
-     *  invalidated whenever either changes. The Car App Library
-     *  throttles invalidates so the head unit isn't hammered at 1 Hz.
-     *  Idempotent: called from onStart and again after a mid-session
-     *  permission grant. */
+    /** Pipe GNSS + recording state into the surface renderer. The
+     *  template itself only changes when the recording toggles (the
+     *  action strip flips between Start and Open-on-phone), so that's
+     *  the only thing that triggers [invalidate]. Idempotent: called
+     *  from onStart and again after a mid-session permission grant. */
     private fun startCollecting() {
         if (collectJob != null) return
         val locRepo = LocationRepository(carContext.applicationContext)
         collectJob = combine(
             locRepo.snapshots(),
             TrailRecordingController.state,
-        ) { gnss, rec ->
-            snapshot = gnss
-            recording = rec
-        }.onEach { invalidate() }.launchIn(lifecycleScope)
+        ) { gnss, rec -> gnss to rec }
+            .onEach { (gnss, rec) ->
+                val recordingToggled =
+                    (rec is RecordingState.Recording) != (recording is RecordingState.Recording)
+                recording = rec
+                renderer.update(gnss, rec)
+                if (recordingToggled) invalidate()
+            }
+            .launchIn(lifecycleScope)
     }
 
     override fun onGetTemplate(): Template {
         if (!hasLocationPermission()) return permissionTemplate()
 
-        val loc = snapshot.location
         val isRecording = recording is RecordingState.Recording
-        val rec = recording as? RecordingState.Recording
 
-        val pane = Pane.Builder()
-            .addRow(
-                Row.Builder()
-                    .setTitle(carContext.getString(R.string.car_row_speed))
-                    .addText(formatSpeed(loc))
-                    .build()
-            )
-            .addRow(
-                Row.Builder()
-                    .setTitle(carContext.getString(R.string.car_row_heading))
-                    .addText(formatHeading(loc))
-                    .build()
-            )
-            .addRow(
-                Row.Builder()
-                    .setTitle(carContext.getString(R.string.car_row_altitude))
-                    .addText(formatAltitude(loc))
-                    .build()
-            )
-            .addRow(
-                Row.Builder()
-                    .setTitle(carContext.getString(R.string.car_row_trip))
-                    .addText(
-                        if (rec != null) "%.2f km · %d pts".format(
-                            Locale.ROOT,
-                            rec.distanceMetres / 1000.0,
-                            rec.pointCount,
-                        )
-                        else carContext.getString(R.string.car_row_trip_idle)
-                    )
-                    .build()
-            )
-
-        // Action strip: Start/Stop + Recent Trails. Only the record
-        // action may carry a title (host allows one custom title per
-        // strip — see class doc); Recent Trails is icon-only.
         val recordAction = Action.Builder()
             .setIcon(
                 carIcon(if (isRecording) R.drawable.ic_car_phone else R.drawable.ic_car_record)
@@ -152,21 +117,39 @@ class TripDashboardScreen(carContext: CarContext) : Screen(carContext), DefaultL
                 screenManager.push(RecentTrailsScreen(carContext))
             }
             .build()
-        val actionStrip = ActionStrip.Builder()
-            .addAction(recordAction)
-            .addAction(trailsAction)
+
+        // Zoom lives on the map action strip (anchored to the map edge
+        // by the host). Icon-only is mandatory here.
+        val mapActionStrip = ActionStrip.Builder()
+            .addAction(
+                Action.Builder()
+                    .setIcon(carIcon(R.drawable.ic_car_zoom_in))
+                    .setOnClickListener { renderer.zoomIn() }
+                    .build()
+            )
+            .addAction(
+                Action.Builder()
+                    .setIcon(carIcon(R.drawable.ic_car_zoom_out))
+                    .setOnClickListener { renderer.zoomOut() }
+                    .build()
+            )
             .build()
 
-        return PaneTemplate.Builder(pane.build())
-            .setTitle(carContext.getString(R.string.app_name))
-            .setActionStrip(actionStrip)
+        return NavigationTemplate.Builder()
+            .setActionStrip(
+                ActionStrip.Builder()
+                    .addAction(recordAction)
+                    .addAction(trailsAction)
+                    .build()
+            )
+            .setMapActionStrip(mapActionStrip)
             .build()
     }
 
-    /** Shown instead of the dashboard while ACCESS_FINE_LOCATION is
-     *  missing — e.g. a fresh install opened from the car before the
-     *  phone app ever ran. The grant action is parked-only because the
-     *  host routes the permission prompt through a parked flow. */
+    /** Shown instead of the map while ACCESS_FINE_LOCATION is missing —
+     *  e.g. a fresh install opened from the car before the phone app
+     *  ever ran. The grant action is parked-only because the host
+     *  routes the permission prompt through a parked flow. */
     private fun permissionTemplate(): Template {
         val grantAction = Action.Builder()
             .setTitle(carContext.getString(R.string.car_permission_grant))
@@ -241,28 +224,4 @@ class TripDashboardScreen(carContext: CarContext) : Screen(carContext), DefaultL
 
     private fun carIcon(resId: Int): CarIcon =
         CarIcon.Builder(IconCompat.createWithResource(carContext, resId)).build()
-
-    private fun formatSpeed(loc: Location?): String {
-        if (loc == null || !loc.hasSpeed()) return "—"
-        val kmh = loc.speed * 3.6f
-        return "%.1f km/h".format(Locale.ROOT, kmh)
-    }
-
-    private fun formatHeading(loc: Location?): String {
-        // GPS course-over-ground, NOT the magnetometer. The phone in a
-        // car is typically lying flat in a cradle or cupholder, so its
-        // magnetic heading is meaningless for direction-of-travel.
-        // Location.bearing is derived from successive GPS positions
-        // and is unaffected by phone orientation — exactly what AA
-        // (and any driving context) actually wants. Returns "—" when
-        // the user is stationary or moving too slowly for the chip to
-        // compute a bearing.
-        if (loc == null || !loc.hasBearing()) return "—"
-        return "%.0f°".format(Locale.ROOT, loc.bearing)
-    }
-
-    private fun formatAltitude(loc: Location?): String {
-        if (loc == null || !loc.hasAltitude()) return "—"
-        return "%d m".format(Locale.ROOT, loc.altitude.toInt())
-    }
 }

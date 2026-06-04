@@ -59,6 +59,14 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <!-- Car App Library host permissions: NAVIGATION_TEMPLATES grants
+         the navigation template set, ACCESS_SURFACE the raw video
+         surface the CarMapRenderer paints on. Both are host-enforced
+         (no user prompt) and only honoured for navigation-category
+         car apps. -->
+    <uses-permission android:name="androidx.car.app.NAVIGATION_TEMPLATES" />
+    <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
+
     <uses-feature
         android:name="android.hardware.location.gps"
         android:required="false" />
@@ -142,16 +150,17 @@
              Library is androidx and the templates render on the head
              unit's own renderer.
 
-             Category POI, not navigation: we surface a passive trip
-             dashboard plus recording controls, not turn-by-turn
-             routing. Declaring navigation would trigger Google review
-             requirements we don't meet. -->
+             Category NAVIGATION: required for video-surface access —
+             our CarMapRenderer paints the map/trail/HUD directly. We
+             qualify as the "maps / driver assistance" subcategory
+             Google opened navigation to in 2024; we ship no
+             turn-by-turn routing and never claim to. -->
         <service
             android:name=".car.GpsInfoCarAppService"
             android:exported="true">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
-                <category android:name="androidx.car.app.category.POI" />
+                <category android:name="androidx.car.app.category.NAVIGATION" />
             </intent-filter>
         </service>
 

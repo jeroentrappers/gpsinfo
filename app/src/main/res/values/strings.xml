@@ -301,6 +301,7 @@
     <string name="car_permission_grant" tools:ignore="MissingTranslation">Grant access</string>
     <string name="car_toast_open_phone" tools:ignore="MissingTranslation">Open GPSinfo on your phone to save the trail</string>
     <string name="car_toast_record_failed" tools:ignore="MissingTranslation">Couldn\'t start recording</string>
+    <string name="car_waiting_fix" tools:ignore="MissingTranslation">Waiting for GPS fix…</string>
     <string name="ghost_card_title" tools:ignore="MissingTranslation">Racing past self</string>
     <string name="ghost_card_you" tools:ignore="MissingTranslation">You</string>
     <string name="ghost_card_ghost" tools:ignore="MissingTranslation">Ghost</string>
