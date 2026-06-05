@@ -132,6 +132,17 @@ class CarMapRenderer(
 
     private val camera = Camera()
     private val tiltMatrix = Matrix()
+    private val instruments = CarInstruments()
+
+    /** Instantaneous drive power in kW for the energy meter — null
+     *  until an OBD2 source feeds [updatePower]; the dial parks at 0
+     *  with a dimmed readout meanwhile. */
+    private var powerKw: Double? = null
+
+    fun updatePower(kw: Double?) {
+        powerKw = kw
+        scheduleRender()
+    }
 
     /** Repaint when an async tile download lands. */
     private val tileArrivedHandler = Handler(Looper.getMainLooper()) {
@@ -393,14 +404,24 @@ class CarMapRenderer(
         // lastDrawnLocation carries the latest fix with derived motion
         // (see withDerivedMotion) — prefer it over the raw snapshot.
         val loc = lastDrawnLocation ?: snapshot.location
+
+        // Split layout: instrument column on the left third, live map
+        // on the right two thirds.
+        val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+        val columnW = w * INSTRUMENT_COLUMN_FRACTION
+        drawInstrumentColumn(canvas, columnW, h, inset, loc)
+
+        val mapLeft = columnW
+        val mapW = (w - columnW).toInt()
         // Anchor: centre only in flat north-up mode. Heading-up or
         // tilted, the marker sits near the bottom edge so nearly the
-        // whole screen is the road ahead — the perspective exists to
-        // look down the route, not at it.
+        // whole map is the road ahead.
         val headingUp = hasBearing
-        val ax = w / 2f
+        val ax = mapLeft + mapW / 2f
         val ay = if (headingUp || tilted) h * ANCHOR_FRACTION else h / 2f
 
+        canvas.save()
+        canvas.clipRect(mapLeft, 0f, w.toFloat(), h.toFloat())
         if (loc != null) {
             // Free camera while panning: the map centres on the
             // dragged-to point and the marker draws at its true
@@ -409,7 +430,7 @@ class CarMapRenderer(
             val camLat = loc.latitude + panLatOffset
             val camLon = loc.longitude + panLonOffset
             if (tilted) {
-                drawTiltedMap(canvas, w, h, ax, ay, camLat, camLon, loc, panned, headingUp, dark, bg)
+                drawTiltedMap(canvas, mapW, h, ax, ay, camLat, camLon, loc, panned, headingUp, dark, bg)
             } else {
                 canvas.save()
                 drawMapLayer(canvas, ax, ay, w, h, camLat, camLon, loc, panned, headingUp, dark)
@@ -417,11 +438,42 @@ class CarMapRenderer(
             }
             if (!panned) drawPositionMarker(canvas, ax, ay, headingUp)
         } else {
-            drawWaitingForFix(canvas, w, h, dark)
+            drawWaitingForFix(canvas, mapLeft, w, h, dark)
         }
+        drawHud(canvas, mapLeft, w, h, dark)
+        drawRallyPanel(canvas, mapLeft, w, h, dark)
+        canvas.restore()
+    }
 
-        drawHud(canvas, w, h, loc, dark)
-        drawRallyPanel(canvas, w, h, dark)
+    /** Left third: speed dial / gimballed compass / energy meter,
+     *  stacked inside the host's stable area (the bottom system rail
+     *  would otherwise eat half the energy dial). The energy needle
+     *  parks at 0 until an OBD2 power source exists — the dial itself
+     *  is the id.dash design. */
+    private fun drawInstrumentColumn(
+        canvas: Canvas,
+        columnW: Float,
+        h: Int,
+        inset: Rect,
+        loc: Location?,
+    ) {
+        instruments.drawColumnBackground(canvas, columnW, h.toFloat())
+        val top = inset.top.toFloat()
+        val bottom = inset.bottom.toFloat().coerceAtMost(h.toFloat())
+        val cellH = (bottom - top) / 3f
+        instruments.drawSpeedDial(
+            canvas, RectF(0f, top, columnW, top + cellH), loc,
+        )
+        instruments.drawCompass(
+            canvas,
+            RectF(0f, top + cellH, columnW, top + 2 * cellH),
+            smoothedBearingDeg,
+            hasBearing,
+            loc,
+        )
+        instruments.drawEnergyDial(
+            canvas, RectF(0f, top + 2 * cellH, columnW, bottom), powerKw,
+        )
     }
 
     /** Flat map → oversized offscreen layer → perspective draw. The
@@ -442,6 +494,10 @@ class CarMapRenderer(
         dark: Boolean,
         bg: Int,
     ) {
+        // [w] is the MAP AREA width; [ax] is absolute on the surface
+        // (offset by the instrument column). The offscreen layer is
+        // map-local — translate between the two when blitting.
+        val mapLeft = ax - w / 2f
         val mx = (w * TILT_MARGIN_X).toInt()
         val mt = (h * TILT_MARGIN_TOP).toInt()
         val layer = obtainMapLayer(w + 2 * mx, h + mt)
@@ -449,7 +505,7 @@ class CarMapRenderer(
         val layerCanvas = Canvas(layer)
         drawMapLayer(
             layerCanvas,
-            ax = mx + ax,
+            ax = mx + (ax - mapLeft),
             ay = mt + ay,
             w = layer.width,
             h = layer.height,
@@ -474,13 +530,13 @@ class CarMapRenderer(
 
         canvas.save()
         canvas.concat(tiltMatrix)
-        canvas.drawBitmap(layer, -mx.toFloat(), -mt.toFloat(), layerPaint)
+        canvas.drawBitmap(layer, mapLeft - mx, -mt.toFloat(), layerPaint)
         canvas.restore()
 
         // Haze the horizon so the layer's far edge never shows as a
         // hard line. Shader is cached per (height, palette).
         ensureHazePaint(h, bg)
-        canvas.drawRect(0f, 0f, w.toFloat(), h * HAZE_DEPTH, hazePaint)
+        canvas.drawRect(mapLeft, 0f, mapLeft + w, h * HAZE_DEPTH, hazePaint)
     }
 
     private fun obtainMapLayer(lw: Int, lh: Int): Bitmap {
@@ -642,82 +698,55 @@ class CarMapRenderer(
         canvas.restore()
     }
 
-    private fun drawWaitingForFix(canvas: Canvas, w: Int, h: Int, dark: Boolean) {
+    private fun drawWaitingForFix(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
         hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
         hudTextPaint.textSize = h * 0.05f
         hudTextPaint.textAlign = Paint.Align.CENTER
         canvas.drawText(
             carContext.getString(be.appmire.gpsinfo.R.string.car_waiting_fix),
-            w / 2f,
+            (mapLeft + w) / 2f,
             h / 2f,
             hudTextPaint,
         )
     }
 
-    private fun drawHud(canvas: Canvas, w: Int, h: Int, loc: Location?, dark: Boolean) {
+    /** Map-area HUD. Speed/heading/altitude moved to the instrument
+     *  column — what remains here is the trip strip (distance,
+     *  duration, REC dot) and the OSM attribution. */
+    private fun drawHud(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
         val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
         val pad = h * 0.03f
+        val unit = min(w - mapLeft.toInt(), h) * 0.13f
 
-        // ── Speed bubble, bottom-left ──
-        val r = min(w, h) * 0.13f
-        val bx = inset.left + pad + r
-        val by = inset.bottom - pad - r
-        bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
-        canvas.drawCircle(bx, by, r, bubblePaint)
-        canvas.drawCircle(bx, by, r, bubbleStrokePaint)
-
-        val speedText = if (loc != null && loc.hasSpeed()) {
-            (loc.speed * 3.6f).roundToInt().toString()
-        } else "—"
-        hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
-        hudTextPaint.textAlign = Paint.Align.CENTER
-        hudTextPaint.textSize = r * 0.78f
-        hudTextPaint.isFakeBoldText = true
-        canvas.drawText(speedText, bx, by + r * 0.12f, hudTextPaint)
-        hudTextPaint.isFakeBoldText = false
-        hudTextPaint.textSize = r * 0.30f
-        hudTextPaint.color = if (dark) HUD_MUTED_DARK else HUD_MUTED_LIGHT
-        canvas.drawText("km/h", bx, by + r * 0.52f, hudTextPaint)
-
-        // ── Bottom info strip, right of the bubble ──
+        // ── Trip strip, bottom-left of the map ──
         val rec = recording as? RecordingState.Recording
-        val parts = mutableListOf<String>()
-        if (loc != null && hasBearing) {
-            val b = smoothedBearingDeg.roundToInt() % 360
-            parts += "${cardinal(b)} $b°"
-        }
-        if (loc != null && loc.hasAltitude()) {
-            parts += "▲ ${loc.altitude.roundToInt()} m"
-        }
         if (rec != null) {
-            parts += "%.1f km".format(Locale.ROOT, rec.distanceMetres / 1000.0)
-            parts += formatDuration(System.currentTimeMillis() - rec.startedAtMillis)
-        }
-        if (parts.isNotEmpty()) {
-            val stripText = parts.joinToString("   ")
+            val stripText = "%.1f km   %s".format(
+                Locale.ROOT,
+                rec.distanceMetres / 1000.0,
+                formatDuration(System.currentTimeMillis() - rec.startedAtMillis),
+            )
             hudTextPaint.textAlign = Paint.Align.LEFT
-            hudTextPaint.textSize = r * 0.34f
-            val sx = bx + r + pad
-            val sy = by + r * 0.12f
+            hudTextPaint.textSize = unit * 0.34f
+            val sx = mapLeft + pad * 1.5f
+            val sy = inset.bottom - pad * 1.5f
             val tw = hudTextPaint.measureText(stripText)
-            val recDotSpace = if (rec != null) r * 0.55f else 0f
+            val recDotSpace = unit * 0.55f
             bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
             val strip = RectF(
                 sx - pad / 2,
-                sy - r * 0.42f,
+                sy - unit * 0.42f,
                 sx + tw + recDotSpace + pad / 2,
-                sy + r * 0.22f,
+                sy + unit * 0.22f,
             )
             canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubblePaint)
             canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubbleStrokePaint)
             hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
             canvas.drawText(stripText, sx, sy, hudTextPaint)
-            if (rec != null) {
-                // Pulse-free REC dot — a steady red dot reads
-                // "recording" without needing an animation loop.
-                recDotPaint.color = if (rec.paused) REC_PAUSED else REC_ACTIVE
-                canvas.drawCircle(sx + tw + recDotSpace / 2, sy - r * 0.10f, r * 0.13f, recDotPaint)
-            }
+            // Pulse-free REC dot — a steady red dot reads "recording"
+            // without needing an animation loop.
+            recDotPaint.color = if (rec.paused) REC_PAUSED else REC_ACTIVE
+            canvas.drawCircle(sx + tw + recDotSpace / 2, sy - unit * 0.10f, unit * 0.13f, recDotPaint)
         }
 
         // ── OSM attribution, bottom-right (tile-policy requirement) ──
@@ -735,9 +764,10 @@ class CarMapRenderer(
     /** Regularity-test panel, top-centre: the early/late delta is THE
      *  number during an RT, so it gets the biggest type on the screen.
      *  Armed shows a one-line "waiting for the marshal" banner. */
-    private fun drawRallyPanel(canvas: Canvas, w: Int, h: Int, dark: Boolean) {
+    private fun drawRallyPanel(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
         val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
         val pad = h * 0.03f
+        val mapCx = (mapLeft + w) / 2f
         when (val r = rally) {
             is RallyState.Running -> {
                 val delta = r.deltaSeconds
@@ -757,7 +787,7 @@ class CarMapRenderer(
                         else -> "GPS"
                     },
                 )
-                val cx = w / 2f
+                val cx = mapCx
                 hudTextPaint.textAlign = Paint.Align.CENTER
                 hudTextPaint.isFakeBoldText = true
                 hudTextPaint.textSize = h * 0.14f
@@ -781,7 +811,7 @@ class CarMapRenderer(
             }
             is RallyState.Armed -> {
                 val text = carContext.getString(be.appmire.gpsinfo.R.string.car_rally_armed)
-                val cx = w / 2f
+                val cx = mapCx
                 hudTextPaint.textAlign = Paint.Align.CENTER
                 hudTextPaint.isFakeBoldText = false
                 hudTextPaint.textSize = h * 0.04f
@@ -807,11 +837,6 @@ class CarMapRenderer(
     private fun latToWorldY(lat: Double, zoom: Int): Double {
         val latRad = Math.toRadians(lat.coerceIn(-MAX_MERCATOR_LAT, MAX_MERCATOR_LAT))
         return (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * TILE_SIZE * (1 shl zoom)
-    }
-
-    private fun cardinal(deg: Int): String {
-        val dirs = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
-        return dirs[(((deg + 22.5) / 45.0).toInt()) % 8]
     }
 
     private fun formatDuration(ms: Long): String {
@@ -882,6 +907,8 @@ class CarMapRenderer(
         /** Marker height when heading-up or tilted: near the bottom,
          *  the screen above is the road ahead. */
         const val ANCHOR_FRACTION = 0.82f
+        /** Left instrument column (speed/compass/energy) width. */
+        const val INSTRUMENT_COLUMN_FRACTION = 1f / 3f
         /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
          *  to Nullarbor and requesting tiles all the way there. */
         const val MAX_PAN_DEG = 0.5
