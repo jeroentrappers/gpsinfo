@@ -20,6 +20,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // BRouter (offline routing engine, MIT) is not on Maven
+        // Central — JitPack builds it from the GitHub tags. Scoped so
+        // nothing else can silently resolve from JitPack.
+        maven("https://jitpack.io") {
+            content { includeGroupByRegex("com\\.github\\.abrensch.*") }
+        }
     }
 }
 

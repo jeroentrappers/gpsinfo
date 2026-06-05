@@ -37,6 +37,9 @@ coroutinesTest = "1.11.0"
 # Real org.json for local unit tests — android.jar's copy is a
 # throwing stub off-device.
 orgJson = "20250517"
+# Offline routing engine (MIT, pure Java + Android) — resolved via
+# JitPack from the abrensch/brouter GitHub tags.
+brouter = "v1.7.9"
 androidxTestCore = "1.7.0"
 androidxTestRunner = "1.7.0"
 androidxTestRules = "1.7.0"
@@ -56,6 +59,10 @@ androidx-window = { module = "androidx.window:window", version.ref = "window" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileInstaller" }
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
+brouter-core = { module = "com.github.abrensch.brouter:brouter-core", version.ref = "brouter" }
+# Runtime-scoped in core's POM, but OsmNodeNamed extends OsmNode from
+# here — needed on the compile classpath too.
+brouter-mapaccess = { module = "com.github.abrensch.brouter:brouter-mapaccess", version.ref = "brouter" }
 # AAOS adapter (CarAppActivity) — debug builds only, for testing the
 # car UI on the Android Automotive OS emulator without a phone/DHU.
 androidx-car-app-automotive = { module = "androidx.car.app:app-automotive", version.ref = "carApp" }

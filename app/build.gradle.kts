@@ -176,6 +176,11 @@ dependencies {
     // the system Android Auto app (or a compatible third-party head
     // unit) is what hosts the templates we render. No new GMS surface.
     implementation(libs.androidx.car.app)
+    // Offline turn-by-turn routing (BRouter, MIT). Pure Java — no JNI,
+    // no Play Services, in keeping with the rest of the app. Road
+    // network ships as rd5 segment tiles downloaded on demand.
+    implementation(libs.brouter.core)
+    implementation(libs.brouter.mapaccess)
     // AAOS adapter so debug builds run on the Android Automotive OS
     // emulator (CarAppActivity hosts the same CarAppService templates).
     // Debug-only: the Play artifact stays a pure phone + Android Auto
