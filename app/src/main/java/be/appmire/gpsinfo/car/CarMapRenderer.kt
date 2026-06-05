@@ -149,8 +149,56 @@ class CarMapRenderer(
     private var navRoute: List<DoubleArray>? = null
 
     fun updateNavigationRoute(points: List<be.appmire.gpsinfo.data.nav.RoutePoint>?) {
+        val changed = (points?.size ?: 0) != (navRoute?.size ?: 0)
         navRoute = points?.map { doubleArrayOf(it.lat, it.lon) }
+        if (changed) {
+            if (points != null) startRoutePrefetch(points) else stopRoutePrefetch()
+        }
         scheduleRender()
+    }
+
+    // ── Route-corridor tile prefetch ───────────────────────────────
+    //
+    // OSM's tile servers are slow and we may drive out of coverage —
+    // when a route lands, quietly request every tile along its
+    // corridor at the driving zoom levels. The provider downloads via
+    // its own (policy-capped) queue and persists to the disk cache,
+    // so by the time the car gets there the tiles are local. Paced in
+    // small batches to leave the queue free for what's on screen now.
+
+    private val prefetchQueue = ArrayDeque<Long>()
+    private val prefetchRunnable = object : Runnable {
+        override fun run() {
+            var n = 0
+            while (n < PREFETCH_BATCH && prefetchQueue.isNotEmpty()) {
+                tileProvider.getMapTile(prefetchQueue.removeFirst())
+                n++
+            }
+            if (prefetchQueue.isNotEmpty()) {
+                mainHandler.postDelayed(this, PREFETCH_BATCH_INTERVAL_MS)
+            }
+        }
+    }
+
+    private fun startRoutePrefetch(points: List<be.appmire.gpsinfo.data.nav.RoutePoint>) {
+        stopRoutePrefetch()
+        val wanted = LinkedHashSet<Long>()
+        for (z in PREFETCH_ZOOMS) {
+            for (p in points) {
+                val tx = (lonToWorldX(p.lon, z) / TILE_SIZE).toInt()
+                    .coerceIn(0, (1 shl z) - 1)
+                val ty = (latToWorldY(p.lat, z) / TILE_SIZE).toInt()
+                    .coerceIn(0, (1 shl z) - 1)
+                wanted.add(MapTileIndex.getTileIndex(z, tx, ty))
+            }
+        }
+        prefetchQueue.addAll(wanted)
+        mainHandler.post(prefetchRunnable)
+    }
+
+    private fun stopRoutePrefetch() {
+        prefetchQueue.clear()
+        mainHandler.removeCallbacks(prefetchRunnable)
     }
 
     /** One-line navigation status (tile download %, route computing,
@@ -179,6 +227,12 @@ class CarMapRenderer(
         osmConfig.userAgentValue = appContext.packageName
         osmConfig.osmdroidBasePath = File(appContext.filesDir, "osmdroid").apply { mkdirs() }
         osmConfig.osmdroidTileCache = File(appContext.cacheDir, "osmdroid/tiles").apply { mkdirs() }
+        // Navigation prefetch + the big tilt layer churn through far
+        // more tiles than the phone map — give the disk cache room so
+        // warmed route corridors survive. Download threads stay at
+        // osmdroid's default 2: that's OSM's tile usage policy cap.
+        osmConfig.tileFileSystemCacheMaxBytes = 1024L * 1024L * 1024L
+        osmConfig.tileFileSystemCacheTrimBytes = 900L * 1024L * 1024L
         MapTileProviderBasic(appContext, MapnikBulkOk).also {
             it.tileRequestCompleteHandlers.add(tileArrivedHandler)
         }
@@ -711,14 +765,54 @@ class CarMapRenderer(
             // antimeridian.
             val wrappedTx = ((tx % n) + n) % n
             for (ty in minTy..maxTy) {
-                val drawable = tileProvider
-                    .getMapTile(MapTileIndex.getTileIndex(tileZoom, wrappedTx, ty))
-                    ?: continue
                 val left = (ax + (tx.toDouble() * TILE_SIZE - cx)).roundToInt()
                 val top = (ay + (ty.toDouble() * TILE_SIZE - cy)).roundToInt()
-                drawable.setBounds(left, top, left + TILE_SIZE, top + TILE_SIZE)
-                drawable.draw(canvas)
+                val drawable = tileProvider
+                    .getMapTile(MapTileIndex.getTileIndex(tileZoom, wrappedTx, ty))
+                if (drawable != null) {
+                    drawable.setBounds(left, top, left + TILE_SIZE, top + TILE_SIZE)
+                    drawable.draw(canvas)
+                } else {
+                    // While this tile downloads, upscale a cached
+                    // ancestor's quadrant instead of leaving a hole —
+                    // the map blurs in rather than blanks out. (The
+                    // getMapTile call above already queued the real
+                    // tile's download.)
+                    drawAncestorFallback(canvas, tileZoom, wrappedTx, ty, left, top)
+                }
             }
+        }
+    }
+
+    /** Draw the matching quadrant of the nearest cached ancestor tile
+     *  (up to [FALLBACK_ZOOM_DEPTH] levels up), scaled to this tile's
+     *  rect. Ancestor tiles are usually already cached — they cover
+     *  4×/16× the area. */
+    private fun drawAncestorFallback(
+        canvas: Canvas,
+        tileZoom: Int,
+        tx: Int,
+        ty: Int,
+        left: Int,
+        top: Int,
+    ) {
+        for (depth in 1..FALLBACK_ZOOM_DEPTH) {
+            val pz = tileZoom - depth
+            if (pz < MIN_ZOOM.toInt()) return
+            val pd = tileProvider.getMapTile(
+                MapTileIndex.getTileIndex(pz, tx shr depth, ty shr depth)
+            ) as? android.graphics.drawable.BitmapDrawable ?: continue
+            val bmp = pd.bitmap ?: continue
+            // Which sub-square of the ancestor this tile occupies.
+            val sub = bmp.width shr depth
+            if (sub <= 0) return
+            val mask = (1 shl depth) - 1
+            val srcLeft = (tx and mask) * sub
+            val srcTop = (ty and mask) * sub
+            fallbackSrcRect.set(srcLeft, srcTop, srcLeft + sub, srcTop + sub)
+            fallbackDstRect.set(left, top, left + TILE_SIZE, top + TILE_SIZE)
+            canvas.drawBitmap(bmp, fallbackSrcRect, fallbackDstRect, layerPaint)
+            return
         }
     }
 
@@ -940,6 +1034,8 @@ class CarMapRenderer(
     /** FILTER_BITMAP so the perspective resample stays smooth. */
     private val layerPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val hazePaint = Paint()
+    private val fallbackSrcRect = Rect()
+    private val fallbackDstRect = Rect()
 
     private companion object {
         const val TILE_SIZE = 256
@@ -975,6 +1071,16 @@ class CarMapRenderer(
         /** Hard cap on the instrument column: even on squat screens
          *  the map keeps at least 60% of the width. */
         const val MAX_COLUMN_FRACTION = 0.4f
+
+        /** Tile fallback + prefetch tuning. Depth 2 = a zoom-14 tile
+         *  can stand in for a zoom-16 hole (16× area, almost always
+         *  cached). Prefetch covers the driving zooms; batches of 6
+         *  every 300 ms keep the 2-thread download queue mostly free
+         *  for the visible viewport. */
+        const val FALLBACK_ZOOM_DEPTH = 2
+        val PREFETCH_ZOOMS = intArrayOf(13, 14, 15, 16)
+        const val PREFETCH_BATCH = 6
+        const val PREFETCH_BATCH_INTERVAL_MS = 300L
         /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
          *  to Nullarbor and requesting tiles all the way there. */
         const val MAX_PAN_DEG = 0.5
