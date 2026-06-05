@@ -176,6 +176,11 @@ dependencies {
     // the system Android Auto app (or a compatible third-party head
     // unit) is what hosts the templates we render. No new GMS surface.
     implementation(libs.androidx.car.app)
+    // AAOS adapter so debug builds run on the Android Automotive OS
+    // emulator (CarAppActivity hosts the same CarAppService templates).
+    // Debug-only: the Play artifact stays a pure phone + Android Auto
+    // app; the automotive uses-features live in src/debug's manifest.
+    debugImplementation(libs.androidx.car.app.automotive)
     // ZXing core for the "share my position" QR encoder. Pure Java,
     // Apache-2.0, no Play Services. We only ever encode here — the
     // scanner side is whatever app the recipient uses.

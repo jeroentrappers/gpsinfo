@@ -116,6 +116,13 @@ class CarMapRenderer(
     /** Accumulated pinch factor from [onScale]; folded into [zoomBias]. */
     private var pinchAccumulator = 1f
 
+    /** Pan mode (host's Action.PAN toggle). While active, [onScroll]
+     *  drags a free camera around; exiting snaps back to follow. The
+     *  offset lives in degrees so it survives zoom changes. */
+    private var panMode = false
+    private var panLatOffset = 0.0
+    private var panLonOffset = 0.0
+
     private var renderPending = false
 
     /** Offscreen layer the flat map is drawn into before the
@@ -174,7 +181,7 @@ class CarMapRenderer(
         }
         wasRecording = isRecording
 
-        val loc = gnss.location
+        val loc = gnss.location?.let { withDerivedMotion(it, lastDrawnLocation) }
         if (loc != null) {
             lastDrawnLocation = loc
             // Course-over-ground low-pass: 35% of the shortest angular
@@ -190,6 +197,31 @@ class CarMapRenderer(
         }
         stepAutoZoom(loc)
         scheduleRender()
+    }
+
+    /** Synthesize speed + course from successive fixes when the chip
+     *  reports (near-)standstill while the position clearly moved.
+     *  Real GNSS chips deliver Doppler speed, but the emulator's NMEA
+     *  injection and some BT GPS mice report vel=0 on moving fixes —
+     *  without this the speed bubble, speed-adaptive zoom and
+     *  heading-up rotation all stay dormant on those sources. */
+    private fun withDerivedMotion(loc: Location, prev: Location?): Location {
+        if (prev == null) return loc
+        // The repository re-emits the same fix on satellite-status
+        // ticks; keep the already-synthesized version instead of
+        // letting the raw re-emission clobber its derived motion.
+        if (loc.elapsedRealtimeNanos <= prev.elapsedRealtimeNanos) return prev
+        val dtSec = (loc.elapsedRealtimeNanos - prev.elapsedRealtimeNanos) / 1e9
+        if (dtSec < 0.2 || dtSec > 10.0) return loc
+        val derived = (prev.distanceTo(loc) / dtSec).toFloat()
+        // Trust the chip whenever it claims real motion itself, and
+        // never synthesize from a teleport (mock-location jumps,
+        // provider switches) — no road car does 90 m/s.
+        if (derived <= 1f || derived > 90f || (loc.hasSpeed() && loc.speed > 0.5f)) return loc
+        return Location(loc).apply {
+            speed = derived
+            bearing = (prev.bearingTo(loc) + 360f) % 360f
+        }
     }
 
     /** Glide the rendered zoom toward the speed target. One bounded
@@ -211,6 +243,18 @@ class CarMapRenderer(
     fun toggleTilt() {
         tilted = !tilted
         scheduleRender()
+    }
+
+    /** Host entered/left pan mode (Action.PAN). Leaving recentres. */
+    fun setPanMode(active: Boolean) {
+        mainHandler.post {
+            panMode = active
+            if (!active) {
+                panLatOffset = 0.0
+                panLonOffset = 0.0
+            }
+            scheduleRender()
+        }
     }
 
     /** Repaint with current state — e.g. after a day/night flip. */
@@ -279,6 +323,33 @@ class CarMapRenderer(
         }
     }
 
+    /** Drag in pan mode. The host hands us screen-space deltas
+     *  (previous − current); map them through the fractional-zoom
+     *  scale and the heading-up rotation into a lat/lon offset. The
+     *  tilt foreshortening is deliberately ignored — near-field pan
+     *  speed is right and the far field just pans a bit faster. */
+    override fun onScroll(distanceX: Float, distanceY: Float) {
+        mainHandler.post {
+            if (!panMode) return@post
+            val loc = snapshot.location ?: lastDrawnLocation ?: return@post
+            val tileZoom = floor(currentZoom).toInt().coerceIn(MIN_ZOOM.toInt(), MAX_ZOOM.toInt())
+            val scale = 2.0.pow(currentZoom - tileZoom)
+            // Screen → world: undo the canvas rotation (heading-up).
+            val b = if (hasBearing) Math.toRadians(smoothedBearingDeg.toDouble()) else 0.0
+            val wx = (distanceX * cos(b) - distanceY * kotlin.math.sin(b)) / scale
+            val wy = (distanceX * kotlin.math.sin(b) + distanceY * cos(b)) / scale
+            val worldSize = TILE_SIZE * (1 shl tileZoom)
+            val latRad = Math.toRadians(
+                (loc.latitude + panLatOffset).coerceIn(-MAX_MERCATOR_LAT, MAX_MERCATOR_LAT)
+            )
+            panLonOffset += wx * 360.0 / worldSize
+            panLatOffset -= wy * 360.0 * cos(latRad) / worldSize
+            panLatOffset = panLatOffset.coerceIn(-MAX_PAN_DEG, MAX_PAN_DEG)
+            panLonOffset = panLonOffset.coerceIn(-MAX_PAN_DEG, MAX_PAN_DEG)
+            scheduleRender()
+        }
+    }
+
     // ── Rendering ──────────────────────────────────────────────────
 
     /** Coalesce bursts (GNSS tick + several tile arrivals) into one
@@ -319,22 +390,32 @@ class CarMapRenderer(
         val bg = if (dark) BG_DARK else BG_LIGHT
         canvas.drawColor(bg)
 
-        val loc = snapshot.location ?: lastDrawnLocation
-        // Anchor: centre for north-up; pushed to the lower third when
-        // heading-up so most of the map is the road ahead.
+        // lastDrawnLocation carries the latest fix with derived motion
+        // (see withDerivedMotion) — prefer it over the raw snapshot.
+        val loc = lastDrawnLocation ?: snapshot.location
+        // Anchor: centre only in flat north-up mode. Heading-up or
+        // tilted, the marker sits near the bottom edge so nearly the
+        // whole screen is the road ahead — the perspective exists to
+        // look down the route, not at it.
         val headingUp = hasBearing
         val ax = w / 2f
-        val ay = if (headingUp) h * 0.66f else h / 2f
+        val ay = if (headingUp || tilted) h * ANCHOR_FRACTION else h / 2f
 
         if (loc != null) {
+            // Free camera while panning: the map centres on the
+            // dragged-to point and the marker draws at its true
+            // position inside the layer instead of at the anchor.
+            val panned = panMode && (panLatOffset != 0.0 || panLonOffset != 0.0)
+            val camLat = loc.latitude + panLatOffset
+            val camLon = loc.longitude + panLonOffset
             if (tilted) {
-                drawTiltedMap(canvas, w, h, ax, ay, loc, headingUp, dark, bg)
+                drawTiltedMap(canvas, w, h, ax, ay, camLat, camLon, loc, panned, headingUp, dark, bg)
             } else {
                 canvas.save()
-                drawMapLayer(canvas, ax, ay, w, h, loc, headingUp, dark)
+                drawMapLayer(canvas, ax, ay, w, h, camLat, camLon, loc, panned, headingUp, dark)
                 canvas.restore()
             }
-            drawPositionMarker(canvas, ax, ay, headingUp)
+            if (!panned) drawPositionMarker(canvas, ax, ay, headingUp)
         } else {
             drawWaitingForFix(canvas, w, h, dark)
         }
@@ -353,7 +434,10 @@ class CarMapRenderer(
         h: Int,
         ax: Float,
         ay: Float,
+        camLat: Double,
+        camLon: Double,
         loc: Location,
+        panned: Boolean,
         headingUp: Boolean,
         dark: Boolean,
         bg: Int,
@@ -369,7 +453,10 @@ class CarMapRenderer(
             ay = mt + ay,
             w = layer.width,
             h = layer.height,
+            camLat = camLat,
+            camLon = camLon,
             loc = loc,
+            panned = panned,
             headingUp = headingUp,
             dark = dark,
         )
@@ -425,21 +512,50 @@ class CarMapRenderer(
         ay: Float,
         w: Int,
         h: Int,
+        camLat: Double,
+        camLon: Double,
         loc: Location,
+        panned: Boolean,
         headingUp: Boolean,
         dark: Boolean,
     ) {
         val tileZoom = floor(currentZoom).toInt().coerceIn(MIN_ZOOM.toInt(), MAX_ZOOM.toInt())
         val scale = 2.0.pow(currentZoom - tileZoom).toFloat()
-        val cx = lonToWorldX(loc.longitude, tileZoom)
-        val cy = latToWorldY(loc.latitude, tileZoom)
+        val cx = lonToWorldX(camLon, tileZoom)
+        val cy = latToWorldY(camLat, tileZoom)
+        // The vehicle's own layer position — equals the anchor while
+        // following, drifts off-anchor while panned.
+        val vehicleX = (ax + (lonToWorldX(loc.longitude, tileZoom) - cx)).toFloat()
+        val vehicleY = (ay + (latToWorldY(loc.latitude, tileZoom) - cy)).toFloat()
 
         canvas.save()
         if (headingUp) canvas.rotate(-smoothedBearingDeg, ax, ay)
         canvas.scale(scale, scale, ax, ay)
         drawTiles(canvas, ax, ay, cx, cy, w, h, tileZoom, scale)
         if (dark) canvas.drawColor(TILE_DARK_SCRIM)
-        drawBreadcrumb(canvas, ax, ay, cx, cy, tileZoom, scale)
+        drawBreadcrumb(canvas, vehicleX, vehicleY, cx, cy, ax, ay, tileZoom, scale)
+        if (panned) drawInLayerMarker(canvas, vehicleX, vehicleY, scale)
+        canvas.restore()
+    }
+
+    /** Marker variant drawn inside the (rotated/scaled/tilted) map
+     *  layer — used while panning, when the vehicle is off-anchor.
+     *  The chevron rotates to the course in world space: combined
+     *  with the heading-up canvas rotation it still points up. */
+    private fun drawInLayerMarker(canvas: Canvas, x: Float, y: Float, scale: Float) {
+        val r = MARKER_RADIUS / scale
+        canvas.drawCircle(x, y, r + 4f / scale, markerRingPaint)
+        canvas.drawCircle(x, y, r, markerFillPaint)
+        canvas.save()
+        if (hasBearing) canvas.rotate(smoothedBearingDeg, x, y)
+        val chevron = Path().apply {
+            moveTo(x, y - r * 0.62f)
+            lineTo(x - r * 0.45f, y + r * 0.40f)
+            lineTo(x, y + r * 0.12f)
+            lineTo(x + r * 0.45f, y + r * 0.40f)
+            close()
+        }
+        canvas.drawPath(chevron, markerChevronPaint)
         canvas.restore()
     }
 
@@ -481,10 +597,12 @@ class CarMapRenderer(
 
     private fun drawBreadcrumb(
         canvas: Canvas,
-        ax: Float,
-        ay: Float,
+        vehicleX: Float,
+        vehicleY: Float,
         cx: Double,
         cy: Double,
+        ax: Float,
+        ay: Float,
         tileZoom: Int,
         scale: Float,
     ) {
@@ -495,9 +613,9 @@ class CarMapRenderer(
             val y = (ay + (latToWorldY(p[0], tileZoom) - cy)).toFloat()
             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }
-        // Connect the decimated tail to the live position so the line
-        // never visibly detaches from the marker.
-        path.lineTo(ax, ay)
+        // Connect the decimated tail to the live vehicle position so
+        // the line never visibly detaches from the marker.
+        path.lineTo(vehicleX, vehicleY)
         // Counter the fractional-zoom canvas scale so stroke widths
         // stay constant on screen.
         trailCasingPaint.strokeWidth = 15f / scale
@@ -747,14 +865,26 @@ class CarMapRenderer(
         const val ZOOM_STEP_PER_TICK = 0.18
         const val ZOOM_BIAS_RANGE = 3.0
 
-        /** 2.5D tilt geometry. Margins are fractions of the viewport
-         *  added to the offscreen layer so the narrowed far field
-         *  still has map content to sample. */
-        const val TILT_DEG = 42f
-        const val TILT_MARGIN_X = 0.35f
-        const val TILT_MARGIN_TOP = 0.30f
-        const val TILT_CAMERA_DISTANCE = 1.2f
+        /** 2.5D tilt geometry. The far field samples the layer
+         *  hyperbolically — at distance D (units of h) and tilt θ, a
+         *  screen point y above the anchor reads the layer at
+         *  y·D/(D·cosθ − y·sinθ), which blows up toward the horizon
+         *  (D·cotθ). These values are solved so the layer's top margin
+         *  covers the *entire* screen: with θ=50°, D=2.4 the screen
+         *  top (0.82·h above the anchor) needs ≈2.15·h of layer →
+         *  margin 1.35·h. Cranking θ up or D down reintroduces the
+         *  empty band at the top — recompute before touching. */
+        const val TILT_DEG = 50f
+        const val TILT_MARGIN_X = 0.50f
+        const val TILT_MARGIN_TOP = 1.35f
+        const val TILT_CAMERA_DISTANCE = 2.4f
         const val HAZE_DEPTH = 0.22f
+        /** Marker height when heading-up or tilted: near the bottom,
+         *  the screen above is the road ahead. */
+        const val ANCHOR_FRACTION = 0.82f
+        /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
+         *  to Nullarbor and requesting tiles all the way there. */
+        const val MAX_PAN_DEG = 0.5
 
         /** Above ~1.1 m/s (walking pace) course-over-ground is stable
          *  enough to rotate the map by. */

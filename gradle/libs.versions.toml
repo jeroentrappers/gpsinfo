@@ -56,6 +56,9 @@ androidx-window = { module = "androidx.window:window", version.ref = "window" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileInstaller" }
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
+# AAOS adapter (CarAppActivity) — debug builds only, for testing the
+# car UI on the Android Automotive OS emulator without a phone/DHU.
+androidx-car-app-automotive = { module = "androidx.car.app:app-automotive", version.ref = "carApp" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxingCore" }
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }

@@ -188,10 +188,12 @@ class TripDashboardScreen(
                 .build()
         }
 
-        // Zoom + tilt live on the map action strip (anchored to the map
-        // edge by the host). Icon-only is mandatory here. The zoom
-        // buttons nudge a bias on top of the speed-adaptive level
-        // rather than fighting it.
+        // Zoom + tilt + pan live on the map action strip (anchored to
+        // the map edge by the host). Icon-only is mandatory here. The
+        // zoom buttons nudge a bias on top of the speed-adaptive level
+        // rather than fighting it. Action.PAN is what makes the host
+        // forward drag/pinch gestures to the surface at all — without
+        // it the map is display-only.
         val mapActionStrip = ActionStrip.Builder()
             .addAction(
                 Action.Builder()
@@ -211,11 +213,15 @@ class TripDashboardScreen(
                     .setOnClickListener { renderer.toggleTilt() }
                     .build()
             )
+            .addAction(Action.PAN)
             .build()
 
         return NavigationTemplate.Builder()
             .setActionStrip(actionStrip)
             .setMapActionStrip(mapActionStrip)
+            .setPanModeListener { isInPanMode ->
+                renderer.setPanMode(isInPanMode)
+            }
             .build()
     }
 

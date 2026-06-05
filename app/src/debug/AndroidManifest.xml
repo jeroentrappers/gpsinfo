@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Debug-only overlay: lets the debug build install and run on the
+    Android Automotive OS emulator, so the car UI (CarMapRenderer +
+    templates) can be tested without a phone + DHU pair.
+
+    None of this ships: release builds use only the main manifest, so
+    the Play artifact remains a phone app with Android Auto projection.
+
+    CarAppActivity is the AAOS-side host that renders our existing
+    GpsInfoCarAppService — same templates, same surface callback.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- app-automotive declares minSdk 29; our app is minSdk 24. Safe
+         to override here: CarAppActivity only ever runs on Automotive
+         OS, which is API 29+ by definition. Debug builds only. -->
+    <uses-sdk tools:overrideLibrary="androidx.car.app.automotive" />
+
+    <uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.car.templates_host"
+        android:required="false" />
+
+    <application>
+        <activity
+            android:name="androidx.car.app.activity.CarAppActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+    </application>
+</manifest>
