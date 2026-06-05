@@ -263,24 +263,26 @@ class CarInstruments {
         val cornerR: Float,
     )
 
-    /** Rounded-square housing on the black column; returns geometry.
-     *  Housing #0B0B0B with a 10% corner radius — the RetroDial
-     *  screens' DialHousing. */
+    /** Rounded-RECT housing filling the whole cell (tiny seam gap) —
+     *  #0B0B0B with a 10% corner radius, the RetroDial DialHousing.
+     *  The dial circle sizes from the short side; the bezel-following
+     *  ticks handle the wide box naturally (roundedRectRayDistance
+     *  takes halfW/halfH independently), so edge ticks just run
+     *  longer toward the wide sides — instrument-pod style. */
     private fun housing(canvas: Canvas, cell: RectF): DialGeometry {
-        val side = min(cell.width(), cell.height()) * 0.96f
-        val cx = cell.centerX()
-        val cy = cell.centerY()
-        val box = RectF(cx - side / 2, cy - side / 2, cx + side / 2, cy + side / 2)
+        val gap = min(cell.width(), cell.height()) * 0.02f
+        val box = RectF(cell.left + gap, cell.top + gap, cell.right - gap, cell.bottom - gap)
+        val shortest = min(box.width(), box.height())
         fillPaint.color = HOUSING
-        canvas.drawRoundRect(box, side * 0.10f, side * 0.10f, fillPaint)
+        canvas.drawRoundRect(box, shortest * 0.10f, shortest * 0.10f, fillPaint)
         return DialGeometry(
-            cx = cx,
-            cy = cy,
-            r = side / 2f * 0.92f,
-            side = side,
-            halfW = side / 2f,
-            halfH = side / 2f,
-            cornerR = side * 0.10f,
+            cx = box.centerX(),
+            cy = box.centerY(),
+            r = shortest / 2f * 0.92f,
+            side = shortest,
+            halfW = box.width() / 2f,
+            halfH = box.height() / 2f,
+            cornerR = shortest * 0.10f,
         )
     }
 

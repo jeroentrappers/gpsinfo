@@ -424,19 +424,17 @@ class CarMapRenderer(
         canvas.clipRect(mapLeft, 0f, w.toFloat(), h.toFloat())
         if (loc != null) {
             // Free camera while panning: the map centres on the
-            // dragged-to point and the marker draws at its true
-            // position inside the layer instead of at the anchor.
-            val panned = panMode && (panLatOffset != 0.0 || panLonOffset != 0.0)
+            // dragged-to point; the marker always draws in-layer at
+            // the vehicle's true position.
             val camLat = loc.latitude + panLatOffset
             val camLon = loc.longitude + panLonOffset
             if (tilted) {
-                drawTiltedMap(canvas, mapW, h, ax, ay, camLat, camLon, loc, panned, headingUp, dark, bg)
+                drawTiltedMap(canvas, mapW, h, ax, ay, camLat, camLon, loc, headingUp, dark, bg)
             } else {
                 canvas.save()
-                drawMapLayer(canvas, ax, ay, w, h, camLat, camLon, loc, panned, headingUp, dark)
+                drawMapLayer(canvas, ax, ay, w, h, camLat, camLon, loc, headingUp, dark)
                 canvas.restore()
             }
-            if (!panned) drawPositionMarker(canvas, ax, ay, headingUp)
         } else {
             drawWaitingForFix(canvas, mapLeft, w, h, dark)
         }
@@ -489,7 +487,6 @@ class CarMapRenderer(
         camLat: Double,
         camLon: Double,
         loc: Location,
-        panned: Boolean,
         headingUp: Boolean,
         dark: Boolean,
         bg: Int,
@@ -512,7 +509,6 @@ class CarMapRenderer(
             camLat = camLat,
             camLon = camLon,
             loc = loc,
-            panned = panned,
             headingUp = headingUp,
             dark = dark,
         )
@@ -571,7 +567,6 @@ class CarMapRenderer(
         camLat: Double,
         camLon: Double,
         loc: Location,
-        panned: Boolean,
         headingUp: Boolean,
         dark: Boolean,
     ) {
@@ -590,14 +585,16 @@ class CarMapRenderer(
         drawTiles(canvas, ax, ay, cx, cy, w, h, tileZoom, scale)
         if (dark) canvas.drawColor(TILE_DARK_SCRIM)
         drawBreadcrumb(canvas, vehicleX, vehicleY, cx, cy, ax, ay, tileZoom, scale)
-        if (panned) drawInLayerMarker(canvas, vehicleX, vehicleY, scale)
+        drawInLayerMarker(canvas, vehicleX, vehicleY, scale)
         canvas.restore()
     }
 
-    /** Marker variant drawn inside the (rotated/scaled/tilted) map
-     *  layer — used while panning, when the vehicle is off-anchor.
-     *  The chevron rotates to the course in world space: combined
-     *  with the heading-up canvas rotation it still points up. */
+    /** Vehicle marker drawn inside the (rotated/scaled/tilted) map
+     *  layer, so it lies down with the perspective like everything
+     *  else on the road. The chevron rotates to the course in world
+     *  space: combined with the heading-up canvas rotation it still
+     *  points up. While panned the marker simply sits wherever the
+     *  vehicle's true position projects. */
     private fun drawInLayerMarker(canvas: Canvas, x: Float, y: Float, scale: Float) {
         val r = MARKER_RADIUS / scale
         canvas.drawCircle(x, y, r + 4f / scale, markerRingPaint)
@@ -678,24 +675,6 @@ class CarMapRenderer(
         trailPaint.strokeWidth = 9f / scale
         canvas.drawPath(path, trailCasingPaint)
         canvas.drawPath(path, trailPaint)
-    }
-
-    private fun drawPositionMarker(canvas: Canvas, ax: Float, ay: Float, headingUp: Boolean) {
-        canvas.drawCircle(ax, ay, MARKER_RADIUS + 4f, markerRingPaint)
-        canvas.drawCircle(ax, ay, MARKER_RADIUS, markerFillPaint)
-        // Chevron: up in heading-up mode (the map rotates instead);
-        // rotated to the course otherwise.
-        canvas.save()
-        if (!headingUp && hasBearing) canvas.rotate(smoothedBearingDeg, ax, ay)
-        val chevron = Path().apply {
-            moveTo(ax, ay - MARKER_RADIUS * 0.62f)
-            lineTo(ax - MARKER_RADIUS * 0.45f, ay + MARKER_RADIUS * 0.40f)
-            lineTo(ax, ay + MARKER_RADIUS * 0.12f)
-            lineTo(ax + MARKER_RADIUS * 0.45f, ay + MARKER_RADIUS * 0.40f)
-            close()
-        }
-        canvas.drawPath(chevron, markerChevronPaint)
-        canvas.restore()
     }
 
     private fun drawWaitingForFix(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
@@ -918,7 +897,10 @@ class CarMapRenderer(
         const val MIN_HEADING_UP_SPEED_MPS = 1.1f
         const val SCALE_STEP = 1.15f
         const val BREADCRUMB_CAP = 4000
-        const val MARKER_RADIUS = 26f
+        // Slightly smaller than the old anchored overlay — the marker
+        // now lives inside the tilted layer, where the perspective
+        // already gives it presence in the near field.
+        const val MARKER_RADIUS = 21f
 
         const val BG_DARK = 0xFF11151A.toInt()
         const val BG_LIGHT = 0xFFE8E8E3.toInt()
