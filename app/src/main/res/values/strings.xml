@@ -303,6 +303,20 @@
     <string name="car_toast_saved" tools:ignore="MissingTranslation">Saved: %1$s</string>
     <string name="car_toast_save_empty" tools:ignore="MissingTranslation">No points captured — nothing saved</string>
     <string name="car_waiting_fix" tools:ignore="MissingTranslation">Waiting for GPS fix…</string>
+    <string name="car_action_end_nav" tools:ignore="MissingTranslation">End route</string>
+    <string name="car_nav_turn_left" tools:ignore="MissingTranslation">Turn left</string>
+    <string name="car_nav_slight_left" tools:ignore="MissingTranslation">Keep slightly left</string>
+    <string name="car_nav_sharp_left" tools:ignore="MissingTranslation">Turn sharply left</string>
+    <string name="car_nav_turn_right" tools:ignore="MissingTranslation">Turn right</string>
+    <string name="car_nav_slight_right" tools:ignore="MissingTranslation">Keep slightly right</string>
+    <string name="car_nav_sharp_right" tools:ignore="MissingTranslation">Turn sharply right</string>
+    <string name="car_nav_keep_left" tools:ignore="MissingTranslation">Keep left</string>
+    <string name="car_nav_keep_right" tools:ignore="MissingTranslation">Keep right</string>
+    <string name="car_nav_u_turn" tools:ignore="MissingTranslation">Make a U-turn</string>
+    <string name="car_nav_roundabout" tools:ignore="MissingTranslation">Enter the roundabout</string>
+    <string name="car_nav_roundabout_exit" tools:ignore="MissingTranslation">Roundabout, exit %1$d</string>
+    <string name="car_nav_continue" tools:ignore="MissingTranslation">Continue</string>
+    <string name="nav_pick_drive" tools:ignore="MissingTranslation">Drive route (offline)</string>
     <string name="rally_title" tools:ignore="MissingTranslation">Regularity rally</string>
     <string name="rally_new_stage" tools:ignore="MissingTranslation">New stage</string>
     <string name="rally_empty" tools:ignore="MissingTranslation">No stages yet. Enter the roadbook speed table as “from km / speed” rows.</string>

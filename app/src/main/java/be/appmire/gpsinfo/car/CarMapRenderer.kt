@@ -144,6 +144,15 @@ class CarMapRenderer(
         scheduleRender()
     }
 
+    /** Active navigation route as packed (lat, lon) pairs, or null
+     *  when not navigating — drawn under the trail breadcrumb. */
+    private var navRoute: List<DoubleArray>? = null
+
+    fun updateNavigationRoute(points: List<be.appmire.gpsinfo.data.nav.RoutePoint>?) {
+        navRoute = points?.map { doubleArrayOf(it.lat, it.lon) }
+        scheduleRender()
+    }
+
     /** Repaint when an async tile download lands. */
     private val tileArrivedHandler = Handler(Looper.getMainLooper()) {
         scheduleRender()
@@ -588,9 +597,35 @@ class CarMapRenderer(
         canvas.scale(scale, scale, ax, ay)
         drawTiles(canvas, ax, ay, cx, cy, w, h, tileZoom, scale)
         if (dark) canvas.drawColor(TILE_DARK_SCRIM)
+        drawNavRoute(canvas, cx, cy, ax, ay, tileZoom, scale)
         drawBreadcrumb(canvas, vehicleX, vehicleY, cx, cy, ax, ay, tileZoom, scale)
         drawInLayerMarker(canvas, vehicleX, vehicleY, scale)
         canvas.restore()
+    }
+
+    /** The computed navigation route — drawn under the breadcrumb so
+     *  the driven trail visibly "eats" the planned line. */
+    private fun drawNavRoute(
+        canvas: Canvas,
+        cx: Double,
+        cy: Double,
+        ax: Float,
+        ay: Float,
+        tileZoom: Int,
+        scale: Float,
+    ) {
+        val pts = navRoute ?: return
+        if (pts.size < 2) return
+        val path = Path()
+        pts.forEachIndexed { i, p ->
+            val x = (ax + (lonToWorldX(p[1], tileZoom) - cx)).toFloat()
+            val y = (ay + (latToWorldY(p[0], tileZoom) - cy)).toFloat()
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        navCasingPaint.strokeWidth = 16f / scale
+        navRoutePaint.strokeWidth = 10f / scale
+        canvas.drawPath(path, navCasingPaint)
+        canvas.drawPath(path, navRoutePaint)
     }
 
     /** Vehicle marker drawn inside the (rotated/scaled/tilted) map
@@ -844,6 +879,18 @@ class CarMapRenderer(
         strokeJoin = Paint.Join.ROUND
         color = TRAIL_CASING
     }
+    private val navRoutePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        color = NAV_ROUTE_COLOR
+    }
+    private val navCasingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        color = NAV_ROUTE_CASING
+    }
     private val markerFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = MARKER_FILL }
     private val markerRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
     private val markerChevronPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
@@ -891,7 +938,7 @@ class CarMapRenderer(
          *  the screen above is the road ahead. */
         const val ANCHOR_FRACTION = 0.82f
         /** Left instrument column (speed/compass/energy) width. */
-        const val INSTRUMENT_COLUMN_FRACTION = 1f / 3f
+        const val INSTRUMENT_COLUMN_FRACTION = 1f / 4f
         /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
          *  to Nullarbor and requesting tiles all the way there. */
         const val MAX_PAN_DEG = 0.5
@@ -911,6 +958,10 @@ class CarMapRenderer(
         const val TILE_DARK_SCRIM = 0x66000000
         const val TRAIL_COLOR = 0xFF00B0FF.toInt()
         const val TRAIL_CASING = 0xCC003C5C.toInt()
+        // Navigation route: the RetroDial accent orange with a white
+        // casing — unmistakable against both trail cyan and OSM roads.
+        const val NAV_ROUTE_COLOR = 0xFFE67635.toInt()
+        const val NAV_ROUTE_CASING = 0xCCFFFFFF.toInt()
         const val MARKER_FILL = 0xFF1A73E8.toInt()
         const val BUBBLE_DARK = 0xE61E242C.toInt()
         const val BUBBLE_LIGHT = 0xF2FFFFFF.toInt()

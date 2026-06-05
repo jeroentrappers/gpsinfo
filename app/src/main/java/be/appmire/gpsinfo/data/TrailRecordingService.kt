@@ -101,9 +101,10 @@ class TrailRecordingService : Service() {
         collectJob = LocationRepository(applicationContext).snapshots()
             .onEach {
                 TrailRecordingController.offer(it)
-                // Rally distance keeps integrating while backgrounded —
-                // the controller dedupes if the activity also feeds it.
+                // Rally distance + nav guidance keep updating while
+                // backgrounded — both dedupe multi-source feeds.
                 be.appmire.gpsinfo.data.rally.RallyController.offer(it)
+                be.appmire.gpsinfo.data.nav.NavigationController.offer(it)
             }
             .launchIn(scope)
         // Step counter alongside GNSS — silently no-ops if the device

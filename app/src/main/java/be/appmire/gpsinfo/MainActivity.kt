@@ -215,6 +215,11 @@ class MainActivity : ComponentActivity() {
                                     vm.setNavigationTarget(target)
                                     nav.popBackStack()
                                 },
+                                onDriveTo = { target ->
+                                    be.appmire.gpsinfo.data.nav.NavigationController
+                                        .navigateTo(this@MainActivity, target.latDeg, target.lonDeg)
+                                    nav.popBackStack()
+                                },
                             )
                         }
                         composable(Routes.Trails) {

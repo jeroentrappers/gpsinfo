@@ -26,6 +26,19 @@
         android:required="false" />
 
     <application>
+        <!-- adb-triggered navigation start/stop for emulator testing
+             of the car screen (see DebugNavigateReceiver). -->
+        <receiver
+            android:name="be.appmire.gpsinfo.debug.DebugNavigateReceiver"
+            android:exported="true"
+            tools:ignore="ExportedReceiver">
+            <intent-filter>
+                <action android:name="be.appmire.gpsinfo.DEBUG_NAVIGATE" />
+                <action android:name="be.appmire.gpsinfo.DEBUG_NAV_STOP" />
+                <action android:name="be.appmire.gpsinfo.DEBUG_IMPORT_TILES" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name="androidx.car.app.activity.CarAppActivity"
             android:exported="true"

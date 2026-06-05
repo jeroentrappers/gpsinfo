@@ -58,6 +58,9 @@ fun NavigationPickerScreen(
     initialLonDeg: Double?,
     onBack: () -> Unit,
     onConfirm: (NavigationTarget.Single) -> Unit,
+    /** Optional: start offline turn-by-turn driving to the target
+     *  instead of the bearing-style waypoint navigation. */
+    onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
 ) {
     var tab by remember { mutableStateOf(0) }
     Scaffold(
@@ -100,10 +103,12 @@ fun NavigationPickerScreen(
                     initialLatDeg = initialLatDeg,
                     initialLonDeg = initialLonDeg,
                     onConfirm = onConfirm,
+                    onDriveTo = onDriveTo,
                 )
                 else -> CoordsPickPane(
                     modifier = Modifier.weight(1f),
                     onConfirm = onConfirm,
+                    onDriveTo = onDriveTo,
                 )
             }
         }
@@ -116,6 +121,7 @@ private fun MapPickPane(
     initialLatDeg: Double?,
     initialLonDeg: Double?,
     onConfirm: (NavigationTarget.Single) -> Unit,
+    onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
 ) {
     val defaultName = stringResource(R.string.nav_default_name)
     var picked by remember { mutableStateOf<GeoPoint?>(null) }
@@ -186,9 +192,24 @@ private fun MapPickPane(
             enabled = p != null,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
         ) {
             Text(stringResource(R.string.nav_pick_confirm))
+        }
+        if (onDriveTo != null) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    if (p != null) {
+                        onDriveTo(NavigationTarget.Single(p.latitude, p.longitude, defaultName))
+                    }
+                },
+                enabled = p != null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+            ) {
+                Text(stringResource(R.string.nav_pick_drive))
+            }
         }
     }
 }
@@ -199,6 +220,7 @@ private class PickedMarker(mapView: MapView) : Marker(mapView)
 private fun CoordsPickPane(
     modifier: Modifier = Modifier,
     onConfirm: (NavigationTarget.Single) -> Unit,
+    onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
 ) {
     val defaultName = stringResource(R.string.nav_default_name)
     var latText by remember { mutableStateOf("") }
@@ -277,6 +299,20 @@ private fun CoordsPickPane(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.nav_pick_confirm))
+        }
+        if (onDriveTo != null) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    if (lat != null && lon != null) {
+                        val name = nameText.trim().ifBlank { defaultName }
+                        onDriveTo(NavigationTarget.Single(lat, lon, name))
+                    }
+                },
+                enabled = valid,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.nav_pick_drive))
+            }
         }
     }
 }

@@ -22,6 +22,8 @@ import be.appmire.gpsinfo.data.LocationRepository
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.TrailRecordingController
 import be.appmire.gpsinfo.data.TrailRepository
+import be.appmire.gpsinfo.data.nav.NavigationController
+import be.appmire.gpsinfo.data.nav.TurnCommand
 import be.appmire.gpsinfo.data.rally.RallyController
 import be.appmire.gpsinfo.data.rally.RallyState
 import be.appmire.gpsinfo.util.TrailNaming
@@ -57,6 +59,7 @@ class TripDashboardScreen(
 
     private var recording: RecordingState = RecordingState.Idle
     private var rally: RallyState = RallyState.Idle
+    private var nav: NavigationController.NavState = NavigationController.NavState.Idle
     private var collectJob: Job? = null
 
     init {
@@ -96,21 +99,46 @@ class TripDashboardScreen(
             locRepo.snapshots(),
             TrailRecordingController.state,
             RallyController.state,
-        ) { gnss, rec, rallyState -> Triple(gnss, rec, rallyState) }
-            .onEach { (gnss, rec, rallyState) ->
-                // Rally distance keeps integrating from the car's own
-                // GNSS stream; the controller dedupes if the phone or
-                // the recording service also feed it.
+            NavigationController.state,
+        ) { gnss, rec, rallyState, navState ->
+            arrayOf(gnss, rec, rallyState, navState)
+        }
+            .onEach { (gnssAny, recAny, rallyAny, navAny) ->
+                val gnss = gnssAny as be.appmire.gpsinfo.data.model.GnssSnapshot
+                val rec = recAny as RecordingState
+                val rallyState = rallyAny as RallyState
+                val navState = navAny as NavigationController.NavState
+                // Rally distance + nav guidance keep updating from the
+                // car's own GNSS stream; both controllers dedupe if
+                // the phone or the recording service also feed them.
                 RallyController.offer(gnss)
+                NavigationController.offer(gnss)
                 val recordingToggled =
                     (rec is RecordingState.Recording) != (recording is RecordingState.Recording)
                 val rallyPhaseChanged = rallyState::class != rally::class
+                val navChanged = navTemplateKey(navState) != navTemplateKey(nav)
                 recording = rec
                 rally = rallyState
+                nav = navState
                 renderer.update(gnss, rec, rallyState)
-                if (recordingToggled || rallyPhaseChanged) invalidate()
+                renderer.updateNavigationRoute(
+                    (navState as? NavigationController.NavState.Navigating)?.route?.points
+                )
+                if (recordingToggled || rallyPhaseChanged || navChanged) invalidate()
             }
             .launchIn(lifecycleScope)
+    }
+
+    /** What of the nav state is visible in the template: the phase,
+     *  the upcoming turn, and the countdown in 10 m steps — anything
+     *  else changing shouldn't burn a template refresh. */
+    private fun navTemplateKey(s: NavigationController.NavState): Any? = when (s) {
+        is NavigationController.NavState.Navigating -> Triple(
+            s.nextTurn?.trackIndex,
+            (s.distanceToTurnM / 10).toInt(),
+            (s.etaSeconds / 60),
+        )
+        else -> s::class
     }
 
     override fun onGetTemplate(): Template {
@@ -182,10 +210,25 @@ class TripDashboardScreen(
                 )
                 .addAction(trailsAction)
                 .build()
-            RallyState.Idle -> ActionStrip.Builder()
-                .addAction(recordAction)
-                .addAction(trailsAction)
-                .build()
+            RallyState.Idle -> ActionStrip.Builder().apply {
+                addAction(recordAction)
+                // End-route control while navigating or preparing a
+                // route; trails browsing keeps its slot otherwise.
+                if (nav is NavigationController.NavState.Navigating ||
+                    nav is NavigationController.NavState.Preparing
+                ) {
+                    addAction(
+                        Action.Builder()
+                            .setTitle(carContext.getString(R.string.car_action_end_nav))
+                            .setOnClickListener {
+                                NavigationController.stop()
+                                invalidate()
+                            }
+                            .build()
+                    )
+                }
+                addAction(trailsAction)
+            }.build()
         }
 
         // Zoom + tilt + pan live on the map action strip (anchored to
@@ -216,13 +259,27 @@ class TripDashboardScreen(
             .addAction(Action.PAN)
             .build()
 
-        return NavigationTemplate.Builder()
-            .setActionStrip(actionStrip)
-            .setMapActionStrip(mapActionStrip)
-            .setPanModeListener { isInPanMode ->
+        return NavigationTemplate.Builder().apply {
+            setActionStrip(actionStrip)
+            setMapActionStrip(mapActionStrip)
+            setPanModeListener { isInPanMode ->
                 renderer.setPanMode(isInPanMode)
             }
-            .build()
+            when (val n = nav) {
+                is NavigationController.NavState.Navigating -> {
+                    setNavigationInfo(routingInfo(n))
+                    setDestinationTravelEstimate(travelEstimate(n))
+                }
+                is NavigationController.NavState.Preparing -> {
+                    setNavigationInfo(
+                        androidx.car.app.navigation.model.RoutingInfo.Builder()
+                            .setLoading(true)
+                            .build()
+                    )
+                }
+                else -> Unit
+            }
+        }.build()
     }
 
     /** Shown instead of the map while ACCESS_FINE_LOCATION is missing —
@@ -310,4 +367,102 @@ class TripDashboardScreen(
 
     private fun carIcon(resId: Int): CarIcon =
         CarIcon.Builder(IconCompat.createWithResource(carContext, resId)).build()
+
+    // ── Turn-by-turn template furniture ────────────────────────────
+
+    /** Host-rendered maneuver card: turn arrow + distance countdown.
+     *  The host draws standard arrows from the maneuver type — no
+     *  icons to ship. */
+    private fun routingInfo(
+        n: NavigationController.NavState.Navigating,
+    ): androidx.car.app.navigation.model.RoutingInfo {
+        val turn = n.nextTurn
+        val builder = androidx.car.app.navigation.model.RoutingInfo.Builder()
+        if (turn == null) {
+            return builder.setLoading(true).build()
+        }
+        val maneuverType = when (turn.command) {
+            TurnCommand.TURN_LEFT ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_NORMAL_LEFT
+            TurnCommand.TURN_SLIGHT_LEFT ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_SLIGHT_LEFT
+            TurnCommand.TURN_SHARP_LEFT ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_SHARP_LEFT
+            TurnCommand.TURN_RIGHT ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_NORMAL_RIGHT
+            TurnCommand.TURN_SLIGHT_RIGHT ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_SLIGHT_RIGHT
+            TurnCommand.TURN_SHARP_RIGHT ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_SHARP_RIGHT
+            TurnCommand.KEEP_LEFT ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_KEEP_LEFT
+            TurnCommand.KEEP_RIGHT ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_KEEP_RIGHT
+            TurnCommand.U_TURN ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_U_TURN_LEFT
+            TurnCommand.ROUNDABOUT ->
+                // Right-hand traffic → counter-clockwise roundabouts.
+                androidx.car.app.navigation.model.Maneuver
+                    .TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW
+            TurnCommand.STRAIGHT, TurnCommand.OFF_ROUTE, TurnCommand.UNKNOWN ->
+                androidx.car.app.navigation.model.Maneuver.TYPE_STRAIGHT
+        }
+        val maneuver = androidx.car.app.navigation.model.Maneuver.Builder(maneuverType).apply {
+            if (maneuverType ==
+                androidx.car.app.navigation.model.Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW &&
+                turn.exitNumber > 0
+            ) {
+                setRoundaboutExitNumber(turn.exitNumber)
+            }
+        }.build()
+        val step = androidx.car.app.navigation.model.Step.Builder()
+            .setManeuver(maneuver)
+            .setCue(cueFor(turn))
+            .build()
+        return builder
+            .setCurrentStep(step, carDistance(n.distanceToTurnM))
+            .build()
+    }
+
+    private fun cueFor(turn: be.appmire.gpsinfo.data.nav.TurnHint): String = when (turn.command) {
+        TurnCommand.TURN_LEFT -> carContext.getString(R.string.car_nav_turn_left)
+        TurnCommand.TURN_SLIGHT_LEFT -> carContext.getString(R.string.car_nav_slight_left)
+        TurnCommand.TURN_SHARP_LEFT -> carContext.getString(R.string.car_nav_sharp_left)
+        TurnCommand.TURN_RIGHT -> carContext.getString(R.string.car_nav_turn_right)
+        TurnCommand.TURN_SLIGHT_RIGHT -> carContext.getString(R.string.car_nav_slight_right)
+        TurnCommand.TURN_SHARP_RIGHT -> carContext.getString(R.string.car_nav_sharp_right)
+        TurnCommand.KEEP_LEFT -> carContext.getString(R.string.car_nav_keep_left)
+        TurnCommand.KEEP_RIGHT -> carContext.getString(R.string.car_nav_keep_right)
+        TurnCommand.U_TURN -> carContext.getString(R.string.car_nav_u_turn)
+        TurnCommand.ROUNDABOUT ->
+            if (turn.exitNumber > 0)
+                carContext.getString(R.string.car_nav_roundabout_exit, turn.exitNumber)
+            else carContext.getString(R.string.car_nav_roundabout)
+        else -> carContext.getString(R.string.car_nav_continue)
+    }
+
+    private fun carDistance(meters: Double): androidx.car.app.model.Distance =
+        if (meters >= 1000) {
+            androidx.car.app.model.Distance.create(
+                meters / 1000.0, androidx.car.app.model.Distance.UNIT_KILOMETERS,
+            )
+        } else {
+            androidx.car.app.model.Distance.create(
+                (meters / 10).toInt() * 10.0, androidx.car.app.model.Distance.UNIT_METERS,
+            )
+        }
+
+    private fun travelEstimate(
+        n: NavigationController.NavState.Navigating,
+    ): androidx.car.app.navigation.model.TravelEstimate {
+        val arrivalMillis = System.currentTimeMillis() + n.etaSeconds * 1000L
+        return androidx.car.app.navigation.model.TravelEstimate.Builder(
+            carDistance(n.distanceRemainingM),
+            androidx.car.app.model.DateTimeWithZone.create(
+                arrivalMillis, java.util.TimeZone.getDefault(),
+            ),
+        )
+            .setRemainingTimeSeconds(n.etaSeconds.toLong())
+            .build()
+    }
 }
