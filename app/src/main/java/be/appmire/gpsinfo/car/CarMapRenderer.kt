@@ -456,8 +456,12 @@ class CarMapRenderer(
         loc: Location?,
     ) {
         instruments.drawColumnBackground(canvas, columnW, h.toFloat())
-        val top = inset.top.toFloat()
-        val bottom = inset.bottom.toFloat().coerceAtMost(h.toFloat())
+        // The stable area is conservative (sized around the action
+        // strips on the map side); the visible area is what actually
+        // matters for the left column — maximize the dials within it.
+        val column = visibleArea ?: inset
+        val top = column.top.toFloat()
+        val bottom = column.bottom.toFloat().coerceAtMost(h.toFloat())
         val cellH = (bottom - top) / 3f
         instruments.drawSpeedDial(
             canvas, RectF(0f, top, columnW, top + cellH), loc,

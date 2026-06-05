@@ -270,7 +270,9 @@ class CarInstruments {
      *  takes halfW/halfH independently), so edge ticks just run
      *  longer toward the wide sides — instrument-pod style. */
     private fun housing(canvas: Canvas, cell: RectF): DialGeometry {
-        val gap = min(cell.width(), cell.height()) * 0.02f
+        // A couple of pixels of seam between housings — the dials
+        // should otherwise own their full cell.
+        val gap = 2f
         val box = RectF(cell.left + gap, cell.top + gap, cell.right - gap, cell.bottom - gap)
         val shortest = min(box.width(), box.height())
         fillPaint.color = HOUSING
@@ -278,7 +280,7 @@ class CarInstruments {
         return DialGeometry(
             cx = box.centerX(),
             cy = box.centerY(),
-            r = shortest / 2f * 0.92f,
+            r = shortest / 2f * 0.98f,
             side = shortest,
             halfW = box.width() / 2f,
             halfH = box.height() / 2f,
@@ -301,7 +303,7 @@ class CarInstruments {
         labelAbs: Boolean = false,
     ) {
         val sharedInnerT = g.r * 0.94f
-        val bezelInset = g.side * 0.025f
+        val bezelInset = g.side * 0.012f
         val labelT = g.r * 0.78f
         var v = minValue
         while (v <= maxValue + 0.0001f) {
