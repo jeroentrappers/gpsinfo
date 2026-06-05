@@ -153,6 +153,16 @@ class CarMapRenderer(
         scheduleRender()
     }
 
+    /** One-line navigation status (tile download %, route computing,
+     *  failure reason) — without it those phases are invisible and
+     *  navigation looks like it silently did nothing. */
+    private var navStatusText: String? = null
+
+    fun updateNavigationStatus(text: String?) {
+        navStatusText = text
+        scheduleRender()
+    }
+
     /** Repaint when an async tile download lands. */
     private val tileArrivedHandler = Handler(Looper.getMainLooper()) {
         scheduleRender()
@@ -414,11 +424,15 @@ class CarMapRenderer(
         // (see withDerivedMotion) — prefer it over the raw snapshot.
         val loc = lastDrawnLocation ?: snapshot.location
 
-        // Split layout: instrument column on the left third, live map
-        // on the right two thirds.
+        // Split layout: instrument column on the left, live map on the
+        // rest. The column width is *derived from the height*: three
+        // stacked square housings, each (usable height)/3 tall — the
+        // cluster is exactly as wide as the dials need, no wider.
         val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
-        val columnW = w * INSTRUMENT_COLUMN_FRACTION
-        drawInstrumentColumn(canvas, columnW, h, inset, loc)
+        val column = visibleArea ?: inset
+        val usableH = (column.bottom.coerceAtMost(h) - column.top).toFloat()
+        val columnW = (usableH / 3f).coerceAtMost(w * MAX_COLUMN_FRACTION)
+        drawInstrumentColumn(canvas, columnW, h, column, loc)
 
         val mapLeft = columnW
         val mapW = (w - columnW).toInt()
@@ -449,7 +463,32 @@ class CarMapRenderer(
         }
         drawHud(canvas, mapLeft, w, h, dark)
         drawRallyPanel(canvas, mapLeft, w, h, dark)
+        drawNavStatus(canvas, mapLeft, w, h, dark)
         canvas.restore()
+    }
+
+    /** Pill banner, top-centre of the map, for navigation phases that
+     *  have no other on-screen representation. */
+    private fun drawNavStatus(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
+        val text = navStatusText ?: return
+        // The rally panel owns the same slot while a stage is armed or
+        // running — don't fight it.
+        if (rally !is RallyState.Idle) return
+        val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+        val pad = h * 0.03f
+        val cx = (mapLeft + w) / 2f
+        hudTextPaint.textAlign = Paint.Align.CENTER
+        hudTextPaint.isFakeBoldText = false
+        hudTextPaint.textSize = h * 0.04f
+        val tw = hudTextPaint.measureText(text)
+        val top = inset.top + pad
+        val panelH = h * 0.04f + pad * 1.5f
+        bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+        val rect = RectF(cx - tw / 2 - pad, top, cx + tw / 2 + pad, top + panelH)
+        canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubblePaint)
+        canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubbleStrokePaint)
+        hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+        canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
     }
 
     /** Left third: speed dial / gimballed compass / energy meter,
@@ -461,14 +500,10 @@ class CarMapRenderer(
         canvas: Canvas,
         columnW: Float,
         h: Int,
-        inset: Rect,
+        column: Rect,
         loc: Location?,
     ) {
         instruments.drawColumnBackground(canvas, columnW, h.toFloat())
-        // The stable area is conservative (sized around the action
-        // strips on the map side); the visible area is what actually
-        // matters for the left column — maximize the dials within it.
-        val column = visibleArea ?: inset
         val top = column.top.toFloat()
         val bottom = column.bottom.toFloat().coerceAtMost(h.toFloat())
         val cellH = (bottom - top) / 3f
@@ -937,8 +972,9 @@ class CarMapRenderer(
         /** Marker height when heading-up or tilted: near the bottom,
          *  the screen above is the road ahead. */
         const val ANCHOR_FRACTION = 0.82f
-        /** Left instrument column (speed/compass/energy) width. */
-        const val INSTRUMENT_COLUMN_FRACTION = 1f / 4f
+        /** Hard cap on the instrument column: even on squat screens
+         *  the map keeps at least 60% of the width. */
+        const val MAX_COLUMN_FRACTION = 0.4f
         /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
          *  to Nullarbor and requesting tiles all the way there. */
         const val MAX_PAN_DEG = 0.5

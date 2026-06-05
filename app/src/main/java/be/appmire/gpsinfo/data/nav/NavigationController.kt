@@ -77,7 +77,7 @@ object NavigationController {
         val appContext = context.applicationContext
         val from = lastLocation
         if (from == null) {
-            _state.value = NavState.Failed("No GPS fix yet")
+            failTransient("No GPS fix yet")
             return
         }
         routeJob?.cancel()
@@ -99,7 +99,7 @@ object NavigationController {
                             }
                             is RoutingDataRepository.DownloadState.Failed -> {
                                 android.util.Log.w(TAG, "tile download failed: ${dl.tile} ${dl.message}")
-                                _state.value = NavState.Failed("Tile ${dl.tile}: ${dl.message}")
+                                failTransient("Tile ${dl.tile}: ${dl.message}")
                             }
                             is RoutingDataRepository.DownloadState.Done -> Unit
                         }
@@ -116,7 +116,7 @@ object NavigationController {
                 null
             }
             if (route == null || route.points.size < 2) {
-                _state.value = NavState.Failed("No route found")
+                failTransient("No route found")
                 return@launch
             }
             installRoute(route, destLat, destLon)
@@ -130,6 +130,17 @@ object NavigationController {
         offRouteCount = 0
         reRouting = false
         _state.value = NavState.Idle
+    }
+
+    /** Failures are transient by design: surface the banner for a few
+     *  seconds, then fall back to Idle so it never sticks around as a
+     *  stale error with no dismiss affordance on the car screen. */
+    private fun failTransient(message: String) {
+        _state.value = NavState.Failed(message)
+        scope.launch {
+            kotlinx.coroutines.delay(FAILED_BANNER_MS)
+            if (_state.value is NavState.Failed) _state.value = NavState.Idle
+        }
     }
 
     /** Feed a GNSS snapshot — multi-source safe (deduped on the fix
@@ -302,4 +313,5 @@ object NavigationController {
     private const val OFF_ROUTE_M = 50.0
     private const val OFF_ROUTE_CONSECUTIVE = 3
     private const val ARRIVAL_M = 40.0
+    private const val FAILED_BANNER_MS = 6_000L
 }

@@ -124,6 +124,13 @@ class TripDashboardScreen(
                 renderer.updateNavigationRoute(
                     (navState as? NavigationController.NavState.Navigating)?.route?.points
                 )
+                renderer.updateNavigationStatus(
+                    when (navState) {
+                        is NavigationController.NavState.Preparing -> navState.detail
+                        is NavigationController.NavState.Failed -> navState.message
+                        else -> null
+                    }
+                )
                 if (recordingToggled || rallyPhaseChanged || navChanged) invalidate()
             }
             .launchIn(lifecycleScope)
