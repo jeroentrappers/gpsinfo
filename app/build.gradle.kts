@@ -79,7 +79,21 @@ android {
             }
         }
         // `debug` keeps the AGP defaults (no minify, no resource shrinking)
-        // so dev cycles stay fast.
+        // so dev cycles stay fast — and stays manifest-identical to
+        // release so sideloaded debug builds behave exactly like the
+        // production app on Android Auto.
+
+        // `aaos` is the Automotive-OS emulator test rig: debug plus
+        // the CarAppActivity adapter + debug receiver (src/aaos).
+        // Quarantined in its own build type because its manifest
+        // additions (automotive uses-features, CarAppActivity) ride
+        // along in every APK of the type that declares them — and the
+        // phone Android Auto host has a history of treating apps that
+        // smell like AAOS apps unpredictably. assembleAaos to build.
+        create("aaos") {
+            initWith(getByName("debug"))
+            matchingFallbacks += "debug"
+        }
     }
 
     buildFeatures {
@@ -183,9 +197,10 @@ dependencies {
     implementation(libs.brouter.mapaccess)
     // AAOS adapter so debug builds run on the Android Automotive OS
     // emulator (CarAppActivity hosts the same CarAppService templates).
-    // Debug-only: the Play artifact stays a pure phone + Android Auto
-    // app; the automotive uses-features live in src/debug's manifest.
-    debugImplementation(libs.androidx.car.app.automotive)
+    // aaos build type only: debug + release manifests stay pure
+    // phone/Android Auto; the automotive uses-features live in
+    // src/aaos's manifest overlay.
+    "aaosImplementation"(libs.androidx.car.app.automotive)
     // ZXing core for the "share my position" QR encoder. Pure Java,
     // Apache-2.0, no Play Services. We only ever encode here — the
     // scanner side is whatever app the recipient uses.
