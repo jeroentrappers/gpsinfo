@@ -317,6 +317,11 @@
     <string name="car_nav_roundabout_exit" tools:ignore="MissingTranslation">Roundabout, exit %1$d</string>
     <string name="car_nav_continue" tools:ignore="MissingTranslation">Continue</string>
     <string name="nav_pick_drive" tools:ignore="MissingTranslation">Drive route (offline)</string>
+    <string name="nav_pick_tab_address" tools:ignore="MissingTranslation">Address</string>
+    <string name="nav_address_label" tools:ignore="MissingTranslation">Search address or place</string>
+    <string name="nav_address_no_results" tools:ignore="MissingTranslation">No matches found</string>
+    <string name="nav_address_offline" tools:ignore="MissingTranslation">No connection — address search needs internet (routing stays offline)</string>
+    <string name="nav_address_from_cache" tools:ignore="MissingTranslation">Cached result (offline)</string>
     <string name="rally_title" tools:ignore="MissingTranslation">Regularity rally</string>
     <string name="rally_new_stage" tools:ignore="MissingTranslation">New stage</string>
     <string name="rally_empty" tools:ignore="MissingTranslation">No stages yet. Enter the roadbook speed table as “from km / speed” rows.</string>

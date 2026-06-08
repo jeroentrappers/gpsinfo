@@ -74,7 +74,11 @@ class CarInstruments {
         centerPaint.color = LCD_BRIGHT
         centerPaint.textSize = g.r * 0.40f
         centerPaint.isFakeBoldText = true
-        val digit = if (loc != null && loc.hasSpeed()) kmh.toInt().toString() else "—"
+        // Fixed 3-digit width with leading zeros so the readout never
+        // shifts as the speed crosses 9→10→100; monospace keeps each
+        // glyph the same width too.
+        val digit = if (loc != null && loc.hasSpeed())
+            "%03d".format(Locale.ROOT, kmh.toInt().coerceIn(0, 999)) else "———"
         canvas.drawText(digit, g.cx, g.cy + g.r * 0.52f, centerPaint)
         centerPaint.isFakeBoldText = false
         if (loc != null && loc.hasSpeedAccuracy()) {
@@ -179,7 +183,8 @@ class CarInstruments {
         centerPaint.textSize = g.r * 0.28f
         centerPaint.isFakeBoldText = true
         canvas.drawText(
-            if (hasHeading) "${headingDeg.toInt()}°" else "—",
+            if (hasHeading) "%03d°".format(Locale.ROOT, (headingDeg.toInt() % 360 + 360) % 360)
+            else "———°",
             g.cx,
             g.cy + g.r * 0.10f,
             centerPaint,
@@ -238,8 +243,10 @@ class CarInstruments {
         centerPaint.color = if (kw != null) LCD_BRIGHT else ACCURACY_GREY
         centerPaint.textSize = g.r * 0.32f
         centerPaint.isFakeBoldText = true
+        // Sign + fixed 3-digit width so the needle's readout stays put
+        // across the −100…240 kW range (e.g. "+045", "-100").
         canvas.drawText(
-            kw?.let { "%+.0f".format(Locale.ROOT, it) } ?: "—",
+            kw?.let { "%+04d".format(Locale.ROOT, it.toInt().coerceIn(-999, 999)) } ?: "————",
             g.cx,
             g.cy + g.r * 0.52f,
             centerPaint,
@@ -425,7 +432,12 @@ class CarInstruments {
         strokeWidth = 2f
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
-    private val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    // Monospace so every digit occupies the same width — the readouts
+    // stay rock-steady as values change (paired with zero-padding).
+    private val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER
+        typeface = android.graphics.Typeface.MONOSPACE
+    }
 
     private companion object {
         // RetroDial geometry — shared with the phone gauge + id.dash.

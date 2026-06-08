@@ -6,7 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
@@ -14,6 +18,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.PrimaryTabRow
@@ -22,10 +29,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -89,16 +98,28 @@ fun NavigationPickerScreen(
                 Tab(
                     selected = tab == 0,
                     onClick = { tab = 0 },
-                    text = { Text(stringResource(R.string.nav_pick_tab_map)) },
+                    text = { Text(stringResource(R.string.nav_pick_tab_address)) },
                 )
                 Tab(
                     selected = tab == 1,
                     onClick = { tab = 1 },
+                    text = { Text(stringResource(R.string.nav_pick_tab_map)) },
+                )
+                Tab(
+                    selected = tab == 2,
+                    onClick = { tab = 2 },
                     text = { Text(stringResource(R.string.nav_pick_tab_coords)) },
                 )
             }
             when (tab) {
-                0 -> MapPickPane(
+                0 -> AddressPickPane(
+                    modifier = Modifier.weight(1f),
+                    biasLatDeg = initialLatDeg,
+                    biasLonDeg = initialLonDeg,
+                    onConfirm = onConfirm,
+                    onDriveTo = onDriveTo,
+                )
+                1 -> MapPickPane(
                     modifier = Modifier.weight(1f),
                     initialLatDeg = initialLatDeg,
                     initialLonDeg = initialLonDeg,
@@ -110,6 +131,129 @@ fun NavigationPickerScreen(
                     onConfirm = onConfirm,
                     onDriveTo = onDriveTo,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Address / place search. The one networked picker: types flow into
+ * Photon via [GeocodingRepository] (debounced), results list below.
+ * Tapping a result confirms it (or drives to it). Routing after the
+ * pick is fully offline — only the lookup needs a connection, and it
+ * falls back to the on-disk cache when there isn't one.
+ */
+@Composable
+private fun AddressPickPane(
+    modifier: Modifier = Modifier,
+    biasLatDeg: Double?,
+    biasLonDeg: Double?,
+    onConfirm: (NavigationTarget.Single) -> Unit,
+    onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
+) {
+    val context = LocalContext.current
+    val repo = remember { be.appmire.gpsinfo.data.nav.GeocodingRepository(context) }
+    var query by remember { mutableStateOf("") }
+    var results by remember {
+        mutableStateOf<List<be.appmire.gpsinfo.data.nav.GeocodeResult>>(emptyList())
+    }
+    var searching by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<String?>(null) }
+    var selected by remember {
+        mutableStateOf<be.appmire.gpsinfo.data.nav.GeocodeResult?>(null)
+    }
+
+    // Debounced search: wait for a 400 ms typing pause before hitting
+    // the network, so each keystroke doesn't fire a request.
+    LaunchedEffect(query) {
+        selected = null
+        val q = query.trim()
+        if (q.length < 3) {
+            results = emptyList()
+            status = null
+            return@LaunchedEffect
+        }
+        kotlinx.coroutines.delay(400)
+        searching = true
+        status = null
+        when (val outcome = repo.search(q, biasLatDeg, biasLonDeg)) {
+            is be.appmire.gpsinfo.data.nav.GeocodingRepository.SearchOutcome.Hits -> {
+                results = outcome.results
+                status = if (outcome.fromCache)
+                    context.getString(R.string.nav_address_from_cache) else null
+            }
+            be.appmire.gpsinfo.data.nav.GeocodingRepository.SearchOutcome.Empty -> {
+                results = emptyList()
+                status = context.getString(R.string.nav_address_no_results)
+            }
+            be.appmire.gpsinfo.data.nav.GeocodingRepository.SearchOutcome.Offline -> {
+                results = emptyList()
+                status = context.getString(R.string.nav_address_offline)
+            }
+        }
+        searching = false
+    }
+
+    Column(modifier = modifier.fillMaxWidth().padding(16.dp)) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            label = { Text(stringResource(R.string.nav_address_label)) },
+            singleLine = true,
+            trailingIcon = {
+                if (searching) CircularProgressIndicator(Modifier.padding(12.dp))
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        status?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            items(results) { r ->
+                val isSel = r === selected
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { selected = r }
+                        .padding(vertical = 10.dp),
+                ) {
+                    Text(
+                        r.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (isSel) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (r.detail.isNotBlank()) {
+                        Text(
+                            r.detail,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                HorizontalDivider()
+            }
+        }
+        val sel = selected
+        Button(
+            onClick = { sel?.let { onConfirm(NavigationTarget.Single(it.lat, it.lon, it.label)) } },
+            enabled = sel != null,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        ) {
+            Text(stringResource(R.string.nav_pick_confirm))
+        }
+        if (onDriveTo != null) {
+            OutlinedButton(
+                onClick = { sel?.let { onDriveTo(NavigationTarget.Single(it.lat, it.lon, it.label)) } },
+                enabled = sel != null,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Text(stringResource(R.string.nav_pick_drive))
             }
         }
     }
