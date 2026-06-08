@@ -93,6 +93,7 @@ data class DashboardProfile(
                 DashboardSection.Speed,
                 DashboardSection.Sky,
                 DashboardSection.Compass,
+                DashboardSection.GForce,
                 DashboardSection.World,
                 DashboardSection.TimeSun,
             ),
