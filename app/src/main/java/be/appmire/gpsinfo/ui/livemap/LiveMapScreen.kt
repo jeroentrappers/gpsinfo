@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.UnitSystem
+import be.appmire.gpsinfo.data.nav.MapLibreStyle
 import be.appmire.gpsinfo.data.nav.OfflineMapRepository
 import kotlinx.coroutines.launch
 import be.appmire.gpsinfo.data.model.FixStatus

@@ -252,14 +252,6 @@ private class MapHolder {
     }
 
     private companion object {
-        val STYLE_URI = MapLibreStyle.LIBERTY
+        val STYLE_URI = be.appmire.gpsinfo.data.nav.MapLibreStyle.LIBERTY
     }
-}
-
-/** Shared MapLibre style URLs — used by the live map, the car
- *  snapshotter and the offline-region downloader so all three cache
- *  against the same style. OpenFreeMap: free OSM vector, no API key,
- *  no usage limits, self-hostable. */
-object MapLibreStyle {
-    const val LIBERTY = "https://tiles.openfreemap.org/styles/liberty"
 }

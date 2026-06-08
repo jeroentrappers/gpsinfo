@@ -61,8 +61,10 @@ object NavigationController {
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var routeJob: Job? = null
+    private var corridorJob: Job? = null
     private var router: OfflineRouter? = null
     private var voice: VoiceGuide? = null
+    private var offlineMap: OfflineMapRepository? = null
 
     /** Cumulative metres at each route point — guidance lookup table. */
     private var cumDist = DoubleArray(0)
@@ -121,12 +123,74 @@ object NavigationController {
             }
             installRoute(route, destLat, destLon)
             voice?.announceStart(route)
+            // Cache the map imagery along the route corridor for
+            // offline rendering — the visual counterpart to the rd5
+            // road network we just ensured. Background, best-effort;
+            // navigation doesn't wait on it. Only on the initial
+            // route, not on silent re-routes (which reuse the cache).
+            startCorridorDownload(appContext, route)
+        }
+    }
+
+    /**
+     * Best-effort offline-cache of the OpenFreeMap vector tiles over
+     * the route's bounding box, so the map renders without a
+     * connection along the whole drive. The bbox of a long route is a
+     * big rectangle, so [maxZoom] is scaled down for larger spans to
+     * keep the tile count under MapLibre's region limit (a too-large
+     * request simply fails and we fall back to online tiles).
+     */
+    private fun startCorridorDownload(context: Context, route: OfflineRoute) {
+        corridorJob?.cancel()
+        if (route.points.size < 2) return
+        var minLat = Double.MAX_VALUE
+        var maxLat = -Double.MAX_VALUE
+        var minLon = Double.MAX_VALUE
+        var maxLon = -Double.MAX_VALUE
+        for (p in route.points) {
+            if (p.lat < minLat) minLat = p.lat
+            if (p.lat > maxLat) maxLat = p.lat
+            if (p.lon < minLon) minLon = p.lon
+            if (p.lon > maxLon) maxLon = p.lon
+        }
+        val margin = 0.05
+        val span = maxOf(maxLat - minLat, maxLon - minLon)
+        // Span-scaled detail ceiling: a city hop gets z15, a
+        // cross-country route only z10, so the rectangle's tile count
+        // stays bounded. MapLibre overzooms beyond maxZoom for closer
+        // views (vector tiles scale), so the map still reads fine.
+        val maxZoom = when {
+            span < 0.3 -> 15.0
+            span < 1.0 -> 14.0
+            span < 3.0 -> 12.0
+            else -> 10.0
+        }
+        val bounds = org.maplibre.android.geometry.LatLngBounds.Builder()
+            .include(org.maplibre.android.geometry.LatLng(maxLat + margin, maxLon + margin))
+            .include(org.maplibre.android.geometry.LatLng(minLat - margin, minLon - margin))
+            .build()
+        val repo = offlineMap ?: OfflineMapRepository(context).also { offlineMap = it }
+        corridorJob = scope.launch {
+            repo.downloadRegion(
+                name = "corridor-${System.currentTimeMillis()}",
+                bounds = bounds,
+                styleUrl = MapLibreStyle.LIBERTY,
+                minZoom = 6.0,
+                maxZoom = maxZoom,
+            ).collect { st ->
+                if (st is OfflineMapRepository.DownloadState.Failed) {
+                    android.util.Log.w(TAG, "corridor map cache failed: ${st.message}")
+                }
+            }
         }
     }
 
     @Synchronized
     fun stop() {
         routeJob?.cancel()
+        // The corridor map cache keeps downloading after stop on
+        // purpose — the tiles stay useful for the next drive; only a
+        // new navigateTo (or process death) supersedes it.
         offRouteCount = 0
         reRouting = false
         _state.value = NavState.Idle

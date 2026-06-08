@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.PointF
 import android.os.Handler
 import android.os.Looper
-import be.appmire.gpsinfo.ui.livemap.MapLibreStyle
+import be.appmire.gpsinfo.data.nav.MapLibreStyle
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
