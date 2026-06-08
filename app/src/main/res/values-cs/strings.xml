@@ -427,4 +427,380 @@
     <string name="update_available_title" tools:ignore="MissingTranslation">Dostupná aktualizace</string>
     <string name="update_available_body" tools:ignore="MissingTranslation">Verze %1$s je na Google Play — klepnutím aktualizujete.</string>
     <string name="update_dismiss" tools:ignore="MissingTranslation">Zavřít</string>
+
+    <!-- Navigation drawer -->
+    <string name="drawer_open">Otevřít menu</string>
+    <string name="drawer_subtitle">GPS dashboard &amp; tracker</string>
+    <string name="drawer_section_quick">Rychlé akce</string>
+    <string name="drawer_section_navigate">Přejít na</string>
+    <string name="drawer_section_dashboard">Rozložení dashboardu</string>
+    <string name="drawer_section_app">Aplikace</string>
+
+    <!-- Compass extras -->
+    <string name="degrees_true">° pravý</string>
+    <string name="compass_card_heading">Kurz</string>
+    <string name="compass_card_course">Směr pohybu</string>
+    <string name="heading_true_suffix">%1$s · °T</string>
+
+    <!-- Persona dashboard metrics -->
+    <string name="metric_elapsed">Uplynulý čas</string>
+    <string name="metric_distance">Vzdálenost</string>
+    <string name="metric_heart_rate">Tepová frekvence</string>
+    <string name="metric_power">Výkon</string>
+    <string name="metric_cadence">Kadence</string>
+    <string name="metric_stride">Délka kroku</string>
+    <string name="persona_runner_idle_hint">Záznam běhu spustíte klepnutím na tlačítko záznamu na hlavní obrazovce.</string>
+    <string name="persona_runner_recording_hint">Zaznamenává se — klepnutím na ikonu sportovního zobrazení získáte vedený koučink.</string>
+    <string name="persona_hiker_until_sunset">DO ZÁPADU SLUNCE</string>
+    <string name="persona_hiker_sunset_at">Západ slunce v %1$s</string>
+    <string name="persona_sailor_sog">SOG</string>
+    <string name="persona_sailor_cog">COG</string>
+    <string name="persona_runner_target_pace">Cíl %1$s</string>
+    <string name="persona_geocacher_no_target">Žádný cíl není nastaven. Pomocí položky „Navigovat do…" v menu zadejte souřadnice keše.</string>
+
+    <!-- Trail empty-state actions -->
+    <string name="trail_empty_action_record">Zaznamenat první trasu</string>
+    <string name="trail_empty_action_import">Importovat soubor GPX</string>
+
+    <!-- Personal records -->
+    <string name="pr_section_title">Osobní rekordy</string>
+    <string name="pr_total_distance">Celková vzdálenost</string>
+    <string name="pr_total_time">Celkový čas</string>
+    <string name="pr_trail_count">Trasy</string>
+    <string name="pr_longest">Nejdelší</string>
+    <string name="pr_fastest_avg">Nejvyšší průměr</string>
+    <string name="pr_biggest_climb">Největší stoupání</string>
+    <string name="pr_longest_duration">Nejdelší běh</string>
+
+    <!-- Dashboard density -->
+    <string name="settings_density_label">Hustota dashboardu</string>
+    <string name="settings_density_standard">Standardní</string>
+    <string name="settings_density_glanceable">Přehledná</string>
+
+    <!-- Trip computer -->
+    <string name="trip_computer_title">CESTA — od posledního resetu</string>
+    <string name="trip_computer_distance">Vzdálenost</string>
+    <string name="trip_computer_time">Čas</string>
+    <string name="trip_computer_trails">Trasy</string>
+    <string name="trip_computer_reset">Resetovat cestu</string>
+
+    <!-- Quick Settings tile -->
+    <string name="qs_tile_label">Trasa GPSinfo</string>
+    <string name="qs_tile_state_recording">Zaznamenává se — klepnutím otevřete</string>
+    <string name="qs_tile_state_idle">Klepnutím spustíte záznam</string>
+
+    <!-- Vibration cues -->
+    <string name="settings_vibration_cues">Vibrační pokyny</string>
+    <string name="settings_vibration_cues_body">Odlišné vibrační vzory, když se tempo odchýlí nebo TF překročí hranici zóny. Nezávislé na zvukových pokynech.</string>
+
+    <!-- Sports view tutorial -->
+    <string name="sports_tutorial_title">Vítejte ve sportovním zobrazení</string>
+    <string name="sports_tutorial_lede">Čtyři přehledné přístroje vás provedou během běhu. Zde je, co každý z nich ukazuje.</string>
+    <string name="sports_tutorial_pace_title">Ukazatel odchylky tempa</string>
+    <string name="sports_tutorial_pace_body">Ručička uprostřed = v tempu. Vlevo od středu = příliš pomalu. Vpravo = příliš rychle. Číslo uvnitř je odchylka v sekundách.</string>
+    <string name="sports_tutorial_hr_title">Ukazatel zóny tepové frekvence</string>
+    <string name="sports_tutorial_hr_body">Barevné pásy jsou Z1–Z5 z vámi nastavených zón. BPM uvnitř, štítek aktuální zóny vpravo.</string>
+    <string name="sports_tutorial_intensity_title">Profil intenzity</string>
+    <string name="sports_tutorial_intensity_body">Barevně odstupňovaný náhled dalšího úseku podle strmosti stoupání, s ETA do dalšího velkého stoupání.</string>
+    <string name="sports_tutorial_cues_title">Zvukové &amp; vibrační pokyny</string>
+    <string name="sports_tutorial_cues_body">Zapněte v nastavení a získejte hlasové / vibrační upozornění, když se tempo odchýlí nebo TF překročí zóny. Hudba se ztiší, místo aby se přerušila.</string>
+    <string name="sports_tutorial_dismiss">Rozumím</string>
+
+    <!-- Laps -->
+    <string name="lap_action">Označit kolo</string>
+    <string name="lap_recorded_toast">Kolo %1$d · %2$.2f km za %3$d:%4$02d</string>
+    <string name="laps_section_title">Kola</string>
+    <string name="laps_column_lap">#</string>
+    <string name="laps_column_distance">Vzdálenost</string>
+    <string name="laps_column_time">Čas</string>
+    <string name="laps_column_pace">Tempo</string>
+    <string name="laps_column_hr">TF</string>
+
+    <!-- Trail tags editor -->
+    <string name="tags_editor_title">Štítky trasy</string>
+    <string name="tags_editor_body">Volné popisky — užitečné pro seskupování ranních běhů, skupinových jízd nebo závodů. Uloženy v poli &lt;keywords&gt; souboru GPX.</string>
+    <string name="tags_editor_empty">Zatím žádné štítky.</string>
+    <string name="tags_editor_input_hint">Přidejte štítek a stiskněte Hotovo</string>
+    <string name="trail_action_edit_tags">Upravit štítky</string>
+
+    <!-- Trails search &amp; sort -->
+    <string name="trails_search_hint">Hledat podle názvu</string>
+    <string name="trails_sort_label">Řadit</string>
+    <string name="trails_sort_date_desc">Nejnovější první</string>
+    <string name="trails_sort_date_asc">Nejstarší první</string>
+    <string name="trails_sort_distance_desc">Nejdelší první</string>
+    <string name="trails_sort_distance_asc">Nejkratší první</string>
+    <string name="trails_filter_all">Vše</string>
+    <string name="trails_no_results">Žádná trasa neodpovídá filtrům.</string>
+
+    <!-- Auto-pause -->
+    <string name="auto_pause_idle_title">Vypadá to nehybně</string>
+    <string name="auto_pause_idle_body">30 s žádný výrazný pohyb. Klepnutím pozastavíte ručně — záznam se po dalším okně nečinnosti pozastaví tak jako tak.</string>
+    <string name="auto_pause_paused_title">Záznam pozastaven</string>
+    <string name="auto_pause_paused_body">Vzdálenost &amp; doba jsou zmrazeny. Automaticky pokračuje, jakmile se posunete &gt; 2 m, nebo klepnutím pokračujte hned.</string>
+
+    <!-- Stride calibration -->
+    <string name="stride_calibration_title">Kalibrace délky kroku</string>
+    <string name="stride_calibration_body">Ujděte změřenou vzdálenost (rovinka atletické dráhy má přesně 100 m; bazén 25 m je 25 m). Počitadlo kroků se vydělí vaší vzdáleností a odvodí osobní délku kroku.</string>
+    <string name="stride_calibration_saved_label">Aktuální kalibrace</string>
+    <string name="stride_calibration_distance_label">Délka chůze</string>
+    <string name="stride_calibration_walking">Chůze — pokračujte v počítání</string>
+    <string name="stride_calibration_steps">kroků</string>
+    <string name="stride_calibration_start">Začít chodit</string>
+    <string name="stride_calibration_save">Uložit kalibraci</string>
+    <string name="stride_calibration_clear">Vymazat kalibraci</string>
+    <string name="settings_stride_calibration">Kalibrovat délku kroku</string>
+
+    <!-- Dashboard profile -->
+    <string name="dashboard_profile_switch">Přepnout profil dashboardu</string>
+    <string name="share_nav_context">Míříte k trasovému bodu vzdálenému %1$s · ETA %2$s</string>
+
+    <!-- Android Auto rows &amp; actions -->
+    <string name="car_row_speed">Rychlost</string>
+    <string name="car_row_heading">Kurz</string>
+    <string name="car_row_altitude">Nadm. výška</string>
+    <string name="car_row_trip">Cesta</string>
+    <string name="car_row_trip_idle">Nezaznamenává se</string>
+    <string name="car_action_start">Spustit trasu</string>
+    <string name="car_action_stop">Zastavit &amp; uložit</string>
+
+    <!-- Dashboard profile editor -->
+    <string name="profile_editor_title">Přizpůsobit dashboard</string>
+    <string name="profile_editor_body">Vyberte, které karty zobrazit a v jakém pořadí. Uloží se jako váš vlastní profil a aktivuje se.</string>
+    <string name="profile_editor_save">Uložit vlastní</string>
+    <string name="profile_editor_reset">Resetovat</string>
+    <string name="profile_editor_section_status">Stavový řádek</string>
+    <string name="profile_editor_section_speed">Rychloměr</string>
+    <string name="profile_editor_accent_label">Barva zvýraznění</string>
+    <string name="profile_editor_chrome_label">Vzhled</string>
+    <string name="profile_editor_chrome_normal">Normální</string>
+    <string name="profile_editor_chrome_night">Noční tlumená červená</string>
+
+    <!-- Live map -->
+    <string name="live_map_title">Živá mapa</string>
+    <string name="live_map_follow">Sledovat moji polohu</string>
+    <string name="live_map_heading_up">Otáčení kurzem nahoru</string>
+    <string name="live_map_recenter">Vystředit na mě</string>
+    <string name="live_map_follow_label">Sledovat</string>
+    <string name="live_map_recenter_label">Vystředit</string>
+    <string name="live_map_download_label">Offline</string>
+    <string name="live_map_download">Stáhnout tuto oblast pro offline použití</string>
+    <string name="live_map_download_progress">Offline mapa: %1$d%%</string>
+    <string name="live_map_sats">Sat.</string>
+    <string name="live_map_open">Otevřít živou mapu</string>
+    <string name="live_map_avg_subtext">prům. %1$s %2$s · %3$d s</string>
+    <string name="settings_dashboard_editor">Přizpůsobit karty dashboardu</string>
+    <string name="dashboard_profile_custom">Vlastní</string>
+
+    <!-- Route cues -->
+    <string name="cue_off_route">Mimo trasu</string>
+    <string name="cue_back_on_route">Zpět na trase</string>
+
+    <!-- Android Auto recent trails &amp; permissions -->
+    <string name="car_action_recent_trails">Nedávné trasy</string>
+    <string name="car_recent_title">Nedávné trasy</string>
+    <string name="car_recent_empty">Zatím nebyly zaznamenány žádné trasy</string>
+    <string name="car_permission_message">GPSinfo potřebuje přístup k poloze, aby mohl zobrazovat rychlost, kurz a nadmořskou výšku.</string>
+    <string name="car_permission_grant">Udělit přístup</string>
+    <string name="car_toast_record_failed">Záznam se nepodařilo spustit</string>
+    <string name="car_toast_saved">Uloženo: %1$s</string>
+    <string name="car_toast_save_empty">Nezachyceny žádné body — nic se neuložilo</string>
+    <string name="car_waiting_fix">Čekání na GPS fix…</string>
+
+    <!-- Android Auto navigation -->
+    <string name="car_action_end_nav">Ukončit trasu</string>
+    <string name="car_nav_turn_left">Odbočte vlevo</string>
+    <string name="car_nav_slight_left">Držte se mírně vlevo</string>
+    <string name="car_nav_sharp_left">Odbočte ostře vlevo</string>
+    <string name="car_nav_turn_right">Odbočte vpravo</string>
+    <string name="car_nav_slight_right">Držte se mírně vpravo</string>
+    <string name="car_nav_sharp_right">Odbočte ostře vpravo</string>
+    <string name="car_nav_keep_left">Držte se vlevo</string>
+    <string name="car_nav_keep_right">Držte se vpravo</string>
+    <string name="car_nav_u_turn">Otočte se do protisměru</string>
+    <string name="car_nav_roundabout">Vjeďte do kruhového objezdu</string>
+    <string name="car_nav_roundabout_exit">Kruhový objezd, výjezd %1$d</string>
+    <string name="car_nav_continue">Pokračujte</string>
+
+    <!-- Navigation destination picker -->
+    <string name="nav_pick_drive">Trasa autem (offline)</string>
+    <string name="nav_pick_tab_address">Adresa</string>
+    <string name="nav_address_label">Hledat adresu nebo místo</string>
+    <string name="nav_address_no_results">Žádné shody nenalezeny</string>
+    <string name="nav_address_offline">Bez připojení — hledání adres vyžaduje internet (plánování trasy zůstává offline)</string>
+    <string name="nav_address_from_cache">Výsledek z mezipaměti (offline)</string>
+    <string name="nav_address_saved_header">ULOŽENÉ &amp; NEDÁVNÉ</string>
+    <string name="nav_address_empty_hint">Zadejte adresu nebo někam jeďte — vaše nedávné cíle se objeví zde.</string>
+
+    <!-- Saved places -->
+    <string name="nav_place_label_action">Pojmenovat toto místo</string>
+    <string name="nav_place_home">Domov</string>
+    <string name="nav_place_work">Práce</string>
+    <string name="nav_place_unpin">Odepnout</string>
+    <string name="nav_place_custom_label">Vlastní popisek</string>
+    <string name="nav_place_save_label">Uložit popisek</string>
+    <string name="nav_place_delete">Smazat</string>
+    <string name="car_places_title">Místa</string>
+    <string name="car_places_empty">Zatím žádná uložená ani nedávná místa. Nejprve vyberte adresu v telefonu.</string>
+    <string name="car_action_places">Místa</string>
+    <string name="car_places_section_saved">Uložená</string>
+    <string name="car_places_section_recent">Nedávná</string>
+    <string name="car_places_trails">Zaznamenané trasy</string>
+
+    <!-- Regularity rally -->
+    <string name="rally_title">Soutěž pravidelnosti</string>
+    <string name="rally_new_stage">Nová etapa</string>
+    <string name="rally_empty">Zatím žádné etapy. Zadejte tabulku rychlostí z roadbooku jako řádky „od km / rychlost".</string>
+    <string name="rally_arm">Připravit</string>
+    <string name="rally_disarm">Zrušit přípravu</string>
+    <string name="rally_edit">Upravit</string>
+    <string name="rally_delete">Smazat</string>
+    <string name="rally_stage_name">Název etapy</string>
+    <string name="rally_changes_header">Změny rychlosti</string>
+    <string name="rally_from_km">Od km</string>
+    <string name="rally_speed_kmh">km/h</string>
+    <string name="rally_add_change">Přidat změnu rychlosti</string>
+    <string name="rally_length_km">Celková délka (km, volitelné)</string>
+    <string name="rally_save">Uložit etapu</string>
+    <string name="rally_cancel">Zrušit</string>
+    <string name="rally_start">START</string>
+    <string name="rally_stop">Zastavit RT</string>
+    <string name="rally_finished">Dosaženo délky etapy</string>
+    <string name="rally_target_speed">Cíl</string>
+    <string name="rally_distance">Vzdálenost</string>
+    <string name="rally_late_speed_up">ZPOŽDĚNÍ — přidejte</string>
+    <string name="rally_early_slow_down">PŘEDSTIH — zvolněte</string>
+    <string name="drawer_rally">Soutěž pravidelnosti</string>
+    <string name="car_rally_armed">RT připravena — na pokyn rozhodčího klepněte na Start</string>
+    <string name="car_action_rally_start">Spustit RT</string>
+    <string name="car_action_rally_stop">Zastavit RT</string>
+
+    <!-- Wheel probes (rally distance) -->
+    <string name="rally_wheel_status">Snímače kol: %1$d spárováno · %2$d připojeno</string>
+    <string name="rally_wheel_none">Žádný snímač kola není spárován — vzdálenost používá GPS</string>
+    <string name="rally_wheel_pair">Spravovat</string>
+    <string name="rally_source_wheel">KOLO</string>
+    <string name="rally_source_wheel_n">KOLO ×%1$d</string>
+    <string name="rally_source_gps">GPS</string>
+    <string name="wheel_pair_title">Snímače kol</string>
+    <string name="wheel_pair_body">Připevněte Bluetooth snímače rychlosti kola (CSC) na náboje kol — stanou se snímači kol pro rally. Dva na stejné nápravě měří přesnou osu vozidla; namontujte je na nehnanou nápravu.</string>
+    <string name="wheel_pair_paired_header">Spárované snímače</string>
+    <string name="wheel_paired_connected">Připojeno · %1$d otáček</string>
+    <string name="wheel_paired_disconnected">Odpojeno — připojí se automaticky</string>
+    <string name="wheel_pair_needs_permissions">K vyhledávání snímačů jsou vyžadována oprávnění Bluetooth.</string>
+    <string name="wheel_pair_scanning">Vyhledávání…</string>
+    <string name="wheel_pair_scan_again">Vyhledat znovu</string>
+    <string name="wheel_pair_no_devices_yet">Zatím nenalezeny žádné snímače — roztočte kolo, aby se snímač probudil.</string>
+    <string name="wheel_pair_unknown_device">Neznámý snímač</string>
+    <string name="wheel_forget_device">Zapomenout</string>
+
+    <!-- Ghost runner -->
+    <string name="ghost_card_title">Závod proti sobě</string>
+    <string name="ghost_card_you">Vy</string>
+    <string name="ghost_card_ghost">Duch</string>
+    <string name="ghost_card_delta">Δ</string>
+    <string name="ghost_card_clear">Stop</string>
+    <string name="ghost_card_finished">Duch dokončil.</string>
+    <string name="trail_action_race_ghost">Závodit proti této</string>
+    <string name="ghost_set_toast">Závodíte proti %1$s — spusťte záznam.</string>
+    <string name="unit_km">km</string>
+    <string name="unit_mi">mi</string>
+    <string name="ghost_picker_title">Duch běžce</string>
+    <string name="ghost_picker_body">Závoďte s virtuálním partnerem. Vyberte rovnoměrné tempo, cílový čas na vzdálenost nebo minulý běh — poté spusťte záznam na dashboardu Běžec.</string>
+    <string name="ghost_mode_off">Vypnuto</string>
+    <string name="ghost_mode_pace">Tempo</string>
+    <string name="ghost_mode_goal">Cíl</string>
+    <string name="ghost_mode_run">Minulý běh</string>
+    <string name="ghost_off_body">Žádný duch — běžíte sami.</string>
+    <string name="ghost_turn_off">Vypnout ducha</string>
+    <string name="ghost_pace_hint">Držte rovnoměrné tempo (%1$s).</string>
+    <string name="ghost_minutes">min</string>
+    <string name="ghost_seconds">s</string>
+    <string name="ghost_apply">Nastavit ducha</string>
+    <string name="ghost_goal_hint">Ujděte vzdálenost v cílovém čase — duch drží potřebné průměrné tempo.</string>
+    <string name="ghost_goal_distance">Vzdálenost</string>
+    <string name="ghost_run_empty">Zatím žádné uložené běhy k závodění. Nejprve nějaký zaznamenejte.</string>
+    <string name="settings_ghost">Duch běžce</string>
+    <string name="runner_ghost_label">Duch</string>
+    <string name="runner_ghost_ahead">%1$s napřed</string>
+    <string name="runner_ghost_behind">%1$s pozadu</string>
+    <string name="runner_ghost_finished">Duch dokončil</string>
+
+    <!-- NMEA logging &amp; Bluetooth bridge -->
+    <string name="settings_nmea_logging">Logovat surová data NMEA (diagnostika)</string>
+    <string name="settings_nmea_logging_body">Zapisuje surové věty NMEA z GPS čipu do cache/nmea/ během záznamů. Výchozně vypnuto; pro ladění chování čipu.</string>
+    <string name="settings_nmea_bt_bridge">NMEA přes Bluetooth (SPP)</string>
+    <string name="settings_nmea_bt_bridge_body">Přeposílá surové věty NMEA přes Bluetooth Serial Port (RFCOMM) během záznamů, aby spárovaný chart-plotter nebo desktopový nástroj mohl telefon používat jako externí GPS přijímač.</string>
+
+    <!-- Coordinate input labels -->
+    <string name="nav_pick_coords_plus_label">Plus Code (volitelné)</string>
+    <string name="nav_pick_coords_alt_label">Plus Code nebo Maidenhead (volitelné)</string>
+
+    <!-- Score breakdown -->
+    <string name="trail_stats_score_breakdown">Tempo %1$d · zóna TF %2$d</string>
+
+    <!-- Pace targets per waypoint -->
+    <string name="pace_targets_title">Cílová tempa</string>
+    <string name="pace_targets_body">Nastavte cílové tempo pro úsek vedoucí ke každému trasovému bodu. Sportovní zobrazení bude místo celkového sledovat tato tempa pro jednotlivé úseky.</string>
+    <string name="pace_targets_waypoint">%1$d%% trasy</string>
+    <string name="pace_targets_apply_all">Použít první na vše</string>
+    <string name="trail_pace_targets">Cílová tempa…</string>
+
+    <!-- Donations -->
+    <string name="about_liberapay_label">Přispět přes Liberapay (opakovaně)</string>
+    <string name="about_github_sponsors_label">Přispět přes GitHub Sponsors</string>
+    <string name="about_paypal_label">Přispět přes PayPal (jednorázově)</string>
+
+    <!-- Cycling power meter -->
+    <string name="cp_pair_title">Měřič výkonu</string>
+    <string name="cp_pair_body">Klepnutím na zařízení jej spárujete. Podporovány jsou pouze Bluetooth měřiče výkonu používající standardní Cycling Power Service.</string>
+    <string name="cp_pair_scanning">Vyhledávání…</string>
+    <string name="cp_pair_scan_again">Vyhledat znovu</string>
+    <string name="cp_pair_no_devices_yet">Hledání měřičů výkonu… roztočte kliku nebo probuďte měřič a mějte jej poblíž.</string>
+    <string name="cp_pair_unknown_device">Neznámé zařízení</string>
+    <string name="cp_pair_needs_permissions">Ke spárování měřiče výkonu jsou vyžadována oprávnění Bluetooth.</string>
+    <string name="cp_forget_device">Zapomenout</string>
+    <string name="cp_status_idle">Žádný měřič výkonu není spárován</string>
+    <string name="cp_status_scanning">Vyhledávání měřičů výkonu</string>
+    <string name="cp_status_connecting">Připojování k %1$s…</string>
+    <string name="cp_status_connected">Připojeno · %1$d W</string>
+    <string name="cp_status_connected_named">%1$s · %2$d W</string>
+    <string name="cp_status_disconnected">%1$s · odpojeno</string>
+    <string name="settings_pair_cp">Měřič výkonu</string>
+
+    <!-- Share position via QR -->
+    <string name="share_position_title">Sdílet moji polohu</string>
+    <string name="share_position_body">Nechte kamaráda naskenovat tento QR kód fotoaparátem nebo QR aplikací — otevře se mu výchozí mapová aplikace s připnutým vaším aktuálním místem.</string>
+    <string name="share_position_waiting_fix">Čekání na GPS fix ke sdílení…</string>
+    <string name="share_position_qr_alt">QR kód obsahující geo URI aktuální polohy</string>
+    <string name="share_position_qr_error">QR kód se nepodařilo zakódovat</string>
+    <string name="share_position_share_button">Sdílet odkaz</string>
+    <string name="share_position_chooser_title">Sdílet polohu</string>
+    <string name="settings_share_position">Sdílet moji polohu</string>
+
+    <!-- Waypoint capture &amp; list -->
+    <string name="waypoint_capture_title">Nový trasový bod</string>
+    <string name="waypoint_capture_note_label">Poznámka (volitelné)</string>
+    <string name="waypoint_capture_save_note">Uložit poznámku</string>
+    <string name="waypoint_capture_take_photo">Vyfotit</string>
+    <string name="waypoint_capture_record_voice">Nahrát hlas</string>
+    <string name="waypoint_capture_stop_voice">Zastavit</string>
+    <string name="waypoint_capture_voice_perm_hint">Vyžadováno oprávnění k mikrofonu</string>
+    <string name="waypoint_capture_needs_fix">Čekání na GPS fix před zachycením trasového bodu…</string>
+    <string name="waypoint_capture_fix_summary">V %1$s, %2$s</string>
+    <string name="waypoint_list_title">Trasové body</string>
+    <string name="waypoint_list_empty">Zatím žádné trasové body. Klepnutím na tlačítko + níže umístíte jeden na vaše aktuální místo.</string>
+    <string name="waypoint_share">Sdílet</string>
+    <string name="waypoint_delete">Smazat</string>
+    <string name="waypoint_voice_play">Přehrát hlasovou poznámku</string>
+    <string name="waypoint_voice_stop">Zastavit přehrávání</string>
+    <string name="waypoint_photo_missing">Soubor fotografie chybí</string>
+    <string name="waypoint_share_chooser_title">Sdílet trasový bod</string>
+    <string name="settings_waypoints">Trasové body</string>
+
+    <!-- FIT export &amp; altitude smoothing -->
+    <string name="trail_share_fit">Sdílet jako FIT</string>
+    <string name="trail_share_fit_failed">Soubor FIT se nepodařilo zakódovat</string>
+    <string name="settings_altitude_smooth">Vyhladit nadmořskou výšku</string>
+    <string name="settings_altitude_smooth_body">Filtruje surovou GPS nadmořskou výšku dolní propustí, aby potlačila kolísání mezi vzorky. Údaj stále sleduje skutečná stoupání, ale přestane poskakovat při chůzi po rovině.</string>
 </resources>

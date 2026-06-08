@@ -427,4 +427,384 @@
     <string name="update_available_title" tools:ignore="MissingTranslation">Update beschikbaar</string>
     <string name="update_available_body" tools:ignore="MissingTranslation">Versie %1$s staat in de Play Store — tik om bij te werken.</string>
     <string name="update_dismiss" tools:ignore="MissingTranslation">Sluiten</string>
+
+    <!-- Navigation drawer -->
+    <string name="drawer_open">Menu openen</string>
+    <string name="drawer_subtitle">GPS-dashboard &amp; tracker</string>
+    <string name="drawer_section_quick">Snelle acties</string>
+    <string name="drawer_section_navigate">Ga naar</string>
+    <string name="drawer_section_dashboard">Dashboardindeling</string>
+    <string name="drawer_section_app">App</string>
+
+    <!-- Compass / heading -->
+    <string name="degrees_true">° waar</string>
+    <string name="compass_card_heading">Koers</string>
+    <string name="compass_card_course">Grondkoers</string>
+
+    <!-- Metric labels -->
+    <string name="metric_elapsed">Verstreken</string>
+    <string name="metric_distance">Afstand</string>
+    <string name="metric_heart_rate">Hartslag</string>
+    <string name="metric_power">Vermogen</string>
+    <string name="metric_cadence">Cadans</string>
+    <string name="metric_stride">Paslengte</string>
+
+    <!-- Persona hints -->
+    <string name="persona_runner_idle_hint">Tik op de opnameknop in het dashboard om een run te starten.</string>
+    <string name="persona_runner_recording_hint">Bezig met opnemen — tik op het sportscherm-icoon voor begeleide coaching.</string>
+    <string name="persona_hiker_until_sunset">TOT ZONSONDERGANG</string>
+    <string name="persona_hiker_sunset_at">Zonsondergang om %1$s</string>
+    <string name="persona_sailor_sog">SOG</string>
+    <string name="persona_sailor_cog">COG</string>
+    <string name="persona_runner_target_pace">Doel %1$s</string>
+    <string name="persona_geocacher_no_target">Geen doel ingesteld. Gebruik “Navigeren naar…” in het menu om de coördinaten van de cache in te voeren.</string>
+    <string name="heading_true_suffix">%1$s · °W</string>
+
+    <!-- Trail empty actions -->
+    <string name="trail_empty_action_record">Neem je eerste route op</string>
+    <string name="trail_empty_action_import">Een GPX-bestand importeren</string>
+
+    <!-- Personal records -->
+    <string name="pr_section_title">Persoonlijke records</string>
+    <string name="pr_total_distance">Totale afstand</string>
+    <string name="pr_total_time">Totale tijd</string>
+    <string name="pr_trail_count">Routes</string>
+    <string name="pr_longest">Langste</string>
+    <string name="pr_fastest_avg">Snelste gem</string>
+    <string name="pr_biggest_climb">Grootste klim</string>
+    <string name="pr_longest_duration">Langste run</string>
+
+    <!-- Dashboard density -->
+    <string name="settings_density_label">Dashboarddichtheid</string>
+    <string name="settings_density_standard">Standaard</string>
+    <string name="settings_density_glanceable">Snel afleesbaar</string>
+
+    <!-- Trip computer -->
+    <string name="trip_computer_title">RIT — sinds laatste reset</string>
+    <string name="trip_computer_distance">Afstand</string>
+    <string name="trip_computer_time">Tijd</string>
+    <string name="trip_computer_trails">Routes</string>
+    <string name="trip_computer_reset">Rit resetten</string>
+
+    <!-- Quick Settings tile -->
+    <string name="qs_tile_label">GPSinfo-route</string>
+    <string name="qs_tile_state_recording">Bezig met opnemen — tik om te openen</string>
+    <string name="qs_tile_state_idle">Tik om de opname te starten</string>
+
+    <!-- Vibration cues -->
+    <string name="settings_vibration_cues">Trilsignalen</string>
+    <string name="settings_vibration_cues_body">Aparte trilpatronen wanneer je tempo afwijkt of je hartslag een zonegrens overschrijdt. Los van de gesproken signalen.</string>
+
+    <!-- Sports view tutorial -->
+    <string name="sports_tutorial_title">Welkom bij het sportscherm</string>
+    <string name="sports_tutorial_lede">Vier snel afleesbare instrumenten begeleiden je tijdens de run. Dit is wat ze je vertellen.</string>
+    <string name="sports_tutorial_pace_title">Tempo-afwijkingsmeter</string>
+    <string name="sports_tutorial_pace_body">Naald in het midden = op tempo. Links van het midden = te traag. Rechts = te snel. Het getal binnenin is de afwijking in seconden.</string>
+    <string name="sports_tutorial_hr_title">Hartslagzonemeter</string>
+    <string name="sports_tutorial_hr_body">De gekleurde banden zijn Z1-Z5 op basis van je ingestelde zones. BPM in de kom, huidige zone rechts.</string>
+    <string name="sports_tutorial_intensity_title">Intensiteitsprofiel</string>
+    <string name="sports_tutorial_intensity_body">Kleurgecodeerd voorbeeld van het volgende stuk op basis van klimsteilheid, met ETA tot de volgende grote klim.</string>
+    <string name="sports_tutorial_cues_title">Gesproken &amp; trilsignalen</string>
+    <string name="sports_tutorial_cues_body">Schakel ze in bij Instellingen voor gesproken/trilsignalen wanneer je tempo afwijkt of je hartslag een zone overschrijdt. De muziek wordt zachter in plaats van onderbroken.</string>
+    <string name="sports_tutorial_dismiss">Begrepen</string>
+
+    <!-- Laps -->
+    <string name="lap_action">Ronde markeren</string>
+    <string name="lap_recorded_toast">Ronde %1$d · %2$.2f km in %3$d:%4$02d</string>
+    <string name="laps_section_title">Rondes</string>
+    <string name="laps_column_lap">#</string>
+    <string name="laps_column_distance">Afstand</string>
+    <string name="laps_column_time">Tijd</string>
+    <string name="laps_column_pace">Tempo</string>
+    <string name="laps_column_hr">HS</string>
+
+    <!-- Trail tags -->
+    <string name="tags_editor_title">Routetags</string>
+    <string name="tags_editor_body">Vrije labels — handig om ochtendruns, groepsritten of wedstrijden te groeperen. Bewaard in het &lt;keywords&gt;-veld van het GPX-bestand.</string>
+    <string name="tags_editor_empty">Nog geen tags.</string>
+    <string name="tags_editor_input_hint">Voeg een tag toe en druk op Gereed</string>
+    <string name="trail_action_edit_tags">Tags bewerken</string>
+
+    <!-- Trails search / sort / filter -->
+    <string name="trails_search_hint">Zoeken op naam</string>
+    <string name="trails_sort_label">Sorteren</string>
+    <string name="trails_sort_date_desc">Nieuwste eerst</string>
+    <string name="trails_sort_date_asc">Oudste eerst</string>
+    <string name="trails_sort_distance_desc">Langste eerst</string>
+    <string name="trails_sort_distance_asc">Kortste eerst</string>
+    <string name="trails_filter_all">Alle</string>
+    <string name="trails_no_results">Geen routes komen overeen met je filters.</string>
+
+    <!-- Auto-pause -->
+    <string name="auto_pause_idle_title">Lijkt stilstaand</string>
+    <string name="auto_pause_idle_body">30 s geen noemenswaardige beweging. Tik om handmatig te pauzeren — de opname pauzeert sowieso automatisch na het volgende stilstaande venster.</string>
+    <string name="auto_pause_paused_title">Opname gepauzeerd</string>
+    <string name="auto_pause_paused_body">Afstand &amp; duur staan stil. Hervat automatisch zodra je &gt; 2 m beweegt, of tik om nu te hervatten.</string>
+
+    <!-- Stride calibration -->
+    <string name="stride_calibration_title">Paslengte kalibreren</string>
+    <string name="stride_calibration_body">Loop een gemeten afstand (een recht stuk atletiekbaan is precies 100 m; een 25 m-bad is 25 m). De stappenteller wordt door je afstand gedeeld om je persoonlijke paslengte te bepalen.</string>
+    <string name="stride_calibration_saved_label">Huidige kalibratie</string>
+    <string name="stride_calibration_distance_label">Loopafstand</string>
+    <string name="stride_calibration_walking">Aan het lopen — blijf tellen</string>
+    <string name="stride_calibration_steps">stappen</string>
+    <string name="stride_calibration_start">Begin met lopen</string>
+    <string name="stride_calibration_save">Kalibratie opslaan</string>
+    <string name="stride_calibration_clear">Kalibratie wissen</string>
+    <string name="settings_stride_calibration">Paslengte kalibreren</string>
+
+    <!-- Dashboard profile -->
+    <string name="dashboard_profile_switch">Dashboardprofiel wisselen</string>
+    <string name="share_nav_context">Onderweg naar wegpunt, nog %1$s · ETA %2$s</string>
+
+    <!-- Android Auto rows -->
+    <string name="car_row_speed">Snelheid</string>
+    <string name="car_row_heading">Koers</string>
+    <string name="car_row_altitude">Hoogte</string>
+    <string name="car_row_trip">Rit</string>
+    <string name="car_row_trip_idle">Niet aan het opnemen</string>
+    <string name="car_action_start">Route starten</string>
+    <string name="car_action_stop">Stoppen &amp; opslaan</string>
+
+    <!-- Profile editor -->
+    <string name="profile_editor_title">Dashboard aanpassen</string>
+    <string name="profile_editor_body">Kies welke kaarten je toont en in welke volgorde. Wordt opgeslagen als je Aangepaste profiel en geactiveerd.</string>
+    <string name="profile_editor_save">Aangepast opslaan</string>
+    <string name="profile_editor_reset">Resetten</string>
+    <string name="profile_editor_section_status">Statusbalk</string>
+    <string name="profile_editor_section_speed">Snelheidsmeter</string>
+    <string name="profile_editor_accent_label">Accentkleur</string>
+    <string name="profile_editor_chrome_label">Weergave</string>
+    <string name="profile_editor_chrome_normal">Normaal</string>
+    <string name="profile_editor_chrome_night">Nacht, gedimd rood</string>
+
+    <!-- Live map -->
+    <string name="live_map_title">Live kaart</string>
+    <string name="live_map_follow">Mijn positie volgen</string>
+    <string name="live_map_heading_up">Koers boven</string>
+    <string name="live_map_recenter">Centreren op mij</string>
+    <string name="live_map_follow_label">Volgen</string>
+    <string name="live_map_recenter_label">Centreren</string>
+    <string name="live_map_download_label">Offline</string>
+    <string name="live_map_download">Dit gebied downloaden voor offline gebruik</string>
+    <string name="live_map_download_progress">Offline kaart: %1$d%%</string>
+    <string name="live_map_sats">Sats</string>
+    <string name="live_map_open">Live kaart openen</string>
+    <string name="live_map_avg_subtext">gem %1$s %2$s · %3$d s</string>
+
+    <!-- Dashboard editor / custom profile -->
+    <string name="settings_dashboard_editor">Dashboardkaarten aanpassen</string>
+    <string name="dashboard_profile_custom">Aangepast</string>
+
+    <!-- Route cues -->
+    <string name="cue_off_route">Van de route af</string>
+    <string name="cue_back_on_route">Terug op de route</string>
+
+    <!-- Android Auto recent trails / permission -->
+    <string name="car_action_recent_trails">Recente routes</string>
+    <string name="car_recent_title">Recente routes</string>
+    <string name="car_recent_empty">Nog geen routes opgenomen</string>
+    <string name="car_permission_message">GPSinfo heeft locatietoegang nodig om snelheid, koers en hoogte te tonen.</string>
+    <string name="car_permission_grant">Toegang verlenen</string>
+    <string name="car_toast_record_failed">Opname kon niet worden gestart</string>
+    <string name="car_toast_saved">Opgeslagen: %1$s</string>
+    <string name="car_toast_save_empty">Geen punten vastgelegd — niets opgeslagen</string>
+    <string name="car_waiting_fix">Wachten op GPS-fix…</string>
+    <string name="car_action_end_nav">Route beëindigen</string>
+
+    <!-- Android Auto turn instructions -->
+    <string name="car_nav_turn_left">Sla linksaf</string>
+    <string name="car_nav_slight_left">Houd iets links aan</string>
+    <string name="car_nav_sharp_left">Sla scherp linksaf</string>
+    <string name="car_nav_turn_right">Sla rechtsaf</string>
+    <string name="car_nav_slight_right">Houd iets rechts aan</string>
+    <string name="car_nav_sharp_right">Sla scherp rechtsaf</string>
+    <string name="car_nav_keep_left">Houd links aan</string>
+    <string name="car_nav_keep_right">Houd rechts aan</string>
+    <string name="car_nav_u_turn">Maak een U-bocht</string>
+    <string name="car_nav_roundabout">Rijd de rotonde op</string>
+    <string name="car_nav_roundabout_exit">Rotonde, afslag %1$d</string>
+    <string name="car_nav_continue">Volg de weg</string>
+
+    <!-- Navigation destination picker -->
+    <string name="nav_pick_drive">Autoroute (offline)</string>
+    <string name="nav_pick_tab_address">Adres</string>
+    <string name="nav_address_label">Adres of plaats zoeken</string>
+    <string name="nav_address_no_results">Geen resultaten gevonden</string>
+    <string name="nav_address_offline">Geen verbinding — adres zoeken vereist internet (routering blijft offline)</string>
+    <string name="nav_address_from_cache">Resultaat uit cache (offline)</string>
+    <string name="nav_address_saved_header">OPGESLAGEN &amp; RECENT</string>
+    <string name="nav_address_empty_hint">Typ een adres, of rijd ergens heen — je recente bestemmingen verschijnen hier.</string>
+    <string name="nav_place_label_action">Deze plaats labelen</string>
+    <string name="nav_place_home">Thuis</string>
+    <string name="nav_place_work">Werk</string>
+    <string name="nav_place_unpin">Losmaken</string>
+    <string name="nav_place_custom_label">Eigen label</string>
+    <string name="nav_place_save_label">Label opslaan</string>
+    <string name="nav_place_delete">Verwijderen</string>
+
+    <!-- Android Auto places -->
+    <string name="car_places_title">Plaatsen</string>
+    <string name="car_places_empty">Nog geen opgeslagen of recente plaatsen. Kies eerst een adres op je telefoon.</string>
+    <string name="car_action_places">Plaatsen</string>
+    <string name="car_places_section_saved">Opgeslagen</string>
+    <string name="car_places_section_recent">Recent</string>
+    <string name="car_places_trails">Opgenomen routes</string>
+
+    <!-- Regularity rally -->
+    <string name="rally_title">Regelmatigheidsproef</string>
+    <string name="rally_new_stage">Nieuwe etappe</string>
+    <string name="rally_empty">Nog geen etappes. Voer de snelheidstabel uit het roadbook in als rijen “vanaf km / snelheid”.</string>
+    <string name="rally_arm">Scherpstellen</string>
+    <string name="rally_disarm">Uitschakelen</string>
+    <string name="rally_edit">Bewerken</string>
+    <string name="rally_delete">Verwijderen</string>
+    <string name="rally_stage_name">Naam etappe</string>
+    <string name="rally_changes_header">Snelheidswijzigingen</string>
+    <string name="rally_from_km">Vanaf km</string>
+    <string name="rally_speed_kmh">km/u</string>
+    <string name="rally_add_change">Snelheidswijziging toevoegen</string>
+    <string name="rally_length_km">Totale lengte (km, optioneel)</string>
+    <string name="rally_save">Etappe opslaan</string>
+    <string name="rally_cancel">Annuleren</string>
+    <string name="rally_start">START</string>
+    <string name="rally_stop">RT stoppen</string>
+    <string name="rally_finished">Etappe-afstand bereikt</string>
+    <string name="rally_target_speed">Doel</string>
+    <string name="rally_distance">Afstand</string>
+    <string name="rally_late_speed_up">TE LAAT — versnellen</string>
+    <string name="rally_early_slow_down">TE VROEG — vertragen</string>
+    <string name="drawer_rally">Regelmatigheidsproef</string>
+    <string name="car_rally_armed">RT scherpgesteld — tik op Start bij het sein van de official</string>
+    <string name="car_action_rally_start">RT starten</string>
+    <string name="car_action_rally_stop">RT stoppen</string>
+
+    <!-- Wheel probes -->
+    <string name="rally_wheel_status">Wielsensoren: %1$d gekoppeld · %2$d verbonden</string>
+    <string name="rally_wheel_none">Geen wielsensor gekoppeld — afstand via GPS</string>
+    <string name="rally_wheel_pair">Beheren</string>
+    <string name="rally_source_wheel">WIEL</string>
+    <string name="rally_source_wheel_n">WIEL ×%1$d</string>
+    <string name="rally_source_gps">GPS</string>
+    <string name="wheel_pair_title">Wielsensoren</string>
+    <string name="wheel_pair_body">Bevestig Bluetooth-fietssnelheidssensoren (CSC) aan de wielnaven — ze worden rally-wielsensoren. Twee op dezelfde as meten de exacte hartlijn van het voertuig; monteer ze op een niet-aangedreven as.</string>
+    <string name="wheel_pair_paired_header">Gekoppelde sensoren</string>
+    <string name="wheel_paired_connected">Verbonden · %1$d omw</string>
+    <string name="wheel_paired_disconnected">Verbroken — verbindt automatisch opnieuw</string>
+    <string name="wheel_pair_needs_permissions">Bluetooth-toestemming is vereist om naar sensoren te scannen.</string>
+    <string name="wheel_pair_scanning">Scannen…</string>
+    <string name="wheel_pair_scan_again">Opnieuw scannen</string>
+    <string name="wheel_pair_no_devices_yet">Nog geen sensoren gevonden — draai het wiel om de sensor te wekken.</string>
+    <string name="wheel_pair_unknown_device">Onbekende sensor</string>
+    <string name="wheel_forget_device">Vergeten</string>
+
+    <!-- Ghost runner -->
+    <string name="ghost_card_title">Race tegen jezelf</string>
+    <string name="ghost_card_you">Jij</string>
+    <string name="ghost_card_ghost">Ghost</string>
+    <string name="ghost_card_delta">Δ</string>
+    <string name="ghost_card_clear">Stop</string>
+    <string name="ghost_card_finished">Ghost is gefinisht.</string>
+    <string name="trail_action_race_ghost">Race hiertegen</string>
+    <string name="ghost_set_toast">Race tegen %1$s — start een opname.</string>
+    <string name="unit_km">km</string>
+    <string name="unit_mi">mi</string>
+    <string name="ghost_picker_title">Ghost-loper</string>
+    <string name="ghost_picker_body">Race tegen een virtuele partner. Kies een gelijkmatig tempo, een doeltijd over een afstand, of een eerdere run — start daarna een opname op het Runner-dashboard.</string>
+    <string name="ghost_mode_off">Uit</string>
+    <string name="ghost_mode_pace">Tempo</string>
+    <string name="ghost_mode_goal">Doel</string>
+    <string name="ghost_mode_run">Eerdere run</string>
+    <string name="ghost_off_body">Geen ghost — je loopt solo.</string>
+    <string name="ghost_turn_off">Ghost uitschakelen</string>
+    <string name="ghost_pace_hint">Houd een gelijkmatig tempo aan (%1$s).</string>
+    <string name="ghost_minutes">min</string>
+    <string name="ghost_seconds">sec</string>
+    <string name="ghost_apply">Ghost instellen</string>
+    <string name="ghost_goal_hint">Leg een afstand af in een doeltijd — de ghost houdt het benodigde gemiddelde tempo aan.</string>
+    <string name="ghost_goal_distance">Afstand</string>
+    <string name="ghost_run_empty">Nog geen opgeslagen runs om tegen te racen. Neem er eerst een op.</string>
+    <string name="settings_ghost">Ghost-loper</string>
+    <string name="runner_ghost_label">Ghost</string>
+    <string name="runner_ghost_ahead">%1$s voor</string>
+    <string name="runner_ghost_behind">%1$s achter</string>
+    <string name="runner_ghost_finished">Ghost gefinisht</string>
+
+    <!-- NMEA logging / Bluetooth bridge -->
+    <string name="settings_nmea_logging">Ruwe NMEA loggen (diagnostiek)</string>
+    <string name="settings_nmea_logging_body">Schrijft de ruwe NMEA-zinnen van de GPS-chip naar cache/nmea/ tijdens opnames. Standaard uit; voor het debuggen van chipgedrag.</string>
+    <string name="settings_nmea_bt_bridge">NMEA via Bluetooth (SPP)</string>
+    <string name="settings_nmea_bt_bridge_body">Verzendt de ruwe NMEA-zinnen tijdens opnames opnieuw via Bluetooth Serial Port (RFCOMM), zodat een gekoppelde kaartplotter of desktoptool de telefoon als externe GPS-puck kan gebruiken.</string>
+
+    <!-- Coordinate input labels -->
+    <string name="nav_pick_coords_plus_label">Plus Code (optioneel)</string>
+    <string name="nav_pick_coords_alt_label">Plus Code of Maidenhead (optioneel)</string>
+
+    <!-- Trail stats score / pace targets -->
+    <string name="trail_stats_score_breakdown">Tempo %1$d · HS-zone %2$d</string>
+    <string name="pace_targets_title">Tempodoelen</string>
+    <string name="pace_targets_body">Stel een doeltempo in voor het segment naar elk wegpunt. Het sportscherm volgt deze doelen per segment in plaats van het algemene doel.</string>
+    <string name="pace_targets_waypoint">%1$d%% van de route</string>
+    <string name="pace_targets_apply_all">Eerste op alle toepassen</string>
+    <string name="trail_pace_targets">Tempodoelen…</string>
+
+    <!-- About / donate -->
+    <string name="about_liberapay_label">Doneren via Liberapay (terugkerend)</string>
+    <string name="about_github_sponsors_label">Doneren via GitHub Sponsors</string>
+    <string name="about_paypal_label">Doneren via PayPal (eenmalig)</string>
+
+    <!-- Cycling power meter -->
+    <string name="cp_pair_title">Fietsvermogensmeter</string>
+    <string name="cp_pair_body">Tik op een toestel om te koppelen. Alleen Bluetooth-vermogensmeters die de standaard Cycling Power Service gebruiken, worden ondersteund.</string>
+    <string name="cp_pair_scanning">Scannen…</string>
+    <string name="cp_pair_scan_again">Opnieuw scannen</string>
+    <string name="cp_pair_no_devices_yet">Op zoek naar vermogensmeters… draai de crank of wek de meter en houd hem in de buurt.</string>
+    <string name="cp_pair_unknown_device">Onbekend toestel</string>
+    <string name="cp_pair_needs_permissions">Bluetooth-toestemming is vereist om een vermogensmeter te koppelen.</string>
+    <string name="cp_forget_device">Vergeten</string>
+    <string name="cp_status_idle">Geen vermogensmeter gekoppeld</string>
+    <string name="cp_status_scanning">Zoeken naar vermogensmeters</string>
+    <string name="cp_status_connecting">Verbinden met %1$s…</string>
+    <string name="cp_status_connected">Verbonden · %1$d W</string>
+    <string name="cp_status_connected_named">%1$s · %2$d W</string>
+    <string name="cp_status_disconnected">%1$s · verbroken</string>
+    <string name="settings_pair_cp">Fietsvermogensmeter</string>
+
+    <!-- Share position -->
+    <string name="share_position_title">Mijn positie delen</string>
+    <string name="share_position_body">Laat een vriend deze QR scannen met zijn camera of QR-app — die opent zijn standaard kaarten-app op jouw huidige plek.</string>
+    <string name="share_position_waiting_fix">Wachten op een GPS-fix om te delen…</string>
+    <string name="share_position_qr_alt">QR-code met de geo-URI van de huidige positie</string>
+    <string name="share_position_qr_error">QR kon niet worden gecodeerd</string>
+    <string name="share_position_share_button">Link delen</string>
+    <string name="share_position_chooser_title">Positie delen</string>
+    <string name="settings_share_position">Mijn positie delen</string>
+
+    <!-- Waypoint capture -->
+    <string name="waypoint_capture_title">Nieuw wegpunt</string>
+    <string name="waypoint_capture_note_label">Notitie (optioneel)</string>
+    <string name="waypoint_capture_save_note">Notitie opslaan</string>
+    <string name="waypoint_capture_take_photo">Foto maken</string>
+    <string name="waypoint_capture_record_voice">Spraak opnemen</string>
+    <string name="waypoint_capture_stop_voice">Stoppen</string>
+    <string name="waypoint_capture_voice_perm_hint">Microfoontoestemming vereist</string>
+    <string name="waypoint_capture_needs_fix">Wachten op een GPS-fix voordat een wegpunt wordt vastgelegd…</string>
+    <string name="waypoint_capture_fix_summary">Om %1$s, %2$s</string>
+    <string name="waypoint_list_title">Wegpunten</string>
+    <string name="waypoint_list_empty">Nog geen wegpunten. Tik op de +-knop hieronder om er een op je huidige plek te plaatsen.</string>
+    <string name="waypoint_share">Delen</string>
+    <string name="waypoint_delete">Verwijderen</string>
+    <string name="waypoint_voice_play">Spraaknotitie afspelen</string>
+    <string name="waypoint_voice_stop">Afspelen stoppen</string>
+    <string name="waypoint_photo_missing">Fotobestand ontbreekt</string>
+    <string name="waypoint_share_chooser_title">Wegpunt delen</string>
+    <string name="settings_waypoints">Wegpunten</string>
+
+    <!-- FIT export -->
+    <string name="trail_share_fit">Delen als FIT</string>
+    <string name="trail_share_fit_failed">FIT-bestand kon niet worden gecodeerd</string>
+
+    <!-- Altitude smoothing -->
+    <string name="settings_altitude_smooth">Hoogte vloeiend maken</string>
+    <string name="settings_altitude_smooth_body">Filtert de ruwe GPS-hoogte met een laagdoorlaatfilter om trillingen per meting te onderdrukken. De uitlezing volgt nog steeds echte klimmen maar springt niet meer op een vlakke wandeling.</string>
 </resources>

@@ -419,12 +419,396 @@
 
     <!-- Play Store rating + update nudge (2.1.0) -->
     <string name="rate_nudge_title" tools:ignore="MissingTranslation">GPSinfo はお役に立っていますか？</string>
-    <string name="rate_nudge_body" tools:ignore="MissingTranslation">このアプリがお役に立ったなら、Playストアでの星5つの評価が、ほかの方に見つけてもらう助けになります。ほんの少しの時間で完了します。</string>
+    <string name="rate_nudge_body" tools:ignore="MissingTranslation">このアプリがお役に立ったなら、Play ストアでの星 5 つの評価が、ほかの方に見つけてもらう助けになります。ほんの少しの時間で完了します。</string>
     <string name="rate_nudge_rate" tools:ignore="MissingTranslation">評価する</string>
     <string name="rate_nudge_later" tools:ignore="MissingTranslation">後で</string>
     <string name="rate_nudge_never" tools:ignore="MissingTranslation">今後表示しない</string>
-    <string name="about_rate_label" tools:ignore="MissingTranslation">Playストアで評価</string>
+    <string name="about_rate_label" tools:ignore="MissingTranslation">Play ストアで評価</string>
     <string name="update_available_title" tools:ignore="MissingTranslation">アップデートがあります</string>
-    <string name="update_available_body" tools:ignore="MissingTranslation">バージョン %1$s が Playストアで公開されています。タップして更新。</string>
+    <string name="update_available_body" tools:ignore="MissingTranslation">バージョン %1$s が Play ストアで公開されています。タップして更新。</string>
     <string name="update_dismiss" tools:ignore="MissingTranslation">閉じる</string>
+
+    <!-- Navigation drawer -->
+    <string name="drawer_open">メニューを開く</string>
+    <string name="drawer_subtitle">GPS ダッシュボード &amp; トラッカー</string>
+    <string name="drawer_section_quick">クイック操作</string>
+    <string name="drawer_section_navigate">移動先</string>
+    <string name="drawer_section_dashboard">ダッシュボード構成</string>
+    <string name="drawer_section_app">アプリ</string>
+
+    <!-- Heading / compass cards -->
+    <string name="degrees_true">° 真北基準</string>
+    <string name="compass_card_heading">進行方位</string>
+    <string name="compass_card_course">コース</string>
+
+    <!-- Persona metrics -->
+    <string name="metric_elapsed">経過</string>
+    <string name="metric_distance">距離</string>
+    <string name="metric_heart_rate">心拍数</string>
+    <string name="metric_power">パワー</string>
+    <string name="metric_cadence">ケイデンス</string>
+    <string name="metric_stride">ストライド</string>
+    <string name="persona_runner_idle_hint">ダッシュボードの記録ボタンをタップしてランを開始します。</string>
+    <string name="persona_runner_recording_hint">記録中 — スポーツビューのアイコンをタップするとコーチング表示になります。</string>
+    <string name="persona_hiker_until_sunset">日の入りまで</string>
+    <string name="persona_hiker_sunset_at">日の入り %1$s</string>
+    <string name="persona_sailor_sog">SOG</string>
+    <string name="persona_sailor_cog">COG</string>
+    <string name="persona_runner_target_pace">目標 %1$s</string>
+    <string name="persona_geocacher_no_target">目的地が未設定です。メニューの「目的地へナビ…」からキャッシュの座標を入力してください。</string>
+    <string name="heading_true_suffix">%1$s · °T</string>
+
+    <!-- Trail empty actions -->
+    <string name="trail_empty_action_record">最初のトラックを記録</string>
+    <string name="trail_empty_action_import">GPX ファイルを読み込み</string>
+
+    <!-- Personal records -->
+    <string name="pr_section_title">自己ベスト</string>
+    <string name="pr_total_distance">総距離</string>
+    <string name="pr_total_time">合計時間</string>
+    <string name="pr_trail_count">トラック数</string>
+    <string name="pr_longest">最長</string>
+    <string name="pr_fastest_avg">最速平均</string>
+    <string name="pr_biggest_climb">最大上昇</string>
+    <string name="pr_longest_duration">最長ラン</string>
+
+    <!-- Dashboard density -->
+    <string name="settings_density_label">ダッシュボードの密度</string>
+    <string name="settings_density_standard">標準</string>
+    <string name="settings_density_glanceable">一目で見やすく</string>
+
+    <!-- Trip computer -->
+    <string name="trip_computer_title">トリップ — 前回リセットから</string>
+    <string name="trip_computer_distance">距離</string>
+    <string name="trip_computer_time">時間</string>
+    <string name="trip_computer_trails">トラック数</string>
+    <string name="trip_computer_reset">トリップをリセット</string>
+
+    <!-- Quick settings tile -->
+    <string name="qs_tile_label">GPSinfo トラック</string>
+    <string name="qs_tile_state_recording">記録中 — タップで開く</string>
+    <string name="qs_tile_state_idle">タップで記録開始</string>
+
+    <!-- Vibration cues -->
+    <string name="settings_vibration_cues">振動フィードバック</string>
+    <string name="settings_vibration_cues_body">ペースがずれたとき、または心拍がゾーン境界を越えたときに、それぞれ異なる振動パターンで通知します。音声フィードバックとは独立して動作します。</string>
+
+    <!-- Sports view tutorial -->
+    <string name="sports_tutorial_title">スポーツビューへようこそ</string>
+    <string name="sports_tutorial_lede">一目で確認できる 4 つの計器がランをサポートします。それぞれの見方を紹介します。</string>
+    <string name="sports_tutorial_pace_title">ペースずれゲージ</string>
+    <string name="sports_tutorial_pace_body">針が中央 = 目標どおり。中央より左 = 遅すぎ。右 = 速すぎ。中の数値はずれの秒数です。</string>
+    <string name="sports_tutorial_hr_title">心拍数ゾーンゲージ</string>
+    <string name="sports_tutorial_hr_body">色帯は設定したゾーンの Z1〜Z5 です。BPM は中央、現在のゾーンタグは右側に表示されます。</string>
+    <string name="sports_tutorial_intensity_title">強度プロファイル</string>
+    <string name="sports_tutorial_intensity_body">この先の区間を登りの急さで色分けしてプレビューし、次の大きな登りまでの ETA を表示します。</string>
+    <string name="sports_tutorial_cues_title">音声 &amp; 振動フィードバック</string>
+    <string name="sports_tutorial_cues_body">設定で有効にすると、ペースがずれたとき、または心拍がゾーンを越えたときに音声・振動で通知します。音楽は途切れず音量が下がるだけです。</string>
+    <string name="sports_tutorial_dismiss">OK</string>
+
+    <!-- Laps -->
+    <string name="lap_action">ラップを記録</string>
+    <string name="lap_recorded_toast">ラップ %1$d · %2$.2f km を %3$d:%4$02d</string>
+    <string name="laps_section_title">ラップ</string>
+    <string name="laps_column_lap">#</string>
+    <string name="laps_column_distance">距離</string>
+    <string name="laps_column_time">時間</string>
+    <string name="laps_column_pace">ペース</string>
+    <string name="laps_column_hr">心拍</string>
+
+    <!-- Trail tags -->
+    <string name="tags_editor_title">トラックのタグ</string>
+    <string name="tags_editor_body">自由に付けられるラベルです — 朝ランやグループライド、レースのグループ分けに便利です。GPX ファイルの &lt;keywords&gt; フィールドに保存されます。</string>
+    <string name="tags_editor_empty">タグはまだありません。</string>
+    <string name="tags_editor_input_hint">タグを入力して完了を押す</string>
+    <string name="trail_action_edit_tags">タグを編集</string>
+
+    <!-- Trails search / sort / filter -->
+    <string name="trails_search_hint">名前で検索</string>
+    <string name="trails_sort_label">並べ替え</string>
+    <string name="trails_sort_date_desc">新しい順</string>
+    <string name="trails_sort_date_asc">古い順</string>
+    <string name="trails_sort_distance_desc">距離が長い順</string>
+    <string name="trails_sort_distance_asc">距離が短い順</string>
+    <string name="trails_filter_all">すべて</string>
+    <string name="trails_no_results">条件に一致するトラックがありません。</string>
+
+    <!-- Auto-pause -->
+    <string name="auto_pause_idle_title">停止中のようです</string>
+    <string name="auto_pause_idle_body">30 秒間ほとんど動きがありません。タップで手動一時停止できます — 次の停止状態が続けば自動的に一時停止します。</string>
+    <string name="auto_pause_paused_title">記録を一時停止中</string>
+    <string name="auto_pause_paused_body">距離と時間は停止しています。2 m 以上移動すると自動で再開します。タップで今すぐ再開することもできます。</string>
+
+    <!-- Stride calibration -->
+    <string name="stride_calibration_title">ストライド校正</string>
+    <string name="stride_calibration_body">測定済みの距離を歩きます（陸上トラックの直線は正確に 100 m、25 m プールは 25 m です）。歩数を距離で割って、あなた個人のストライド長を求めます。</string>
+    <string name="stride_calibration_saved_label">現在の校正値</string>
+    <string name="stride_calibration_distance_label">歩く距離</string>
+    <string name="stride_calibration_walking">歩行中 — そのまま歩数を数えます</string>
+    <string name="stride_calibration_steps">歩</string>
+    <string name="stride_calibration_start">歩き始める</string>
+    <string name="stride_calibration_save">校正値を保存</string>
+    <string name="stride_calibration_clear">校正値をクリア</string>
+    <string name="settings_stride_calibration">ストライドを校正</string>
+
+    <!-- Dashboard profile -->
+    <string name="dashboard_profile_switch">ダッシュボードプロファイルを切り替え</string>
+
+    <!-- Share nav context -->
+    <string name="share_nav_context">%1$s 先のウェイポイントへ移動中 · ETA %2$s</string>
+
+    <!-- Android Auto rows / actions -->
+    <string name="car_row_speed">速度</string>
+    <string name="car_row_heading">進行方位</string>
+    <string name="car_row_altitude">標高</string>
+    <string name="car_row_trip">トリップ</string>
+    <string name="car_row_trip_idle">記録していません</string>
+    <string name="car_action_start">トラック開始</string>
+    <string name="car_action_stop">停止して保存</string>
+
+    <!-- Dashboard profile editor -->
+    <string name="profile_editor_title">ダッシュボードをカスタマイズ</string>
+    <string name="profile_editor_body">表示するカードと並び順を選びます。カスタムプロファイルとして保存し、適用します。</string>
+    <string name="profile_editor_save">カスタムを保存</string>
+    <string name="profile_editor_reset">リセット</string>
+    <string name="profile_editor_section_status">ステータスバー</string>
+    <string name="profile_editor_section_speed">スピードゲージ</string>
+    <string name="profile_editor_accent_label">アクセントカラー</string>
+    <string name="profile_editor_chrome_label">表示スタイル</string>
+    <string name="profile_editor_chrome_normal">標準</string>
+    <string name="profile_editor_chrome_night">ナイト（暗い赤）</string>
+
+    <!-- Live map -->
+    <string name="live_map_title">ライブマップ</string>
+    <string name="live_map_follow">現在地を追従</string>
+    <string name="live_map_heading_up">進行方向を上に</string>
+    <string name="live_map_recenter">現在地に戻す</string>
+    <string name="live_map_follow_label">追従</string>
+    <string name="live_map_recenter_label">中央へ</string>
+    <string name="live_map_download_label">オフライン</string>
+    <string name="live_map_download">この範囲をオフライン用にダウンロード</string>
+    <string name="live_map_download_progress">オフラインマップ: %1$d%%</string>
+    <string name="live_map_sats">衛星</string>
+    <string name="live_map_open">ライブマップを開く</string>
+    <string name="live_map_avg_subtext">平均 %1$s %2$s · %3$d 秒</string>
+
+    <!-- Dashboard editor / custom profile -->
+    <string name="settings_dashboard_editor">ダッシュボードのカードをカスタマイズ</string>
+    <string name="dashboard_profile_custom">カスタム</string>
+
+    <!-- Route cues -->
+    <string name="cue_off_route">ルートを外れました</string>
+    <string name="cue_back_on_route">ルートに復帰</string>
+
+    <!-- Android Auto recent trails -->
+    <string name="car_action_recent_trails">最近のトラック</string>
+    <string name="car_recent_title">最近のトラック</string>
+    <string name="car_recent_empty">記録したトラックはまだありません</string>
+    <string name="car_permission_message">速度・進行方位・標高を表示するには、GPSinfo に位置情報へのアクセスが必要です。</string>
+    <string name="car_permission_grant">アクセスを許可</string>
+    <string name="car_toast_record_failed">記録を開始できませんでした</string>
+    <string name="car_toast_saved">保存しました: %1$s</string>
+    <string name="car_toast_save_empty">記録された点がありません — 保存しませんでした</string>
+    <string name="car_waiting_fix">GPS 測位を待機中…</string>
+
+    <!-- Android Auto navigation cues -->
+    <string name="car_action_end_nav">ルートを終了</string>
+    <string name="car_nav_turn_left">左折</string>
+    <string name="car_nav_slight_left">やや左へ</string>
+    <string name="car_nav_sharp_left">鋭く左折</string>
+    <string name="car_nav_turn_right">右折</string>
+    <string name="car_nav_slight_right">やや右へ</string>
+    <string name="car_nav_sharp_right">鋭く右折</string>
+    <string name="car_nav_keep_left">左側を進む</string>
+    <string name="car_nav_keep_right">右側を進む</string>
+    <string name="car_nav_u_turn">U ターン</string>
+    <string name="car_nav_roundabout">ロータリーに進入</string>
+    <string name="car_nav_roundabout_exit">ロータリー、%1$d 番目の出口</string>
+    <string name="car_nav_continue">直進</string>
+
+    <!-- Address search -->
+    <string name="nav_pick_drive">車のルート（オフライン）</string>
+    <string name="nav_pick_tab_address">住所</string>
+    <string name="nav_address_label">住所や地名を検索</string>
+    <string name="nav_address_no_results">一致する結果がありません</string>
+    <string name="nav_address_offline">接続なし — 住所検索にはインターネットが必要です（ルート計算はオフラインで動作します）</string>
+    <string name="nav_address_from_cache">キャッシュされた結果（オフライン）</string>
+    <string name="nav_address_saved_header">保存済み &amp; 最近</string>
+    <string name="nav_address_empty_hint">住所を入力するか、どこかへ運転してみてください — 最近の目的地がここに表示されます。</string>
+
+    <!-- Place labels -->
+    <string name="nav_place_label_action">この場所にラベルを付ける</string>
+    <string name="nav_place_home">自宅</string>
+    <string name="nav_place_work">職場</string>
+    <string name="nav_place_unpin">ピンを外す</string>
+    <string name="nav_place_custom_label">カスタムラベル</string>
+    <string name="nav_place_save_label">ラベルを保存</string>
+    <string name="nav_place_delete">削除</string>
+
+    <!-- Android Auto places -->
+    <string name="car_places_title">場所</string>
+    <string name="car_places_empty">保存済み・最近の場所はまだありません。まずスマートフォンで住所を選んでください。</string>
+    <string name="car_action_places">場所</string>
+    <string name="car_places_section_saved">保存済み</string>
+    <string name="car_places_section_recent">最近</string>
+    <string name="car_places_trails">記録したトラック</string>
+
+    <!-- Regularity rally -->
+    <string name="rally_title">レギュラリティラリー</string>
+    <string name="rally_new_stage">新しいステージ</string>
+    <string name="rally_empty">ステージはまだありません。ロードブックの速度表を「開始 km / 速度」の行として入力してください。</string>
+    <string name="rally_arm">アーム</string>
+    <string name="rally_disarm">解除</string>
+    <string name="rally_edit">編集</string>
+    <string name="rally_delete">削除</string>
+    <string name="rally_stage_name">ステージ名</string>
+    <string name="rally_changes_header">速度変更</string>
+    <string name="rally_from_km">開始 km</string>
+    <string name="rally_speed_kmh">km/h</string>
+    <string name="rally_add_change">速度変更を追加</string>
+    <string name="rally_length_km">全長（km、任意）</string>
+    <string name="rally_save">ステージを保存</string>
+    <string name="rally_cancel">キャンセル</string>
+    <string name="rally_start">スタート</string>
+    <string name="rally_stop">RT を停止</string>
+    <string name="rally_finished">ステージ距離に到達しました</string>
+    <string name="rally_target_speed">目標</string>
+    <string name="rally_distance">距離</string>
+    <string name="rally_late_speed_up">遅れ — 速度を上げて</string>
+    <string name="rally_early_slow_down">早い — 速度を落として</string>
+    <string name="drawer_rally">レギュラリティラリー</string>
+    <string name="car_rally_armed">RT アーム済み — 係員の合図でスタートをタップ</string>
+    <string name="car_action_rally_start">RT スタート</string>
+    <string name="car_action_rally_stop">RT を停止</string>
+    <string name="rally_wheel_status">ホイールプローブ: %1$d 個ペアリング済み · %2$d 個接続中</string>
+    <string name="rally_wheel_none">ホイールセンサー未ペアリング — 距離は GPS を使用</string>
+    <string name="rally_wheel_pair">管理</string>
+    <string name="rally_source_wheel">ホイール</string>
+    <string name="rally_source_wheel_n">ホイール ×%1$d</string>
+    <string name="rally_source_gps">GPS</string>
+
+    <!-- Wheel probe pairing -->
+    <string name="wheel_pair_title">ホイールプローブ</string>
+    <string name="wheel_pair_body">Bluetooth の自転車用速度センサー（CSC）をホイールハブに取り付けると、ラリー用のホイールプローブになります。同じ車軸に 2 個取り付けると車両の中心線を正確に測定できます。非駆動軸に取り付けてください。</string>
+    <string name="wheel_pair_paired_header">ペアリング済みプローブ</string>
+    <string name="wheel_paired_connected">接続済み · %1$d 回転</string>
+    <string name="wheel_paired_disconnected">未接続 — 自動的に再接続します</string>
+    <string name="wheel_pair_needs_permissions">センサーをスキャンするには Bluetooth の権限が必要です。</string>
+    <string name="wheel_pair_scanning">スキャン中…</string>
+    <string name="wheel_pair_scan_again">再スキャン</string>
+    <string name="wheel_pair_no_devices_yet">センサーがまだ見つかりません — ホイールを回してセンサーを起動してください。</string>
+    <string name="wheel_pair_unknown_device">不明なセンサー</string>
+    <string name="wheel_forget_device">削除</string>
+
+    <!-- Ghost runner card -->
+    <string name="ghost_card_title">過去の自分と競争</string>
+    <string name="ghost_card_you">あなた</string>
+    <string name="ghost_card_ghost">ゴースト</string>
+    <string name="ghost_card_delta">Δ</string>
+    <string name="ghost_card_clear">停止</string>
+    <string name="ghost_card_finished">ゴーストがゴールしました。</string>
+    <string name="trail_action_race_ghost">これと競争する</string>
+    <string name="ghost_set_toast">%1$s と競争します — 記録を開始してください。</string>
+    <string name="unit_km">km</string>
+    <string name="unit_mi">mi</string>
+
+    <!-- Ghost picker -->
+    <string name="ghost_picker_title">ゴーストランナー</string>
+    <string name="ghost_picker_body">仮想のパートナーと競争します。一定ペース、距離に対する目標タイム、過去のランのいずれかを選び、ランナーダッシュボードで記録を開始してください。</string>
+    <string name="ghost_mode_off">オフ</string>
+    <string name="ghost_mode_pace">ペース</string>
+    <string name="ghost_mode_goal">目標</string>
+    <string name="ghost_mode_run">過去のラン</string>
+    <string name="ghost_off_body">ゴーストなし — 一人で走ります。</string>
+    <string name="ghost_turn_off">ゴーストをオフにする</string>
+    <string name="ghost_pace_hint">一定のペース（%1$s）を維持します。</string>
+    <string name="ghost_minutes">分</string>
+    <string name="ghost_seconds">秒</string>
+    <string name="ghost_apply">ゴーストを設定</string>
+    <string name="ghost_goal_hint">目標タイム内に距離を走破します — ゴーストはそれに必要な平均ペースを維持します。</string>
+    <string name="ghost_goal_distance">距離</string>
+    <string name="ghost_run_empty">競争できる保存済みのランがまだありません。まず 1 本記録してください。</string>
+    <string name="settings_ghost">ゴーストランナー</string>
+    <string name="runner_ghost_label">ゴースト</string>
+    <string name="runner_ghost_ahead">%1$s 先行</string>
+    <string name="runner_ghost_behind">%1$s 遅れ</string>
+    <string name="runner_ghost_finished">ゴーストがゴール</string>
+
+    <!-- NMEA logging / bridge -->
+    <string name="settings_nmea_logging">生 NMEA を記録（診断用）</string>
+    <string name="settings_nmea_logging_body">記録中に GPS チップの生 NMEA センテンスを cache/nmea/ に書き出します。既定ではオフで、チップの動作をデバッグするためのものです。</string>
+    <string name="settings_nmea_bt_bridge">NMEA を Bluetooth で送信（SPP）</string>
+    <string name="settings_nmea_bt_bridge_body">記録中に生 NMEA センテンスを Bluetooth シリアルポート（RFCOMM）で再送信します。ペアリング済みのチャートプロッターやデスクトップツールが、この端末を外付け GPS として利用できます。</string>
+
+    <!-- Coordinate input optional labels -->
+    <string name="nav_pick_coords_plus_label">Plus Code（任意）</string>
+    <string name="nav_pick_coords_alt_label">Plus Code または Maidenhead（任意）</string>
+
+    <!-- Trail score / pace targets -->
+    <string name="trail_stats_score_breakdown">ペース %1$d · 心拍ゾーン %2$d</string>
+    <string name="pace_targets_title">ペース目標</string>
+    <string name="pace_targets_body">各ウェイポイントまでの区間に目標ペースを設定します。スポーツビューでは、全体の目標ではなく区間ごとの目標に従います。</string>
+    <string name="pace_targets_waypoint">トラックの %1$d%% 地点</string>
+    <string name="pace_targets_apply_all">最初の値をすべてに適用</string>
+    <string name="trail_pace_targets">ペース目標…</string>
+
+    <!-- About donation links -->
+    <string name="about_liberapay_label">Liberapay で寄付（継続）</string>
+    <string name="about_github_sponsors_label">GitHub Sponsors で寄付</string>
+    <string name="about_paypal_label">PayPal で寄付（単発）</string>
+
+    <!-- Cycling power meter pairing -->
+    <string name="cp_pair_title">サイクリングパワーメーター</string>
+    <string name="cp_pair_body">デバイスをタップしてペアリングします。標準の Cycling Power Service に対応した Bluetooth パワーメーターのみサポートします。</string>
+    <string name="cp_pair_scanning">スキャン中…</string>
+    <string name="cp_pair_scan_again">再スキャン</string>
+    <string name="cp_pair_no_devices_yet">パワーメーターを検索中… クランクを回すかメーターを起動して、近くに置いてください。</string>
+    <string name="cp_pair_unknown_device">不明なデバイス</string>
+    <string name="cp_pair_needs_permissions">パワーメーターをペアリングするには Bluetooth の権限が必要です。</string>
+    <string name="cp_forget_device">削除</string>
+    <string name="cp_status_idle">パワーメーター未ペアリング</string>
+    <string name="cp_status_scanning">パワーメーターをスキャン中</string>
+    <string name="cp_status_connecting">%1$s に接続中…</string>
+    <string name="cp_status_connected">接続済み · %1$d W</string>
+    <string name="cp_status_connected_named">%1$s · %2$d W</string>
+    <string name="cp_status_disconnected">%1$s · 未接続</string>
+    <string name="settings_pair_cp">サイクリングパワーメーター</string>
+
+    <!-- Share position -->
+    <string name="share_position_title">現在地を共有</string>
+    <string name="share_position_body">友だちにこの QR をカメラや QR アプリで読み取ってもらうと、相手の標準マップアプリが開き、あなたの現在地にピンが立ちます。</string>
+    <string name="share_position_waiting_fix">共有するための GPS 測位を待機中…</string>
+    <string name="share_position_qr_alt">現在地の geo URI を含む QR コード</string>
+    <string name="share_position_qr_error">QR を生成できませんでした</string>
+    <string name="share_position_share_button">リンクを共有</string>
+    <string name="share_position_chooser_title">現在地を共有</string>
+    <string name="settings_share_position">現在地を共有</string>
+
+    <!-- Waypoint capture -->
+    <string name="waypoint_capture_title">新しいウェイポイント</string>
+    <string name="waypoint_capture_note_label">メモ（任意）</string>
+    <string name="waypoint_capture_save_note">メモを保存</string>
+    <string name="waypoint_capture_take_photo">写真を撮る</string>
+    <string name="waypoint_capture_record_voice">音声を録音</string>
+    <string name="waypoint_capture_stop_voice">停止</string>
+    <string name="waypoint_capture_voice_perm_hint">マイクの権限が必要です</string>
+    <string name="waypoint_capture_needs_fix">ウェイポイントを記録する前に GPS 測位を待機中…</string>
+    <string name="waypoint_capture_fix_summary">%1$s、%2$s</string>
+    <string name="waypoint_list_title">ウェイポイント</string>
+    <string name="waypoint_list_empty">ウェイポイントはまだありません。下の + ボタンをタップすると、現在地に 1 つ置けます。</string>
+    <string name="waypoint_share">共有</string>
+    <string name="waypoint_delete">削除</string>
+    <string name="waypoint_voice_play">音声メモを再生</string>
+    <string name="waypoint_voice_stop">再生を停止</string>
+    <string name="waypoint_photo_missing">写真ファイルが見つかりません</string>
+    <string name="waypoint_share_chooser_title">ウェイポイントを共有</string>
+    <string name="settings_waypoints">ウェイポイント</string>
+
+    <!-- FIT export -->
+    <string name="trail_share_fit">FIT として共有</string>
+    <string name="trail_share_fit_failed">FIT ファイルを生成できませんでした</string>
+
+    <!-- Altitude smoothing -->
+    <string name="settings_altitude_smooth">標高を平滑化</string>
+    <string name="settings_altitude_smooth_body">生の GPS 標高をローパスフィルターに通して、サンプルごとのばらつきを抑えます。実際の登りは正しく追従しつつ、平坦な道での値の上下を抑えます。</string>
 </resources>

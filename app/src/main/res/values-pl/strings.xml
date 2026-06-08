@@ -31,7 +31,7 @@
     <string name="share_subject">Moja lokalizacja</string>
 
     <!-- Fix statuses -->
-    <string name="fix_status_no_fix">Brak fix</string>
+    <string name="fix_status_no_fix">Brak fixa</string>
     <string name="fix_status_2d">Fix 2D</string>
     <string name="fix_status_3d">Fix 3D</string>
 
@@ -423,4 +423,380 @@
     <string name="update_available_title" tools:ignore="MissingTranslation">Dostępna aktualizacja</string>
     <string name="update_available_body" tools:ignore="MissingTranslation">Wersja %1$s jest już w sklepie Play — dotknij, aby zaktualizować.</string>
     <string name="update_dismiss" tools:ignore="MissingTranslation">Zamknij</string>
+
+    <!-- Navigation drawer -->
+    <string name="drawer_open">Otwórz menu</string>
+    <string name="drawer_subtitle">Pulpit GPS i rejestrator</string>
+    <string name="drawer_section_quick">Szybkie akcje</string>
+    <string name="drawer_section_navigate">Przejdź do</string>
+    <string name="drawer_section_dashboard">Układ pulpitu</string>
+    <string name="drawer_section_app">Aplikacja</string>
+
+    <!-- Compass card (heading vs course) -->
+    <string name="degrees_true">° rzeczywiste</string>
+    <string name="compass_card_heading">Kurs</string>
+    <string name="compass_card_course">Kierunek ruchu</string>
+
+    <!-- Dashboard metrics -->
+    <string name="metric_elapsed">Czas</string>
+    <string name="metric_distance">Dystans</string>
+    <string name="metric_heart_rate">Tętno</string>
+    <string name="metric_power">Moc</string>
+    <string name="metric_cadence">Kadencja</string>
+    <string name="metric_stride">Długość kroku</string>
+
+    <!-- Persona dashboards -->
+    <string name="persona_runner_idle_hint">Dotknij przycisku nagrywania na pulpicie, aby rozpocząć bieg.</string>
+    <string name="persona_runner_recording_hint">Nagrywanie — dotknij ikony widoku sportowego, aby uzyskać prowadzenie treningowe.</string>
+    <string name="persona_hiker_until_sunset">DO ZACHODU SŁOŃCA</string>
+    <string name="persona_hiker_sunset_at">Zachód słońca o %1$s</string>
+    <string name="persona_sailor_sog">SOG</string>
+    <string name="persona_sailor_cog">COG</string>
+    <string name="persona_runner_target_pace">Cel %1$s</string>
+    <string name="persona_geocacher_no_target">Nie ustawiono celu. Użyj pozycji „Nawiguj do…” w menu, aby wprowadzić współrzędne skrytki.</string>
+    <string name="heading_true_suffix">%1$s · °T</string>
+
+    <!-- Trail empty-state actions -->
+    <string name="trail_empty_action_record">Nagraj pierwszą trasę</string>
+    <string name="trail_empty_action_import">Importuj plik GPX</string>
+
+    <!-- Personal records -->
+    <string name="pr_section_title">Rekordy osobiste</string>
+    <string name="pr_total_distance">Łączny dystans</string>
+    <string name="pr_total_time">Łączny czas</string>
+    <string name="pr_trail_count">Trasy</string>
+    <string name="pr_longest">Najdłuższa</string>
+    <string name="pr_fastest_avg">Najszybsza śr.</string>
+    <string name="pr_biggest_climb">Największe przewyższenie</string>
+    <string name="pr_longest_duration">Najdłuższy bieg</string>
+
+    <!-- Dashboard density -->
+    <string name="settings_density_label">Gęstość pulpitu</string>
+    <string name="settings_density_standard">Standardowa</string>
+    <string name="settings_density_glanceable">Czytelna na rzut oka</string>
+
+    <!-- Trip computer -->
+    <string name="trip_computer_title">PODRÓŻ — od ostatniego zerowania</string>
+    <string name="trip_computer_distance">Dystans</string>
+    <string name="trip_computer_time">Czas</string>
+    <string name="trip_computer_trails">Trasy</string>
+    <string name="trip_computer_reset">Wyzeruj podróż</string>
+
+    <!-- Quick Settings tile -->
+    <string name="qs_tile_label">Trasa GPSinfo</string>
+    <string name="qs_tile_state_recording">Nagrywanie — dotknij, aby otworzyć</string>
+    <string name="qs_tile_state_idle">Dotknij, aby rozpocząć nagrywanie</string>
+
+    <!-- Vibration cues -->
+    <string name="settings_vibration_cues">Sygnały wibracyjne</string>
+    <string name="settings_vibration_cues_body">Odrębne wzorce wibracji, gdy tempo zmienia się lub tętno przekracza granicę strefy. Niezależne od sygnałów dźwiękowych.</string>
+
+    <!-- Sports view tutorial -->
+    <string name="sports_tutorial_title">Witaj w widoku sportowym</string>
+    <string name="sports_tutorial_lede">Cztery czytelne na rzut oka wskaźniki prowadzą Cię przez bieg. Oto, co pokazuje każdy z nich.</string>
+    <string name="sports_tutorial_pace_title">Wskaźnik odchylenia tempa</string>
+    <string name="sports_tutorial_pace_body">Wskazówka pośrodku = w tempie. Na lewo = za wolno. Na prawo = za szybko. Liczba w środku to odchylenie w sekundach.</string>
+    <string name="sports_tutorial_hr_title">Wskaźnik strefy tętna</string>
+    <string name="sports_tutorial_hr_body">Kolorowe pasma to strefy Z1–Z5 z Twojej konfiguracji. Wartość ud/min w środku, bieżąca strefa po prawej.</string>
+    <string name="sports_tutorial_intensity_title">Profil intensywności</string>
+    <string name="sports_tutorial_intensity_body">Podgląd najbliższego odcinka pokolorowany według stromości podjazdu, z czasem ETA do następnego dużego podjazdu.</string>
+    <string name="sports_tutorial_cues_title">Sygnały dźwiękowe i wibracyjne</string>
+    <string name="sports_tutorial_cues_body">Włącz w Ustawieniach, aby otrzymywać głosowe / wibracyjne sygnały, gdy tempo zmienia się lub tętno przekracza strefy. Muzyka jest przyciszana, a nie przerywana.</string>
+    <string name="sports_tutorial_dismiss">Rozumiem</string>
+
+    <!-- Laps -->
+    <string name="lap_action">Zaznacz okrążenie</string>
+    <string name="lap_recorded_toast">Okrążenie %1$d · %2$.2f km w %3$d:%4$02d</string>
+    <string name="laps_section_title">Okrążenia</string>
+    <string name="laps_column_lap">#</string>
+    <string name="laps_column_distance">Dystans</string>
+    <string name="laps_column_time">Czas</string>
+    <string name="laps_column_pace">Tempo</string>
+    <string name="laps_column_hr">Tętno</string>
+
+    <!-- Trail tags -->
+    <string name="tags_editor_title">Etykiety trasy</string>
+    <string name="tags_editor_body">Dowolne etykiety — przydatne do grupowania porannych biegów, wspólnych przejażdżek czy zawodów. Zapisywane w polu &lt;keywords&gt; pliku GPX.</string>
+    <string name="tags_editor_empty">Brak etykiet.</string>
+    <string name="tags_editor_input_hint">Dodaj etykietę i naciśnij Gotowe</string>
+    <string name="trail_action_edit_tags">Edytuj etykiety</string>
+
+    <!-- Trails search &amp; sort -->
+    <string name="trails_search_hint">Szukaj po nazwie</string>
+    <string name="trails_sort_label">Sortuj</string>
+    <string name="trails_sort_date_desc">Najnowsze</string>
+    <string name="trails_sort_date_asc">Najstarsze</string>
+    <string name="trails_sort_distance_desc">Najdłuższe</string>
+    <string name="trails_sort_distance_asc">Najkrótsze</string>
+    <string name="trails_filter_all">Wszystkie</string>
+    <string name="trails_no_results">Żadna trasa nie pasuje do filtrów.</string>
+
+    <!-- Auto-pause -->
+    <string name="auto_pause_idle_title">Wygląda na postój</string>
+    <string name="auto_pause_idle_body">Brak istotnego ruchu od 30 s. Dotknij, aby wstrzymać ręcznie — nagrywanie i tak wstrzyma się automatycznie po kolejnym okresie bezruchu.</string>
+    <string name="auto_pause_paused_title">Nagrywanie wstrzymane</string>
+    <string name="auto_pause_paused_body">Dystans i czas są zamrożone. Wznawia się automatycznie, gdy przesuniesz się &gt; 2 m, lub dotknij, aby wznowić teraz.</string>
+
+    <!-- Stride calibration -->
+    <string name="stride_calibration_title">Kalibracja kroku</string>
+    <string name="stride_calibration_body">Przejdź zmierzony dystans (prosta na bieżni to dokładnie 100 m; basen 25 m to 25 m). Licznik kroków dzieli Twój dystans, aby wyznaczyć osobistą długość kroku.</string>
+    <string name="stride_calibration_saved_label">Bieżąca kalibracja</string>
+    <string name="stride_calibration_distance_label">Dystans przejścia</string>
+    <string name="stride_calibration_walking">Idź — licz dalej</string>
+    <string name="stride_calibration_steps">kroków</string>
+    <string name="stride_calibration_start">Zacznij iść</string>
+    <string name="stride_calibration_save">Zapisz kalibrację</string>
+    <string name="stride_calibration_clear">Wyczyść kalibrację</string>
+    <string name="settings_stride_calibration">Kalibruj długość kroku</string>
+
+    <!-- Dashboard profile -->
+    <string name="dashboard_profile_switch">Przełącz profil pulpitu</string>
+    <string name="share_nav_context">Zmierzam do punktu trasy w odległości %1$s · ETA %2$s</string>
+
+    <!-- Android Auto rows &amp; actions -->
+    <string name="car_row_speed">Prędkość</string>
+    <string name="car_row_heading">Kurs</string>
+    <string name="car_row_altitude">Wysokość</string>
+    <string name="car_row_trip">Podróż</string>
+    <string name="car_row_trip_idle">Nie nagrywa</string>
+    <string name="car_action_start">Rozpocznij trasę</string>
+    <string name="car_action_stop">Zatrzymaj i zapisz</string>
+
+    <!-- Profile editor -->
+    <string name="profile_editor_title">Dostosuj pulpit</string>
+    <string name="profile_editor_body">Wybierz, które karty pokazać i w jakiej kolejności. Zapisuje się jako profil Własny i go aktywuje.</string>
+    <string name="profile_editor_save">Zapisz własny</string>
+    <string name="profile_editor_reset">Resetuj</string>
+    <string name="profile_editor_section_status">Pasek stanu</string>
+    <string name="profile_editor_section_speed">Prędkościomierz</string>
+    <string name="profile_editor_accent_label">Kolor akcentu</string>
+    <string name="profile_editor_chrome_label">Wygląd interfejsu</string>
+    <string name="profile_editor_chrome_normal">Normalny</string>
+    <string name="profile_editor_chrome_night">Nocny przyciemniony czerwony</string>
+
+    <!-- Live map -->
+    <string name="live_map_title">Mapa na żywo</string>
+    <string name="live_map_follow">Podążaj za moją pozycją</string>
+    <string name="live_map_heading_up">Obrót kursem do góry</string>
+    <string name="live_map_recenter">Wyśrodkuj na mnie</string>
+    <string name="live_map_follow_label">Podążaj</string>
+    <string name="live_map_recenter_label">Wyśrodkuj</string>
+    <string name="live_map_download_label">Offline</string>
+    <string name="live_map_download">Pobierz ten obszar do użytku offline</string>
+    <string name="live_map_download_progress">Mapa offline: %1$d%%</string>
+    <string name="live_map_sats">Sat</string>
+    <string name="live_map_open">Otwórz mapę na żywo</string>
+    <string name="live_map_avg_subtext">śr. %1$s %2$s · %3$d s</string>
+    <string name="settings_dashboard_editor">Dostosuj karty pulpitu</string>
+    <string name="dashboard_profile_custom">Własny</string>
+
+    <!-- Off-route cues -->
+    <string name="cue_off_route">Poza trasą</string>
+    <string name="cue_back_on_route">Z powrotem na trasie</string>
+
+    <!-- Android Auto recent trails -->
+    <string name="car_action_recent_trails">Ostatnie trasy</string>
+    <string name="car_recent_title">Ostatnie trasy</string>
+    <string name="car_recent_empty">Nie nagrano jeszcze żadnych tras</string>
+    <string name="car_permission_message">GPSinfo potrzebuje dostępu do lokalizacji, aby pokazywać prędkość, kurs i wysokość.</string>
+    <string name="car_permission_grant">Przyznaj dostęp</string>
+    <string name="car_toast_record_failed">Nie udało się rozpocząć nagrywania</string>
+    <string name="car_toast_saved">Zapisano: %1$s</string>
+    <string name="car_toast_save_empty">Nie zarejestrowano punktów — nic nie zapisano</string>
+    <string name="car_waiting_fix">Oczekiwanie na fix GPS…</string>
+
+    <!-- Android Auto turn-by-turn -->
+    <string name="car_action_end_nav">Zakończ trasę</string>
+    <string name="car_nav_turn_left">Skręć w lewo</string>
+    <string name="car_nav_slight_left">Trzymaj się lekko lewej</string>
+    <string name="car_nav_sharp_left">Skręć ostro w lewo</string>
+    <string name="car_nav_turn_right">Skręć w prawo</string>
+    <string name="car_nav_slight_right">Trzymaj się lekko prawej</string>
+    <string name="car_nav_sharp_right">Skręć ostro w prawo</string>
+    <string name="car_nav_keep_left">Trzymaj się lewej</string>
+    <string name="car_nav_keep_right">Trzymaj się prawej</string>
+    <string name="car_nav_u_turn">Zawróć</string>
+    <string name="car_nav_roundabout">Wjedź na rondo</string>
+    <string name="car_nav_roundabout_exit">Rondo, %1$d. zjazd</string>
+    <string name="car_nav_continue">Jedź dalej</string>
+
+    <!-- Navigation destination picker -->
+    <string name="nav_pick_drive">Trasa jazdy (offline)</string>
+    <string name="nav_pick_tab_address">Adres</string>
+    <string name="nav_address_label">Szukaj adresu lub miejsca</string>
+    <string name="nav_address_no_results">Brak dopasowań</string>
+    <string name="nav_address_offline">Brak połączenia — wyszukiwanie adresu wymaga internetu (wyznaczanie trasy działa offline)</string>
+    <string name="nav_address_from_cache">Wynik z pamięci podręcznej (offline)</string>
+    <string name="nav_address_saved_header">ZAPISANE I OSTATNIE</string>
+    <string name="nav_address_empty_hint">Wpisz adres lub gdzieś pojedź — Twoje ostatnie cele pojawią się tutaj.</string>
+    <string name="nav_place_label_action">Oznacz to miejsce</string>
+    <string name="nav_place_home">Dom</string>
+    <string name="nav_place_work">Praca</string>
+    <string name="nav_place_unpin">Odepnij</string>
+    <string name="nav_place_custom_label">Własna etykieta</string>
+    <string name="nav_place_save_label">Zapisz etykietę</string>
+    <string name="nav_place_delete">Usuń</string>
+    <string name="car_places_title">Miejsca</string>
+    <string name="car_places_empty">Brak zapisanych lub ostatnich miejsc. Najpierw wybierz adres na telefonie.</string>
+    <string name="car_action_places">Miejsca</string>
+    <string name="car_places_section_saved">Zapisane</string>
+    <string name="car_places_section_recent">Ostatnie</string>
+    <string name="car_places_trails">Nagrane trasy</string>
+
+    <!-- Regularity rally -->
+    <string name="rally_title">Rajd regularności</string>
+    <string name="rally_new_stage">Nowy odcinek</string>
+    <string name="rally_empty">Brak odcinków. Wprowadź tabelę prędkości z roadbooka jako wiersze „od km / prędkość”.</string>
+    <string name="rally_arm">Uzbrój</string>
+    <string name="rally_disarm">Rozbrój</string>
+    <string name="rally_edit">Edytuj</string>
+    <string name="rally_delete">Usuń</string>
+    <string name="rally_stage_name">Nazwa odcinka</string>
+    <string name="rally_changes_header">Zmiany prędkości</string>
+    <string name="rally_from_km">Od km</string>
+    <string name="rally_speed_kmh">km/h</string>
+    <string name="rally_add_change">Dodaj zmianę prędkości</string>
+    <string name="rally_length_km">Długość całkowita (km, opcjonalnie)</string>
+    <string name="rally_save">Zapisz odcinek</string>
+    <string name="rally_cancel">Anuluj</string>
+    <string name="rally_start">START</string>
+    <string name="rally_stop">Zatrzymaj RR</string>
+    <string name="rally_finished">Osiągnięto dystans odcinka</string>
+    <string name="rally_target_speed">Cel</string>
+    <string name="rally_distance">Dystans</string>
+    <string name="rally_late_speed_up">SPÓŹNIENIE — przyspiesz</string>
+    <string name="rally_early_slow_down">ZA WCZEŚNIE — zwolnij</string>
+    <string name="drawer_rally">Rajd regularności</string>
+    <string name="car_rally_armed">RR uzbrojony — dotknij Start na sygnał sędziego</string>
+    <string name="car_action_rally_start">Start RR</string>
+    <string name="car_action_rally_stop">Zatrzymaj RR</string>
+
+    <!-- Wheel-speed probes -->
+    <string name="rally_wheel_status">Sondy koła: %1$d sparowane · %2$d połączone</string>
+    <string name="rally_wheel_none">Brak sparowanej sondy koła — dystans z GPS</string>
+    <string name="rally_wheel_pair">Zarządzaj</string>
+    <string name="rally_source_wheel">KOŁO</string>
+    <string name="rally_source_wheel_n">KOŁO ×%1$d</string>
+    <string name="rally_source_gps">GPS</string>
+    <string name="wheel_pair_title">Sondy koła</string>
+    <string name="wheel_pair_body">Przymocuj bluetoothowe czujniki prędkości roweru (CSC) do piast kół — staną się sondami koła do rajdu. Dwie na tej samej osi mierzą dokładną oś wzdłużną pojazdu; montuj na osi nienapędzanej.</string>
+    <string name="wheel_pair_paired_header">Sparowane sondy</string>
+    <string name="wheel_paired_connected">Połączono · %1$d obr.</string>
+    <string name="wheel_paired_disconnected">Rozłączono — połączy się automatycznie</string>
+    <string name="wheel_pair_needs_permissions">Do skanowania czujników wymagane są uprawnienia Bluetooth.</string>
+    <string name="wheel_pair_scanning">Skanowanie…</string>
+    <string name="wheel_pair_scan_again">Skanuj ponownie</string>
+    <string name="wheel_pair_no_devices_yet">Nie znaleziono jeszcze czujników — zakręć kołem, aby wybudzić czujnik.</string>
+    <string name="wheel_pair_unknown_device">Nieznany czujnik</string>
+    <string name="wheel_forget_device">Zapomnij</string>
+
+    <!-- Ghost runner -->
+    <string name="ghost_card_title">Wyścig z samym sobą</string>
+    <string name="ghost_card_you">Ty</string>
+    <string name="ghost_card_ghost">Duch</string>
+    <string name="ghost_card_delta">Δ</string>
+    <string name="ghost_card_clear">Stop</string>
+    <string name="ghost_card_finished">Duch ukończył trasę.</string>
+    <string name="trail_action_race_ghost">Ścigaj się z tą trasą</string>
+    <string name="ghost_set_toast">Wyścig z %1$s — rozpocznij nagrywanie.</string>
+    <string name="unit_km">km</string>
+    <string name="unit_mi">mi</string>
+    <string name="ghost_picker_title">Duch biegacza</string>
+    <string name="ghost_picker_body">Ścigaj się z wirtualnym partnerem. Wybierz stałe tempo, docelowy czas na dystansie lub miniony bieg — następnie rozpocznij nagrywanie na pulpicie biegacza.</string>
+    <string name="ghost_mode_off">Wył.</string>
+    <string name="ghost_mode_pace">Tempo</string>
+    <string name="ghost_mode_goal">Cel</string>
+    <string name="ghost_mode_run">Miniony bieg</string>
+    <string name="ghost_off_body">Brak ducha — biegniesz solo.</string>
+    <string name="ghost_turn_off">Wyłącz ducha</string>
+    <string name="ghost_pace_hint">Utrzymuj stałe tempo (%1$s).</string>
+    <string name="ghost_minutes">min</string>
+    <string name="ghost_seconds">sek</string>
+    <string name="ghost_apply">Ustaw ducha</string>
+    <string name="ghost_goal_hint">Pokonaj dystans w docelowym czasie — duch utrzymuje wymagane średnie tempo.</string>
+    <string name="ghost_goal_distance">Dystans</string>
+    <string name="ghost_run_empty">Brak zapisanych biegów do wyścigu. Najpierw nagraj jeden.</string>
+    <string name="settings_ghost">Duch biegacza</string>
+    <string name="runner_ghost_label">Duch</string>
+    <string name="runner_ghost_ahead">%1$s przewagi</string>
+    <string name="runner_ghost_behind">%1$s straty</string>
+    <string name="runner_ghost_finished">Duch ukończył</string>
+
+    <!-- NMEA logging &amp; bridge -->
+    <string name="settings_nmea_logging">Zapisuj surowe NMEA (diagnostyka)</string>
+    <string name="settings_nmea_logging_body">Zapisuje surowe zdania NMEA z układu GPS do cache/nmea/ podczas nagrywania. Domyślnie wyłączone; do debugowania zachowania układu.</string>
+    <string name="settings_nmea_bt_bridge">NMEA przez Bluetooth (SPP)</string>
+    <string name="settings_nmea_bt_bridge_body">Rozsyła surowe zdania NMEA przez Bluetooth Serial Port (RFCOMM) podczas nagrywania, dzięki czemu sparowany ploter map lub narzędzie na komputerze może użyć telefonu jako zewnętrznego odbiornika GPS.</string>
+
+    <!-- Coordinate extra fields -->
+    <string name="nav_pick_coords_plus_label">Plus Code (opcjonalnie)</string>
+    <string name="nav_pick_coords_alt_label">Plus Code lub Maidenhead (opcjonalnie)</string>
+
+    <!-- Pace targets -->
+    <string name="trail_stats_score_breakdown">Tempo %1$d · Strefa tętna %2$d</string>
+    <string name="pace_targets_title">Cele tempa</string>
+    <string name="pace_targets_body">Ustaw docelowe tempo dla odcinka prowadzącego do każdego punktu trasy. Widok sportowy będzie podążał za tymi celami per odcinek zamiast za ogólnym.</string>
+    <string name="pace_targets_waypoint">%1$d%% trasy</string>
+    <string name="pace_targets_apply_all">Zastosuj pierwszy do wszystkich</string>
+    <string name="trail_pace_targets">Cele tempa…</string>
+
+    <!-- Donations -->
+    <string name="about_liberapay_label">Wesprzyj przez Liberapay (cyklicznie)</string>
+    <string name="about_github_sponsors_label">Wesprzyj przez GitHub Sponsors</string>
+    <string name="about_paypal_label">Wesprzyj przez PayPal (jednorazowo)</string>
+
+    <!-- Cycling power meter -->
+    <string name="cp_pair_title">Miernik mocy rowerowej</string>
+    <string name="cp_pair_body">Dotknij urządzenia, aby je sparować. Obsługiwane są wyłącznie bluetoothowe mierniki mocy korzystające ze standardowego profilu Cycling Power Service.</string>
+    <string name="cp_pair_scanning">Skanowanie…</string>
+    <string name="cp_pair_scan_again">Skanuj ponownie</string>
+    <string name="cp_pair_no_devices_yet">Wyszukiwanie mierników mocy… zakręć korbą lub wybudź miernik i trzymaj go w pobliżu.</string>
+    <string name="cp_pair_unknown_device">Nieznane urządzenie</string>
+    <string name="cp_pair_needs_permissions">Do sparowania miernika mocy wymagane są uprawnienia Bluetooth.</string>
+    <string name="cp_forget_device">Zapomnij</string>
+    <string name="cp_status_idle">Brak sparowanego miernika mocy</string>
+    <string name="cp_status_scanning">Wyszukiwanie mierników mocy</string>
+    <string name="cp_status_connecting">Łączenie z %1$s…</string>
+    <string name="cp_status_connected">Połączono · %1$d W</string>
+    <string name="cp_status_connected_named">%1$s · %2$d W</string>
+    <string name="cp_status_disconnected">%1$s · rozłączono</string>
+    <string name="settings_pair_cp">Miernik mocy rowerowej</string>
+
+    <!-- Share position -->
+    <string name="share_position_title">Udostępnij moją pozycję</string>
+    <string name="share_position_body">Poproś znajomego, aby zeskanował ten kod QR aparatem lub aplikacją QR — otworzy się jego domyślna aplikacja map z pinezką w Twoim bieżącym miejscu.</string>
+    <string name="share_position_waiting_fix">Oczekiwanie na fix GPS do udostępnienia…</string>
+    <string name="share_position_qr_alt">Kod QR zawierający geo URI bieżącej pozycji</string>
+    <string name="share_position_qr_error">Nie udało się zakodować QR</string>
+    <string name="share_position_share_button">Udostępnij link</string>
+    <string name="share_position_chooser_title">Udostępnij pozycję</string>
+    <string name="settings_share_position">Udostępnij moją pozycję</string>
+
+    <!-- Waypoint capture -->
+    <string name="waypoint_capture_title">Nowy punkt trasy</string>
+    <string name="waypoint_capture_note_label">Notatka (opcjonalnie)</string>
+    <string name="waypoint_capture_save_note">Zapisz notatkę</string>
+    <string name="waypoint_capture_take_photo">Zrób zdjęcie</string>
+    <string name="waypoint_capture_record_voice">Nagraj głos</string>
+    <string name="waypoint_capture_stop_voice">Stop</string>
+    <string name="waypoint_capture_voice_perm_hint">Wymagane uprawnienie do mikrofonu</string>
+    <string name="waypoint_capture_needs_fix">Oczekiwanie na fix GPS przed zapisem punktu trasy…</string>
+    <string name="waypoint_capture_fix_summary">O %1$s, %2$s</string>
+    <string name="waypoint_list_title">Punkty trasy</string>
+    <string name="waypoint_list_empty">Brak punktów trasy. Dotknij przycisku + poniżej, aby upuścić jeden w bieżącym miejscu.</string>
+    <string name="waypoint_share">Udostępnij</string>
+    <string name="waypoint_delete">Usuń</string>
+    <string name="waypoint_voice_play">Odtwórz notatkę głosową</string>
+    <string name="waypoint_voice_stop">Zatrzymaj odtwarzanie</string>
+    <string name="waypoint_photo_missing">Brak pliku zdjęcia</string>
+    <string name="waypoint_share_chooser_title">Udostępnij punkt trasy</string>
+    <string name="settings_waypoints">Punkty trasy</string>
+
+    <!-- FIT export -->
+    <string name="trail_share_fit">Udostępnij jako FIT</string>
+    <string name="trail_share_fit_failed">Nie udało się zakodować pliku FIT</string>
+
+    <!-- Altitude smoothing -->
+    <string name="settings_altitude_smooth">Wygładzaj wysokość</string>
+    <string name="settings_altitude_smooth_body">Filtruje surową wysokość GPS przez filtr dolnoprzepustowy, aby tłumić drgania między próbkami. Odczyt nadal śledzi rzeczywiste podjazdy, ale przestaje skakać na płaskiej trasie.</string>
 </resources>

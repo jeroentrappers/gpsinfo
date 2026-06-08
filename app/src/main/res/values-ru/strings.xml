@@ -427,4 +427,382 @@
     <string name="update_available_title" tools:ignore="MissingTranslation">Доступно обновление</string>
     <string name="update_available_body" tools:ignore="MissingTranslation">Версия %1$s доступна в Play Маркете — нажмите, чтобы обновить.</string>
     <string name="update_dismiss" tools:ignore="MissingTranslation">Закрыть</string>
+
+    <!-- Navigation drawer -->
+    <string name="drawer_open">Открыть меню</string>
+    <string name="drawer_subtitle">GPS-панель и трекер</string>
+    <string name="drawer_section_quick">Быстрые действия</string>
+    <string name="drawer_section_navigate">Перейти к</string>
+    <string name="drawer_section_dashboard">Раскладка панели</string>
+    <string name="drawer_section_app">Приложение</string>
+
+    <!-- Compass card -->
+    <string name="degrees_true">° ист.</string>
+    <string name="compass_card_heading">Курс</string>
+    <string name="compass_card_course">Путевой угол</string>
+
+    <!-- Persona metrics -->
+    <string name="metric_elapsed">Время</string>
+    <string name="metric_distance">Дистанция</string>
+    <string name="metric_heart_rate">Пульс</string>
+    <string name="metric_power">Мощность</string>
+    <string name="metric_cadence">Каденс</string>
+    <string name="metric_stride">Длина шага</string>
+    <string name="persona_runner_idle_hint">Нажмите кнопку записи на панели, чтобы начать пробежку.</string>
+    <string name="persona_runner_recording_hint">Идёт запись — нажмите значок спортивного экрана для тренировки с подсказками.</string>
+    <string name="persona_hiker_until_sunset">ДО ЗАКАТА</string>
+    <string name="persona_hiker_sunset_at">Закат в %1$s</string>
+    <string name="persona_sailor_sog">SOG</string>
+    <string name="persona_sailor_cog">COG</string>
+    <string name="persona_runner_target_pace">Цель %1$s</string>
+    <string name="persona_geocacher_no_target">Цель не задана. Через пункт меню «Навигация к…» введите координаты тайника.</string>
+    <string name="heading_true_suffix">%1$s · °T</string>
+
+    <!-- Trail empty-state actions -->
+    <string name="trail_empty_action_record">Записать свой первый трек</string>
+    <string name="trail_empty_action_import">Импортировать GPX-файл</string>
+
+    <!-- Personal records -->
+    <string name="pr_section_title">Личные рекорды</string>
+    <string name="pr_total_distance">Всего пройдено</string>
+    <string name="pr_total_time">Общее время</string>
+    <string name="pr_trail_count">Треки</string>
+    <string name="pr_longest">Самый длинный</string>
+    <string name="pr_fastest_avg">Лучшая сред.</string>
+    <string name="pr_biggest_climb">Наибольший подъём</string>
+    <string name="pr_longest_duration">Самая долгая</string>
+
+    <!-- Dashboard density -->
+    <string name="settings_density_label">Плотность панели</string>
+    <string name="settings_density_standard">Стандартная</string>
+    <string name="settings_density_glanceable">Крупная</string>
+
+    <!-- Trip computer -->
+    <string name="trip_computer_title">ПОЕЗДКА — с последнего сброса</string>
+    <string name="trip_computer_distance">Дистанция</string>
+    <string name="trip_computer_time">Время</string>
+    <string name="trip_computer_trails">Треки</string>
+    <string name="trip_computer_reset">Сбросить поездку</string>
+
+    <!-- Quick Settings tile -->
+    <string name="qs_tile_label">Трек GPSinfo</string>
+    <string name="qs_tile_state_recording">Идёт запись — нажмите, чтобы открыть</string>
+    <string name="qs_tile_state_idle">Нажмите, чтобы начать запись</string>
+
+    <!-- Vibration cues -->
+    <string name="settings_vibration_cues">Вибрационные подсказки</string>
+    <string name="settings_vibration_cues_body">Разные вибрации при отклонении от темпа или переходе пульса через границу зоны. Не зависят от звуковых подсказок.</string>
+
+    <!-- Sports view tutorial -->
+    <string name="sports_tutorial_title">Знакомство со спортивным экраном</string>
+    <string name="sports_tutorial_lede">Четыре наглядных прибора ведут вас во время пробежки. Вот что показывает каждый из них.</string>
+    <string name="sports_tutorial_pace_title">Шкала отклонения темпа</string>
+    <string name="sports_tutorial_pace_body">Стрелка по центру — в графике. Левее — слишком медленно. Правее — слишком быстро. Число внутри — отклонение в секундах.</string>
+    <string name="sports_tutorial_hr_title">Шкала зоны пульса</string>
+    <string name="sports_tutorial_hr_body">Цветные полосы — это Z1–Z5 из ваших настроек зон. Пульс в центре, метка текущей зоны справа.</string>
+    <string name="sports_tutorial_intensity_title">Профиль интенсивности</string>
+    <string name="sports_tutorial_intensity_body">Цветной обзор ближайшего отрезка по крутизне подъёма с расчётным временем до следующего большого подъёма.</string>
+    <string name="sports_tutorial_cues_title">Звуковые и вибрационные подсказки</string>
+    <string name="sports_tutorial_cues_body">Включите в настройках голосовые и вибрационные подсказки при отклонении от темпа или переходе пульса через зоны. Музыка приглушается, а не обрывается.</string>
+    <string name="sports_tutorial_dismiss">Понятно</string>
+
+    <!-- Laps -->
+    <string name="lap_action">Отметить круг</string>
+    <string name="lap_recorded_toast">Круг %1$d · %2$.2f км за %3$d:%4$02d</string>
+    <string name="laps_section_title">Круги</string>
+    <string name="laps_column_lap">№</string>
+    <string name="laps_column_distance">Дистанция</string>
+    <string name="laps_column_time">Время</string>
+    <string name="laps_column_pace">Темп</string>
+    <string name="laps_column_hr">Пульс</string>
+
+    <!-- Trail tags -->
+    <string name="tags_editor_title">Метки трека</string>
+    <string name="tags_editor_body">Произвольные метки — удобно группировать утренние пробежки, групповые заезды, гонки. Сохраняются в поле &lt;keywords&gt; GPX-файла.</string>
+    <string name="tags_editor_empty">Меток пока нет.</string>
+    <string name="tags_editor_input_hint">Введите метку и нажмите Готово</string>
+    <string name="trail_action_edit_tags">Изменить метки</string>
+
+    <!-- Trails search &amp; sort -->
+    <string name="trails_search_hint">Поиск по названию</string>
+    <string name="trails_sort_label">Сортировка</string>
+    <string name="trails_sort_date_desc">Сначала новые</string>
+    <string name="trails_sort_date_asc">Сначала старые</string>
+    <string name="trails_sort_distance_desc">Сначала длинные</string>
+    <string name="trails_sort_distance_asc">Сначала короткие</string>
+    <string name="trails_filter_all">Все</string>
+    <string name="trails_no_results">Нет треков, подходящих под фильтры.</string>
+
+    <!-- Auto-pause -->
+    <string name="auto_pause_idle_title">Похоже, вы стоите</string>
+    <string name="auto_pause_idle_body">Нет заметного движения уже 30 с. Нажмите, чтобы поставить на паузу вручную — иначе запись приостановится сама после следующего периода покоя.</string>
+    <string name="auto_pause_paused_title">Запись на паузе</string>
+    <string name="auto_pause_paused_body">Дистанция и время заморожены. Запись возобновится, как только вы пройдёте &gt; 2 м, или нажмите, чтобы продолжить сейчас.</string>
+
+    <!-- Stride calibration -->
+    <string name="stride_calibration_title">Калибровка длины шага</string>
+    <string name="stride_calibration_body">Пройдите известную дистанцию (прямая беговой дорожки — ровно 100 м; бассейн 25 м — это 25 м). Счётчик шагов делит её на число шагов, чтобы вычислить вашу длину шага.</string>
+    <string name="stride_calibration_saved_label">Текущая калибровка</string>
+    <string name="stride_calibration_distance_label">Дистанция ходьбы</string>
+    <string name="stride_calibration_walking">Идёт ходьба — продолжайте считать</string>
+    <string name="stride_calibration_steps">шагов</string>
+    <string name="stride_calibration_start">Начать ходьбу</string>
+    <string name="stride_calibration_save">Сохранить калибровку</string>
+    <string name="stride_calibration_clear">Сбросить калибровку</string>
+    <string name="settings_stride_calibration">Калибровать шаг</string>
+
+    <!-- Dashboard profile -->
+    <string name="dashboard_profile_switch">Сменить профиль панели</string>
+    <string name="share_nav_context">Направляюсь к точке, до неё %1$s · прибытие %2$s</string>
+
+    <!-- Android Auto rows -->
+    <string name="car_row_speed">Скорость</string>
+    <string name="car_row_heading">Курс</string>
+    <string name="car_row_altitude">Высота</string>
+    <string name="car_row_trip">Поездка</string>
+    <string name="car_row_trip_idle">Запись не идёт</string>
+    <string name="car_action_start">Начать трек</string>
+    <string name="car_action_stop">Стоп и сохранить</string>
+
+    <!-- Dashboard profile editor -->
+    <string name="profile_editor_title">Настроить панель</string>
+    <string name="profile_editor_body">Выберите, какие карточки показывать и в каком порядке. Сохраняется как профиль «Свой» и активируется.</string>
+    <string name="profile_editor_save">Сохранить свой</string>
+    <string name="profile_editor_reset">Сбросить</string>
+    <string name="profile_editor_section_status">Строка состояния</string>
+    <string name="profile_editor_section_speed">Спидометр</string>
+    <string name="profile_editor_accent_label">Акцентный цвет</string>
+    <string name="profile_editor_chrome_label">Оформление</string>
+    <string name="profile_editor_chrome_normal">Обычное</string>
+    <string name="profile_editor_chrome_night">Ночное приглушённо-красное</string>
+
+    <!-- Live map -->
+    <string name="live_map_title">Карта в реальном времени</string>
+    <string name="live_map_follow">Следовать за мной</string>
+    <string name="live_map_heading_up">Поворот по курсу</string>
+    <string name="live_map_recenter">Центрировать на мне</string>
+    <string name="live_map_follow_label">Следить</string>
+    <string name="live_map_recenter_label">Центр</string>
+    <string name="live_map_download_label">Офлайн</string>
+    <string name="live_map_download">Скачать эту область для офлайн-режима</string>
+    <string name="live_map_download_progress">Офлайн-карта: %1$d%%</string>
+    <string name="live_map_sats">Спут</string>
+    <string name="live_map_open">Открыть карту в реальном времени</string>
+    <string name="live_map_avg_subtext">сред. %1$s %2$s · %3$d с</string>
+    <string name="settings_dashboard_editor">Настроить карточки панели</string>
+    <string name="dashboard_profile_custom">Свой</string>
+
+    <!-- Route cues -->
+    <string name="cue_off_route">Сошли с маршрута</string>
+    <string name="cue_back_on_route">Снова на маршруте</string>
+
+    <!-- Android Auto recent trails &amp; permissions -->
+    <string name="car_action_recent_trails">Недавние треки</string>
+    <string name="car_recent_title">Недавние треки</string>
+    <string name="car_recent_empty">Треки пока не записаны</string>
+    <string name="car_permission_message">GPSinfo нужен доступ к геолокации, чтобы показывать скорость, курс и высоту.</string>
+    <string name="car_permission_grant">Предоставить доступ</string>
+    <string name="car_toast_record_failed">Не удалось начать запись</string>
+    <string name="car_toast_saved">Сохранено: %1$s</string>
+    <string name="car_toast_save_empty">Точки не записаны — ничего не сохранено</string>
+    <string name="car_waiting_fix">Ожидание фиксации GPS…</string>
+
+    <!-- Android Auto turn-by-turn -->
+    <string name="car_action_end_nav">Завершить маршрут</string>
+    <string name="car_nav_turn_left">Поверните налево</string>
+    <string name="car_nav_slight_left">Держитесь левее</string>
+    <string name="car_nav_sharp_left">Резко поверните налево</string>
+    <string name="car_nav_turn_right">Поверните направо</string>
+    <string name="car_nav_slight_right">Держитесь правее</string>
+    <string name="car_nav_sharp_right">Резко поверните направо</string>
+    <string name="car_nav_keep_left">Держитесь слева</string>
+    <string name="car_nav_keep_right">Держитесь справа</string>
+    <string name="car_nav_u_turn">Развернитесь</string>
+    <string name="car_nav_roundabout">Въезжайте на круг</string>
+    <string name="car_nav_roundabout_exit">Круг, %1$d-й съезд</string>
+    <string name="car_nav_continue">Продолжайте движение</string>
+
+    <!-- Navigation target picker -->
+    <string name="nav_pick_drive">Маршрут для авто (офлайн)</string>
+    <string name="nav_pick_tab_address">Адрес</string>
+    <string name="nav_address_label">Поиск адреса или места</string>
+    <string name="nav_address_no_results">Совпадений не найдено</string>
+    <string name="nav_address_offline">Нет связи — для поиска адреса нужен интернет (прокладка маршрута работает офлайн)</string>
+    <string name="nav_address_from_cache">Результат из кэша (офлайн)</string>
+    <string name="nav_address_saved_header">СОХРАНЁННЫЕ И НЕДАВНИЕ</string>
+    <string name="nav_address_empty_hint">Введите адрес или просто куда-нибудь съездите — недавние пункты назначения появятся здесь.</string>
+    <string name="nav_place_label_action">Отметить это место</string>
+    <string name="nav_place_home">Дом</string>
+    <string name="nav_place_work">Работа</string>
+    <string name="nav_place_unpin">Открепить</string>
+    <string name="nav_place_custom_label">Своя метка</string>
+    <string name="nav_place_save_label">Сохранить метку</string>
+    <string name="nav_place_delete">Удалить</string>
+
+    <!-- Android Auto places -->
+    <string name="car_places_title">Места</string>
+    <string name="car_places_empty">Сохранённых и недавних мест пока нет. Сначала выберите адрес на телефоне.</string>
+    <string name="car_action_places">Места</string>
+    <string name="car_places_section_saved">Сохранённые</string>
+    <string name="car_places_section_recent">Недавние</string>
+    <string name="car_places_trails">Записанные треки</string>
+
+    <!-- Regularity rally -->
+    <string name="rally_title">Регулярность</string>
+    <string name="rally_new_stage">Новый этап</string>
+    <string name="rally_empty">Этапов пока нет. Введите таблицу скоростей из дорожной книги строками «с км / скорость».</string>
+    <string name="rally_arm">Взвести</string>
+    <string name="rally_disarm">Снять</string>
+    <string name="rally_edit">Изменить</string>
+    <string name="rally_delete">Удалить</string>
+    <string name="rally_stage_name">Название этапа</string>
+    <string name="rally_changes_header">Изменения скорости</string>
+    <string name="rally_from_km">С км</string>
+    <string name="rally_speed_kmh">км/ч</string>
+    <string name="rally_add_change">Добавить изменение скорости</string>
+    <string name="rally_length_km">Общая длина (км, необязательно)</string>
+    <string name="rally_save">Сохранить этап</string>
+    <string name="rally_cancel">Отмена</string>
+    <string name="rally_start">СТАРТ</string>
+    <string name="rally_stop">Стоп</string>
+    <string name="rally_finished">Дистанция этапа пройдена</string>
+    <string name="rally_target_speed">Цель</string>
+    <string name="rally_distance">Дистанция</string>
+    <string name="rally_late_speed_up">ОТСТАЁТЕ — прибавьте</string>
+    <string name="rally_early_slow_down">СПЕШИТЕ — сбавьте</string>
+    <string name="drawer_rally">Регулярность</string>
+    <string name="car_rally_armed">Взведено — нажмите Старт по команде судьи</string>
+    <string name="car_action_rally_start">Старт</string>
+    <string name="car_action_rally_stop">Стоп</string>
+
+    <!-- Wheel-speed probes -->
+    <string name="rally_wheel_status">Колёсные датчики: %1$d сопряжено · %2$d подключено</string>
+    <string name="rally_wheel_none">Колёсный датчик не сопряжён — дистанция считается по GPS</string>
+    <string name="rally_wheel_pair">Управление</string>
+    <string name="rally_source_wheel">КОЛЕСО</string>
+    <string name="rally_source_wheel_n">КОЛЕСО ×%1$d</string>
+    <string name="rally_source_gps">GPS</string>
+    <string name="wheel_pair_title">Колёсные датчики</string>
+    <string name="wheel_pair_body">Закрепите Bluetooth-датчики скорости велосипеда (CSC) на ступицах колёс — они станут колёсными датчиками ралли. Два на одной оси измеряют точную осевую линию автомобиля; ставьте на неведущую ось.</string>
+    <string name="wheel_pair_paired_header">Сопряжённые датчики</string>
+    <string name="wheel_paired_connected">Подключено · %1$d об.</string>
+    <string name="wheel_paired_disconnected">Отключено — подключится автоматически</string>
+    <string name="wheel_pair_needs_permissions">Для поиска датчиков нужны разрешения Bluetooth.</string>
+    <string name="wheel_pair_scanning">Поиск…</string>
+    <string name="wheel_pair_scan_again">Искать снова</string>
+    <string name="wheel_pair_no_devices_yet">Датчики пока не найдены — крутаните колесо, чтобы разбудить датчик.</string>
+    <string name="wheel_pair_unknown_device">Неизвестный датчик</string>
+    <string name="wheel_forget_device">Забыть</string>
+
+    <!-- Ghost runner -->
+    <string name="ghost_card_title">Гонка с собой</string>
+    <string name="ghost_card_you">Вы</string>
+    <string name="ghost_card_ghost">Призрак</string>
+    <string name="ghost_card_delta">Δ</string>
+    <string name="ghost_card_clear">Стоп</string>
+    <string name="ghost_card_finished">Призрак финишировал.</string>
+    <string name="trail_action_race_ghost">Гонка с этим треком</string>
+    <string name="ghost_set_toast">Гонка с %1$s — начните запись.</string>
+    <string name="unit_km">км</string>
+    <string name="unit_mi">ми</string>
+    <string name="ghost_picker_title">Призрак-соперник</string>
+    <string name="ghost_picker_body">Соревнуйтесь с виртуальным напарником. Выберите ровный темп, цель по времени на дистанцию или прошлую пробежку — затем начните запись на панели бегуна.</string>
+    <string name="ghost_mode_off">Выкл.</string>
+    <string name="ghost_mode_pace">Темп</string>
+    <string name="ghost_mode_goal">Цель</string>
+    <string name="ghost_mode_run">Прошлая пробежка</string>
+    <string name="ghost_off_body">Призрака нет — вы бежите в одиночку.</string>
+    <string name="ghost_turn_off">Отключить призрака</string>
+    <string name="ghost_pace_hint">Держите ровный темп (%1$s).</string>
+    <string name="ghost_minutes">мин</string>
+    <string name="ghost_seconds">сек</string>
+    <string name="ghost_apply">Задать призрака</string>
+    <string name="ghost_goal_hint">Пройдите дистанцию за целевое время — призрак держит нужный средний темп.</string>
+    <string name="ghost_goal_distance">Дистанция</string>
+    <string name="ghost_run_empty">Сохранённых пробежек для гонки пока нет. Сначала запишите одну.</string>
+    <string name="settings_ghost">Призрак-соперник</string>
+    <string name="runner_ghost_label">Призрак</string>
+    <string name="runner_ghost_ahead">%1$s впереди</string>
+    <string name="runner_ghost_behind">%1$s позади</string>
+    <string name="runner_ghost_finished">Призрак финишировал</string>
+
+    <!-- NMEA logging &amp; Bluetooth bridge -->
+    <string name="settings_nmea_logging">Запись сырого NMEA (диагностика)</string>
+    <string name="settings_nmea_logging_body">Сохранять сырые NMEA-предложения GPS-чипа в cache/nmea/ во время записей. По умолчанию выключено; для отладки поведения чипа.</string>
+    <string name="settings_nmea_bt_bridge">NMEA по Bluetooth (SPP)</string>
+    <string name="settings_nmea_bt_bridge_body">Транслировать сырые NMEA-предложения по Bluetooth Serial Port (RFCOMM) во время записей, чтобы сопряжённый картплоттер или настольная программа могли использовать телефон как внешний GPS-приёмник.</string>
+
+    <!-- Plus Code / Maidenhead coordinate entry -->
+    <string name="nav_pick_coords_plus_label">Plus Code (необязательно)</string>
+    <string name="nav_pick_coords_alt_label">Plus Code или Maidenhead (необязательно)</string>
+
+    <!-- Trail stats score breakdown -->
+    <string name="trail_stats_score_breakdown">Темп %1$d · зона пульса %2$d</string>
+
+    <!-- Pace targets -->
+    <string name="pace_targets_title">Целевые темпы</string>
+    <string name="pace_targets_body">Задайте целевой темп для отрезка перед каждой путевой точкой. Спортивный экран будет следовать этим темпам по отрезкам вместо общего.</string>
+    <string name="pace_targets_waypoint">%1$d%% пути</string>
+    <string name="pace_targets_apply_all">Применить первый ко всем</string>
+    <string name="trail_pace_targets">Целевые темпы…</string>
+
+    <!-- Donations -->
+    <string name="about_liberapay_label">Пожертвовать через Liberapay (регулярно)</string>
+    <string name="about_github_sponsors_label">Пожертвовать через GitHub Sponsors</string>
+    <string name="about_paypal_label">Пожертвовать через PayPal (разово)</string>
+
+    <!-- Cycling power meter -->
+    <string name="cp_pair_title">Измеритель мощности</string>
+    <string name="cp_pair_body">Нажмите на устройство, чтобы подключить его. Поддерживаются только Bluetooth-измерители мощности со стандартной службой Cycling Power Service.</string>
+    <string name="cp_pair_scanning">Поиск…</string>
+    <string name="cp_pair_scan_again">Искать снова</string>
+    <string name="cp_pair_no_devices_yet">Поиск измерителей мощности… покрутите шатун или разбудите измеритель и держите его рядом.</string>
+    <string name="cp_pair_unknown_device">Неизвестное устройство</string>
+    <string name="cp_pair_needs_permissions">Для подключения измерителя мощности нужны разрешения Bluetooth.</string>
+    <string name="cp_forget_device">Забыть</string>
+    <string name="cp_status_idle">Измеритель мощности не подключён</string>
+    <string name="cp_status_scanning">Поиск измерителей мощности</string>
+    <string name="cp_status_connecting">Подключение к %1$s…</string>
+    <string name="cp_status_connected">Подключено · %1$d Вт</string>
+    <string name="cp_status_connected_named">%1$s · %2$d Вт</string>
+    <string name="cp_status_disconnected">%1$s · нет связи</string>
+    <string name="settings_pair_cp">Измеритель мощности</string>
+
+    <!-- Share position via QR -->
+    <string name="share_position_title">Поделиться местоположением</string>
+    <string name="share_position_body">Попросите друга навести камеру или QR-приложение на этот код — у него откроется приложение карт с меткой на вашем текущем месте.</string>
+    <string name="share_position_waiting_fix">Ожидание фиксации GPS, чтобы поделиться…</string>
+    <string name="share_position_qr_alt">QR-код с geo-ссылкой на текущее местоположение</string>
+    <string name="share_position_qr_error">Не удалось создать QR-код</string>
+    <string name="share_position_share_button">Поделиться ссылкой</string>
+    <string name="share_position_chooser_title">Поделиться местоположением</string>
+    <string name="settings_share_position">Поделиться местоположением</string>
+
+    <!-- Waypoint capture &amp; list -->
+    <string name="waypoint_capture_title">Новая путевая точка</string>
+    <string name="waypoint_capture_note_label">Заметка (необязательно)</string>
+    <string name="waypoint_capture_save_note">Сохранить заметку</string>
+    <string name="waypoint_capture_take_photo">Сделать фото</string>
+    <string name="waypoint_capture_record_voice">Записать голос</string>
+    <string name="waypoint_capture_stop_voice">Стоп</string>
+    <string name="waypoint_capture_voice_perm_hint">Нужно разрешение на микрофон</string>
+    <string name="waypoint_capture_needs_fix">Ожидание фиксации GPS перед записью путевой точки…</string>
+    <string name="waypoint_capture_fix_summary">В %1$s, %2$s</string>
+    <string name="waypoint_list_title">Путевые точки</string>
+    <string name="waypoint_list_empty">Путевых точек пока нет. Нажмите кнопку + ниже, чтобы поставить точку на текущем месте.</string>
+    <string name="waypoint_share">Поделиться</string>
+    <string name="waypoint_delete">Удалить</string>
+    <string name="waypoint_voice_play">Воспроизвести голосовую заметку</string>
+    <string name="waypoint_voice_stop">Остановить воспроизведение</string>
+    <string name="waypoint_photo_missing">Файл фото отсутствует</string>
+    <string name="waypoint_share_chooser_title">Поделиться путевой точкой</string>
+    <string name="settings_waypoints">Путевые точки</string>
+
+    <!-- FIT export -->
+    <string name="trail_share_fit">Отправить как FIT</string>
+    <string name="trail_share_fit_failed">Не удалось создать FIT-файл</string>
+
+    <!-- Altitude smoothing -->
+    <string name="settings_altitude_smooth">Сглаживать высоту</string>
+    <string name="settings_altitude_smooth_body">Пропускать сырую высоту GPS через фильтр нижних частот, чтобы убрать дрожание от выборки к выборке. Показания по-прежнему отслеживают реальные подъёмы, но перестают скакать при ходьбе по ровной местности.</string>
 </resources>
