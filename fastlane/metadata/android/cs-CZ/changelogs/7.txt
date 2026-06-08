@@ -1,0 +1,5 @@
+• Offline navigace s hlasovým navedením
+• Vektorové mapy (MapLibre) v telefonu a Android Auto
+• Režim rally pravidelnosti se vzdáleností z kolového senzoru
+• Vyhledávání adres + uložená místa Domov/Práce/nedávná
+• Stažení map pro offline použití

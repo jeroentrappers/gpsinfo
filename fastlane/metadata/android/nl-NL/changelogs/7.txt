@@ -1,0 +1,5 @@
+• Offline turn-by-turn navigatie met gesproken aanwijzingen
+• Vectorkaarten (MapLibre) op telefoon en Android Auto
+• Regelmatigheidsrally-modus met wielsensor-afstand
+• Adres zoeken + opgeslagen Thuis/Werk/recente plaatsen
+• Kaarten downloaden voor offline gebruik

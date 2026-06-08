@@ -1,0 +1,5 @@
+• Offline-Navigation mit Sprachführung
+• Vektorkarten (MapLibre) auf Telefon und Android Auto
+• Gleichmäßigkeitsprüfungs-Modus mit Radsensor-Distanz
+• Adresssuche + gespeicherte Zuhause/Arbeit/letzte Orte
+• Karten für Offline-Nutzung herunterladen

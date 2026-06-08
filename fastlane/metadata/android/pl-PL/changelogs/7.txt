@@ -1,0 +1,5 @@
+• Nawigacja offline z prowadzeniem głosowym
+• Mapy wektorowe (MapLibre) na telefonie i Android Auto
+• Tryb rajdu regularności z dystansem z czujnika koła
+• Wyszukiwanie adresów + zapisane miejsca Dom/Praca/ostatnie
+• Pobieranie map do użytku offline

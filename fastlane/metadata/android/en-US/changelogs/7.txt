@@ -1,0 +1,5 @@
+• Offline turn-by-turn navigation with voice guidance
+• Vector maps (MapLibre) on phone and Android Auto
+• Regularity rally mode with wheel-sensor distance
+• Address search + saved Home/Work/recent places
+• Download maps for offline use

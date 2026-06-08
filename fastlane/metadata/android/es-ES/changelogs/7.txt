@@ -1,0 +1,5 @@
+• Navegación sin conexión con guía por voz
+• Mapas vectoriales (MapLibre) en el teléfono y Android Auto
+• Modo rally de regularidad con distancia por sensor de rueda
+• Búsqueda de direcciones + lugares Casa/Trabajo/recientes
+• Descargar mapas para uso sin conexión

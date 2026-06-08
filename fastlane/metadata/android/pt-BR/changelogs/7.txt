@@ -1,0 +1,5 @@
+• Navegação offline com orientação por voz
+• Mapas vetoriais (MapLibre) no telefone e Android Auto
+• Modo rally de regularidade com distância por sensor de roda
+• Busca de endereços + locais Casa/Trabalho/recentes
+• Baixar mapas para uso offline

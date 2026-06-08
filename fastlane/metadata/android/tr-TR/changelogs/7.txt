@@ -1,0 +1,5 @@
+• Sesli yönlendirmeli çevrimdışı navigasyon
+• Telefonda ve Android Auto’da vektör haritalar (MapLibre)
+• Tekerlek sensörü mesafeli regülarite ralli modu
+• Adres arama + kayıtlı Ev/İş/son yerler
+• Haritaları çevrimdışı kullanım için indirme

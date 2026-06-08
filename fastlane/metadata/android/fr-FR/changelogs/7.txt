@@ -1,0 +1,5 @@
+• Navigation hors ligne avec guidage vocal
+• Cartes vectorielles (MapLibre) sur téléphone et Android Auto
+• Mode rallye de régularité avec distance par capteur de roue
+• Recherche d'adresse + lieux Domicile/Travail/récents
+• Télécharger des cartes pour une utilisation hors ligne
