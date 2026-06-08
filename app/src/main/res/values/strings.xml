@@ -287,6 +287,9 @@
     <!-- Short captions shown beneath the live-map control buttons. -->
     <string name="live_map_follow_label" tools:ignore="MissingTranslation">Follow</string>
     <string name="live_map_recenter_label" tools:ignore="MissingTranslation">Recentre</string>
+    <string name="live_map_download_label" tools:ignore="MissingTranslation">Offline</string>
+    <string name="live_map_download" tools:ignore="MissingTranslation">Download this area for offline use</string>
+    <string name="live_map_download_progress" tools:ignore="MissingTranslation">Offline map: %1$d%%</string>
     <string name="live_map_sats" tools:ignore="MissingTranslation">Sats</string>
     <string name="live_map_open" tools:ignore="MissingTranslation">Open live map</string>
     <string name="live_map_avg_subtext" tools:ignore="MissingTranslation">avg %1$s %2$s · %3$d s</string>

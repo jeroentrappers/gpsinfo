@@ -1,16 +1,11 @@
 package be.appmire.gpsinfo.car
 
-import android.graphics.Bitmap
-import android.graphics.Camera
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
-import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.Shader
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
@@ -24,23 +19,10 @@ import androidx.lifecycle.LifecycleOwner
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.model.GnssSnapshot
 import be.appmire.gpsinfo.data.rally.RallyState
-import be.appmire.gpsinfo.ui.trails.MapnikBulkOk
-import java.io.File
 import java.util.Locale
-import kotlin.math.PI
 import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.hypot
-import kotlin.math.ln
 import kotlin.math.log2
 import kotlin.math.min
-import kotlin.math.pow
-import kotlin.math.roundToInt
-import kotlin.math.tan
-import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.MapTileProviderBasic
-import org.osmdroid.util.MapTileIndex
 
 /**
  * Draws the Waze-style car map: OSM tile base layer, the in-flight
@@ -125,14 +107,12 @@ class CarMapRenderer(
 
     private var renderPending = false
 
-    /** Offscreen layer the flat map is drawn into before the
-     *  perspective pass. Oversized: the tilt narrows the far field, so
-     *  the viewport's top corners sample outside the screen rect. */
-    private var mapLayer: Bitmap? = null
-
-    private val camera = Camera()
-    private val tiltMatrix = Matrix()
     private val instruments = CarInstruments()
+
+    /** MapLibre vector-map snapshotter — renders the base map (with
+     *  native bearing + pitch) off-screen to a bitmap we blit onto the
+     *  car surface. A new snapshot redraws the frame via [scheduleRender]. */
+    private val snapshotter = CarMapSnapshotter(carContext) { scheduleRender() }
 
     /** Instantaneous drive power in kW for the energy meter — null
      *  until an OBD2 source feeds [updatePower]; the dial parks at 0
@@ -145,97 +125,22 @@ class CarMapRenderer(
     }
 
     /** Active navigation route as packed (lat, lon) pairs, or null
-     *  when not navigating — drawn under the trail breadcrumb. */
+     *  when not navigating — projected onto the vector map per frame. */
     private var navRoute: List<DoubleArray>? = null
 
     fun updateNavigationRoute(points: List<be.appmire.gpsinfo.data.nav.RoutePoint>?) {
-        val changed = (points?.size ?: 0) != (navRoute?.size ?: 0)
         navRoute = points?.map { doubleArrayOf(it.lat, it.lon) }
-        if (changed) {
-            if (points != null) startRoutePrefetch(points) else stopRoutePrefetch()
-        }
         scheduleRender()
     }
 
-    // ── Route-corridor tile prefetch ───────────────────────────────
-    //
-    // OSM's tile servers are slow and we may drive out of coverage —
-    // when a route lands, quietly request every tile along its
-    // corridor at the driving zoom levels. The provider downloads via
-    // its own (policy-capped) queue and persists to the disk cache,
-    // so by the time the car gets there the tiles are local. Paced in
-    // small batches to leave the queue free for what's on screen now.
-
-    private val prefetchQueue = ArrayDeque<Long>()
-    private val prefetchRunnable = object : Runnable {
-        override fun run() {
-            var n = 0
-            while (n < PREFETCH_BATCH && prefetchQueue.isNotEmpty()) {
-                tileProvider.getMapTile(prefetchQueue.removeFirst())
-                n++
-            }
-            if (prefetchQueue.isNotEmpty()) {
-                mainHandler.postDelayed(this, PREFETCH_BATCH_INTERVAL_MS)
-            }
-        }
-    }
-
-    private fun startRoutePrefetch(points: List<be.appmire.gpsinfo.data.nav.RoutePoint>) {
-        stopRoutePrefetch()
-        val wanted = LinkedHashSet<Long>()
-        for (z in PREFETCH_ZOOMS) {
-            for (p in points) {
-                val tx = (lonToWorldX(p.lon, z) / TILE_SIZE).toInt()
-                    .coerceIn(0, (1 shl z) - 1)
-                val ty = (latToWorldY(p.lat, z) / TILE_SIZE).toInt()
-                    .coerceIn(0, (1 shl z) - 1)
-                wanted.add(MapTileIndex.getTileIndex(z, tx, ty))
-            }
-        }
-        prefetchQueue.addAll(wanted)
-        mainHandler.post(prefetchRunnable)
-    }
-
-    private fun stopRoutePrefetch() {
-        prefetchQueue.clear()
-        mainHandler.removeCallbacks(prefetchRunnable)
-    }
-
-    /** One-line navigation status (tile download %, route computing,
-     *  failure reason) — without it those phases are invisible and
-     *  navigation looks like it silently did nothing. */
+    /** One-line navigation status (route computing, failure reason) —
+     *  without it those phases are invisible and navigation looks like
+     *  it silently did nothing. */
     private var navStatusText: String? = null
 
     fun updateNavigationStatus(text: String?) {
         navStatusText = text
         scheduleRender()
-    }
-
-    /** Repaint when an async tile download lands. */
-    private val tileArrivedHandler = Handler(Looper.getMainLooper()) {
-        scheduleRender()
-        true
-    }
-
-    private val tileProvider: MapTileProviderBasic by lazy {
-        // The car session can be the first thing that runs in this
-        // process (phone app never opened), so MainActivity's osmdroid
-        // config may not have happened. Same app-private paths as
-        // MainActivity → shared tile cache. Idempotent by construction.
-        val osmConfig = Configuration.getInstance()
-        val appContext = carContext.applicationContext
-        osmConfig.userAgentValue = appContext.packageName
-        osmConfig.osmdroidBasePath = File(appContext.filesDir, "osmdroid").apply { mkdirs() }
-        osmConfig.osmdroidTileCache = File(appContext.cacheDir, "osmdroid/tiles").apply { mkdirs() }
-        // Navigation prefetch + the big tilt layer churn through far
-        // more tiles than the phone map — give the disk cache room so
-        // warmed route corridors survive. Download threads stay at
-        // osmdroid's default 2: that's OSM's tile usage policy cap.
-        osmConfig.tileFileSystemCacheMaxBytes = 1024L * 1024L * 1024L
-        osmConfig.tileFileSystemCacheTrimBytes = 900L * 1024L * 1024L
-        MapTileProviderBasic(appContext, MapnikBulkOk).also {
-            it.tileRequestCompleteHandlers.add(tileArrivedHandler)
-        }
     }
 
     init {
@@ -244,10 +149,7 @@ class CarMapRenderer(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        tileProvider.tileRequestCompleteHandlers.remove(tileArrivedHandler)
-        tileProvider.detach()
-        mapLayer?.recycle()
-        mapLayer = null
+        snapshotter.destroy()
     }
 
     // ── Data in ────────────────────────────────────────────────────
@@ -407,29 +309,24 @@ class CarMapRenderer(
         }
     }
 
-    /** Drag in pan mode. The host hands us screen-space deltas
-     *  (previous − current); map them through the fractional-zoom
-     *  scale and the heading-up rotation into a lat/lon offset. The
-     *  tilt foreshortening is deliberately ignored — near-field pan
-     *  speed is right and the far field just pans a bit faster. */
+    /** Drag in pan mode. Convert the screen-space delta into a lat/lon
+     *  shift using the latest snapshot's own projection — two unprojects
+     *  (centre, and centre+delta) give the geographic offset for this
+     *  drag, accounting for MapLibre's zoom, bearing and pitch exactly. */
     override fun onScroll(distanceX: Float, distanceY: Float) {
         mainHandler.post {
             if (!panMode) return@post
-            val loc = snapshot.location ?: lastDrawnLocation ?: return@post
-            val tileZoom = floor(currentZoom).toInt().coerceIn(MIN_ZOOM.toInt(), MAX_ZOOM.toInt())
-            val scale = 2.0.pow(currentZoom - tileZoom)
-            // Screen → world: undo the canvas rotation (heading-up).
-            val b = if (hasBearing) Math.toRadians(smoothedBearingDeg.toDouble()) else 0.0
-            val wx = (distanceX * cos(b) - distanceY * kotlin.math.sin(b)) / scale
-            val wy = (distanceX * kotlin.math.sin(b) + distanceY * cos(b)) / scale
-            val worldSize = TILE_SIZE * (1 shl tileZoom)
-            val latRad = Math.toRadians(
-                (loc.latitude + panLatOffset).coerceIn(-MAX_MERCATOR_LAT, MAX_MERCATOR_LAT)
-            )
-            panLonOffset += wx * 360.0 / worldSize
-            panLatOffset -= wy * 360.0 * cos(latRad) / worldSize
-            panLatOffset = panLatOffset.coerceIn(-MAX_PAN_DEG, MAX_PAN_DEG)
-            panLonOffset = panLonOffset.coerceIn(-MAX_PAN_DEG, MAX_PAN_DEG)
+            val snap = snapshotter.latest ?: return@post
+            val w = snap.bitmap.width
+            val h = snap.bitmap.height
+            val cx = w / 2f
+            val cy = h / 2f
+            val from = snap.latLngForPixel(android.graphics.PointF(cx, cy))
+            val to = snap.latLngForPixel(android.graphics.PointF(cx + distanceX, cy + distanceY))
+            panLatOffset = (panLatOffset + (to.latitude - from.latitude))
+                .coerceIn(-MAX_PAN_DEG, MAX_PAN_DEG)
+            panLonOffset = (panLonOffset + (to.longitude - from.longitude))
+                .coerceIn(-MAX_PAN_DEG, MAX_PAN_DEG)
             scheduleRender()
         }
     }
@@ -490,28 +387,11 @@ class CarMapRenderer(
 
         val mapLeft = columnW
         val mapW = (w - columnW).toInt()
-        // Anchor: centre only in flat north-up mode. Heading-up or
-        // tilted, the marker sits near the bottom edge so nearly the
-        // whole map is the road ahead.
-        val headingUp = hasBearing
-        val ax = mapLeft + mapW / 2f
-        val ay = if (headingUp || tilted) h * ANCHOR_FRACTION else h / 2f
 
         canvas.save()
         canvas.clipRect(mapLeft, 0f, w.toFloat(), h.toFloat())
         if (loc != null) {
-            // Free camera while panning: the map centres on the
-            // dragged-to point; the marker always draws in-layer at
-            // the vehicle's true position.
-            val camLat = loc.latitude + panLatOffset
-            val camLon = loc.longitude + panLonOffset
-            if (tilted) {
-                drawTiltedMap(canvas, mapW, h, ax, ay, camLat, camLon, loc, headingUp, dark, bg)
-            } else {
-                canvas.save()
-                drawMapLayer(canvas, ax, ay, w, h, camLat, camLon, loc, headingUp, dark)
-                canvas.restore()
-            }
+            drawVectorMap(canvas, mapLeft, mapW, h, loc, dark)
         } else {
             drawWaitingForFix(canvas, mapLeft, w, h, dark)
         }
@@ -576,159 +456,121 @@ class CarMapRenderer(
         )
     }
 
-    /** Flat map → oversized offscreen layer → perspective draw. The
-     *  margins exist because rotateX narrows the far field: the
-     *  viewport's top corners sample map content from outside the
-     *  screen rect. A haze gradient hides the layer's far edge. */
-    private fun drawTiltedMap(
+    /**
+     * Vector map for the car: blit the latest MapLibre snapshot (which
+     * MapLibre renders with native bearing + pitch) into the map area,
+     * then project the route / breadcrumb / vehicle overlays onto it
+     * via the snapshot's own projection — no mercator math, no
+     * perspective matrix. Requesting the next snapshot for the current
+     * camera is what keeps the map live.
+     */
+    private fun drawVectorMap(
         canvas: Canvas,
-        w: Int,
+        mapLeft: Float,
+        mapW: Int,
         h: Int,
-        ax: Float,
-        ay: Float,
-        camLat: Double,
-        camLon: Double,
         loc: Location,
-        headingUp: Boolean,
-        dark: Boolean,
-        bg: Int,
-    ) {
-        // [w] is the MAP AREA width; [ax] is absolute on the surface
-        // (offset by the instrument column). The offscreen layer is
-        // map-local — translate between the two when blitting.
-        val mapLeft = ax - w / 2f
-        val mx = (w * TILT_MARGIN_X).toInt()
-        val mt = (h * TILT_MARGIN_TOP).toInt()
-        val layer = obtainMapLayer(w + 2 * mx, h + mt)
-        layer.eraseColor(bg)
-        val layerCanvas = Canvas(layer)
-        drawMapLayer(
-            layerCanvas,
-            ax = mx + (ax - mapLeft),
-            ay = mt + ay,
-            w = layer.width,
-            h = layer.height,
-            camLat = camLat,
-            camLon = camLon,
-            loc = loc,
-            headingUp = headingUp,
-            dark = dark,
-        )
-
-        // Perspective: rotate the map plane about the horizontal axis
-        // through the anchor. Camera distance scales with the surface
-        // so the foreshortening looks the same on every head unit.
-        camera.save()
-        camera.setLocation(0f, 0f, -(h * TILT_CAMERA_DISTANCE) / 72f)
-        camera.rotateX(TILT_DEG)
-        camera.getMatrix(tiltMatrix)
-        camera.restore()
-        tiltMatrix.preTranslate(-ax, -ay)
-        tiltMatrix.postTranslate(ax, ay)
-
-        canvas.save()
-        canvas.concat(tiltMatrix)
-        canvas.drawBitmap(layer, mapLeft - mx, -mt.toFloat(), layerPaint)
-        canvas.restore()
-
-        // Haze the horizon so the layer's far edge never shows as a
-        // hard line. Shader is cached per (height, palette).
-        ensureHazePaint(h, bg)
-        canvas.drawRect(mapLeft, 0f, mapLeft + w, h * HAZE_DEPTH, hazePaint)
-    }
-
-    private fun obtainMapLayer(lw: Int, lh: Int): Bitmap {
-        val existing = mapLayer
-        if (existing != null && existing.width == lw && existing.height == lh) return existing
-        existing?.recycle()
-        return Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).also { mapLayer = it }
-    }
-
-    private var hazeKey = 0L
-    private fun ensureHazePaint(h: Int, bg: Int) {
-        val key = h.toLong() shl 32 or (bg.toLong() and 0xFFFFFFFFL)
-        if (key == hazeKey) return
-        hazeKey = key
-        hazePaint.shader = LinearGradient(
-            0f, 0f, 0f, h * HAZE_DEPTH,
-            bg, bg and 0x00FFFFFF,
-            Shader.TileMode.CLAMP,
-        )
-    }
-
-    /** The flat (untilted) map: tiles + dark scrim + breadcrumb, with
-     *  heading-up rotation and fractional-zoom scaling applied around
-     *  the anchor. Draws onto whatever canvas it's given — the surface
-     *  directly (top-down mode) or the offscreen layer (tilt mode). */
-    private fun drawMapLayer(
-        canvas: Canvas,
-        ax: Float,
-        ay: Float,
-        w: Int,
-        h: Int,
-        camLat: Double,
-        camLon: Double,
-        loc: Location,
-        headingUp: Boolean,
         dark: Boolean,
     ) {
-        val tileZoom = floor(currentZoom).toInt().coerceIn(MIN_ZOOM.toInt(), MAX_ZOOM.toInt())
-        val scale = 2.0.pow(currentZoom - tileZoom).toFloat()
-        val cx = lonToWorldX(camLon, tileZoom)
-        val cy = latToWorldY(camLat, tileZoom)
-        // The vehicle's own layer position — equals the anchor while
-        // following, drifts off-anchor while panned.
-        val vehicleX = (ax + (lonToWorldX(loc.longitude, tileZoom) - cx)).toFloat()
-        val vehicleY = (ay + (latToWorldY(loc.latitude, tileZoom) - cy)).toFloat()
+        // Camera follows the vehicle (+ any pan offset). Heading-up
+        // bakes the course into the map bearing; tilt becomes MapLibre's
+        // native pitch so labels stay upright and the road recedes.
+        val camLat = loc.latitude + panLatOffset
+        val camLon = loc.longitude + panLonOffset
+        val bearing = if (hasBearing) smoothedBearingDeg.toDouble() else 0.0
+        val pitch = if (tilted) CAR_PITCH_DEG else 0.0
+        val cam = org.maplibre.android.camera.CameraPosition.Builder()
+            .target(org.maplibre.android.geometry.LatLng(camLat, camLon))
+            .zoom(currentZoom)
+            .bearing(bearing)
+            .tilt(pitch)
+            .build()
+        snapshotter.request(mapW, h, cam)
 
-        canvas.save()
-        if (headingUp) canvas.rotate(-smoothedBearingDeg, ax, ay)
-        canvas.scale(scale, scale, ax, ay)
-        drawTiles(canvas, ax, ay, cx, cy, w, h, tileZoom, scale)
-        if (dark) canvas.drawColor(TILE_DARK_SCRIM)
-        drawNavRoute(canvas, cx, cy, ax, ay, tileZoom, scale)
-        drawBreadcrumb(canvas, vehicleX, vehicleY, cx, cy, ax, ay, tileZoom, scale)
-        drawInLayerMarker(canvas, vehicleX, vehicleY, scale)
-        canvas.restore()
-    }
-
-    /** The computed navigation route — drawn under the breadcrumb so
-     *  the driven trail visibly "eats" the planned line. */
-    private fun drawNavRoute(
-        canvas: Canvas,
-        cx: Double,
-        cy: Double,
-        ax: Float,
-        ay: Float,
-        tileZoom: Int,
-        scale: Float,
-    ) {
-        val pts = navRoute ?: return
-        if (pts.size < 2) return
-        val path = Path()
-        pts.forEachIndexed { i, p ->
-            val x = (ax + (lonToWorldX(p[1], tileZoom) - cx)).toFloat()
-            val y = (ay + (latToWorldY(p[0], tileZoom) - cy)).toFloat()
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        val snap = snapshotter.latest
+        if (snap == null) {
+            // Style/first snapshot still loading — keep the bg, show a
+            // hint instead of a blank panel.
+            drawWaitingForFix(canvas, mapLeft, (mapLeft + mapW).toInt(), h, dark)
+            return
         }
-        navCasingPaint.strokeWidth = 16f / scale
-        navRoutePaint.strokeWidth = 10f / scale
+        val bmp = snap.bitmap
+        canvas.drawBitmap(bmp, mapLeft, 0f, layerPaint)
+        if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
+
+        // Overlays projected through the snapshot. pixelForLatLng gives
+        // bitmap-space pixels; offset x by the instrument column.
+        drawProjectedRoute(canvas, snap, mapLeft)
+        drawProjectedBreadcrumb(canvas, snap, mapLeft)
+        drawProjectedMarker(canvas, snap, mapLeft, loc)
+    }
+
+    private fun drawProjectedRoute(
+        canvas: Canvas,
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+    ) {
+        val path = projectedPath(navRoute, snap, mapLeft) ?: return
+        navCasingPaint.strokeWidth = 16f
+        navRoutePaint.strokeWidth = 10f
         canvas.drawPath(path, navCasingPaint)
         canvas.drawPath(path, navRoutePaint)
     }
 
-    /** Vehicle marker drawn inside the (rotated/scaled/tilted) map
-     *  layer, so it lies down with the perspective like everything
-     *  else on the road. The chevron rotates to the course in world
-     *  space: combined with the heading-up canvas rotation it still
-     *  points up. While panned the marker simply sits wherever the
-     *  vehicle's true position projects. */
-    private fun drawInLayerMarker(canvas: Canvas, x: Float, y: Float, scale: Float) {
-        val r = MARKER_RADIUS / scale
-        canvas.drawCircle(x, y, r + 4f / scale, markerRingPaint)
+    private fun drawProjectedBreadcrumb(
+        canvas: Canvas,
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+    ) {
+        val pts = breadcrumb.map { doubleArrayOf(it[0], it[1]) }
+        val path = projectedPath(pts, snap, mapLeft) ?: return
+        trailCasingPaint.strokeWidth = 15f
+        trailPaint.strokeWidth = 9f
+        canvas.drawPath(path, trailCasingPaint)
+        canvas.drawPath(path, trailPaint)
+    }
+
+    /** Project a lat/lon polyline onto the snapshot, decimated to at
+     *  most [MAX_PROJECTED_POINTS] so a long route/breadcrumb can't
+     *  flood the per-frame JNI projection cost (each pixelForLatLng is
+     *  a native call) and jank the surface — the host kills slow apps.
+     *  The last point is always included so the line meets the marker. */
+    private fun projectedPath(
+        pts: List<DoubleArray>?,
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+    ): Path? {
+        if (pts == null || pts.size < 2) return null
+        val step = (pts.size + MAX_PROJECTED_POINTS - 1) / MAX_PROJECTED_POINTS
+        val path = Path()
+        var started = false
+        var i = 0
+        while (i < pts.size) {
+            val p = pts[i]
+            val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(p[0], p[1]))
+            val x = mapLeft + pf.x
+            if (!started) { path.moveTo(x, pf.y); started = true } else path.lineTo(x, pf.y)
+            if (i == pts.size - 1) break
+            i = (i + step).coerceAtMost(pts.size - 1)
+        }
+        return path
+    }
+
+    /** Vehicle marker at its projected position. Whenever the car is
+     *  moving the camera bakes the course into the map bearing
+     *  (heading-up), so the chevron always points up. */
+    private fun drawProjectedMarker(
+        canvas: Canvas,
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+        loc: Location,
+    ) {
+        val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude))
+        val x = mapLeft + pf.x
+        val y = pf.y
+        val r = MARKER_RADIUS
+        canvas.drawCircle(x, y, r + 4f, markerRingPaint)
         canvas.drawCircle(x, y, r, markerFillPaint)
-        canvas.save()
-        if (hasBearing) canvas.rotate(smoothedBearingDeg, x, y)
         val chevron = Path().apply {
             moveTo(x, y - r * 0.62f)
             lineTo(x - r * 0.45f, y + r * 0.40f)
@@ -737,112 +579,6 @@ class CarMapRenderer(
             close()
         }
         canvas.drawPath(chevron, markerChevronPaint)
-        canvas.restore()
-    }
-
-    private fun drawTiles(
-        canvas: Canvas,
-        ax: Float,
-        ay: Float,
-        cx: Double,
-        cy: Double,
-        w: Int,
-        h: Int,
-        tileZoom: Int,
-        scale: Float,
-    ) {
-        // Cover the rotated+scaled viewport: half the diagonal in every
-        // direction from the anchor (in pre-scale units), padded by one
-        // tile.
-        val half = hypot(w.toDouble(), h.toDouble()) / (2.0 * scale) + TILE_SIZE
-        val n = 1 shl tileZoom
-        val minTx = floor((cx - half) / TILE_SIZE).toInt()
-        val maxTx = floor((cx + half) / TILE_SIZE).toInt()
-        val minTy = floor((cy - half) / TILE_SIZE).toInt().coerceAtLeast(0)
-        val maxTy = floor((cy + half) / TILE_SIZE).toInt().coerceAtMost(n - 1)
-        for (tx in minTx..maxTx) {
-            // Wrap longitude so the map keeps tiling across the
-            // antimeridian.
-            val wrappedTx = ((tx % n) + n) % n
-            for (ty in minTy..maxTy) {
-                val left = (ax + (tx.toDouble() * TILE_SIZE - cx)).roundToInt()
-                val top = (ay + (ty.toDouble() * TILE_SIZE - cy)).roundToInt()
-                val drawable = tileProvider
-                    .getMapTile(MapTileIndex.getTileIndex(tileZoom, wrappedTx, ty))
-                if (drawable != null) {
-                    drawable.setBounds(left, top, left + TILE_SIZE, top + TILE_SIZE)
-                    drawable.draw(canvas)
-                } else {
-                    // While this tile downloads, upscale a cached
-                    // ancestor's quadrant instead of leaving a hole —
-                    // the map blurs in rather than blanks out. (The
-                    // getMapTile call above already queued the real
-                    // tile's download.)
-                    drawAncestorFallback(canvas, tileZoom, wrappedTx, ty, left, top)
-                }
-            }
-        }
-    }
-
-    /** Draw the matching quadrant of the nearest cached ancestor tile
-     *  (up to [FALLBACK_ZOOM_DEPTH] levels up), scaled to this tile's
-     *  rect. Ancestor tiles are usually already cached — they cover
-     *  4×/16× the area. */
-    private fun drawAncestorFallback(
-        canvas: Canvas,
-        tileZoom: Int,
-        tx: Int,
-        ty: Int,
-        left: Int,
-        top: Int,
-    ) {
-        for (depth in 1..FALLBACK_ZOOM_DEPTH) {
-            val pz = tileZoom - depth
-            if (pz < MIN_ZOOM.toInt()) return
-            val pd = tileProvider.getMapTile(
-                MapTileIndex.getTileIndex(pz, tx shr depth, ty shr depth)
-            ) as? android.graphics.drawable.BitmapDrawable ?: continue
-            val bmp = pd.bitmap ?: continue
-            // Which sub-square of the ancestor this tile occupies.
-            val sub = bmp.width shr depth
-            if (sub <= 0) return
-            val mask = (1 shl depth) - 1
-            val srcLeft = (tx and mask) * sub
-            val srcTop = (ty and mask) * sub
-            fallbackSrcRect.set(srcLeft, srcTop, srcLeft + sub, srcTop + sub)
-            fallbackDstRect.set(left, top, left + TILE_SIZE, top + TILE_SIZE)
-            canvas.drawBitmap(bmp, fallbackSrcRect, fallbackDstRect, layerPaint)
-            return
-        }
-    }
-
-    private fun drawBreadcrumb(
-        canvas: Canvas,
-        vehicleX: Float,
-        vehicleY: Float,
-        cx: Double,
-        cy: Double,
-        ax: Float,
-        ay: Float,
-        tileZoom: Int,
-        scale: Float,
-    ) {
-        if (breadcrumb.size < 2) return
-        val path = Path()
-        breadcrumb.forEachIndexed { i, p ->
-            val x = (ax + (lonToWorldX(p[1], tileZoom) - cx)).toFloat()
-            val y = (ay + (latToWorldY(p[0], tileZoom) - cy)).toFloat()
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        // Connect the decimated tail to the live vehicle position so
-        // the line never visibly detaches from the marker.
-        path.lineTo(vehicleX, vehicleY)
-        // Counter the fractional-zoom canvas scale so stroke widths
-        // stay constant on screen.
-        trailCasingPaint.strokeWidth = 15f / scale
-        trailPaint.strokeWidth = 9f / scale
-        canvas.drawPath(path, trailCasingPaint)
-        canvas.drawPath(path, trailPaint)
     }
 
     private fun drawWaitingForFix(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
@@ -976,16 +712,6 @@ class CarMapRenderer(
         }
     }
 
-    // ── Web-Mercator helpers (slippy tiles, world pixels at zoom) ──
-
-    private fun lonToWorldX(lon: Double, zoom: Int): Double =
-        (lon + 180.0) / 360.0 * TILE_SIZE * (1 shl zoom)
-
-    private fun latToWorldY(lat: Double, zoom: Int): Double {
-        val latRad = Math.toRadians(lat.coerceIn(-MAX_MERCATOR_LAT, MAX_MERCATOR_LAT))
-        return (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * TILE_SIZE * (1 shl zoom)
-    }
-
     private fun formatDuration(ms: Long): String {
         val totalMin = (abs(ms) / 60_000L).toInt()
         return if (totalMin >= 60) "%d:%02d h".format(Locale.ROOT, totalMin / 60, totalMin % 60)
@@ -1031,58 +757,35 @@ class CarMapRenderer(
     }
     private val hudTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val recDotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    /** FILTER_BITMAP so the perspective resample stays smooth. */
+    /** FILTER_BITMAP so the snapshot bitmap blits smoothly. */
     private val layerPaint = Paint(Paint.FILTER_BITMAP_FLAG)
-    private val hazePaint = Paint()
-    private val fallbackSrcRect = Rect()
-    private val fallbackDstRect = Rect()
+    private val darkScrimPaint = Paint().apply { color = TILE_DARK_SCRIM }
 
     private companion object {
         const val TILE_SIZE = 256
         const val MIN_ZOOM = 3.0
         const val MAX_ZOOM = 19.0
-        const val MAX_MERCATOR_LAT = 85.05112878
 
         /** Speed-adaptive zoom: glide between these levels as ground
-         *  speed goes 0 → [ZOOM_FAST_KMH]. */
+         *  speed goes 0 → [ZOOM_FAST_KMH]. MapLibre takes the
+         *  fractional value directly. */
         const val ZOOM_STANDSTILL = 17.5
         const val ZOOM_FAST = 13.8
         const val ZOOM_FAST_KMH = 120.0
         const val ZOOM_STEP_PER_TICK = 0.18
         const val ZOOM_BIAS_RANGE = 3.0
 
-        /** 2.5D tilt geometry. The far field samples the layer
-         *  hyperbolically — at distance D (units of h) and tilt θ, a
-         *  screen point y above the anchor reads the layer at
-         *  y·D/(D·cosθ − y·sinθ), which blows up toward the horizon
-         *  (D·cotθ). These values are solved so the layer's top margin
-         *  covers the *entire* screen: with θ=50°, D=2.4 the screen
-         *  top (0.82·h above the anchor) needs ≈2.15·h of layer →
-         *  margin 1.35·h. Cranking θ up or D down reintroduces the
-         *  empty band at the top — recompute before touching. */
-        const val TILT_DEG = 50f
-        const val TILT_MARGIN_X = 0.50f
-        const val TILT_MARGIN_TOP = 1.35f
-        const val TILT_CAMERA_DISTANCE = 2.4f
-        const val HAZE_DEPTH = 0.22f
-        /** Marker height when heading-up or tilted: near the bottom,
-         *  the screen above is the road ahead. */
-        const val ANCHOR_FRACTION = 0.82f
+        /** MapLibre camera pitch when tilt is on — the native 2.5D
+         *  perspective (labels stay upright, road recedes). The host's
+         *  driving-mode tilt cap is 60°; 50 reads well without
+         *  over-flattening the foreground. */
+        const val CAR_PITCH_DEG = 50.0
         /** Hard cap on the instrument column: even on squat screens
          *  the map keeps at least 60% of the width. */
         const val MAX_COLUMN_FRACTION = 0.4f
 
-        /** Tile fallback + prefetch tuning. Depth 2 = a zoom-14 tile
-         *  can stand in for a zoom-16 hole (16× area, almost always
-         *  cached). Prefetch covers the driving zooms; batches of 6
-         *  every 300 ms keep the 2-thread download queue mostly free
-         *  for the visible viewport. */
-        const val FALLBACK_ZOOM_DEPTH = 2
-        val PREFETCH_ZOOMS = intArrayOf(13, 14, 15, 16)
-        const val PREFETCH_BATCH = 6
-        const val PREFETCH_BATCH_INTERVAL_MS = 300L
         /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
-         *  to Nullarbor and requesting tiles all the way there. */
+         *  far off the route. */
         const val MAX_PAN_DEG = 0.5
 
         /** Above ~1.1 m/s (walking pace) course-over-ground is stable
@@ -1090,10 +793,12 @@ class CarMapRenderer(
         const val MIN_HEADING_UP_SPEED_MPS = 1.1f
         const val SCALE_STEP = 1.15f
         const val BREADCRUMB_CAP = 4000
-        // Slightly smaller than the old anchored overlay — the marker
-        // now lives inside the tilted layer, where the perspective
-        // already gives it presence in the near field.
         const val MARKER_RADIUS = 21f
+        /** Per-frame projection budget for route/breadcrumb polylines —
+         *  each point is a native pixelForLatLng call; over-projecting
+         *  janks the surface and the host kills slow apps. ~120 points
+         *  is smooth enough at car-screen scale. */
+        const val MAX_PROJECTED_POINTS = 120
 
         const val BG_DARK = 0xFF11151A.toInt()
         const val BG_LIGHT = 0xFFE8E8E3.toInt()

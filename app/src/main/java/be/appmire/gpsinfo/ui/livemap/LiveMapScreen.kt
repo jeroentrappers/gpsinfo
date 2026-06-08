@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CenterFocusStrong
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.ExploreOff
 import androidx.compose.material.icons.outlined.LocationSearching
@@ -48,6 +49,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.UnitSystem
+import be.appmire.gpsinfo.data.nav.OfflineMapRepository
+import kotlinx.coroutines.launch
 import be.appmire.gpsinfo.data.model.FixStatus
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import be.appmire.gpsinfo.util.UnitConverter
@@ -77,6 +80,13 @@ fun LiveMapScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val recording by vm.recordingState.collectAsStateWithLifecycle()
     val navigationTarget by vm.navigationTarget.collectAsStateWithLifecycle()
+    // Offline turn-by-turn route (NavigationController) — drawn on the
+    // map as the active route line so "Drive route (offline)" shows
+    // its path, not just the bearing-style waypoint target.
+    val navState by be.appmire.gpsinfo.data.nav.NavigationController.state
+        .collectAsStateWithLifecycle()
+    val tbtRoute = (navState as? be.appmire.gpsinfo.data.nav.NavigationController.NavState.Navigating)
+        ?.route?.points
     val loc = state.gnss.location
     val unit = state.unitSystem
 
@@ -105,6 +115,13 @@ fun LiveMapScreen(
     // host follows continuously while `follow` is on; this nudges it
     // once when the user taps Recentre even if follow was already on).
     var recenterTrigger by remember { mutableStateOf(0) }
+
+    // Offline map-region download state.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val downloadScope = androidx.compose.runtime.rememberCoroutineScope()
+    val offlineRepo = remember { be.appmire.gpsinfo.data.nav.OfflineMapRepository(context) }
+    var offlineBusy by remember { mutableStateOf(false) }
+    var offlineProgress by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -140,6 +157,7 @@ fun LiveMapScreen(
                 gpsBearingDeg = gpsBearing,
                 recording = recording,
                 navigationTarget = navigationTarget,
+                tbtRoute = tbtRoute,
                 recenterTrigger = recenterTrigger,
             )
 
@@ -237,6 +255,80 @@ fun LiveMapScreen(
                             contentDescription = stringResource(R.string.live_map_recenter),
                         )
                     }
+                }
+                // Download the current area's vector tiles for offline
+                // use — the map-imagery counterpart to the rd5 road
+                // network. Caches a box around the current position.
+                LabeledMapControl(label = stringResource(R.string.live_map_download_label)) {
+                    FilledIconButton(
+                        onClick = {
+                            val l = loc ?: return@FilledIconButton
+                            if (!offlineBusy) {
+                                offlineBusy = true
+                                offlineProgress = 0
+                                downloadScope.launch {
+                                    val half = 0.18 // ≈ 20 km box half-extent
+                                    val bounds = org.maplibre.android.geometry.LatLngBounds.Builder()
+                                        .include(
+                                            org.maplibre.android.geometry.LatLng(
+                                                l.latitude + half, l.longitude + half,
+                                            )
+                                        )
+                                        .include(
+                                            org.maplibre.android.geometry.LatLng(
+                                                l.latitude - half, l.longitude - half,
+                                            )
+                                        )
+                                        .build()
+                                    offlineRepo.downloadRegion(
+                                        name = "area-${l.latitude.toInt()}-${l.longitude.toInt()}",
+                                        bounds = bounds,
+                                        styleUrl = MapLibreStyle.LIBERTY,
+                                        minZoom = 6.0,
+                                        maxZoom = 15.0,
+                                    ).collect { st ->
+                                        when (st) {
+                                            is OfflineMapRepository.DownloadState.Progress ->
+                                                offlineProgress = if (st.required > 0)
+                                                    (st.completed * 100 / st.required).toInt() else 0
+                                            is OfflineMapRepository.DownloadState.Done -> {
+                                                offlineProgress = 100; offlineBusy = false
+                                            }
+                                            is OfflineMapRepository.DownloadState.Failed ->
+                                                offlineBusy = false
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                    ) {
+                        if (offlineBusy) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(
+                                Icons.Outlined.Download,
+                                contentDescription = stringResource(R.string.live_map_download),
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Offline-download progress chip.
+            if (offlineBusy || (offlineProgress in 1..99)) {
+                Surface(
+                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 72.dp, end = 12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.live_map_download_progress, offlineProgress),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    )
                 }
             }
         }

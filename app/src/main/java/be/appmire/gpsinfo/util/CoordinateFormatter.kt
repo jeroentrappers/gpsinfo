@@ -199,7 +199,7 @@ object CoordinateFormatter {
         val mFull = (a - d) * 60.0
         val m = floor(mFull).toInt()
         val s = (mFull - m) * 60.0
-        return "%d°%02d'%06.3f\" %s".format(Locale.ROOT, d, m, s, hemi)
+        return "%02d°%02d'%06.3f\" %s".format(Locale.ROOT, d, m, s, hemi)
     }
 
     /**

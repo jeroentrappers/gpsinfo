@@ -49,6 +49,9 @@ fun MapLibreMapHost(
     gpsBearingDeg: Float?,
     recording: RecordingState,
     navigationTarget: NavigationTarget?,
+    /** Active offline turn-by-turn route (NavigationController), drawn
+     *  as the primary route line; null when not navigating. */
+    tbtRoute: List<be.appmire.gpsinfo.data.nav.RoutePoint>? = null,
     /** Bumped by the caller to force a one-shot recenter on the user. */
     recenterTrigger: Int,
     modifier: Modifier = Modifier,
@@ -93,7 +96,10 @@ fun MapLibreMapHost(
         update = {
             val forceRecenter = recenterTrigger != lastRecenter[0]
             lastRecenter[0] = recenterTrigger
-            holder.update(loc, follow || forceRecenter, headingUp, gpsBearingDeg, recording, navigationTarget)
+            holder.update(
+                loc, follow || forceRecenter, headingUp, gpsBearingDeg,
+                recording, navigationTarget, tbtRoute,
+            )
         },
     )
 }
@@ -113,10 +119,12 @@ private class MapHolder {
     private var destDot: Circle? = null
     private var trailLine: Line? = null
     private var routeLine: Line? = null
+    private var tbtLine: Line? = null
 
     private var seeded = false
     private val trailPoints = ArrayList<LatLng>()
     private var lastRoutePointCount = -1
+    private var lastTbtPointCount = -1
 
     fun onMapReady(view: MapView, map: MapLibreMap) {
         this.map = map
@@ -135,6 +143,7 @@ private class MapHolder {
         gpsBearingDeg: Float?,
         recording: RecordingState,
         navigationTarget: NavigationTarget?,
+        tbtRoute: List<be.appmire.gpsinfo.data.nav.RoutePoint>?,
     ) {
         val map = map ?: return
         val circles = circles ?: return
@@ -215,6 +224,23 @@ private class MapHolder {
             destDot?.let { circles.delete(it); destDot = null }
             routeLine?.let { lines.delete(it); routeLine = null; lastRoutePointCount = -1 }
         }
+
+        // Offline turn-by-turn route (NavigationController) — the
+        // primary route line, orange + thick so it reads as "the way".
+        if (tbtRoute != null && tbtRoute.size >= 2) {
+            if (lastTbtPointCount != tbtRoute.size) {
+                lastTbtPointCount = tbtRoute.size
+                val pts = tbtRoute.map { LatLng(it.lat, it.lon) }
+                tbtLine?.let { lines.delete(it) }
+                tbtLine = lines.create(
+                    LineOptions().withLatLngs(pts).withLineColor("#E67635").withLineWidth(6f),
+                )
+            }
+        } else if (tbtLine != null) {
+            lines.delete(tbtLine!!)
+            tbtLine = null
+            lastTbtPointCount = -1
+        }
     }
 
     fun release() {
@@ -225,9 +251,15 @@ private class MapHolder {
         map = null
     }
 
-    companion object {
-        /** OpenFreeMap "liberty" — fully free OSM vector style, no API
-         *  key, no usage limits, self-hostable. */
-        const val STYLE_URI = "https://tiles.openfreemap.org/styles/liberty"
+    private companion object {
+        val STYLE_URI = MapLibreStyle.LIBERTY
     }
+}
+
+/** Shared MapLibre style URLs — used by the live map, the car
+ *  snapshotter and the offline-region downloader so all three cache
+ *  against the same style. OpenFreeMap: free OSM vector, no API key,
+ *  no usage limits, self-hostable. */
+object MapLibreStyle {
+    const val LIBERTY = "https://tiles.openfreemap.org/styles/liberty"
 }

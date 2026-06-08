@@ -9,7 +9,8 @@ class CoordinateFormatterTest {
     @Test fun dms_north_east() {
         val f = CoordinateFormatter.format(51.1302028, 4.3777386, CoordinateFormat.DMS) as FormattedCoord.Pair
         assertEquals("51°07'48.730\" N", f.lat)
-        assertEquals("4°22'39.859\" E", f.lon)
+        // Degrees are zero-padded to a fixed width (leading 0).
+        assertEquals("04°22'39.859\" E", f.lon)
     }
 
     @Test fun dms_south_west() {
