@@ -426,4 +426,5 @@ private fun sectionLabel(section: DashboardSection): String = when (section) {
     DashboardSection.Compass -> stringResource(R.string.section_compass)
     DashboardSection.World -> stringResource(R.string.section_world)
     DashboardSection.TimeSun -> stringResource(R.string.section_time)
+    DashboardSection.GForce -> stringResource(R.string.section_gforce)
 }

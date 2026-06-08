@@ -807,4 +807,5 @@
     <!-- Altitude smoothing -->
     <string name="settings_altitude_smooth">Suavizar altitud</string>
     <string name="settings_altitude_smooth_body">Filtra la altitud GPS sin procesar con un filtro paso bajo para suprimir el ruido entre muestras. La lectura sigue reflejando las subidas reales pero deja de oscilar en un trayecto llano.</string>
+    <string name="section_gforce">Fuerza G</string>
 </resources>

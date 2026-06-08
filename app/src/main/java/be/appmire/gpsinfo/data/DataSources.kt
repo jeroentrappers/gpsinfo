@@ -37,6 +37,13 @@ interface SensorDataSource {
      * pipeline along.
      */
     fun magnetometerStream(): Flow<MagnetometerSample>
+
+    /**
+     * Linear-acceleration samples (gravity removed) mapped to G forces
+     * in the device frame, for the G-meter dashboard card. Lightly
+     * low-pass filtered. Emits at the game sensor rate while collected.
+     */
+    fun gForceStream(): Flow<be.appmire.gpsinfo.data.model.GForceSample>
 }
 
 /**

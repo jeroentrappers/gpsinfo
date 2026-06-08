@@ -807,4 +807,5 @@
     <!-- Altitude smoothing -->
     <string name="settings_altitude_smooth">Hoogte vloeiend maken</string>
     <string name="settings_altitude_smooth_body">Filtert de ruwe GPS-hoogte met een laagdoorlaatfilter om trillingen per meting te onderdrukken. De uitlezing volgt nog steeds echte klimmen maar springt niet meer op een vlakke wandeling.</string>
+    <string name="section_gforce">G-kracht</string>
 </resources>

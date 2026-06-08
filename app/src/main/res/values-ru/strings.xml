@@ -805,4 +805,5 @@
     <!-- Altitude smoothing -->
     <string name="settings_altitude_smooth">Сглаживать высоту</string>
     <string name="settings_altitude_smooth_body">Пропускать сырую высоту GPS через фильтр нижних частот, чтобы убрать дрожание от выборки к выборке. Показания по-прежнему отслеживают реальные подъёмы, но перестают скакать при ходьбе по ровной местности.</string>
+    <string name="section_gforce">Перегрузка</string>
 </resources>

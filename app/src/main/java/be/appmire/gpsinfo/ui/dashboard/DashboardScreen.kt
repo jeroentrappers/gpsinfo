@@ -80,6 +80,7 @@ import be.appmire.gpsinfo.data.DashboardDensity
 import be.appmire.gpsinfo.data.TrailRecordingService
 import be.appmire.gpsinfo.data.model.MagneticAccuracy
 import be.appmire.gpsinfo.ui.components.CompassCard
+import be.appmire.gpsinfo.ui.components.GForceCard
 import be.appmire.gpsinfo.ui.components.PositionCard
 import be.appmire.gpsinfo.ui.components.SkyViewCard
 import be.appmire.gpsinfo.ui.components.SpeedCard
@@ -113,6 +114,7 @@ private object SectionKeys {
     const val World = "section-world"
     const val TimeSun = "section-time-sun"
     const val TripComputer = "section-trip-computer"
+    const val GForce = "section-gforce"
 }
 
 private data class DashboardSection(
@@ -141,6 +143,7 @@ fun DashboardScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val compass by vm.compass.collectAsStateWithLifecycle()
+    val gForce by vm.gForce.collectAsStateWithLifecycle()
     val recording by vm.recordingState.collectAsStateWithLifecycle()
     val onboardingSeen by vm.onboardingSeen.collectAsStateWithLifecycle()
     val showRateNudge by vm.showRateNudge.collectAsStateWithLifecycle()
@@ -590,6 +593,10 @@ fun DashboardScreen(
                         ) loc?.takeIf { it.hasBearing() }?.bearing else null,
                     )
                 }
+            }
+            profileBuilders[be.appmire.gpsinfo.data.model.DashboardSection.GForce] =
+                DashboardSection(SectionKeys.GForce) {
+                GForceCard(sample = gForce)
             }
             profileBuilders[be.appmire.gpsinfo.data.model.DashboardSection.World] =
                 DashboardSection(SectionKeys.World) {

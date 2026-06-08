@@ -803,4 +803,5 @@
     <string name="trail_share_fit_failed">Não foi possível gerar o arquivo FIT</string>
     <string name="settings_altitude_smooth">Suavizar altitude</string>
     <string name="settings_altitude_smooth_body">Filtra a altitude bruta do GPS por um passa-baixa para suprimir o ruído por amostra. A leitura ainda acompanha subidas reais, mas para de oscilar em uma caminhada plana.</string>
+    <string name="section_gforce">Força G</string>
 </resources>

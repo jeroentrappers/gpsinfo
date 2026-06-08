@@ -735,4 +735,5 @@
     <string name="trail_share_fit_failed">FIT dosyası oluşturulamadı</string>
     <string name="settings_altitude_smooth">Yüksekliği yumuşat</string>
     <string name="settings_altitude_smooth_body">Ham GPS yüksekliğini, örnek başına titremeyi bastırmak için alçak geçiren bir filtreden geçir. Okuma gerçek tırmanışları yine izler ama düz yürüyüşte zıplamayı bırakır.</string>
+    <string name="section_gforce">G kuvveti</string>
 </resources>

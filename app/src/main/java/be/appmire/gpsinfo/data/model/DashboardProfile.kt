@@ -19,6 +19,7 @@ enum class DashboardSection {
     Compass,
     World,
     TimeSun,
+    GForce,
 }
 
 /**
@@ -116,6 +117,7 @@ data class DashboardProfile(
             cards = listOf(
                 DashboardSection.Speed,
                 DashboardSection.Status,
+                DashboardSection.GForce,
                 DashboardSection.Position,
                 DashboardSection.Compass,
                 DashboardSection.TimeSun,

@@ -799,4 +799,5 @@
     <!-- Altitude smoothing -->
     <string name="settings_altitude_smooth">Wygładzaj wysokość</string>
     <string name="settings_altitude_smooth_body">Filtruje surową wysokość GPS przez filtr dolnoprzepustowy, aby tłumić drgania między próbkami. Odczyt nadal śledzi rzeczywiste podjazdy, ale przestaje skakać na płaskiej trasie.</string>
+    <string name="section_gforce">Przeciążenie</string>
 </resources>

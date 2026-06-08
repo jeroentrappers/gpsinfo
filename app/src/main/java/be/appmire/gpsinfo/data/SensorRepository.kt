@@ -354,6 +354,55 @@ class SensorRepository(private val context: Context) : SensorDataSource {
         awaitClose { sm.unregisterListener(listener) }
     }
 
+    override fun gForceStream(): Flow<be.appmire.gpsinfo.data.model.GForceSample> = callbackFlow {
+        // Prefer the fused linear-acceleration sensor (gravity already
+        // removed). Fall back to the raw accelerometer with a simple
+        // high-pass gravity filter on devices that lack the virtual one.
+        val linear = sm.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+        val raw = if (linear == null) sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) else null
+        val sensor = linear ?: raw
+        if (sensor == null) {
+            trySend(be.appmire.gpsinfo.data.model.GForceSample(0f, 0f, 0f))
+            awaitClose { }
+            return@callbackFlow
+        }
+        val gravity = FloatArray(3) // running gravity estimate (fallback path)
+        // Light EMA so the dot glides instead of jittering on engine buzz.
+        val smoothed = FloatArray(3)
+        var seeded = false
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                val ax: Float
+                val ay: Float
+                val az: Float
+                if (raw != null) {
+                    // High-pass: isolate gravity, subtract it.
+                    val a = 0.8f
+                    for (i in 0..2) gravity[i] = a * gravity[i] + (1 - a) * event.values[i]
+                    ax = event.values[0] - gravity[0]
+                    ay = event.values[1] - gravity[1]
+                    az = event.values[2] - gravity[2]
+                } else {
+                    ax = event.values[0]; ay = event.values[1]; az = event.values[2]
+                }
+                val raw3 = floatArrayOf(ax, ay, az)
+                if (!seeded) { System.arraycopy(raw3, 0, smoothed, 0, 3); seeded = true }
+                val s = SMOOTHING
+                for (i in 0..2) smoothed[i] = smoothed[i] + s * (raw3[i] - smoothed[i])
+                trySend(
+                    be.appmire.gpsinfo.data.model.GForceSample(
+                        lateralG = smoothed[0] / G,
+                        longitudinalG = smoothed[1] / G,
+                        verticalG = smoothed[2] / G,
+                    )
+                )
+            }
+            override fun onAccuracyChanged(s: Sensor?, accuracy: Int) = Unit
+        }
+        sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
+        awaitClose { sm.unregisterListener(listener) }
+    }
+
     private fun mapAccuracy(level: Int): MagneticAccuracy = when (level) {
         SensorManager.SENSOR_STATUS_UNRELIABLE -> MagneticAccuracy.UNRELIABLE
         SensorManager.SENSOR_STATUS_ACCURACY_LOW -> MagneticAccuracy.LOW
@@ -374,6 +423,10 @@ class SensorRepository(private val context: Context) : SensorDataSource {
          *  is well below any perceptible change). */
         const val GEO_RECOMPUTE_METERS = 100.0
         const val GEO_RECOMPUTE_ALTITUDE_METERS = 200.0
+        /** Standard gravity — m/s² per 1 G. */
+        const val G = 9.80665f
+        /** EMA factor for the G readout (0..1, higher = snappier). */
+        const val SMOOTHING = 0.25f
     }
 }
 

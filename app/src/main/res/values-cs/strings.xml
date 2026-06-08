@@ -803,4 +803,5 @@
     <string name="trail_share_fit_failed">Soubor FIT se nepodařilo zakódovat</string>
     <string name="settings_altitude_smooth">Vyhladit nadmořskou výšku</string>
     <string name="settings_altitude_smooth_body">Filtruje surovou GPS nadmořskou výšku dolní propustí, aby potlačila kolísání mezi vzorky. Údaj stále sleduje skutečná stoupání, ale přestane poskakovat při chůzi po rovině.</string>
+    <string name="section_gforce">Přetížení</string>
 </resources>

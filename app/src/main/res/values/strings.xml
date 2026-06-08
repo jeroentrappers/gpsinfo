@@ -756,4 +756,5 @@
     <string name="profile_next_climb" tools:ignore="MissingTranslation">Next climb</string>
     <string name="profile_climb_summary" tools:ignore="MissingTranslation">%1$s · +%2$s</string>
     <string name="profile_climb_in" tools:ignore="MissingTranslation">In</string>
+    <string name="section_gforce">G-force</string>
 </resources>

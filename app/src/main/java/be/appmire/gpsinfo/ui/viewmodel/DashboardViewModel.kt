@@ -705,6 +705,18 @@ class DashboardViewModel(
         compassFlow,
     ) { _, c -> c }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CompassReading())
 
+    /** Live G-force for the G-meter card — its own ~30 Hz flow (sampled
+     *  from the game-rate accelerometer) so only screens showing it pay
+     *  the cost. WhileSubscribed stops the sensor when nothing observes. */
+    val gForce: StateFlow<be.appmire.gpsinfo.data.model.GForceSample> =
+        sensorRepo.gForceStream()
+            .sample(33L)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                be.appmire.gpsinfo.data.model.GForceSample(0f, 0f, 0f),
+            )
+
     /** 500 ms tick. Used both for the clock readout and for throttling the
      *  sun-position recompute — without this, the calc runs at 50 Hz with
      *  every sensor tick for zero UI gain. */

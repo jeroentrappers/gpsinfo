@@ -807,4 +807,5 @@
     <string name="trail_share_fit_failed">Impossible de générer le fichier FIT</string>
     <string name="settings_altitude_smooth">Lisser l\'altitude</string>
     <string name="settings_altitude_smooth_body">Filtre l\'altitude GPS brute par un passe-bas pour supprimer les variations entre échantillons. La valeur affichée suit toujours les vraies montées mais cesse de fluctuer sur un trajet plat.</string>
+    <string name="section_gforce">Force G</string>
 </resources>
