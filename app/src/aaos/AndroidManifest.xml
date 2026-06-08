@@ -36,6 +36,7 @@
                 <action android:name="be.appmire.gpsinfo.DEBUG_NAVIGATE" />
                 <action android:name="be.appmire.gpsinfo.DEBUG_NAV_STOP" />
                 <action android:name="be.appmire.gpsinfo.DEBUG_IMPORT_TILES" />
+                <action android:name="be.appmire.gpsinfo.DEBUG_ADD_PLACE" />
             </intent-filter>
         </receiver>
 

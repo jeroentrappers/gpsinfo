@@ -22,11 +22,27 @@ class DebugNavigateReceiver : BroadcastReceiver() {
             ACTION_NAVIGATE -> {
                 val lat = intent.getFloatExtra("lat", Float.NaN).toDouble()
                 val lon = intent.getFloatExtra("lon", Float.NaN).toDouble()
+                val name = intent.getStringExtra("name")
                 if (!lat.isNaN() && !lon.isNaN()) {
-                    NavigationController.navigateTo(context, lat, lon)
+                    NavigationController.navigateTo(context, lat, lon, destName = name)
                 }
             }
             ACTION_STOP -> NavigationController.stop()
+            // Seed a saved/recent place for testing the car Places
+            // list without the phone:
+            //   adb shell am broadcast -a be.appmire.gpsinfo.DEBUG_ADD_PLACE \
+            //     --ef lat 51.21 --ef lon 3.22 --es name Brugge be.appmire.gpsinfo
+            ACTION_ADD_PLACE -> {
+                val lat = intent.getFloatExtra("lat", Float.NaN).toDouble()
+                val lon = intent.getFloatExtra("lon", Float.NaN).toDouble()
+                val name = intent.getStringExtra("name") ?: "Place"
+                if (!lat.isNaN() && !lon.isNaN()) {
+                    be.appmire.gpsinfo.data.nav.PlacesRepository(context).recordVisit(
+                        lat, lon, name, intent.getStringExtra("detail") ?: "",
+                        System.currentTimeMillis(),
+                    )
+                }
+            }
             // Import rd5 tiles pushed to the app's external-files dir
             // (the only place adb can reach across AAOS's user 10):
             //   adb push E0_N50.rd5 \
@@ -48,5 +64,6 @@ class DebugNavigateReceiver : BroadcastReceiver() {
         const val ACTION_NAVIGATE = "be.appmire.gpsinfo.DEBUG_NAVIGATE"
         const val ACTION_STOP = "be.appmire.gpsinfo.DEBUG_NAV_STOP"
         const val ACTION_IMPORT_TILES = "be.appmire.gpsinfo.DEBUG_IMPORT_TILES"
+        const val ACTION_ADD_PLACE = "be.appmire.gpsinfo.DEBUG_ADD_PLACE"
     }
 }

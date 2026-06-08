@@ -217,7 +217,10 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onDriveTo = { target ->
                                     be.appmire.gpsinfo.data.nav.NavigationController
-                                        .navigateTo(this@MainActivity, target.latDeg, target.lonDeg)
+                                        .navigateTo(
+                                            this@MainActivity, target.latDeg, target.lonDeg,
+                                            destName = target.name,
+                                        )
                                     nav.popBackStack()
                                 },
                             )

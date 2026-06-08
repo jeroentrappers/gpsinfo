@@ -165,10 +165,13 @@ class TripDashboardScreen(
                 if (isRecording) stopAndSave() else startRecordingSafely()
             }
             .build()
-        val trailsAction = Action.Builder()
-            .setIcon(carIcon(R.drawable.ic_car_trails))
+        // Places: saved + recent destinations (and trails, inside).
+        // Replaces the old standalone Trails action. Icon-only — the
+        // record action already carries the strip's one custom title.
+        val placesAction = Action.Builder()
+            .setIcon(carIcon(R.drawable.ic_car_places))
             .setOnClickListener {
-                screenManager.push(RecentTrailsScreen(carContext))
+                screenManager.push(PlacesScreen(carContext))
             }
             .build()
 
@@ -215,7 +218,7 @@ class TripDashboardScreen(
                         }
                         .build()
                 )
-                .addAction(trailsAction)
+                .addAction(placesAction)
                 .build()
             RallyState.Idle -> ActionStrip.Builder().apply {
                 addAction(recordAction)
@@ -234,7 +237,7 @@ class TripDashboardScreen(
                             .build()
                     )
                 }
-                addAction(trailsAction)
+                addAction(placesAction)
             }.build()
         }
 

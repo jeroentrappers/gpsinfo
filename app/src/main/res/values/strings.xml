@@ -325,6 +325,21 @@
     <string name="nav_address_no_results" tools:ignore="MissingTranslation">No matches found</string>
     <string name="nav_address_offline" tools:ignore="MissingTranslation">No connection — address search needs internet (routing stays offline)</string>
     <string name="nav_address_from_cache" tools:ignore="MissingTranslation">Cached result (offline)</string>
+    <string name="nav_address_saved_header" tools:ignore="MissingTranslation">SAVED &amp; RECENT</string>
+    <string name="nav_address_empty_hint" tools:ignore="MissingTranslation">Type an address, or drive somewhere — your recent destinations appear here.</string>
+    <string name="nav_place_label_action" tools:ignore="MissingTranslation">Label this place</string>
+    <string name="nav_place_home" tools:ignore="MissingTranslation">Home</string>
+    <string name="nav_place_work" tools:ignore="MissingTranslation">Work</string>
+    <string name="nav_place_unpin" tools:ignore="MissingTranslation">Unpin</string>
+    <string name="nav_place_custom_label" tools:ignore="MissingTranslation">Custom label</string>
+    <string name="nav_place_save_label" tools:ignore="MissingTranslation">Save label</string>
+    <string name="nav_place_delete" tools:ignore="MissingTranslation">Delete</string>
+    <string name="car_places_title" tools:ignore="MissingTranslation">Places</string>
+    <string name="car_places_empty" tools:ignore="MissingTranslation">No saved or recent places yet. Pick an address on your phone first.</string>
+    <string name="car_action_places" tools:ignore="MissingTranslation">Places</string>
+    <string name="car_places_section_saved" tools:ignore="MissingTranslation">Saved</string>
+    <string name="car_places_section_recent" tools:ignore="MissingTranslation">Recent</string>
+    <string name="car_places_trails" tools:ignore="MissingTranslation">Recorded trails</string>
     <string name="rally_title" tools:ignore="MissingTranslation">Regularity rally</string>
     <string name="rally_new_stage" tools:ignore="MissingTranslation">New stage</string>
     <string name="rally_empty" tools:ignore="MissingTranslation">No stages yet. Enter the roadbook speed table as “from km / speed” rows.</string>

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,6 +41,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontFamily
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -153,6 +161,9 @@ private fun AddressPickPane(
 ) {
     val context = LocalContext.current
     val repo = remember { be.appmire.gpsinfo.data.nav.GeocodingRepository(context) }
+    val placesRepo = remember { be.appmire.gpsinfo.data.nav.PlacesRepository(context) }
+    val savedPlaces by placesRepo.places.collectAsStateWithLifecycle()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     var query by remember { mutableStateOf("") }
     var results by remember {
         mutableStateOf<List<be.appmire.gpsinfo.data.nav.GeocodeResult>>(emptyList())
@@ -161,6 +172,10 @@ private fun AddressPickPane(
     var status by remember { mutableStateOf<String?>(null) }
     var selected by remember {
         mutableStateOf<be.appmire.gpsinfo.data.nav.GeocodeResult?>(null)
+    }
+    // Place whose label is being assigned (Home/Work/custom), or null.
+    var labelTarget by remember {
+        mutableStateOf<be.appmire.gpsinfo.data.nav.SavedPlace?>(null)
     }
 
     // Debounced search: wait for a 400 ms typing pause before hitting
@@ -214,30 +229,77 @@ private fun AddressPickPane(
             )
         }
         LazyColumn(modifier = Modifier.weight(1f)) {
-            items(results) { r ->
-                val isSel = r === selected
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { selected = r }
-                        .padding(vertical = 10.dp),
-                ) {
-                    Text(
-                        r.label,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (isSel) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface,
-                    )
-                    if (r.detail.isNotBlank()) {
+            if (query.isBlank()) {
+                // No query → offer saved + recent places to tap, no
+                // typing. (The car Places screen shows the same list.)
+                if (savedPlaces.isEmpty()) {
+                    item {
                         Text(
-                            r.detail,
-                            style = MaterialTheme.typography.bodySmall,
+                            stringResource(R.string.nav_address_empty_hint),
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 16.dp),
                         )
                     }
+                } else {
+                    item {
+                        Text(
+                            stringResource(R.string.nav_address_saved_header),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                        )
+                    }
+                    items(savedPlaces, key = { it.id }) { place ->
+                        PlaceRow(
+                            place = place,
+                            onDrive = {
+                                val cb = onDriveTo ?: onConfirm
+                                cb(NavigationTarget.Single(place.lat, place.lon, place.displayTitle))
+                            },
+                            onLabel = { labelTarget = place },
+                        )
+                        HorizontalDivider()
+                    }
                 }
-                HorizontalDivider()
+            } else {
+                items(results) { r ->
+                    val isSel = r === selected
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selected = r }
+                            .padding(vertical = 10.dp),
+                    ) {
+                        Text(
+                            r.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (isSel) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface,
+                        )
+                        if (r.detail.isNotBlank()) {
+                            Text(
+                                r.detail,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    HorizontalDivider()
+                }
             }
+        }
+
+        labelTarget?.let { target ->
+            PlaceLabelDialog(
+                place = target,
+                onDismiss = { labelTarget = null },
+                onSetHome = { scope.launch { placesRepo.setHome(target.id) }; labelTarget = null },
+                onSetWork = { scope.launch { placesRepo.setWork(target.id) }; labelTarget = null },
+                onSetLabel = { lbl -> scope.launch { placesRepo.setLabel(target.id, lbl) }; labelTarget = null },
+                onClearRole = { scope.launch { placesRepo.clearRole(target.id) }; labelTarget = null },
+                onDelete = { scope.launch { placesRepo.delete(target.id) }; labelTarget = null },
+            )
         }
         val sel = selected
         Button(
@@ -257,6 +319,119 @@ private fun AddressPickPane(
             }
         }
     }
+}
+
+/** A saved/recent place row: tap the body to drive there, the label
+ *  icon to assign Home/Work/custom or remove it. */
+@Composable
+private fun PlaceRow(
+    place: be.appmire.gpsinfo.data.nav.SavedPlace,
+    onDrive: () -> Unit,
+    onLabel: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val icon = when (place.role) {
+            be.appmire.gpsinfo.data.nav.PlaceRole.HOME -> Icons.Outlined.Home
+            be.appmire.gpsinfo.data.nav.PlaceRole.WORK -> Icons.Outlined.Work
+            be.appmire.gpsinfo.data.nav.PlaceRole.LABELED -> Icons.Outlined.Star
+            be.appmire.gpsinfo.data.nav.PlaceRole.RECENT -> Icons.Outlined.History
+        }
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = 12.dp),
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onDrive)
+                .padding(vertical = 12.dp),
+        ) {
+            Text(place.displayTitle, style = MaterialTheme.typography.bodyLarge)
+            val sub = when (place.role) {
+                be.appmire.gpsinfo.data.nav.PlaceRole.HOME,
+                be.appmire.gpsinfo.data.nav.PlaceRole.WORK,
+                be.appmire.gpsinfo.data.nav.PlaceRole.LABELED ->
+                    listOf(place.name, place.detail).filter { it.isNotBlank() }.joinToString(" · ")
+                be.appmire.gpsinfo.data.nav.PlaceRole.RECENT -> place.detail
+            }
+            if (sub.isNotBlank()) {
+                Text(
+                    sub,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        IconButton(onClick = onLabel) {
+            Icon(
+                Icons.Outlined.StarBorder,
+                contentDescription = stringResource(R.string.nav_place_label_action),
+            )
+        }
+    }
+}
+
+/** Assign Home / Work / a custom label to a place, or remove it. */
+@Composable
+private fun PlaceLabelDialog(
+    place: be.appmire.gpsinfo.data.nav.SavedPlace,
+    onDismiss: () -> Unit,
+    onSetHome: () -> Unit,
+    onSetWork: () -> Unit,
+    onSetLabel: (String) -> Unit,
+    onClearRole: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    var custom by remember { mutableStateOf(if (place.role == be.appmire.gpsinfo.data.nav.PlaceRole.LABELED) place.label else "") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(place.name) },
+        text = {
+            Column {
+                Row {
+                    androidx.compose.material3.TextButton(onClick = onSetHome) {
+                        Text(stringResource(R.string.nav_place_home))
+                    }
+                    androidx.compose.material3.TextButton(onClick = onSetWork) {
+                        Text(stringResource(R.string.nav_place_work))
+                    }
+                    if (place.role != be.appmire.gpsinfo.data.nav.PlaceRole.RECENT) {
+                        androidx.compose.material3.TextButton(onClick = onClearRole) {
+                            Text(stringResource(R.string.nav_place_unpin))
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = custom,
+                    onValueChange = { custom = it },
+                    label = { Text(stringResource(R.string.nav_place_custom_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(
+                onClick = { onSetLabel(custom.trim()) },
+                enabled = custom.isNotBlank(),
+            ) { Text(stringResource(R.string.nav_place_save_label)) }
+        },
+        dismissButton = {
+            Row {
+                androidx.compose.material3.TextButton(onClick = onDelete) {
+                    Text(stringResource(R.string.nav_place_delete))
+                }
+                androidx.compose.material3.TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.rally_cancel))
+                }
+            }
+        },
+    )
 }
 
 @Composable

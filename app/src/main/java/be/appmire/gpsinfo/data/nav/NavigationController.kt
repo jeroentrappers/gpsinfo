@@ -74,9 +74,21 @@ object NavigationController {
     private var lastLocation: Location? = null
 
     /** Start navigating from the current position to ([destLat],
-     *  [destLon]). Downloads missing segment tiles first. */
-    fun navigateTo(context: Context, destLat: Double, destLon: Double) {
+     *  [destLon]). Downloads missing segment tiles first. [destName]
+     *  (+ optional [destDetail]) is recorded into recent places so it
+     *  can be re-picked without typing — including from the car. */
+    fun navigateTo(
+        context: Context,
+        destLat: Double,
+        destLon: Double,
+        destName: String? = null,
+        destDetail: String = "",
+    ) {
         val appContext = context.applicationContext
+        if (!destName.isNullOrBlank()) {
+            PlacesRepository(appContext)
+                .recordVisit(destLat, destLon, destName, destDetail, System.currentTimeMillis())
+        }
         val from = lastLocation
         if (from == null) {
             failTransient("No GPS fix yet")
