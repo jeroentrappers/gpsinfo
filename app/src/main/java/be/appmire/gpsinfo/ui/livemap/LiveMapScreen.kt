@@ -32,11 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,22 +44,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.UnitSystem
 import be.appmire.gpsinfo.data.model.FixStatus
-import be.appmire.gpsinfo.ui.trails.MapnikBulkOk
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import be.appmire.gpsinfo.util.UnitConverter
 import be.appmire.gpsinfo.util.lengthUnitLabel
 import be.appmire.gpsinfo.util.speedUnitLabel
 import java.util.Locale
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.Polyline
 
 /**
  * Real-time map with the live GPS position pinned and the most
@@ -109,25 +101,10 @@ fun LiveMapScreen(
     val rollingAvgKmh: Float? = rollingSpeed.averageKmh()
     val rollingWindowSec: Long = rollingSpeed.windowSeconds()
 
-    val mapViewRef = remember { mutableStateOf<MapView?>(null) }
-    val userMarkerRef = remember { mutableStateOf<Marker?>(null) }
-    val trailPolylineRef = remember { mutableStateOf<Polyline?>(null) }
-    val routePolylineRef = remember { mutableStateOf<Polyline?>(null) }
-    val targetMarkerRef = remember { mutableStateOf<Marker?>(null) }
-
-    val latestFollow by rememberUpdatedState(follow)
-    val latestHeadingUp by rememberUpdatedState(headingUp)
-
-    DisposableEffect(Unit) {
-        onDispose {
-            mapViewRef.value?.onDetach()
-            mapViewRef.value = null
-            userMarkerRef.value = null
-            trailPolylineRef.value = null
-            routePolylineRef.value = null
-            targetMarkerRef.value = null
-        }
-    }
+    // Bumped to force a one-shot recenter on the user (the MapLibre
+    // host follows continuously while `follow` is on; this nudges it
+    // once when the user taps Recentre even if follow was already on).
+    var recenterTrigger by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -151,106 +128,19 @@ fun LiveMapScreen(
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // osmdroid map. AndroidView is the bridge from Compose to
-            // the imperative MapView; we keep the marker + polyline
-            // references in remember-state and re-mutate them as the
-            // GNSS stream produces new fixes.
-            AndroidView(
+            // MapLibre Native vector map (OpenFreeMap style, no key).
+            // The host owns the GL MapView + its annotation layers; we
+            // just feed it the current fix, follow/heading toggles and
+            // the active recording/route.
+            MapLibreMapHost(
                 modifier = Modifier.fillMaxSize(),
-                factory = { ctx ->
-                    MapView(ctx).apply {
-                        setTileSource(MapnikBulkOk)
-                        setMultiTouchControls(true)
-                        minZoomLevel = MapnikBulkOk.minimumZoomLevel.toDouble()
-                        maxZoomLevel = MapnikBulkOk.maximumZoomLevel.toDouble()
-                        controller.setZoom(16.0)
-                        val seedLat = loc?.latitude ?: 50.0
-                        val seedLon = loc?.longitude ?: 10.0
-                        controller.setCenter(GeoPoint(seedLat, seedLon))
-                        val marker = Marker(this).apply {
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                            title = "You"
-                        }
-                        overlays.add(marker)
-                        userMarkerRef.value = marker
-                        // Live polyline — populated only while recording.
-                        val poly = Polyline(this).apply {
-                            outlinePaint.strokeWidth = 8f
-                            outlinePaint.color = 0xFFE67635.toInt()
-                        }
-                        overlays.add(poly)
-                        trailPolylineRef.value = poly
-                        // Route polyline — when the active navigation
-                        // target is a Route, drawn beneath the live
-                        // trail so a track-back run shows both.
-                        val routePoly = Polyline(this).apply {
-                            outlinePaint.strokeWidth = 6f
-                            outlinePaint.color = 0x9979C2FF.toInt()
-                        }
-                        overlays.add(0, routePoly)
-                        routePolylineRef.value = routePoly
-                        // Destination marker — added on demand.
-                        val target = Marker(this).apply {
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                            title = "Destination"
-                        }
-                        overlays.add(target)
-                        targetMarkerRef.value = target
-                        mapViewRef.value = this
-                    }
-                },
-                update = { map ->
-                    val l = loc ?: return@AndroidView
-                    val point = GeoPoint(l.latitude, l.longitude)
-                    userMarkerRef.value?.position = point
-                    if (latestFollow) map.controller.animateTo(point)
-                    map.mapOrientation = if (latestHeadingUp && gpsBearing != null) -gpsBearing
-                    else 0f
-                    // Refresh the polyline from the in-flight recording.
-                    val rec = recording as? RecordingState.Recording
-                    val poly = trailPolylineRef.value
-                    if (rec != null && poly != null) {
-                        // Cheap: TrailRecordingController doesn't expose
-                        // points directly, but every accepted point ends
-                        // up reflected in `rec.pointCount`. The live
-                        // polyline grows by appending the current fix —
-                        // good enough for visual feedback even if it
-                        // misses points that were captured before the
-                        // user opened this screen.
-                        val pts = poly.actualPoints
-                        if (pts.isEmpty() || pts.last() != point) {
-                            poly.addPoint(point)
-                        }
-                    } else if (poly != null && poly.actualPoints.isNotEmpty()) {
-                        // Recording stopped — clear the live trail.
-                        poly.setPoints(emptyList())
-                    }
-                    // Sync the destination marker + (for Route)
-                    // the route polyline against the active target.
-                    val target = navigationTarget
-                    val targetMarker = targetMarkerRef.value
-                    val routePoly = routePolylineRef.value
-                    if (target != null && targetMarker != null) {
-                        targetMarker.position = GeoPoint(target.targetLatDeg, target.targetLonDeg)
-                        targetMarker.setVisible(true)
-                        if (target is be.appmire.gpsinfo.data.model.NavigationTarget.Route &&
-                            routePoly != null
-                        ) {
-                            val pts = target.points.map { GeoPoint(it.latDeg, it.lonDeg) }
-                            if (routePoly.actualPoints.size != pts.size) {
-                                routePoly.setPoints(pts)
-                            }
-                        } else if (routePoly != null && routePoly.actualPoints.isNotEmpty()) {
-                            routePoly.setPoints(emptyList())
-                        }
-                    } else {
-                        targetMarker?.setVisible(false)
-                        if (routePoly != null && routePoly.actualPoints.isNotEmpty()) {
-                            routePoly.setPoints(emptyList())
-                        }
-                    }
-                    map.invalidate()
-                },
+                loc = loc,
+                follow = follow,
+                headingUp = headingUp,
+                gpsBearingDeg = gpsBearing,
+                recording = recording,
+                navigationTarget = navigationTarget,
+                recenterTrigger = recenterTrigger,
             )
 
             // Top overlay — speed, heading, altitude. Translucent so
@@ -339,9 +229,8 @@ fun LiveMapScreen(
                 }
                 LabeledMapControl(label = stringResource(R.string.live_map_recenter_label)) {
                     FilledIconButton(onClick = {
-                        val l = loc ?: return@FilledIconButton
-                        mapViewRef.value?.controller?.animateTo(GeoPoint(l.latitude, l.longitude))
                         follow = true
+                        recenterTrigger++
                     }) {
                         Icon(
                             Icons.Outlined.CenterFocusStrong,

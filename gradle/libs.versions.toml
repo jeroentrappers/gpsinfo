@@ -40,6 +40,11 @@ orgJson = "20250517"
 # Offline routing engine (MIT, pure Java + Android) — resolved via
 # JitPack from the abrensch/brouter GitHub tags.
 brouter = "v1.7.9"
+# MapLibre Native — vector-tile map rendering (BSD-2, no API key).
+# C++ core with a thin Java layer + per-ABI .so; the annotation
+# plugin gives symbol/line managers for the marker + trail overlays.
+maplibre = "11.13.0"
+maplibreAnnotation = "3.0.2"
 androidxTestCore = "1.7.0"
 androidxTestRunner = "1.7.0"
 androidxTestRules = "1.7.0"
@@ -60,6 +65,8 @@ androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstall
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
 brouter-core = { module = "com.github.abrensch.brouter:brouter-core", version.ref = "brouter" }
+maplibre-android = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
+maplibre-annotation = { module = "org.maplibre.gl:android-plugin-annotation-v9", version.ref = "maplibreAnnotation" }
 # Runtime-scoped in core's POM, but OsmNodeNamed extends OsmNode from
 # here — needed on the compile classpath too.
 brouter-mapaccess = { module = "com.github.abrensch.brouter:brouter-mapaccess", version.ref = "brouter" }

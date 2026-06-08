@@ -195,6 +195,10 @@ dependencies {
     // network ships as rd5 segment tiles downloaded on demand.
     implementation(libs.brouter.core)
     implementation(libs.brouter.mapaccess)
+    // Vector-tile map rendering (MapLibre Native, BSD-2). No API key;
+    // styles + tiles from free OSM sources (OpenFreeMap by default).
+    implementation(libs.maplibre.android)
+    implementation(libs.maplibre.annotation)
     // AAOS adapter so debug builds run on the Android Automotive OS
     // emulator (CarAppActivity hosts the same CarAppService templates).
     // aaos build type only: debug + release manifests stay pure
