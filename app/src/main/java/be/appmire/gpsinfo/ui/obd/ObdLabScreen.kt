@@ -35,7 +35,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -145,7 +147,10 @@ fun ObdLabScreen(onBack: () -> Unit) {
                 OutlinedButton(onClick = { controller.disconnect() }) { Text("Cancel") }
             }
 
-            state.report?.let { report -> ReportSummary(report) }
+            state.report?.let { report ->
+                ReportSummary(report)
+                MappingCard(report = report, onSave = { controller.saveActiveMapping() })
+            }
 
             // Live transcript console.
             if (state.log.isNotEmpty()) {
@@ -220,6 +225,49 @@ private fun ReportSummary(report: be.appmire.gpsinfo.obd.ProbeReport) {
                     )
                 }
             }
+        }
+    }
+}
+
+/** The confirm step: the auto-suggested role→sensor mapping with live
+ *  values, and a button to persist it + start the live feed. */
+@Composable
+private fun MappingCard(report: be.appmire.gpsinfo.obd.ProbeReport, onSave: () -> Unit) {
+    val mapping = report.suggestion.mapping ?: return
+    val profile = be.appmire.gpsinfo.obd.ObdProfiles.byId(report.suggestion.profileId)
+    var saved by remember { mutableStateOf(false) }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Suggested mapping", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "Profile: ${profile.displayName} · key ${mapping.vehicleKey}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(4.dp))
+            mapping.roles.forEach { (role, request) ->
+                val reading = report.roleReadings.firstOrNull {
+                    it.role == role && it.request == request
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        "${role.label}  ←  $request",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                    Text(
+                        text = reading?.value?.let { "%.1f %s".format(Locale.ROOT, it, role.unit) }
+                            ?: "—",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Button(
+                onClick = { onSave(); saved = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(if (saved) "Saved — live feed started" else "Use this mapping (start live feed)") }
         }
     }
 }

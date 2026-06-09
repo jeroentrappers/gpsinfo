@@ -50,6 +50,7 @@ class ObdProbeController(context: Context) {
     val state: StateFlow<ObdLabState> = _state.asStateFlow()
 
     private val transcript = StringBuilder()
+    private var lastAddress: String? = null
 
     fun hasConnectPermission(): Boolean = connection.hasConnectPermission()
 
@@ -68,6 +69,7 @@ class ObdProbeController(context: Context) {
     fun startProbe(address: String) {
         job?.cancel()
         connection.close()
+        lastAddress = address
         transcript.setLength(0)
         _state.value = ObdLabState(
             status = ObdStatus.Connecting,
@@ -79,7 +81,7 @@ class ObdProbeController(context: Context) {
                 connection.connect(address)
                 log("connected")
                 _state.value = _state.value.copy(status = ObdStatus.Probing)
-                val report = SmartProbe(ObdManager(connection, ::log), ::log).probe()
+                val report = SmartProbe(ObdManager(connection, ::log), ::log).probe(address)
                 val path = writeTranscript()
                 _state.value = _state.value.copy(
                     status = ObdStatus.Done,
@@ -104,6 +106,20 @@ class ObdProbeController(context: Context) {
         job?.cancel()
         connection.close()
         _state.value = _state.value.copy(status = ObdStatus.Idle)
+    }
+
+    /** Confirm step: persist the suggested mapping as the active vehicle
+     *  and (re)start the live feed for it. Returns false if there's
+     *  nothing to save (no mapped roles). The probe connection is closed
+     *  first so the live feed can own the adapter. */
+    fun saveActiveMapping(): Boolean {
+        val mapping = _state.value.report?.suggestion?.mapping ?: return false
+        val address = lastAddress ?: return false
+        job?.cancel()
+        connection.close()
+        ObdMappingRepository(appContext).saveActive(mapping, address)
+        ObdLiveController.start(appContext, address, mapping)
+        return true
     }
 
     private fun log(line: String) {

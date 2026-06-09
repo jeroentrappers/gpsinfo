@@ -23,6 +23,11 @@ data class ProbeReport(
     val vin: String?,
     val supportedPids: List<Int>,
     val sensors: List<DetectedSensor>,
+    /** Per-role results across generic + make profiles, and the
+     *  auto-suggested mapping the user confirms. */
+    val roleReadings: List<RoleReading> = emptyList(),
+    val suggestion: MappingSuggester.Suggestion =
+        MappingSuggester.Suggestion(ObdProfiles.GENERIC.id, null),
 )
 
 /**
@@ -40,7 +45,7 @@ class SmartProbe(
     private val log: (String) -> Unit = {},
 ) {
 
-    suspend fun probe(): ProbeReport {
+    suspend fun probe(vehicleKeyFallback: String): ProbeReport {
         log("— init —")
         obd.runInit()
 
@@ -59,9 +64,41 @@ class SmartProbe(
         log("— polling ${supported.size} PIDs —")
         val sensors = supported.map { pid -> probePid(pid) }
 
+        // Role readings: generic PIDs that map to a role, then each
+        // make profile's UDS commands (so EV roles get a shot).
+        log("— roles: generic —")
+        val genericReadings = ObdProfiles.GENERIC.roleCommands.mapNotNull { pc ->
+            val sensor = sensors.firstOrNull { it.request == pc.command.request } ?: return@mapNotNull null
+            RoleReading(pc.role!!, ObdProfiles.GENERIC.id, pc.command.request, sensor.value, sensor.rawHex, sensor.live)
+        }
+        val makeReadings = ArrayList<RoleReading>()
+        for (profile in ObdProfiles.makeProfiles) {
+            log("— roles: ${profile.displayName} —")
+            for (pc in profile.roleCommands) {
+                val payload = obd.readPayload(pc.command)
+                val rawHex = payload?.joinToString(" ") { "%02X".format(it) }
+                makeReadings.add(
+                    RoleReading(
+                        role = pc.role!!,
+                        profileId = profile.id,
+                        request = pc.command.request,
+                        value = payload?.let { pc.command.decode(it) },
+                        rawHex = rawHex,
+                        live = payload != null,
+                    ),
+                )
+            }
+        }
+        val readings = genericReadings + makeReadings
+        val vehicleKey = vin?.takeIf { it.isNotBlank() } ?: vehicleKeyFallback
+        val suggestion = MappingSuggester.suggest(vehicleKey, readings)
+
         val live = sensors.count { it.live }
-        log("— done: $live/${sensors.size} PIDs returned data —")
-        return ProbeReport(adapterId, protocol, vin, supported, sensors)
+        log(
+            "— done: $live/${sensors.size} PIDs live; profile ${suggestion.profileId}; " +
+                "${suggestion.mapping?.roles?.size ?: 0} roles mapped —",
+        )
+        return ProbeReport(adapterId, protocol, vin, supported, sensors, readings, suggestion)
     }
 
     /** Walk the 0100/0120/… supported-PID bitmask chain. */

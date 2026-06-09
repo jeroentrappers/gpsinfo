@@ -80,11 +80,20 @@ class TripDashboardScreen(
      *  hosts that expose it; over Android Auto projection it's usually
      *  unimplemented, so the readouts stay dashed until OBD2 fills them. */
     private var carInfo: CarInfo? = null
+
+    /** True once the OBD live feed is supplying energy values, so the
+     *  car-hardware EnergyLevel feed yields to the (richer) OBD source. */
+    @Volatile
+    private var obdProvidesEnergy = false
+    private var obdJob: Job? = null
+
     private val energyListener = OnCarDataAvailableListener<EnergyLevel> { level ->
-        // Prefer EV state of charge; fall back to fuel % for combustion.
-        val soc = floatOrNull(level.batteryPercent) ?: floatOrNull(level.fuelPercent)
-        val rangeKm = floatOrNull(level.rangeRemainingMeters)?.div(1000f)
-        renderer.updateEnergy(soc, rangeKm)
+        if (!obdProvidesEnergy) {
+            // Prefer EV state of charge; fall back to fuel % for combustion.
+            val soc = floatOrNull(level.batteryPercent) ?: floatOrNull(level.fuelPercent)
+            val rangeKm = floatOrNull(level.rangeRemainingMeters)?.div(1000f)
+            renderer.updateEnergy(soc, rangeKm)
+        }
     }
 
     private fun floatOrNull(cv: CarValue<Float>): Float? =
@@ -97,6 +106,7 @@ class TripDashboardScreen(
     override fun onStart(owner: LifecycleOwner) {
         if (hasLocationPermission()) startCollecting()
         startEnergyUpdates()
+        startObdFeed()
     }
 
     override fun onStop(owner: LifecycleOwner) {
@@ -104,7 +114,30 @@ class TripDashboardScreen(
         collectJob = null
         gForceJob?.cancel()
         gForceJob = null
+        obdJob?.cancel()
+        obdJob = null
         stopEnergyUpdates()
+    }
+
+    /** Auto-connect the OBD live feed if the user configured an adapter in
+     *  the OBD Lab, and pipe its power/SoC/range into the energy dial.
+     *  Power has no Car-API source, so OBD owns it outright. */
+    private fun startObdFeed() {
+        be.appmire.gpsinfo.obd.ObdLiveController.startIfConfigured(carContext.applicationContext)
+        if (obdJob != null) return
+        obdJob = be.appmire.gpsinfo.obd.ObdLiveController.state
+            .onEach { d ->
+                if (d.connected) {
+                    renderer.updatePower(d.powerKw)
+                    if (d.socPercent != null || d.rangeKm != null) {
+                        obdProvidesEnergy = true
+                        renderer.updateEnergy(d.socPercent?.toFloat(), d.rangeKm?.toFloat())
+                    }
+                } else {
+                    obdProvidesEnergy = false
+                }
+            }
+            .launchIn(lifecycleScope)
     }
 
     /** Subscribe to the car's energy level (battery %, range). Wrapped

@@ -75,6 +75,7 @@ object StandardPids {
         cmd(0x42, "v12", "Control-module voltage", "V") { b -> u16(b, 0)?.let { it / 1000.0 } },
         cmd(0x43, "abs_load", "Absolute load", "%") { b -> u16(b, 0)?.let { it * 100.0 / 255.0 } },
         cmd(0x46, "ambient", "Ambient air temp", "°C") { b -> u8(b, 0)?.let { it - 40.0 } },
+        cmd(0x5B, "hybrid_soc", "Hybrid battery life", "%") { b -> u8(b, 0)?.let { it * 100.0 / 255.0 } },
         cmd(0x5C, "oil_temp", "Engine oil temp", "°C") { b -> u8(b, 0)?.let { it - 40.0 } },
         cmd(0x5E, "fuel_rate", "Engine fuel rate", "L/h") { b -> u16(b, 0)?.let { it / 20.0 } },
     )

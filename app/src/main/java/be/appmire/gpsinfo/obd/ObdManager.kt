@@ -41,7 +41,11 @@ class ObdManager(
      * semicolons (e.g. "ATSH7E5;ATCRA7ED;22028C") runs each prefix but
      * only parses the final command's reply.
      */
-    suspend fun poll(cmd: ObdCommand): Double? {
+    suspend fun poll(cmd: ObdCommand): Double? = readPayload(cmd)?.let { cmd.decode(it) }
+
+    /** Run a (possibly composite) command and return its decoded payload
+     *  bytes, or null on NO DATA / error. Liveness = non-null payload. */
+    suspend fun readPayload(cmd: ObdCommand): IntArray? {
         val parts = cmd.request.split(';').map { it.trim() }.filter { it.isNotEmpty() }
         if (parts.isEmpty()) return null
         return try {
@@ -53,8 +57,7 @@ class ObdManager(
                 0x22, 0x21, 0x2E -> 2 // UDS RDBI/WDBI use 2-byte DIDs
                 else -> 1
             }
-            val payload = ObdResponse.extractPayload(reply, mode, pidBytes) ?: return null
-            cmd.decode(payload)
+            ObdResponse.extractPayload(reply, mode, pidBytes)
         } catch (e: Exception) {
             log("✗ ${cmd.key}: ${e.message}")
             null
