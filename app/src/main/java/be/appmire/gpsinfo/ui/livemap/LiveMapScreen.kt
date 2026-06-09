@@ -233,21 +233,20 @@ fun LiveMapScreen(
                         ManeuverBanner(turn = turn, distanceM = navg.distanceToTurnM)
                     }
                 }
-                // Top strip: speed with its margin of error (top-left),
-                // plus heading + altitude in Pro. Speed is repeated here
-                // as the precise readout; the corner dial is the
-                // glanceable one.
-                TopOverlay(
-                    speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
-                    speedAccuracyKmh = loc
-                        ?.takeIf { it.hasSpeedAccuracy() }
-                        ?.speedAccuracyMetersPerSecond?.times(3.6f),
-                    gpsBearingDeg = gpsBearing,
-                    altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
-                    unit = unit,
-                    // Simple: just speed + error. Pro: + heading, altitude.
-                    compact = !pro,
-                )
+                // Top strip (Pro only): precise speed + its margin of
+                // error, heading and altitude. In Simple the bottom-left
+                // dial is the sole speed readout, so the strip is hidden.
+                if (pro) {
+                    TopOverlay(
+                        speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
+                        speedAccuracyKmh = loc
+                            ?.takeIf { it.hasSpeedAccuracy() }
+                            ?.speedAccuracyMetersPerSecond?.times(3.6f),
+                        gpsBearingDeg = gpsBearing,
+                        altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
+                        unit = unit,
+                    )
+                }
             }
 
             // Speed gauge — current speed dial + posted-limit roundel —
@@ -533,7 +532,6 @@ private fun TopOverlay(
     gpsBearingDeg: Float?,
     altMeters: Double?,
     unit: UnitSystem,
-    compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -550,20 +548,18 @@ private fun TopOverlay(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SpeedCell(speedKmh = speedKmh, accuracyKmh = speedAccuracyKmh, unit = unit)
-            if (!compact) {
-                Stat(
-                    label = stringResource(R.string.metric_heading),
-                    value = gpsBearingDeg?.let { "%03d".format(Locale.ROOT, it.toInt()) } ?: "—",
-                    unit = "°T",
-                )
-                Stat(
-                    label = stringResource(R.string.metric_altitude),
-                    value = altMeters?.let {
-                        "%d".format(Locale.ROOT, UnitConverter.lengthFromMeters(it, unit).toInt())
-                    } ?: "—",
-                    unit = lengthUnitLabel(unit),
-                )
-            }
+            Stat(
+                label = stringResource(R.string.metric_heading),
+                value = gpsBearingDeg?.let { "%03d".format(Locale.ROOT, it.toInt()) } ?: "—",
+                unit = "°T",
+            )
+            Stat(
+                label = stringResource(R.string.metric_altitude),
+                value = altMeters?.let {
+                    "%d".format(Locale.ROOT, UnitConverter.lengthFromMeters(it, unit).toInt())
+                } ?: "—",
+                unit = lengthUnitLabel(unit),
+            )
         }
     }
 }
