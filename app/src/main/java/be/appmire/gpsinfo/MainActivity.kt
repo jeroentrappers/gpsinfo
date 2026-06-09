@@ -80,7 +80,19 @@ private object Routes {
     const val Rally = "rally"
     const val WheelPair = "wheel-pair"
     const val GForce = "gforce"
+    const val Hub = "hub"
 }
+
+/** Activity Hub tile → the screen it opens (Phase 1: today's screens). */
+private fun routeForActivity(a: be.appmire.gpsinfo.ui.activity.Activity): String =
+    when (a) {
+        be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE -> Routes.LiveMap
+        be.appmire.gpsinfo.ui.activity.Activity.TRACK_TRAIN -> Routes.Dashboard
+        be.appmire.gpsinfo.ui.activity.Activity.EXPLORE_ORIENT -> Routes.Compass
+        be.appmire.gpsinfo.ui.activity.Activity.GPS_LAB -> Routes.Satellites
+        be.appmire.gpsinfo.ui.activity.Activity.RALLY -> Routes.Rally
+        be.appmire.gpsinfo.ui.activity.Activity.CUSTOM -> Routes.Dashboard
+    }
 
 class MainActivity : ComponentActivity() {
 
@@ -168,7 +180,14 @@ class MainActivity : ComponentActivity() {
 
                 if (hasPermission) {
                     val nav = rememberNavController()
-                    NavHost(navController = nav, startDestination = Routes.Dashboard) {
+                    NavHost(navController = nav, startDestination = Routes.Hub) {
+                        composable(Routes.Hub) {
+                            be.appmire.gpsinfo.ui.activity.ActivityHubScreen(
+                                onOpenActivity = { activity ->
+                                    nav.navigate(routeForActivity(activity))
+                                },
+                            )
+                        }
                         composable(Routes.Dashboard) {
                             DashboardScreen(
                                 isDark = effectiveDark,

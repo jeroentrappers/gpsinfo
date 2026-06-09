@@ -761,4 +761,9 @@
     <string name="gforce_longitudinal">Longitudinal</string>
     <string name="gforce_vertical">Vertical</string>
     <string name="gforce_peak">Peak</string>
+    <!-- Activity Hub (localized in a later phase). -->
+    <string name="activity_hub_title" tools:ignore="MissingTranslation">What do you want to do?</string>
+    <string name="activity_open" tools:ignore="MissingTranslation">Open</string>
+    <string name="activity_why_how" tools:ignore="MissingTranslation">Why and how</string>
+    <string name="action_close" tools:ignore="MissingTranslation">Close</string>
 </resources>
