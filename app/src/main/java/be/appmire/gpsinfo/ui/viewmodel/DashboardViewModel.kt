@@ -942,12 +942,43 @@ class DashboardViewModel(
         val primary = selectedProfileIds.firstOrNull() ?: "default"
         val pinned = be.appmire.gpsinfo.ui.activity.Personas
             .pinnedActivitiesFor(selectedProfileIds).map { it.name }
+        // Seed each pinned activity's detail level from the primary
+        // persona's default (geeks → Pro, casual → Simple).
+        val seed = be.appmire.gpsinfo.ui.activity.Personas.byId(primary)
+            ?.defaultDetail ?: be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
+        val detailSeed = pinned.associateWith { seed.name }
         viewModelScope.launch {
             (settings as? SettingsRepository)?.let {
                 it.setDashboardProfileId(primary)
                 it.setPinnedActivities(pinned)
+                it.mergeActivityDetailLevels(detailSeed)
             }
             settings.setOnboardingSeen(true)
+        }
+    }
+
+    /** Per-activity Simple/Pro detail level (absent → Simple). */
+    val detailLevels: StateFlow<Map<be.appmire.gpsinfo.ui.activity.Activity, be.appmire.gpsinfo.ui.activity.DetailLevel>> =
+        ((settings as? SettingsRepository)?.activityDetailLevels
+            ?: kotlinx.coroutines.flow.flowOf(emptyMap()))
+            .map { raw ->
+                raw.mapNotNull { (k, v) ->
+                    val a = runCatching { be.appmire.gpsinfo.ui.activity.Activity.valueOf(k) }.getOrNull()
+                    val d = runCatching { be.appmire.gpsinfo.ui.activity.DetailLevel.valueOf(v) }.getOrNull()
+                    if (a != null && d != null) a to d else null
+                }.toMap()
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    fun detailLevelOf(activity: be.appmire.gpsinfo.ui.activity.Activity): be.appmire.gpsinfo.ui.activity.DetailLevel =
+        detailLevels.value[activity] ?: be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
+
+    fun setActivityDetail(
+        activity: be.appmire.gpsinfo.ui.activity.Activity,
+        level: be.appmire.gpsinfo.ui.activity.DetailLevel,
+    ) {
+        viewModelScope.launch {
+            (settings as? SettingsRepository)?.setActivityDetailLevel(activity.name, level.name)
         }
     }
 

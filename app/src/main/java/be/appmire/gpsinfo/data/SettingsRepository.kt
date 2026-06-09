@@ -117,6 +117,10 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
          *  [be.appmire.gpsinfo.ui.activity.Activity] names. Seeded from
          *  the first-run persona picker. */
         val PinnedActivities = stringPreferencesKey("pinned_activities")
+        /** Per-activity Simple/Pro detail level: "ACTIVITY=LEVEL"
+         *  comma-separated (enum names). Absent activities default to
+         *  Simple. Seeded from the persona picker. */
+        val ActivityDetailLevels = stringPreferencesKey("activity_detail_levels")
         /** Serialised card list for the user-customised dashboard
          *  profile. Comma-separated [be.appmire.gpsinfo.data.model.DashboardSection]
          *  enum names. Null when the user hasn't built one yet — the
@@ -333,6 +337,32 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setPinnedActivities(ids: List<String>) {
         context.dataStore.edit { it[Keys.PinnedActivities] = ids.joinToString(",") }
+    }
+
+    private fun decodeDetail(raw: String?): Map<String, String> =
+        raw?.split(',')?.mapNotNull {
+            val kv = it.split('='); if (kv.size == 2 && kv[0].isNotBlank()) kv[0] to kv[1] else null
+        }?.toMap() ?: emptyMap()
+
+    /** Per-activity detail levels (enum-name → "SIMPLE"/"PRO"). */
+    val activityDetailLevels: Flow<Map<String, String>> = context.dataStore.data
+        .map { decodeDetail(it[Keys.ActivityDetailLevels]) }
+
+    suspend fun setActivityDetailLevel(activity: String, level: String) {
+        context.dataStore.edit { prefs ->
+            val cur = decodeDetail(prefs[Keys.ActivityDetailLevels]).toMutableMap()
+            cur[activity] = level
+            prefs[Keys.ActivityDetailLevels] = cur.entries.joinToString(",") { "${it.key}=${it.value}" }
+        }
+    }
+
+    /** Merge several activity → level defaults (first-run seeding). */
+    suspend fun mergeActivityDetailLevels(levels: Map<String, String>) {
+        context.dataStore.edit { prefs ->
+            val cur = decodeDetail(prefs[Keys.ActivityDetailLevels]).toMutableMap()
+            cur.putAll(levels)
+            prefs[Keys.ActivityDetailLevels] = cur.entries.joinToString(",") { "${it.key}=${it.value}" }
+        }
     }
 
     /** Raw serialised list — comma-joined section names. The model

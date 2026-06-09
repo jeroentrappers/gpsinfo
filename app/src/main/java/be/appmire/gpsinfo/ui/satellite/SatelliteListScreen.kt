@@ -77,6 +77,9 @@ fun SatelliteListScreen(
     vm: DashboardViewModel,
     onBack: () -> Unit,
     onOpenNmea: () -> Unit = {},
+    /** When set, shows a "Simple" action that switches GPS Lab to its
+     *  simple layout (Activity-dashboard detail toggle). */
+    onShowSimple: (() -> Unit)? = null,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var sortMode by remember { mutableStateOf(SatSortMode.CONSTELLATION) }
@@ -122,6 +125,11 @@ fun SatelliteListScreen(
                     }
                 },
                 actions = {
+                    if (onShowSimple != null) {
+                        androidx.compose.material3.TextButton(onClick = onShowSimple) {
+                            androidx.compose.material3.Text(stringResource(R.string.detail_simple))
+                        }
+                    }
                     val nextMode = when (sortMode) {
                         SatSortMode.CONSTELLATION -> SatSortMode.SIGNAL
                         SatSortMode.SIGNAL -> SatSortMode.CONSTELLATION

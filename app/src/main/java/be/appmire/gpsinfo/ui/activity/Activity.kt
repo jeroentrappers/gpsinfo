@@ -31,6 +31,11 @@ enum class Activity {
     CUSTOM,
 }
 
+/** How much an activity shows. Simple = curated essentials; Pro = the
+ *  full instrument set (today's screens). Defaulted from the persona,
+ *  toggled in the activity's app bar, persisted per activity. */
+enum class DetailLevel { SIMPLE, PRO }
+
 /** Presentation metadata for one activity tile. Copy is English for
  *  now; it moves to string resources in the localization phase. */
 data class ActivityInfo(

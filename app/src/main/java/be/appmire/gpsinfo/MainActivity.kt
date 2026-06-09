@@ -81,18 +81,25 @@ private object Routes {
     const val WheelPair = "wheel-pair"
     const val GForce = "gforce"
     const val Hub = "hub"
+    const val GpsLabSimple = "gps-lab-simple"
 }
 
-/** Activity Hub tile → the screen it opens (Phase 1: today's screens). */
-private fun routeForActivity(a: be.appmire.gpsinfo.ui.activity.Activity): String =
-    when (a) {
-        be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE -> Routes.LiveMap
-        be.appmire.gpsinfo.ui.activity.Activity.TRACK_TRAIN -> Routes.Dashboard
-        be.appmire.gpsinfo.ui.activity.Activity.EXPLORE_ORIENT -> Routes.Compass
-        be.appmire.gpsinfo.ui.activity.Activity.GPS_LAB -> Routes.Satellites
-        be.appmire.gpsinfo.ui.activity.Activity.RALLY -> Routes.Rally
-        be.appmire.gpsinfo.ui.activity.Activity.CUSTOM -> Routes.Dashboard
-    }
+/** Activity Hub tile → the screen it opens, honouring the per-activity
+ *  Simple/Pro detail level (Phase 3). Only GPS Lab has a Simple layout so
+ *  far; the others open their existing (Pro) screen regardless. */
+private fun routeForActivity(
+    a: be.appmire.gpsinfo.ui.activity.Activity,
+    detail: be.appmire.gpsinfo.ui.activity.DetailLevel,
+): String = when (a) {
+    be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE -> Routes.LiveMap
+    be.appmire.gpsinfo.ui.activity.Activity.TRACK_TRAIN -> Routes.Dashboard
+    be.appmire.gpsinfo.ui.activity.Activity.EXPLORE_ORIENT -> Routes.Compass
+    be.appmire.gpsinfo.ui.activity.Activity.GPS_LAB ->
+        if (detail == be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE) Routes.GpsLabSimple
+        else Routes.Satellites
+    be.appmire.gpsinfo.ui.activity.Activity.RALLY -> Routes.Rally
+    be.appmire.gpsinfo.ui.activity.Activity.CUSTOM -> Routes.Dashboard
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -193,7 +200,7 @@ class MainActivity : ComponentActivity() {
                             be.appmire.gpsinfo.ui.activity.ActivityHubScreen(
                                 pinned = pinned.toSet(),
                                 onOpenActivity = { activity ->
-                                    nav.navigate(routeForActivity(activity))
+                                    nav.navigate(routeForActivity(activity, vm.detailLevelOf(activity)))
                                 },
                             )
                         }
@@ -295,6 +302,30 @@ class MainActivity : ComponentActivity() {
                                 vm = vm,
                                 onBack = { nav.popBackStack() },
                                 onOpenNmea = { nav.navigate(Routes.Nmea) },
+                                onShowSimple = {
+                                    vm.setActivityDetail(
+                                        be.appmire.gpsinfo.ui.activity.Activity.GPS_LAB,
+                                        be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE,
+                                    )
+                                    nav.navigate(Routes.GpsLabSimple) {
+                                        popUpTo(Routes.Satellites) { inclusive = true }
+                                    }
+                                },
+                            )
+                        }
+                        composable(Routes.GpsLabSimple) {
+                            be.appmire.gpsinfo.ui.activity.GpsLabSimpleScreen(
+                                vm = vm,
+                                onBack = { nav.popBackStack() },
+                                onShowDetailed = {
+                                    vm.setActivityDetail(
+                                        be.appmire.gpsinfo.ui.activity.Activity.GPS_LAB,
+                                        be.appmire.gpsinfo.ui.activity.DetailLevel.PRO,
+                                    )
+                                    nav.navigate(Routes.Satellites) {
+                                        popUpTo(Routes.GpsLabSimple) { inclusive = true }
+                                    }
+                                },
                             )
                         }
                         composable(Routes.Nmea) {

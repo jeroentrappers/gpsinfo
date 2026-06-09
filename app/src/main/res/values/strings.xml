@@ -768,6 +768,14 @@
     <string name="persona_picker_title" tools:ignore="MissingTranslation">What will you use GPSinfo for?</string>
     <string name="persona_picker_intro" tools:ignore="MissingTranslation">Pick what fits — you can choose more than one. We\'ll put your activities first; everything stays available.</string>
     <string name="persona_picker_continue" tools:ignore="MissingTranslation">Continue</string>
+    <string name="gps_lab_title" tools:ignore="MissingTranslation">GPS Lab</string>
+    <string name="gps_lab_good" tools:ignore="MissingTranslation">Good fix</string>
+    <string name="gps_lab_weak" tools:ignore="MissingTranslation">Weak fix (2D)</string>
+    <string name="gps_lab_searching" tools:ignore="MissingTranslation">Searching for satellites…</string>
+    <string name="gps_lab_sats_summary" tools:ignore="MissingTranslation">%1$d satellites in use · %2$d in view</string>
+    <string name="gps_lab_accuracy" tools:ignore="MissingTranslation">Accuracy ±%1$d m</string>
+    <string name="detail_detailed" tools:ignore="MissingTranslation">Detailed</string>
+    <string name="detail_simple" tools:ignore="MissingTranslation">Simple</string>
     <string name="activity_why_how" tools:ignore="MissingTranslation">Why and how</string>
     <string name="action_close" tools:ignore="MissingTranslation">Close</string>
 </resources>
