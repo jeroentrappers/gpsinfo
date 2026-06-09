@@ -1,5 +1,9 @@
 package be.appmire.gpsinfo.ui.livemap
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
 import android.location.Location
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -24,6 +28,10 @@ import org.maplibre.android.plugins.annotation.CircleOptions
 import org.maplibre.android.plugins.annotation.Line
 import org.maplibre.android.plugins.annotation.LineManager
 import org.maplibre.android.plugins.annotation.LineOptions
+import org.maplibre.android.plugins.annotation.Symbol
+import org.maplibre.android.plugins.annotation.SymbolManager
+import org.maplibre.android.plugins.annotation.SymbolOptions
+import org.maplibre.android.style.layers.Property
 
 /**
  * MapLibre Native vector-map host. Renders OpenStreetMap *vector*
@@ -114,8 +122,10 @@ private class MapHolder {
     private var map: MapLibreMap? = null
     private var circles: CircleManager? = null
     private var lines: LineManager? = null
+    private var symbols: SymbolManager? = null
 
-    private var userDot: Circle? = null
+    private var userPuck: Symbol? = null
+    private var lastBearing = 0f
     private var destDot: Circle? = null
     private var trailLine: Line? = null
     private var routeLine: Line? = null
@@ -130,9 +140,18 @@ private class MapHolder {
         this.map = map
         map.setStyle(Style.Builder().fromUri(STYLE_URI)) { style ->
             // Managers must outlive the style; LineManager added first
-            // so the trail/route draw beneath the position dots.
+            // so the trail/route draw beneath the position markers.
             lines = LineManager(view, map, style)
             circles = CircleManager(view, map, style)
+            // Navigation puck: a chevron in a translucent blue disc that
+            // rotates to the course (icon rotation aligned to the map, so
+            // heading-up keeps it pointing up the screen).
+            style.addImage(PUCK_IMAGE, navPuckBitmap())
+            symbols = SymbolManager(view, map, style).apply {
+                iconAllowOverlap = true
+                iconIgnorePlacement = true
+                iconRotationAlignment = Property.ICON_ROTATION_ALIGNMENT_MAP
+            }
         }
     }
 
@@ -151,30 +170,40 @@ private class MapHolder {
         val l = loc ?: return
         val here = LatLng(l.latitude, l.longitude)
 
-        // User position dot.
-        if (userDot == null) {
-            userDot = circles.create(
-                CircleOptions().withLatLng(here).withCircleRadius(7f)
-                    .withCircleColor("#1A73E8").withCircleStrokeColor("#FFFFFF")
-                    .withCircleStrokeWidth(2.5f),
-            )
-        } else {
-            userDot!!.latLng = here
-            circles.update(userDot)
+        // User position puck — chevron in a translucent blue disc,
+        // rotated to the course. Map-aligned, so heading-up keeps it
+        // pointing up the screen; north-up shows the travel direction.
+        val puckRotate = gpsBearingDeg ?: lastBearing
+        lastBearing = puckRotate
+        symbols?.let { sym ->
+            if (userPuck == null) {
+                userPuck = sym.create(
+                    SymbolOptions().withLatLng(here).withIconImage(PUCK_IMAGE)
+                        .withIconRotate(puckRotate).withIconSize(1f),
+                )
+            } else {
+                userPuck!!.latLng = here
+                userPuck!!.iconRotate = puckRotate
+                sym.update(userPuck)
+            }
         }
 
         // Camera: follow + heading-up rotation. Heading-up also tilts
-        // into a 2.5D driving perspective (north-up stays flat top-down).
+        // into a 2.5D driving perspective (north-up stays flat top-down)
+        // and offsets the puck toward the bottom so the road ahead is
+        // clear (top camera padding pushes the centred target down).
         if (follow) {
             val bearing = if (headingUp && gpsBearingDeg != null) gpsBearingDeg.toDouble() else 0.0
             val pitch = if (headingUp) HEADING_UP_PITCH_DEG else 0.0
-            val target = if (!seeded) {
+            val topPad = if (headingUp) map.height * PUCK_BOTTOM_PADDING_FRAC else 0.0
+            val builder = CameraPosition.Builder()
+                .target(here).bearing(bearing).tilt(pitch)
+                .padding(0.0, topPad, 0.0, 0.0)
+            if (!seeded) {
                 seeded = true
-                CameraPosition.Builder().target(here).zoom(15.5).bearing(bearing).tilt(pitch).build()
-            } else {
-                CameraPosition.Builder().target(here).bearing(bearing).tilt(pitch).build()
+                builder.zoom(15.5)
             }
-            map.cameraPosition = target
+            map.cameraPosition = builder.build()
         }
 
         // Live recording trail.
@@ -253,9 +282,42 @@ private class MapHolder {
         map = null
     }
 
+    /** Chevron-in-translucent-blue-disc navigation puck, drawn once and
+     *  registered as a style image the SymbolManager references. */
+    private fun navPuckBitmap(): Bitmap {
+        val s = 96
+        val bmp = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        val cx = s / 2f
+        val cy = s / 2f
+        val r = s * 0.40f
+        c.drawCircle(cx, cy, r, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x99_1A73E8.toInt() })
+        c.drawCircle(
+            cx, cy, r,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = s * 0.05f
+                color = 0xFFFFFFFF.toInt()
+            },
+        )
+        val chevron = Path().apply {
+            moveTo(cx, cy - r * 0.55f)
+            lineTo(cx - r * 0.45f, cy + r * 0.35f)
+            lineTo(cx, cy + r * 0.12f)
+            lineTo(cx + r * 0.45f, cy + r * 0.35f)
+            close()
+        }
+        c.drawPath(chevron, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt() })
+        return bmp
+    }
+
     private companion object {
         val STYLE_URI = be.appmire.gpsinfo.data.nav.MapLibreStyle.LIBERTY
         /** Camera pitch in heading-up (driving) mode — 2.5D perspective. */
         const val HEADING_UP_PITCH_DEG = 50.0
+        const val PUCK_IMAGE = "nav_puck"
+        /** Top camera padding (fraction of map height) in heading-up mode
+         *  — pushes the puck toward the bottom so the road ahead shows. */
+        const val PUCK_BOTTOM_PADDING_FRAC = 0.45
     }
 }
