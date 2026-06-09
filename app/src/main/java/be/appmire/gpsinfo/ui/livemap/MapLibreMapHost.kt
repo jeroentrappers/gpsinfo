@@ -163,14 +163,16 @@ private class MapHolder {
             circles.update(userDot)
         }
 
-        // Camera: follow + heading-up rotation.
+        // Camera: follow + heading-up rotation. Heading-up also tilts
+        // into a 2.5D driving perspective (north-up stays flat top-down).
         if (follow) {
             val bearing = if (headingUp && gpsBearingDeg != null) gpsBearingDeg.toDouble() else 0.0
+            val pitch = if (headingUp) HEADING_UP_PITCH_DEG else 0.0
             val target = if (!seeded) {
                 seeded = true
-                CameraPosition.Builder().target(here).zoom(15.5).bearing(bearing).build()
+                CameraPosition.Builder().target(here).zoom(15.5).bearing(bearing).tilt(pitch).build()
             } else {
-                CameraPosition.Builder().target(here).bearing(bearing).build()
+                CameraPosition.Builder().target(here).bearing(bearing).tilt(pitch).build()
             }
             map.cameraPosition = target
         }
@@ -253,5 +255,7 @@ private class MapHolder {
 
     private companion object {
         val STYLE_URI = be.appmire.gpsinfo.data.nav.MapLibreStyle.LIBERTY
+        /** Camera pitch in heading-up (driving) mode — 2.5D perspective. */
+        const val HEADING_UP_PITCH_DEG = 50.0
     }
 }

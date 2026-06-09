@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.ExploreOff
 import androidx.compose.material.icons.outlined.LocationSearching
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,6 +55,10 @@ import be.appmire.gpsinfo.data.nav.MapLibreStyle
 import be.appmire.gpsinfo.data.nav.OfflineMapRepository
 import kotlinx.coroutines.launch
 import be.appmire.gpsinfo.data.model.FixStatus
+import be.appmire.gpsinfo.data.nav.NavigationController
+import be.appmire.gpsinfo.data.nav.TurnCommand
+import be.appmire.gpsinfo.data.nav.TurnHint
+import be.appmire.gpsinfo.data.ThemeOverride
 import be.appmire.gpsinfo.ui.activity.DetailLevel
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import be.appmire.gpsinfo.util.UnitConverter
@@ -103,6 +108,7 @@ fun LiveMapScreen(
 
     var follow by remember { mutableStateOf(true) }
     var headingUp by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
     // Treat the chip's bearing as "course" only above the 3 km/h
     // threshold — below that the Doppler reading is unstable and
     // would jitter the heading-up rotation around the user.
@@ -164,6 +170,32 @@ fun LiveMapScreen(
                             )
                         }
                     }
+                    // Quick settings — theme + units — without leaving the map.
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            Icons.Outlined.MoreVert,
+                            contentDescription = stringResource(R.string.activity_hub_more),
+                        )
+                    }
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                    ) {
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_toggle_theme)) },
+                            onClick = {
+                                menuExpanded = false
+                                vm.setThemeOverride(nextTheme(state.themeOverride))
+                            },
+                        )
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_toggle_units)) },
+                            onClick = {
+                                menuExpanded = false
+                                vm.setUnitSystem(nextUnit(state.unitSystem))
+                            },
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -196,20 +228,32 @@ fun LiveMapScreen(
             // doubles as a sanity-cross-check: small subtext shows
             // the rolling distance-over-time average and flags
             // divergence from the Doppler chip reading.
-            TopOverlay(
-                speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
-                rollingAvgKmh = rollingAvgKmh,
-                rollingWindowSec = rollingWindowSec,
-                gpsBearingDeg = gpsBearing,
-                altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
-                unit = unit,
-                // Simple: just the speed. Pro: + heading, altitude and
-                // the rolling-average cross-check.
-                compact = !pro,
+            Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
+                    .fillMaxWidth()
                     .padding(12.dp),
-            )
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // Turn-by-turn maneuver banner while navigating an
+                // offline route.
+                (navState as? NavigationController.NavState.Navigating)?.let { navg ->
+                    navg.nextTurn?.let { turn ->
+                        ManeuverBanner(turn = turn, distanceM = navg.distanceToTurnM)
+                    }
+                }
+                TopOverlay(
+                    speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
+                    rollingAvgKmh = rollingAvgKmh,
+                    rollingWindowSec = rollingWindowSec,
+                    gpsBearingDeg = gpsBearing,
+                    altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
+                    unit = unit,
+                    // Simple: just the speed. Pro: + heading, altitude and
+                    // the rolling-average cross-check.
+                    compact = !pro,
+                )
+            }
 
             // Bottom overlay — fix status + accuracy + sats. When a
             // navigation target is active, a dedicated NavOverlay sits
@@ -390,6 +434,67 @@ private fun LabeledMapControl(label: String, button: @Composable () -> Unit) {
             )
         }
     }
+}
+
+/** Turn-by-turn maneuver banner: distance to the next turn + the cue. */
+@Composable
+private fun ManeuverBanner(turn: TurnHint, distanceM: Double) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 3.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = if (distanceM >= 1000) "%.1f km".format(Locale.ROOT, distanceM / 1000.0)
+                else "${(distanceM / 10).toInt() * 10} m",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            Text(
+                text = turnCue(turn),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(start = 16.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun turnCue(turn: TurnHint): String = stringResource(
+    when (turn.command) {
+        TurnCommand.TURN_LEFT -> R.string.car_nav_turn_left
+        TurnCommand.TURN_SLIGHT_LEFT -> R.string.car_nav_slight_left
+        TurnCommand.TURN_SHARP_LEFT -> R.string.car_nav_sharp_left
+        TurnCommand.TURN_RIGHT -> R.string.car_nav_turn_right
+        TurnCommand.TURN_SLIGHT_RIGHT -> R.string.car_nav_slight_right
+        TurnCommand.TURN_SHARP_RIGHT -> R.string.car_nav_sharp_right
+        TurnCommand.KEEP_LEFT -> R.string.car_nav_keep_left
+        TurnCommand.KEEP_RIGHT -> R.string.car_nav_keep_right
+        TurnCommand.U_TURN -> R.string.car_nav_u_turn
+        TurnCommand.ROUNDABOUT -> R.string.car_nav_roundabout
+        else -> R.string.car_nav_continue
+    }
+)
+
+private fun nextTheme(t: ThemeOverride): ThemeOverride = when (t) {
+    ThemeOverride.System -> ThemeOverride.Light
+    ThemeOverride.Light -> ThemeOverride.Dark
+    ThemeOverride.Dark -> ThemeOverride.System
+}
+
+private fun nextUnit(u: UnitSystem): UnitSystem = when (u) {
+    UnitSystem.Metric -> UnitSystem.Imperial
+    UnitSystem.Imperial -> UnitSystem.Nautical
+    UnitSystem.Nautical -> UnitSystem.Metric
 }
 
 @Composable
