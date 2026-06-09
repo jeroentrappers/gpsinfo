@@ -1,0 +1,2 @@
+• Android Auto : navigation vers une adresse, tableau de bord repensé, panneau de limitation et vues carte plate/2,5D/3D
+• Nouvel affichage plein écran de la force G

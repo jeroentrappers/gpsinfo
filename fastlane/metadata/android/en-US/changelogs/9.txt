@@ -1,0 +1,2 @@
+• Android Auto: navigate to an address, redesigned dashboard, speed-limit sign and flat/2.5D/3D map views
+• New full-screen G-force view
