@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Apartment
 import androidx.compose.material.icons.outlined.CenterFocusStrong
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Download
@@ -107,7 +108,9 @@ fun LiveMapScreen(
     val unit = state.unitSystem
 
     var follow by remember { mutableStateOf(true) }
-    var headingUp by remember { mutableStateOf(false) }
+    // Map presentation, cycled by the view-mode button (mirrors the car):
+    // flat north-up → 2.5D heading-up → 2.5D heading-up + 3D buildings.
+    var viewMode by remember { mutableStateOf(be.appmire.gpsinfo.car.MapViewMode.FLAT) }
     var menuExpanded by remember { mutableStateOf(false) }
     // Treat the chip's bearing as "course" only above the 3 km/h
     // threshold — below that the Doppler reading is unstable and
@@ -215,7 +218,7 @@ fun LiveMapScreen(
                 modifier = Modifier.fillMaxSize(),
                 loc = loc,
                 follow = follow,
-                headingUp = headingUp,
+                viewMode = viewMode,
                 gpsBearingDeg = gpsBearing,
                 recording = recording,
                 navigationTarget = navigationTarget,
@@ -311,16 +314,35 @@ fun LiveMapScreen(
                         )
                     }
                 }
-                LabeledMapControl(
-                    label = if (headingUp) stringResource(R.string.trail_heading_up)
-                    else stringResource(R.string.trail_north_up),
-                ) {
+                // View-mode cycle (same three modes as the car): flat
+                // north-up → 2.5D heading-up → 2.5D + 3D buildings. The
+                // icon + caption reflect the *current* mode; tapping
+                // advances to the next.
+                val viewModeLabel = when (viewMode) {
+                    be.appmire.gpsinfo.car.MapViewMode.FLAT -> stringResource(R.string.trail_north_up)
+                    be.appmire.gpsinfo.car.MapViewMode.TILTED_FLAT -> "2.5D"
+                    be.appmire.gpsinfo.car.MapViewMode.TILTED_3D -> "3D"
+                }
+                LabeledMapControl(label = viewModeLabel) {
                     FilledIconToggleButton(
-                        checked = headingUp,
-                        onCheckedChange = { headingUp = it },
+                        checked = viewMode != be.appmire.gpsinfo.car.MapViewMode.FLAT,
+                        onCheckedChange = {
+                            viewMode = when (viewMode) {
+                                be.appmire.gpsinfo.car.MapViewMode.FLAT ->
+                                    be.appmire.gpsinfo.car.MapViewMode.TILTED_FLAT
+                                be.appmire.gpsinfo.car.MapViewMode.TILTED_FLAT ->
+                                    be.appmire.gpsinfo.car.MapViewMode.TILTED_3D
+                                be.appmire.gpsinfo.car.MapViewMode.TILTED_3D ->
+                                    be.appmire.gpsinfo.car.MapViewMode.FLAT
+                            }
+                        },
                     ) {
                         Icon(
-                            if (headingUp) Icons.Outlined.Explore else Icons.Outlined.ExploreOff,
+                            when (viewMode) {
+                                be.appmire.gpsinfo.car.MapViewMode.FLAT -> Icons.Outlined.ExploreOff
+                                be.appmire.gpsinfo.car.MapViewMode.TILTED_FLAT -> Icons.Outlined.Explore
+                                be.appmire.gpsinfo.car.MapViewMode.TILTED_3D -> Icons.Outlined.Apartment
+                            },
                             contentDescription = stringResource(R.string.live_map_heading_up),
                         )
                     }

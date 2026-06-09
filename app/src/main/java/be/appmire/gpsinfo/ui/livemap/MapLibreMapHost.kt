@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import be.appmire.gpsinfo.car.MapViewMode
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.model.NavigationTarget
 import org.maplibre.android.MapLibre
@@ -32,6 +33,7 @@ import org.maplibre.android.plugins.annotation.Symbol
 import org.maplibre.android.plugins.annotation.SymbolManager
 import org.maplibre.android.plugins.annotation.SymbolOptions
 import org.maplibre.android.style.layers.Property
+import org.maplibre.android.style.layers.PropertyFactory
 
 /**
  * MapLibre Native vector-map host. Renders OpenStreetMap *vector*
@@ -53,7 +55,9 @@ import org.maplibre.android.style.layers.Property
 fun MapLibreMapHost(
     loc: Location?,
     follow: Boolean,
-    headingUp: Boolean,
+    /** Map presentation: flat north-up, 2.5D heading-up with flat
+     *  building footprints, or 2.5D heading-up with 3D extrusions. */
+    viewMode: MapViewMode,
     gpsBearingDeg: Float?,
     recording: RecordingState,
     navigationTarget: NavigationTarget?,
@@ -105,7 +109,7 @@ fun MapLibreMapHost(
             val forceRecenter = recenterTrigger != lastRecenter[0]
             lastRecenter[0] = recenterTrigger
             holder.update(
-                loc, follow || forceRecenter, headingUp, gpsBearingDeg,
+                loc, follow || forceRecenter, viewMode, gpsBearingDeg,
                 recording, navigationTarget, tbtRoute,
             )
         },
@@ -120,9 +124,15 @@ fun MapLibreMapHost(
  */
 private class MapHolder {
     private var map: MapLibreMap? = null
+    private var style: Style? = null
     private var circles: CircleManager? = null
     private var lines: LineManager? = null
     private var symbols: SymbolManager? = null
+
+    /** What we last pushed to the style's `building-3d` layer, so the
+     *  visibility is only set when the mode actually flips (and re-set
+     *  once the style finishes loading). */
+    private var applied3d: Boolean? = null
 
     private var userPuck: Symbol? = null
     private var lastBearing = 0f
@@ -139,6 +149,9 @@ private class MapHolder {
     fun onMapReady(view: MapView, map: MapLibreMap) {
         this.map = map
         map.setStyle(Style.Builder().fromUri(STYLE_URI)) { style ->
+            this.style = style
+            // A fresh style needs the building-3d visibility (re)applied.
+            applied3d = null
             // Managers must outlive the style; LineManager added first
             // so the trail/route draw beneath the position markers.
             lines = LineManager(view, map, style)
@@ -158,7 +171,7 @@ private class MapHolder {
     fun update(
         loc: Location?,
         follow: Boolean,
-        headingUp: Boolean,
+        viewMode: MapViewMode,
         gpsBearingDeg: Float?,
         recording: RecordingState,
         navigationTarget: NavigationTarget?,
@@ -167,6 +180,12 @@ private class MapHolder {
         val map = map ?: return
         val circles = circles ?: return
         val lines = lines ?: return
+
+        // Tilt is on for both 2.5D modes; 3D building extrusions only in
+        // the dedicated 3D mode (the other two show flat footprints).
+        val headingUp = viewMode != MapViewMode.FLAT
+        applyBuildings3d(viewMode == MapViewMode.TILTED_3D)
+
         val l = loc ?: return
         val here = LatLng(l.latitude, l.longitude)
 
@@ -280,6 +299,21 @@ private class MapHolder {
         circles = null
         lines = null
         map = null
+        style = null
+        applied3d = null
+    }
+
+    /** Show/hide the style's `building-3d` extrusion layer to match the
+     *  view mode — same lever the car snapshotter pulls. No-op until the
+     *  style is loaded or when already in the requested state. */
+    private fun applyBuildings3d(want: Boolean) {
+        if (applied3d == want) return
+        val style = style ?: return
+        val layer = runCatching { style.getLayer(BUILDING_3D_LAYER) }.getOrNull() ?: return
+        layer.setProperties(
+            PropertyFactory.visibility(if (want) Property.VISIBLE else Property.NONE),
+        )
+        applied3d = want
     }
 
     /** Chevron-in-translucent-blue-disc navigation puck, drawn once and
@@ -313,6 +347,8 @@ private class MapHolder {
 
     private companion object {
         val STYLE_URI = be.appmire.gpsinfo.data.nav.MapLibreStyle.LIBERTY
+        /** OpenFreeMap "liberty" style's extruded-buildings layer. */
+        const val BUILDING_3D_LAYER = "building-3d"
         /** Camera pitch in heading-up (driving) mode — 2.5D perspective. */
         const val HEADING_UP_PITCH_DEG = 50.0
         const val PUCK_IMAGE = "nav_puck"
