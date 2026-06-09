@@ -212,6 +212,12 @@ class MainActivity : ComponentActivity() {
                                 onOpenGhost = { nav.navigate(Routes.Ghost) },
                                 onOpenRally = { nav.navigate(Routes.Rally) },
                                 onOpenGForce = { nav.navigate(Routes.GForce) },
+                                onOpenHub = {
+                                    nav.navigate(Routes.Hub) {
+                                        popUpTo(Routes.Hub) { inclusive = false }
+                                        launchSingleTop = true
+                                    }
+                                },
                                 vm = vm,
                             )
                         }

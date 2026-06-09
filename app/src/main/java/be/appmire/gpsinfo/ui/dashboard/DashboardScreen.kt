@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.outlined.AddLocationAlt
@@ -141,6 +142,10 @@ fun DashboardScreen(
     onOpenGhost: () -> Unit = {},
     onOpenRally: () -> Unit = {},
     onOpenGForce: () -> Unit = {},
+    /** Return to the Activity Hub (the launch screen). The dashboard is
+     *  reached as the "Custom / Everything" and "Track & Train"
+     *  activities, so it needs an explicit way back to the selector. */
+    onOpenHub: () -> Unit = {},
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val compass by vm.compass.collectAsStateWithLifecycle()
@@ -277,6 +282,7 @@ fun DashboardScreen(
                 isRecording = isRecording,
                 isDark = isDark,
                 activeProfileId = activeProfile.id,
+                onOpenHub = { closeDrawer(); onOpenHub() },
                 onSelectProfile = { id ->
                     closeDrawer()
                     vm.setDashboardProfile(id)
@@ -820,6 +826,7 @@ private fun DashboardDrawerContent(
     isRecording: Boolean,
     isDark: Boolean,
     activeProfileId: String,
+    onOpenHub: () -> Unit,
     onSelectProfile: (String) -> Unit,
     onNewWaypoint: () -> Unit,
     onSaveWaypoint: () -> Unit,
@@ -858,6 +865,15 @@ private fun DashboardDrawerContent(
                 )
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp))
+
+            // Back to the Activity Hub — the launch screen / selector.
+            DrawerItem(
+                label = stringResource(R.string.drawer_activities),
+                icon = Icons.AutoMirrored.Outlined.ArrowBack,
+                onClick = onOpenHub,
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp))
 
             // --- Quick actions --- //
             DrawerSectionLabel(stringResource(R.string.drawer_section_quick))

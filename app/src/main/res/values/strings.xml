@@ -764,6 +764,7 @@
     <!-- Activity Hub (localized in a later phase). -->
     <string name="activity_hub_title" tools:ignore="MissingTranslation">What do you want to do?</string>
     <string name="activity_open" tools:ignore="MissingTranslation">Open</string>
+    <string name="drawer_activities" tools:ignore="MissingTranslation">Activities</string>
     <string name="activity_why_how" tools:ignore="MissingTranslation">Why and how</string>
     <string name="action_close" tools:ignore="MissingTranslation">Close</string>
 </resources>
