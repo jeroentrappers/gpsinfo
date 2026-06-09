@@ -1,5 +1,6 @@
 package be.appmire.gpsinfo.ui.activity
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
 import androidx.compose.material.icons.outlined.Explore
@@ -8,6 +9,7 @@ import androidx.compose.material.icons.outlined.SatelliteAlt
 import androidx.compose.material.icons.outlined.SportsScore
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
+import be.appmire.gpsinfo.R
 
 /**
  * The app's top-level **activities** — the "what do you want to do"
@@ -36,16 +38,16 @@ enum class Activity {
  *  toggled in the activity's app bar, persisted per activity. */
 enum class DetailLevel { SIMPLE, PRO }
 
-/** Presentation metadata for one activity tile. Copy is English for
- *  now; it moves to string resources in the localization phase. */
+/** Presentation metadata for one activity tile. Text is localized — the
+ *  UI resolves the @StringRes ids with stringResource. */
 data class ActivityInfo(
     val activity: Activity,
-    val title: String,
+    @StringRes val titleRes: Int,
     val icon: ImageVector,
     /** One-line "what it's for", shown on the tile. */
-    val what: String,
+    @StringRes val whatRes: Int,
     /** Two-three sentences of "why + how", shown on demand. */
-    val whyHow: String,
+    @StringRes val whyHowRes: Int,
     /** Tile accent, packed ARGB (reuses the persona palette). */
     val accentArgb: Int,
 )
@@ -64,62 +66,50 @@ object Activities {
     val all: List<ActivityInfo> = listOf(
         ActivityInfo(
             Activity.DRIVE_NAVIGATE,
-            title = "Drive & Navigate",
+            titleRes = R.string.activity_drive_title,
             icon = Icons.Outlined.Navigation,
-            what = "Get there — address search, route, live map.",
-            whyHow = "Search for an address or place and follow an offline " +
-                "turn-by-turn route on a live vector map, with your speed at a " +
-                "glance. Tap to open the map, then search or pick a saved place.",
+            whatRes = R.string.activity_drive_what,
+            whyHowRes = R.string.activity_drive_whyhow,
             accentArgb = ORANGE,
         ),
         ActivityInfo(
             Activity.TRACK_TRAIN,
-            title = "Track & Train",
+            titleRes = R.string.activity_track_title,
             icon = Icons.AutoMirrored.Outlined.DirectionsRun,
-            what = "Record a run or ride and pace yourself.",
-            whyHow = "Record a GPX/FIT trail with distance, time and pace; add a " +
-                "ghost runner, pace targets and heart-rate or power sensors. Start " +
-                "recording from the dashboard and review trails afterwards.",
+            whatRes = R.string.activity_track_what,
+            whyHowRes = R.string.activity_track_whyhow,
             accentArgb = RED,
         ),
         ActivityInfo(
             Activity.EXPLORE_ORIENT,
-            title = "Explore & Orient",
+            titleRes = R.string.activity_explore_title,
             icon = Icons.Outlined.Explore,
-            what = "Where am I, where's that, mark this.",
-            whyHow = "A precise compass, your coordinates in any format, waypoints " +
-                "to mark and share spots, plus sun/moon and a world view. Open the " +
-                "compass, then reach waypoints and sharing from there.",
+            whatRes = R.string.activity_explore_what,
+            whyHowRes = R.string.activity_explore_whyhow,
             accentArgb = GREEN,
         ),
         ActivityInfo(
             Activity.GPS_LAB,
-            title = "GPS Lab",
+            titleRes = R.string.activity_gpslab_title,
             icon = Icons.Outlined.SatelliteAlt,
-            what = "See the raw signal — satellites, NMEA, fix quality.",
-            whyHow = "Inspect the sky plot, per-satellite signal strength, fix " +
-                "status and accuracy, and the raw NMEA stream. For the curious, " +
-                "for surveying, and for diagnosing reception.",
+            whatRes = R.string.activity_gpslab_what,
+            whyHowRes = R.string.activity_gpslab_whyhow,
             accentArgb = TEAL,
         ),
         ActivityInfo(
             Activity.RALLY,
-            title = "Rally / Regularity",
+            titleRes = R.string.activity_rally_title,
             icon = Icons.Outlined.SportsScore,
-            what = "Hold an exact average over a stage.",
-            whyHow = "Run a regularity stage to a target average speed with a " +
-                "live early/late delta, wheel-sensor distance and ±recalibration. " +
-                "Arm the stage, then start on the marshal's go.",
+            whatRes = R.string.activity_rally_what,
+            whyHowRes = R.string.activity_rally_whyhow,
             accentArgb = GRAPHITE,
         ),
         ActivityInfo(
             Activity.CUSTOM,
-            title = "Custom / Everything",
+            titleRes = R.string.activity_custom_title,
             icon = Icons.Outlined.Tune,
-            what = "Your full, editable dashboard — all cards on one screen.",
-            whyHow = "The classic all-in-one dashboard: pick exactly which cards " +
-                "show and in what order. Everything the app can do, on a single " +
-                "screen, the way you arrange it.",
+            whatRes = R.string.activity_custom_what,
+            whyHowRes = R.string.activity_custom_whyhow,
             accentArgb = SLATE,
         ),
     )

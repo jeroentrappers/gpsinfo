@@ -85,7 +85,7 @@ fun PersonaPickerScreen(
                             Surface(color = accent, modifier = Modifier.fillMaxSize()) {}
                         }
                         Text(
-                            persona.displayName,
+                            stringResource(persona.displayNameRes),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier
                                 .weight(1f)

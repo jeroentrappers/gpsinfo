@@ -117,8 +117,8 @@ fun ActivityHubScreen(
                 }
             },
             icon = { Icon(sel.icon, contentDescription = null, tint = Color(sel.accentArgb)) },
-            title = { Text(sel.title) },
-            text = { Text(sel.whyHow) },
+            title = { Text(stringResource(sel.titleRes)) },
+            text = { Text(stringResource(sel.whyHowRes)) },
         )
     }
 }
@@ -144,7 +144,7 @@ private fun ResumeRow(item: ActivityInfo, onClick: () -> Unit) {
         ) {
             Icon(item.icon, contentDescription = null, tint = Color(item.accentArgb))
             Text(
-                stringResource(R.string.activity_resume, item.title),
+                stringResource(R.string.activity_resume, stringResource(item.titleRes)),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f).padding(start = 12.dp),
             )
@@ -197,13 +197,13 @@ private fun ActivityTile(
                     modifier = Modifier.size(36.dp),
                 )
                 Text(
-                    item.title,
+                    stringResource(item.titleRes),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 10.dp),
                 )
                 Text(
-                    item.what,
+                    stringResource(item.whatRes),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),

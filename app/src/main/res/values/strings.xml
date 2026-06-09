@@ -762,43 +762,73 @@
     <string name="gforce_vertical">Vertical</string>
     <string name="gforce_peak">Peak</string>
     <!-- Activity Hub (localized in a later phase). -->
-    <string name="activity_hub_title" tools:ignore="MissingTranslation">What do you want to do?</string>
-    <string name="activity_open" tools:ignore="MissingTranslation">Open</string>
-    <string name="drawer_activities" tools:ignore="MissingTranslation">Activities</string>
-    <string name="drawer_simple_tracker" tools:ignore="MissingTranslation">Simple tracker</string>
-    <string name="persona_picker_title" tools:ignore="MissingTranslation">What will you use GPSinfo for?</string>
-    <string name="persona_picker_intro" tools:ignore="MissingTranslation">Pick what fits — you can choose more than one. We\'ll put your activities first; everything stays available.</string>
-    <string name="persona_picker_continue" tools:ignore="MissingTranslation">Continue</string>
-    <string name="gps_lab_title" tools:ignore="MissingTranslation">GPS Lab</string>
-    <string name="gps_lab_good" tools:ignore="MissingTranslation">Good fix</string>
-    <string name="gps_lab_weak" tools:ignore="MissingTranslation">Weak fix (2D)</string>
-    <string name="gps_lab_searching" tools:ignore="MissingTranslation">Searching for satellites…</string>
-    <string name="gps_lab_sats_summary" tools:ignore="MissingTranslation">%1$d satellites in use · %2$d in view</string>
-    <string name="gps_lab_accuracy" tools:ignore="MissingTranslation">Accuracy ±%1$d m</string>
-    <string name="detail_detailed" tools:ignore="MissingTranslation">Detailed</string>
-    <string name="detail_simple" tools:ignore="MissingTranslation">Simple</string>
-    <string name="explore_title" tools:ignore="MissingTranslation">Explore &amp; Orient</string>
-    <string name="explore_no_fix" tools:ignore="MissingTranslation">Waiting for GPS…</string>
-    <string name="explore_mark" tools:ignore="MissingTranslation">Mark here</string>
-    <string name="explore_share" tools:ignore="MissingTranslation">Share</string>
-    <string name="rally_simple_target" tools:ignore="MissingTranslation">→ %1$.0f km/h · %2$.2f km</string>
-    <string name="rally_simple_stop" tools:ignore="MissingTranslation">Stop</string>
-    <string name="rally_simple_start" tools:ignore="MissingTranslation">Start</string>
-    <string name="rally_armed" tools:ignore="MissingTranslation">Armed — waiting for the go</string>
-    <string name="rally_simple_idle" tools:ignore="MissingTranslation">No stage armed yet</string>
-    <string name="rally_simple_setup" tools:ignore="MissingTranslation">Set up a stage</string>
-    <string name="track_title" tools:ignore="MissingTranslation">Track &amp; Train</string>
-    <string name="track_distance" tools:ignore="MissingTranslation">Distance</string>
-    <string name="track_time" tools:ignore="MissingTranslation">Time</string>
-    <string name="track_pace" tools:ignore="MissingTranslation">Pace</string>
-    <string name="track_start" tools:ignore="MissingTranslation">Start recording</string>
-    <string name="track_stop" tools:ignore="MissingTranslation">Stop &amp; save</string>
-    <string name="activity_why_how" tools:ignore="MissingTranslation">Why and how</string>
-    <string name="activity_hub_your" tools:ignore="MissingTranslation">Your activities</string>
-    <string name="activity_hub_more" tools:ignore="MissingTranslation">More</string>
-    <string name="activity_resume" tools:ignore="MissingTranslation">Resume %1$s</string>
-    <string name="activity_intro_title" tools:ignore="MissingTranslation">New: activities</string>
-    <string name="activity_intro_body" tools:ignore="MissingTranslation">GPSinfo is now organised by what you want to do. Pick an activity to dive in; your full dashboard lives under Custom / Everything.</string>
-    <string name="activity_intro_dismiss" tools:ignore="MissingTranslation">Got it</string>
-    <string name="action_close" tools:ignore="MissingTranslation">Close</string>
+    <string name="activity_hub_title">What do you want to do?</string>
+    <string name="activity_open">Open</string>
+    <string name="drawer_activities">Activities</string>
+    <string name="drawer_simple_tracker">Simple tracker</string>
+    <string name="persona_picker_title">What will you use GPSinfo for?</string>
+    <string name="persona_picker_intro">Pick what fits — you can choose more than one. We\'ll put your activities first; everything stays available.</string>
+    <string name="persona_picker_continue">Continue</string>
+    <string name="gps_lab_title">GPS Lab</string>
+    <string name="gps_lab_good">Good fix</string>
+    <string name="gps_lab_weak">Weak fix (2D)</string>
+    <string name="gps_lab_searching">Searching for satellites…</string>
+    <string name="gps_lab_sats_summary">%1$d satellites in use · %2$d in view</string>
+    <string name="gps_lab_accuracy">Accuracy ±%1$d m</string>
+    <string name="detail_detailed">Detailed</string>
+    <string name="detail_simple">Simple</string>
+    <string name="explore_title">Explore &amp; Orient</string>
+    <string name="explore_no_fix">Waiting for GPS…</string>
+    <string name="explore_mark">Mark here</string>
+    <string name="explore_share">Share</string>
+    <string name="rally_simple_target">→ %1$.0f km/h · %2$.2f km</string>
+    <string name="rally_simple_stop">Stop</string>
+    <string name="rally_simple_start">Start</string>
+    <string name="rally_armed">Armed — waiting for the go</string>
+    <string name="rally_simple_idle">No stage armed yet</string>
+    <string name="rally_simple_setup">Set up a stage</string>
+    <string name="track_title">Track &amp; Train</string>
+    <string name="track_distance">Distance</string>
+    <string name="track_time">Time</string>
+    <string name="track_pace">Pace</string>
+    <string name="track_start">Start recording</string>
+    <string name="track_stop">Stop &amp; save</string>
+    <string name="activity_why_how">Why and how</string>
+    <string name="activity_hub_your">Your activities</string>
+    <string name="activity_hub_more">More</string>
+    <string name="activity_resume">Resume %1$s</string>
+    <string name="activity_intro_title">New: activities</string>
+    <string name="activity_intro_body">GPSinfo is now organised by what you want to do. Pick an activity to dive in; your full dashboard lives under Custom / Everything.</string>
+    <string name="activity_intro_dismiss">Got it</string>
+    <!-- Activity registry: title / one-line "what" / "why+how". -->
+    <string name="activity_drive_title">Drive &amp; Navigate</string>
+    <string name="activity_drive_what">Get there — address search, route, live map.</string>
+    <string name="activity_drive_whyhow">Search for an address or place and follow an offline turn-by-turn route on a live vector map, with your speed at a glance. Tap to open the map, then search or pick a saved place.</string>
+    <string name="activity_track_title">Track &amp; Train</string>
+    <string name="activity_track_what">Record a run or ride and pace yourself.</string>
+    <string name="activity_track_whyhow">Record a GPX/FIT trail with distance, time and pace; add a ghost runner, pace targets and heart-rate or power sensors. Start recording from the dashboard and review trails afterwards.</string>
+    <string name="activity_explore_title">Explore &amp; Orient</string>
+    <string name="activity_explore_what">Where am I, where\'s that, mark this.</string>
+    <string name="activity_explore_whyhow">A precise compass, your coordinates in any format, waypoints to mark and share spots, plus sun/moon and a world view. Open the compass, then reach waypoints and sharing from there.</string>
+    <string name="activity_gpslab_title">GPS Lab</string>
+    <string name="activity_gpslab_what">See the raw signal — satellites, NMEA, fix quality.</string>
+    <string name="activity_gpslab_whyhow">Inspect the sky plot, per-satellite signal strength, fix status and accuracy, and the raw NMEA stream. For the curious, for surveying, and for diagnosing reception.</string>
+    <string name="activity_rally_title">Rally / Regularity</string>
+    <string name="activity_rally_what">Hold an exact average over a stage.</string>
+    <string name="activity_rally_whyhow">Run a regularity stage to a target average speed with a live early/late delta, wheel-sensor distance and ±recalibration. Arm the stage, then start on the marshal\'s go.</string>
+    <string name="activity_custom_title">Custom / Everything</string>
+    <string name="activity_custom_what">Your full, editable dashboard — all cards on one screen.</string>
+    <string name="activity_custom_whyhow">The classic all-in-one dashboard: pick exactly which cards show and in what order. Everything the app can do, on a single screen, the way you arrange it.</string>
+    <!-- Persona picker display names. -->
+    <string name="persona_driver">Driver</string>
+    <string name="persona_runner">Runner</string>
+    <string name="persona_cyclist">Cyclist</string>
+    <string name="persona_hiker">Hiker</string>
+    <string name="persona_sailor">Sailor</string>
+    <string name="persona_motorcyclist">Motorcyclist</string>
+    <string name="persona_geocacher">Geocacher</string>
+    <string name="persona_ham">Ham / SOTA</string>
+    <string name="persona_motorsport">Motorsport</string>
+    <string name="persona_custom">Just GPS stuff</string>
+    <string name="action_close">Close</string>
 </resources>
