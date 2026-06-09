@@ -1,6 +1,6 @@
 # Activity-based dashboard — UX spec
 
-Status: **proposal / for sign-off** · Direction: **Hybrid A+B** (persona-seeded Activity Hub, per-activity Simple/Pro) · Author: design exploration, 2026-06-09
+Status: **decisions locked — ready for Phase 1** · Direction: **Hybrid A+B** (persona-seeded Activity Hub, per-activity Simple/Pro) · Author: design exploration, 2026-06-09
 
 ---
 
@@ -43,6 +43,20 @@ Plus a retained escape hatch:
 
 | ⚙️ **Custom / Everything** | "I want it all on one screen." | The current editable dashboard (`DashboardProfileEditor`) — nothing is taken away. |
 
+### 2.1 Icons (Material Symbols)
+
+Icons come from the `androidx.compose.material:material-icons-extended` dependency the app already ships (Apache-2.0) — no new assets, instantly consistent with the rest of the UI. Hub tiles and the persona picker use:
+
+| Item | `Icons.Outlined.*` |
+|---|---|
+| 🧭 Drive & Navigate | `Navigation` |
+| 🏃 Track & Train | `DirectionsRun` |
+| 🏁 Rally / Regularity | `SportsScore` (checkered flag) |
+| 🔭 Explore & Orient | `Explore` (compass rose) |
+| 📡 GPS Lab | `SatelliteAlt` |
+| ⚙️ Custom / Everything | `Tune` |
+| Motorsport persona | `SportsMotorsports` (helmet) |
+
 ---
 
 ## 3. Persona → activity & defaults map
@@ -59,10 +73,10 @@ Personas become *bundles*: they pin a primary activity (and sometimes secondary)
 | Motorcyclist | amber | Drive & Navigate | Rally | Pro |
 | Geocacher | purple | Explore & Orient | — | Simple |
 | Ham / SOTA | teal | GPS Lab | Explore & Orient | Pro |
-| *(new)* Motorsport | red/black | Rally | Drive & Navigate | Pro |
+| **Motorsport** *(new)* | graphite | Rally | Drive & Navigate | Pro |
 | "Just GPS stuff" / Custom | orange | Custom / Everything | all | Pro |
 
-Open decision: add the **Motorsport** persona (Rally has none today) or let any persona pin Rally.
+The **Motorsport** persona is new (Rally had no persona). Accent: graphite/carbon (≈ `#37474F`), distinct from Runner's red; icon `SportsMotorsports`. Suggested cards: Speed, G-meter, Status, Compass.
 
 ---
 
@@ -157,7 +171,7 @@ Behaviours:
 - **Android Auto** (§ below) is independent.
 
 ### Android Auto
-The car surface is its own front door and should stay **navigation-centric** (Drive & Navigate) regardless of the phone's active activity — drivers want the map, not the GPS Lab. Track recording and Rally remain reachable from the car action strips as today. Open decision: optionally mirror the phone's *detail level* (Simple/Pro) for the car gauges.
+The car surface is its own front door and stays **navigation-centric** (Drive & Navigate) regardless of the phone's active activity — drivers want the map, not the GPS Lab. Track recording and Rally remain reachable from the car action strips as today. **Decided:** the car stays fixed — no Simple/Pro mirroring for now (revisit once the phone flow settles).
 
 ---
 
@@ -172,8 +186,8 @@ The car surface is its own front door and should stay **navigation-centric** (Dr
 
 ## 10. Migration from today
 
-- The current single dashboard becomes the **Custom / Everything** activity — existing users lose nothing; their saved profile/accent carry over.
-- First run for *existing* users: a one-time card on the old dashboard — "Try the new activity view" → opens the Hub; opting out keeps today's behaviour as the default home.
+- The Hub **replaces the launch screen** for everyone; the current single dashboard lives on as the **Custom / Everything** activity, so existing users lose nothing — their saved profile/accent carry over.
+- First launch after the update shows a one-time intro card explaining the Hub, with a shortcut straight to Custom / Everything for anyone who wants today's exact dashboard.
 - No data migration: profiles, trails, waypoints, sensors all unaffected.
 
 ---
@@ -204,13 +218,13 @@ Net-new design surface ≈ the Hub, the first-run picker, and **one Simple layou
 
 ---
 
-## 13. Open decisions (need your call)
+## 13. Decisions (resolved)
 
-1. **Motorsport persona** — add it, or let any persona pin Rally?
-2. **Home replacement vs. opt-in** — does the Hub replace the dashboard as the launch screen, or is it opt-in initially (safer for existing users)?
-3. **Car detail level** — mirror the phone's Simple/Pro on the AA gauges, or keep the car fixed?
-4. **"Explore & Orient" breadth** — it's the widest bucket (compass + waypoints + world/sun + geocache). Split into two if it feels overloaded in testing?
-5. **Activity naming/icons** — the labels above are placeholders; worth a quick naming pass before localization.
+1. **Motorsport persona** — added; graphite/carbon accent, `SportsMotorsports` icon. ✓
+2. **Home** — the Hub **replaces** the launch screen (one-time intro for existing users; Custom / Everything preserves the old dashboard). ✓
+3. **Car detail level** — the car stays fixed / navigation-first; no Simple/Pro mirroring for now. ✓
+4. **Explore & Orient breadth** — kept as a single activity (revisit only if testing shows overload). ✓
+5. **Naming & icons** — activity names confirmed; icons use Material Symbols (see §2.1). ✓
 
 ---
 
