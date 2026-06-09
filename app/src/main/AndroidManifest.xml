@@ -19,6 +19,13 @@
          start; if denied, recording still works without step counts. -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
+    <!-- Car energy level (battery %, range remaining) for the Android
+         Auto energy meter, via androidx.car.app CarInfo. The host grants
+         this over projection where it supports it; most projected hosts
+         report energy as unimplemented, in which case the readouts stay
+         dashed until an OBD2 source fills them. -->
+    <uses-permission android:name="com.google.android.gms.permission.CAR_FUEL" />
+
     <!-- BLE heart-rate monitor pairing + measurement.
          API 31+ uses BLUETOOTH_SCAN (with neverForLocation since we
          don't derive location from advertisements) and BLUETOOTH_CONNECT.
@@ -151,16 +158,23 @@
              unit's own renderer.
 
              Category NAVIGATION: required for video-surface access —
-             our CarMapRenderer paints the map/trail/HUD directly. We
-             qualify as the "maps / driver assistance" subcategory
-             Google opened navigation to in 2024; we ship no
-             turn-by-turn routing and never claim to. -->
+             our CarMapRenderer paints the map/trail/HUD directly, and we
+             compute offline turn-by-turn routes (BRouter) shown on that
+             surface. The second filter makes us a navigation-intent
+             target: Assistant "navigate to X" and other apps' geo: deep
+             links start a route here (handled in TripDashboardSession).
+             Required by the NAVIGATION category (quality rule NF-6). -->
         <service
             android:name=".car.GpsInfoCarAppService"
             android:exported="true">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.NAVIGATION" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.car.app.action.NAVIGATE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="geo" />
             </intent-filter>
         </service>
 
