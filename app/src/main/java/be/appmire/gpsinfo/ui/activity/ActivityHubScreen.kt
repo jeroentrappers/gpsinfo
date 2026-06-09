@@ -50,8 +50,14 @@ import be.appmire.gpsinfo.R
 @Composable
 fun ActivityHubScreen(
     onOpenActivity: (Activity) -> Unit,
+    pinned: Set<Activity> = emptySet(),
 ) {
     var info by remember { mutableStateOf<ActivityInfo?>(null) }
+    // Persona-pinned activities float to the top; stable sort keeps the
+    // registry order within each group.
+    val ordered = remember(pinned) {
+        Activities.all.sortedBy { if (it.activity in pinned) 0 else 1 }
+    }
 
     Scaffold(
         topBar = {
@@ -67,7 +73,7 @@ fun ActivityHubScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(Activities.all, key = { it.activity }) { item ->
+            items(ordered, key = { it.activity }) { item ->
                 ActivityTile(
                     item = item,
                     onOpen = { onOpenActivity(item.activity) },

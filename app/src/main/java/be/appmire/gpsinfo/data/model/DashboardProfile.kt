@@ -83,6 +83,8 @@ data class DashboardProfile(
         const val COLOR_AMBER = 0xFFFFA000.toInt()
         const val COLOR_PURPLE = 0xFF7B1FA2.toInt()
         const val COLOR_TEAL = 0xFF00897B.toInt()
+        // Motorsport: graphite/carbon — distinct from the runner's red.
+        const val COLOR_GRAPHITE = 0xFF37474F.toInt()
 
         val Default = DashboardProfile(
             id = "default",
@@ -189,8 +191,20 @@ data class DashboardProfile(
             accentArgb = COLOR_TEAL,
         )
 
+        val Motorsport = DashboardProfile(
+            id = "motorsport",
+            displayName = "Motorsport",
+            cards = listOf(
+                DashboardSection.Speed,
+                DashboardSection.GForce,
+                DashboardSection.Status,
+                DashboardSection.Compass,
+            ),
+            accentArgb = COLOR_GRAPHITE,
+        )
+
         val builtIns: List<DashboardProfile> = listOf(
-            Default, Runner, Cyclist, Hiker, Sailor, Motorcyclist, Geocacher, Ham,
+            Default, Runner, Cyclist, Hiker, Sailor, Motorcyclist, Geocacher, Ham, Motorsport,
         )
 
         const val CUSTOM_ID = "custom"

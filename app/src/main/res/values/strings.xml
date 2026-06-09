@@ -765,6 +765,9 @@
     <string name="activity_hub_title" tools:ignore="MissingTranslation">What do you want to do?</string>
     <string name="activity_open" tools:ignore="MissingTranslation">Open</string>
     <string name="drawer_activities" tools:ignore="MissingTranslation">Activities</string>
+    <string name="persona_picker_title" tools:ignore="MissingTranslation">What will you use GPSinfo for?</string>
+    <string name="persona_picker_intro" tools:ignore="MissingTranslation">Pick what fits — you can choose more than one. We\'ll put your activities first; everything stays available.</string>
+    <string name="persona_picker_continue" tools:ignore="MissingTranslation">Continue</string>
     <string name="activity_why_how" tools:ignore="MissingTranslation">Why and how</string>
     <string name="action_close" tools:ignore="MissingTranslation">Close</string>
 </resources>

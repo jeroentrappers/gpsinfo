@@ -922,6 +922,35 @@ class DashboardViewModel(
         viewModelScope.launch { settings.setOnboardingSeen(false) }
     }
 
+    /** Activities pinned to the top of the Hub, seeded by the first-run
+     *  persona picker. Empty until onboarding completes. */
+    val pinnedActivities: StateFlow<List<be.appmire.gpsinfo.ui.activity.Activity>> =
+        ((settings as? SettingsRepository)?.pinnedActivities
+            ?: kotlinx.coroutines.flow.flowOf(emptyList()))
+            .map { names ->
+                names.mapNotNull {
+                    runCatching { be.appmire.gpsinfo.ui.activity.Activity.valueOf(it) }.getOrNull()
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** First-run completion: [selectedProfileIds] are persona ids in
+     *  selection order (the first is primary). Seeds the active dashboard
+     *  profile + accent, the pinned activities (union across personas),
+     *  and marks onboarding done. */
+    fun completeOnboarding(selectedProfileIds: List<String>) {
+        val primary = selectedProfileIds.firstOrNull() ?: "default"
+        val pinned = be.appmire.gpsinfo.ui.activity.Personas
+            .pinnedActivitiesFor(selectedProfileIds).map { it.name }
+        viewModelScope.launch {
+            (settings as? SettingsRepository)?.let {
+                it.setDashboardProfileId(primary)
+                it.setPinnedActivities(pinned)
+            }
+            settings.setOnboardingSeen(true)
+        }
+    }
+
     // ---------- Play Store rating nudge ----------
 
     /** Cold-start count, persisted. Drives [showRateNudge]; bumped once

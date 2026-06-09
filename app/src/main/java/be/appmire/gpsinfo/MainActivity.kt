@@ -179,10 +179,19 @@ class MainActivity : ComponentActivity() {
                 }
 
                 if (hasPermission) {
+                    val onboardingSeen by vm.onboardingSeen.collectAsStateWithLifecycle()
+                    if (!onboardingSeen) {
+                        // First run: pick persona(s), seed pins + profile.
+                        be.appmire.gpsinfo.ui.activity.PersonaPickerScreen(
+                            onDone = { ids -> vm.completeOnboarding(ids) },
+                        )
+                    } else {
                     val nav = rememberNavController()
                     NavHost(navController = nav, startDestination = Routes.Hub) {
                         composable(Routes.Hub) {
+                            val pinned by vm.pinnedActivities.collectAsStateWithLifecycle()
                             be.appmire.gpsinfo.ui.activity.ActivityHubScreen(
+                                pinned = pinned.toSet(),
                                 onOpenActivity = { activity ->
                                     nav.navigate(routeForActivity(activity))
                                 },
@@ -410,6 +419,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+                    }
                     }
                 } else {
                     PermissionRequiredScreen(

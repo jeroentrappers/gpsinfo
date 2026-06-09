@@ -113,6 +113,10 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
          *  the special "custom" sentinel, or "default" when nothing has
          *  been chosen. */
         val DashboardProfileId = stringPreferencesKey("dashboard_profile_id")
+        /** Activity Hub: activities pinned to the top, comma-separated
+         *  [be.appmire.gpsinfo.ui.activity.Activity] names. Seeded from
+         *  the first-run persona picker. */
+        val PinnedActivities = stringPreferencesKey("pinned_activities")
         /** Serialised card list for the user-customised dashboard
          *  profile. Comma-separated [be.appmire.gpsinfo.data.model.DashboardSection]
          *  enum names. Null when the user hasn't built one yet — the
@@ -321,6 +325,14 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setDashboardProfileId(value: String) {
         context.dataStore.edit { it[Keys.DashboardProfileId] = value }
+    }
+
+    /** Activities pinned to the top of the Hub (enum names), in order. */
+    val pinnedActivities: Flow<List<String>> = context.dataStore.data
+        .map { p -> p[Keys.PinnedActivities]?.split(',')?.filter { it.isNotBlank() } ?: emptyList() }
+
+    suspend fun setPinnedActivities(ids: List<String>) {
+        context.dataStore.edit { it[Keys.PinnedActivities] = ids.joinToString(",") }
     }
 
     /** Raw serialised list — comma-joined section names. The model
