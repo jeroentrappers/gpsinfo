@@ -47,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.RecordingState
@@ -119,17 +118,6 @@ fun LiveMapScreen(
     val gpsBearing: Float? = if (headingMode ==
         be.appmire.gpsinfo.util.HeadingMode.DualWithCourse
     ) loc?.takeIf { it.hasBearing() }?.bearing else null
-
-    // Rolling distance-over-time speed estimator — independent
-    // cross-check against Location.speed (Doppler) so the user can
-    // see when the chip is being noisy.
-    val rollingSpeed = remember { be.appmire.gpsinfo.util.RollingSpeed() }
-    if (loc != null) {
-        val ts = if (loc.time > 0) loc.time else System.currentTimeMillis()
-        rollingSpeed.push(loc.latitude, loc.longitude, ts)
-    }
-    val rollingAvgKmh: Float? = rollingSpeed.averageKmh()
-    val rollingWindowSec: Long = rollingSpeed.windowSeconds()
 
     // Bumped to force a one-shot recenter on the user (the MapLibre
     // host follows continuously while `follow` is on; this nudges it
@@ -245,18 +233,35 @@ fun LiveMapScreen(
                         ManeuverBanner(turn = turn, distanceM = navg.distanceToTurnM)
                     }
                 }
+                // Top strip: speed with its margin of error (top-left),
+                // plus heading + altitude in Pro. Speed is repeated here
+                // as the precise readout; the corner dial is the
+                // glanceable one.
                 TopOverlay(
                     speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
-                    rollingAvgKmh = rollingAvgKmh,
-                    rollingWindowSec = rollingWindowSec,
+                    speedAccuracyKmh = loc
+                        ?.takeIf { it.hasSpeedAccuracy() }
+                        ?.speedAccuracyMetersPerSecond?.times(3.6f),
                     gpsBearingDeg = gpsBearing,
                     altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
                     unit = unit,
-                    // Simple: just the speed. Pro: + heading, altitude and
-                    // the rolling-average cross-check.
+                    // Simple: just speed + error. Pro: + heading, altitude.
                     compact = !pro,
                 )
             }
+
+            // Speed gauge — current speed dial + posted-limit roundel —
+            // pinned to the bottom-left. Always shown; the limit roundel
+            // falls back to a dash when no posted limit is known.
+            SpeedGauge(
+                speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
+                limitKmh = (navState as? NavigationController.NavState.Navigating)
+                    ?.speedLimitKmh,
+                unit = unit,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 12.dp, bottom = 12.dp),
+            )
 
             // Bottom overlay — fix status + accuracy + sats. When a
             // navigation target is active, a dedicated NavOverlay sits
@@ -264,7 +269,9 @@ fun LiveMapScreen(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(12.dp),
+                    // Inset from the left so the bottom-left speed dial
+                    // has its own corner; the info pills sit beside it.
+                    .padding(start = 156.dp, end = 12.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 navigationTarget?.let { target ->
@@ -522,14 +529,12 @@ private fun nextUnit(u: UnitSystem): UnitSystem = when (u) {
 @Composable
 private fun TopOverlay(
     speedKmh: Float?,
-    rollingAvgKmh: Float?,
-    rollingWindowSec: Long,
+    speedAccuracyKmh: Float?,
     gpsBearingDeg: Float?,
     altMeters: Double?,
     unit: UnitSystem,
+    compact: Boolean,
     modifier: Modifier = Modifier,
-    /** Simple mode — show only the speed, hide heading/altitude. */
-    compact: Boolean = false,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -544,12 +549,7 @@ private fun TopOverlay(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SpeedStat(
-                liveKmh = speedKmh,
-                avgKmh = if (compact) null else rollingAvgKmh,
-                windowSec = rollingWindowSec,
-                unit = unit,
-            )
+            SpeedCell(speedKmh = speedKmh, accuracyKmh = speedAccuracyKmh, unit = unit)
             if (!compact) {
                 Stat(
                     label = stringResource(R.string.metric_heading),
@@ -568,38 +568,12 @@ private fun TopOverlay(
     }
 }
 
-/**
- * Speed cell with a built-in rolling-window cross-check. The big
- * number is the chip's Doppler-derived `Location.speed`. Underneath
- * sits a small subtext showing the rolling distance-over-time
- * average and the delta — colour-coded:
- *
- *  - green / no flag : agreement within ±2 km/h (good fix)
- *  - amber           : ±2-6 km/h disagreement (transitional or
- *                      mildly noisy)
- *  - red             : > 6 km/h disagreement (multipath, signal
- *                      bounce, the chip is lying)
- *
- * The window seconds shown is the actual observed span (1-second
- * GPS cadence + occasional drops mean a "10 s window" may contain
- * 8-12 s of data).
- */
+/** Precise speed readout with its margin of error: the chip's
+ *  Doppler speed plus the ± uncertainty it reports
+ *  ([Location.speedAccuracyMetersPerSecond]), shown on its own line so
+ *  the confidence in the number is always visible. */
 @Composable
-private fun SpeedStat(
-    liveKmh: Float?,
-    avgKmh: Float?,
-    windowSec: Long,
-    unit: UnitSystem,
-) {
-    val liveDisp = liveKmh?.let { "%.0f".format(Locale.ROOT, UnitConverter.speedFromKmh(it, unit)) } ?: "—"
-    val avgDisp = avgKmh?.let { "%.0f".format(Locale.ROOT, UnitConverter.speedFromKmh(it, unit)) }
-    val deltaAbs: Float? = if (liveKmh != null && avgKmh != null) kotlin.math.abs(liveKmh - avgKmh) else null
-    val deltaTint = when {
-        deltaAbs == null -> MaterialTheme.colorScheme.onSurfaceVariant
-        deltaAbs <= 2f -> be.appmire.gpsinfo.ui.theme.SignalGreen
-        deltaAbs <= 6f -> be.appmire.gpsinfo.ui.theme.SignalYellow
-        else -> be.appmire.gpsinfo.ui.theme.SignalRed
-    }
+private fun SpeedCell(speedKmh: Float?, accuracyKmh: Float?, unit: UnitSystem) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = stringResource(R.string.metric_speed),
@@ -608,10 +582,11 @@ private fun SpeedStat(
         )
         Spacer(Modifier.height(2.dp))
         Row(verticalAlignment = Alignment.Bottom) {
-            be.appmire.gpsinfo.ui.components.AutoSizingText(
-                text = liveDisp,
-                maxFontSize = 28.sp,
-                minFontSize = 16.sp,
+            Text(
+                text = speedKmh?.let {
+                    "%.0f".format(Locale.ROOT, UnitConverter.speedFromKmh(it, unit))
+                } ?: "—",
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
@@ -622,19 +597,18 @@ private fun SpeedStat(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (avgDisp != null) {
-            Text(
-                text = stringResource(
-                    R.string.live_map_avg_subtext,
-                    avgDisp,
+        Text(
+            text = accuracyKmh?.let {
+                "± %.1f %s".format(
+                    Locale.ROOT,
+                    UnitConverter.speedFromKmh(it, unit),
                     speedUnitLabel(unit),
-                    windowSec,
-                ),
-                style = MaterialTheme.typography.labelSmall,
-                color = deltaTint,
-                fontFamily = FontFamily.Monospace,
-            )
-        }
+                )
+            } ?: "± —",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontFamily = FontFamily.Monospace,
+        )
     }
 }
 

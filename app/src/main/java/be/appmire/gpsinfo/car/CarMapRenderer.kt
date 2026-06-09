@@ -465,30 +465,7 @@ class CarMapRenderer(
         drawHud(canvas, mapLeft, visibleRight, h, dark)
         drawRallyPanel(canvas, mapLeft, visibleRight, h, dark)
         drawNavStatus(canvas, mapLeft, visibleRight, h, dark)
-        drawSpeedLimit(canvas, mapLeft, top, h)
         canvas.restore()
-    }
-
-    /** EU-style speed-limit sign — white disc, red ring, black number —
-     *  in the map's top-left, shown only when the route gives a posted
-     *  limit for the current road. */
-    private fun drawSpeedLimit(canvas: Canvas, mapLeft: Float, top: Float, h: Int) {
-        val kmh = speedLimitKmh ?: return
-        val pad = h * 0.03f
-        val r = h * 0.085f
-        val cx = mapLeft + pad + r
-        val cy = top + pad + r
-        speedSignFillPaint.color = Color.WHITE
-        canvas.drawCircle(cx, cy, r, speedSignFillPaint)
-        speedSignRingPaint.strokeWidth = r * 0.24f
-        canvas.drawCircle(cx, cy, r * 0.88f, speedSignRingPaint)
-        val txt = kmh.toString()
-        hudTextPaint.textAlign = Paint.Align.CENTER
-        hudTextPaint.isFakeBoldText = true
-        hudTextPaint.color = Color.BLACK
-        hudTextPaint.textSize = if (txt.length >= 3) r * 0.82f else r * 1.02f
-        canvas.drawText(txt, cx, cy + hudTextPaint.textSize * 0.35f, hudTextPaint)
-        hudTextPaint.isFakeBoldText = false
     }
 
     /** Pill banner, top-centre of the map, for navigation phases that
@@ -539,7 +516,7 @@ class CarMapRenderer(
         val row1 = top + cellH
         val row2 = top + cellH * 2f
         // Left column: speed (top), compass (bottom).
-        instruments.drawSpeedDial(canvas, RectF(col0, top, col0 + cellW, row1), loc)
+        instruments.drawSpeedDial(canvas, RectF(col0, top, col0 + cellW, row1), loc, speedLimitKmh)
         instruments.drawCompass(
             canvas, RectF(col0, row1, col0 + cellW, row2),
             smoothedBearingDeg, hasBearing, loc,
@@ -888,11 +865,6 @@ class CarMapRenderer(
     }
     private val hudTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val recDotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val speedSignFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val speedSignRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        color = 0xFFD32F2F.toInt()
-    }
     /** FILTER_BITMAP so the snapshot bitmap blits smoothly. */
     private val layerPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val darkScrimPaint = Paint().apply { color = TILE_DARK_SCRIM }

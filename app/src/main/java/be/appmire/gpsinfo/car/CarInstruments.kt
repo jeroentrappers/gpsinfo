@@ -57,7 +57,7 @@ class CarInstruments {
 
     // ── Speed dial ─────────────────────────────────────────────────
 
-    fun drawSpeedDial(canvas: Canvas, cell: RectF, loc: Location?) {
+    fun drawSpeedDial(canvas: Canvas, cell: RectF, loc: Location?, speedLimitKmh: Int?) {
         val g = housing(canvas, cell)
 
         drawDialScale(
@@ -74,28 +74,57 @@ class CarInstruments {
         val kmh = if (loc != null && loc.hasSpeed()) loc.speed * 3.6 else 0.0
         drawNeedle(canvas, g, START_DEG + SWEEP_DEG * speedFraction(kmh))
 
-        // Centre stack below the hub: big digit + ± accuracy band,
-        // the phone speed gauge's signature pair.
-        centerPaint.color = LCD_BRIGHT
-        centerPaint.textSize = g.r * 0.40f
+        val over = speedLimitKmh != null && kmh > speedLimitKmh + SPEED_OVER_TOL
+
+        // Posted-limit marker on the scale, just inside the ticks. Amber
+        // normally; the dot and its glow flare red once the limit is
+        // exceeded — a glanceable "you're speeding" cue on the dial.
+        if (speedLimitKmh != null) {
+            val frac = speedFraction(speedLimitKmh.toDouble())
+            val ang = Math.toRadians((START_DEG + SWEEP_DEG * frac).toDouble())
+            val dx = cos(ang).toFloat()
+            val dy = sin(ang).toFloat()
+            val rr = g.r * 0.90f
+            val dotX = g.cx + rr * dx
+            val dotY = g.cy + rr * dy
+            val dotColor = if (over) NORTH_RED else LIMIT_DOT
+            fillPaint.color = fade(dotColor, if (over) 0.55f else 0.28f)
+            canvas.drawCircle(dotX, dotY, g.r * 0.12f, fillPaint)
+            fillPaint.color = dotColor
+            canvas.drawCircle(dotX, dotY, g.r * 0.055f, fillPaint)
+        }
+
+        // Big speed digit — fixed 3-digit width with leading zeros so the
+        // readout never shifts as the speed crosses 9→10→100. Turns red
+        // when over the posted limit.
+        centerPaint.color = if (over) NORTH_RED else LCD_BRIGHT
+        centerPaint.textSize = g.r * 0.38f
         centerPaint.isFakeBoldText = true
-        // Fixed 3-digit width with leading zeros so the readout never
-        // shifts as the speed crosses 9→10→100; monospace keeps each
-        // glyph the same width too.
         val digit = if (loc != null && loc.hasSpeed())
             "%03d".format(Locale.ROOT, kmh.toInt().coerceIn(0, 999)) else "———"
-        canvas.drawText(digit, g.cx, g.cy + g.r * 0.52f, centerPaint)
+        canvas.drawText(digit, g.cx, g.cy + g.r * 0.40f, centerPaint)
         centerPaint.isFakeBoldText = false
-        if (loc != null && loc.hasSpeedAccuracy()) {
-            centerPaint.color = ACCURACY_GREY
-            centerPaint.textSize = g.r * 0.13f
-            canvas.drawText(
-                "± %.1f km/h".format(Locale.ROOT, loc.speedAccuracyMetersPerSecond * 3.6f),
-                g.cx,
-                g.cy + g.r * 0.70f,
-                centerPaint,
-            )
-        }
+
+        // Posted-limit roundel at the dial's bottom centre (EU sign),
+        // always present — a muted dash when no limit is known.
+        drawLimitSign(canvas, g.cx, g.cy + g.r * 0.74f, g.r * 0.18f, speedLimitKmh)
+    }
+
+    /** EU-style posted-limit roundel — white disc, red ring, black
+     *  number. Grey dash when the limit is unknown. */
+    private fun drawLimitSign(canvas: Canvas, cx: Float, cy: Float, radius: Float, limitKmh: Int?) {
+        val known = limitKmh != null
+        fillPaint.color = Color.WHITE
+        canvas.drawCircle(cx, cy, radius, fillPaint)
+        ringPaint.color = if (known) SIGN_RED else ACCURACY_GREY
+        ringPaint.strokeWidth = radius * 0.22f
+        canvas.drawCircle(cx, cy, radius * 0.86f, ringPaint)
+        val txt = limitKmh?.toString() ?: "–"
+        centerPaint.color = if (known) Color.BLACK else ACCURACY_GREY
+        centerPaint.isFakeBoldText = true
+        centerPaint.textSize = if (txt.length >= 3) radius * 0.78f else radius * 1.0f
+        canvas.drawText(txt, cx, cy + centerPaint.textSize * 0.36f, centerPaint)
+        centerPaint.isFakeBoldText = false
     }
 
     /** Phone gauge's piecewise scale: 60% of sweep to the pivot. */
@@ -606,6 +635,9 @@ class CarInstruments {
         const val SPEED_MAX = 180
         const val SPEED_PIVOT = 100.0
         val SPEED_ACCENTS = setOf(30, 50, 70, 90, 120)
+        /** Small tolerance (km/h) before flagging over-limit, to absorb
+         *  GNSS speed jitter. */
+        const val SPEED_OVER_TOL = 1.0
 
         const val KW_MIN = -100.0
         const val KW_MAX = 240.0
@@ -630,6 +662,10 @@ class CarInstruments {
         const val LCD_UNIT = 0xFF7FCCFF.toInt()
         const val ACCURACY_GREY = 0xFF8AA0AA.toInt()
         const val NORTH_RED = 0xFFEF5350.toInt()
+        /** Posted-limit marker dot (amber until the limit is exceeded). */
+        const val LIMIT_DOT = 0xFFFFC107.toInt()
+        /** EU speed-limit sign ring. */
+        const val SIGN_RED = 0xFFD32F2F.toInt()
         const val REGEN_BLUE = 0xFF35B0E6.toInt()
         const val ECO_GREEN = 0xFF35B047.toInt()
         const val SOC_AMBER = 0xFFF9A825.toInt()
