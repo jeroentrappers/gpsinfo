@@ -879,4 +879,5 @@
     <string name="persona_ham">Funkamateur / SOTA</string>
     <string name="persona_motorsport">Motorsport</string>
     <string name="persona_custom">Einfach GPS-Kram</string>
+    <string name="drive_destination">Ziel</string>
 </resources>

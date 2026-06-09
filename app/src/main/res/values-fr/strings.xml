@@ -881,4 +881,5 @@
     <string name="persona_ham">Radioamateur / SOTA</string>
     <string name="persona_motorsport">Sport automobile</string>
     <string name="persona_custom">Juste du GPS</string>
+    <string name="drive_destination">Destination</string>
 </resources>

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.ExploreOff
 import androidx.compose.material.icons.outlined.LocationSearching
 import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
@@ -53,6 +54,7 @@ import be.appmire.gpsinfo.data.nav.MapLibreStyle
 import be.appmire.gpsinfo.data.nav.OfflineMapRepository
 import kotlinx.coroutines.launch
 import be.appmire.gpsinfo.data.model.FixStatus
+import be.appmire.gpsinfo.ui.activity.DetailLevel
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import be.appmire.gpsinfo.util.UnitConverter
 import be.appmire.gpsinfo.util.lengthUnitLabel
@@ -77,8 +79,15 @@ import java.util.Locale
 fun LiveMapScreen(
     vm: DashboardViewModel,
     onBack: () -> Unit,
-    onShowSimple: (() -> Unit)? = null,
+    /** Open the destination picker (search / saved places). */
+    onOpenDestination: (() -> Unit)? = null,
+    /** Drive & Navigate detail level: Simple shows just speed + guidance,
+     *  Pro adds heading/altitude and the GPS fix/accuracy/sats bar. */
+    detailLevel: DetailLevel = DetailLevel.PRO,
+    /** Flip the detail level (Simple ⇄ Pro) in place. */
+    onToggleDetail: (() -> Unit)? = null,
 ) {
+    val pro = detailLevel == DetailLevel.PRO
     val state by vm.state.collectAsStateWithLifecycle()
     val recording by vm.recordingState.collectAsStateWithLifecycle()
     val navigationTarget by vm.navigationTarget.collectAsStateWithLifecycle()
@@ -138,9 +147,21 @@ fun LiveMapScreen(
                     }
                 },
                 actions = {
-                    if (onShowSimple != null) {
-                        androidx.compose.material3.TextButton(onClick = onShowSimple) {
-                            Text(stringResource(R.string.detail_simple))
+                    if (onOpenDestination != null) {
+                        IconButton(onClick = onOpenDestination) {
+                            Icon(
+                                Icons.Outlined.Search,
+                                contentDescription = stringResource(R.string.drive_destination),
+                            )
+                        }
+                    }
+                    if (onToggleDetail != null) {
+                        androidx.compose.material3.TextButton(onClick = onToggleDetail) {
+                            Text(
+                                stringResource(
+                                    if (pro) R.string.detail_simple else R.string.detail_detailed
+                                )
+                            )
                         }
                     }
                 },
@@ -182,6 +203,9 @@ fun LiveMapScreen(
                 gpsBearingDeg = gpsBearing,
                 altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
                 unit = unit,
+                // Simple: just the speed. Pro: + heading, altitude and
+                // the rolling-average cross-check.
+                compact = !pro,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(12.dp),
@@ -207,12 +231,15 @@ fun LiveMapScreen(
                         onStop = { vm.clearNavigation() },
                     )
                 }
-                BottomOverlay(
-                    fix = state.gnss.fix,
-                    accuracyMeters = loc?.takeIf { it.hasAccuracy() }?.accuracy,
-                    satsInUse = state.gnss.satellitesInUse,
-                    unit = unit,
-                )
+                // Detailed GPS readout — Pro only.
+                if (pro) {
+                    BottomOverlay(
+                        fix = state.gnss.fix,
+                        accuracyMeters = loc?.takeIf { it.hasAccuracy() }?.accuracy,
+                        satsInUse = state.gnss.satellitesInUse,
+                        unit = unit,
+                    )
+                }
             }
 
             // Right-side stacked controls, each captioned so the icons
@@ -374,6 +401,8 @@ private fun TopOverlay(
     altMeters: Double?,
     unit: UnitSystem,
     modifier: Modifier = Modifier,
+    /** Simple mode — show only the speed, hide heading/altitude. */
+    compact: Boolean = false,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -390,22 +419,24 @@ private fun TopOverlay(
         ) {
             SpeedStat(
                 liveKmh = speedKmh,
-                avgKmh = rollingAvgKmh,
+                avgKmh = if (compact) null else rollingAvgKmh,
                 windowSec = rollingWindowSec,
                 unit = unit,
             )
-            Stat(
-                label = stringResource(R.string.metric_heading),
-                value = gpsBearingDeg?.let { "%03d".format(Locale.ROOT, it.toInt()) } ?: "—",
-                unit = "°T",
-            )
-            Stat(
-                label = stringResource(R.string.metric_altitude),
-                value = altMeters?.let {
-                    "%d".format(Locale.ROOT, UnitConverter.lengthFromMeters(it, unit).toInt())
-                } ?: "—",
-                unit = lengthUnitLabel(unit),
-            )
+            if (!compact) {
+                Stat(
+                    label = stringResource(R.string.metric_heading),
+                    value = gpsBearingDeg?.let { "%03d".format(Locale.ROOT, it.toInt()) } ?: "—",
+                    unit = "°T",
+                )
+                Stat(
+                    label = stringResource(R.string.metric_altitude),
+                    value = altMeters?.let {
+                        "%d".format(Locale.ROOT, UnitConverter.lengthFromMeters(it, unit).toInt())
+                    } ?: "—",
+                    unit = lengthUnitLabel(unit),
+                )
+            }
         }
     }
 }

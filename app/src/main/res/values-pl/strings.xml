@@ -873,4 +873,5 @@
     <string name="persona_ham">Krótkofalowiec / SOTA</string>
     <string name="persona_motorsport">Sporty motorowe</string>
     <string name="persona_custom">Tylko GPS</string>
+    <string name="drive_destination">Cel</string>
 </resources>

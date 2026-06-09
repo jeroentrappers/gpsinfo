@@ -96,8 +96,9 @@ private fun routeForActivity(
 ): String {
     val simple = detail == be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
     return when (a) {
-        be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE ->
-            if (simple) Routes.NavPicker else Routes.LiveMap
+        // Drive & Navigate is always the map; Simple/Pro is an in-screen
+        // info-density toggle (not a separate screen).
+        be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE -> Routes.LiveMap
         be.appmire.gpsinfo.ui.activity.Activity.TRACK_TRAIN ->
             if (simple) Routes.TrackSimple else Routes.Dashboard
         be.appmire.gpsinfo.ui.activity.Activity.EXPLORE_ORIENT ->
@@ -351,15 +352,6 @@ class MainActivity : ComponentActivity() {
                                         )
                                     nav.popBackStack()
                                 },
-                                onShowDetailed = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.PRO,
-                                    )
-                                    nav.navigate(Routes.LiveMap) {
-                                        popUpTo(Routes.NavPicker) { inclusive = true }
-                                    }
-                                },
                             )
                         }
                         composable(Routes.Trails) {
@@ -516,17 +508,22 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Routes.LiveMap) {
+                            val detail by vm.detailLevels.collectAsStateWithLifecycle()
+                            val driveDetail = detail[
+                                be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE
+                            ] ?: be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
                             be.appmire.gpsinfo.ui.livemap.LiveMapScreen(
                                 vm = vm,
                                 onBack = { nav.popBackStack() },
-                                onShowSimple = {
+                                onOpenDestination = { nav.navigate(Routes.NavPicker) },
+                                detailLevel = driveDetail,
+                                onToggleDetail = {
                                     vm.setActivityDetail(
                                         be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE,
+                                        if (driveDetail == be.appmire.gpsinfo.ui.activity.DetailLevel.PRO)
+                                            be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
+                                        else be.appmire.gpsinfo.ui.activity.DetailLevel.PRO,
                                     )
-                                    nav.navigate(Routes.NavPicker) {
-                                        popUpTo(Routes.LiveMap) { inclusive = true }
-                                    }
                                 },
                             )
                         }
