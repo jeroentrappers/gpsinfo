@@ -832,4 +832,13 @@
     <string name="persona_custom">Just GPS stuff</string>
     <string name="action_close">Close</string>
     <string name="drive_destination">Destination</string>
+    <!-- Spoken navigation guidance (VoiceGuide) -->
+    <string name="voice_route_computed">Route computed. %1$s to destination.</string>
+    <string name="voice_recalculated">Route recalculated.</string>
+    <string name="voice_arrived">You have arrived.</string>
+    <string name="voice_in_distance">In %1$s, %2$s</string>
+    <string name="voice_dist_meters">%1$d metres</string>
+    <string name="voice_dist_kilometers">%1$s kilometres</string>
+    <string name="voice_dist_feet">%1$d feet</string>
+    <string name="voice_dist_miles">%1$s miles</string>
 </resources>

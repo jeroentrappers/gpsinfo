@@ -878,4 +878,13 @@
     <string name="persona_motorsport">Motorsport</string>
     <string name="persona_custom">Jen věci kolem GPS</string>
     <string name="drive_destination">Cíl</string>
+    <!-- Spoken navigation guidance (VoiceGuide) -->
+    <string name="voice_route_computed">Trasa vypočítána. %1$s do cíle.</string>
+    <string name="voice_recalculated">Trasa přepočítána.</string>
+    <string name="voice_arrived">Dorazili jste do cíle.</string>
+    <string name="voice_in_distance">Za %1$s, %2$s</string>
+    <string name="voice_dist_meters">%1$d metrů</string>
+    <string name="voice_dist_kilometers">%1$s kilometrů</string>
+    <string name="voice_dist_feet">%1$d stop</string>
+    <string name="voice_dist_miles">%1$s mil</string>
 </resources>

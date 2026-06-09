@@ -886,4 +886,13 @@
     <string name="persona_motorsport">モータースポーツ</string>
     <string name="persona_custom">GPS のことだけ</string>
     <string name="drive_destination">目的地</string>
+    <!-- Spoken navigation guidance (VoiceGuide) -->
+    <string name="voice_route_computed">ルートを計算しました。目的地まで%1$s。</string>
+    <string name="voice_recalculated">ルートを再計算しました。</string>
+    <string name="voice_arrived">目的地に到着しました。</string>
+    <string name="voice_in_distance">%1$s先、%2$s</string>
+    <string name="voice_dist_meters">%1$dメートル</string>
+    <string name="voice_dist_kilometers">%1$sキロメートル</string>
+    <string name="voice_dist_feet">%1$dフィート</string>
+    <string name="voice_dist_miles">%1$sマイル</string>
 </resources>

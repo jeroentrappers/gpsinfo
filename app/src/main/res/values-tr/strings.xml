@@ -808,4 +808,13 @@
     <string name="persona_motorsport">Motor sporu</string>
     <string name="persona_custom">Sadece GPS işleri</string>
     <string name="drive_destination">Hedef</string>
+    <!-- Spoken navigation guidance (VoiceGuide) -->
+    <string name="voice_route_computed">Rota hesaplandı. Hedefe %1$s.</string>
+    <string name="voice_recalculated">Rota yeniden hesaplandı.</string>
+    <string name="voice_arrived">Hedefe ulaştınız.</string>
+    <string name="voice_in_distance">%1$s sonra, %2$s</string>
+    <string name="voice_dist_meters">%1$d metre</string>
+    <string name="voice_dist_kilometers">%1$s kilometre</string>
+    <string name="voice_dist_feet">%1$d fit</string>
+    <string name="voice_dist_miles">%1$s mil</string>
 </resources>

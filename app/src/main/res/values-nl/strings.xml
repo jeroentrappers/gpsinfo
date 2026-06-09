@@ -882,4 +882,13 @@
     <string name="persona_motorsport">Motorsport</string>
     <string name="persona_custom">Gewoon GPS-dingen</string>
     <string name="drive_destination">Bestemming</string>
+    <!-- Spoken navigation guidance (VoiceGuide) -->
+    <string name="voice_route_computed">Route berekend. %1$s tot bestemming.</string>
+    <string name="voice_recalculated">Route herberekend.</string>
+    <string name="voice_arrived">U bent gearriveerd.</string>
+    <string name="voice_in_distance">Over %1$s, %2$s</string>
+    <string name="voice_dist_meters">%1$d meter</string>
+    <string name="voice_dist_kilometers">%1$s kilometer</string>
+    <string name="voice_dist_feet">%1$d voet</string>
+    <string name="voice_dist_miles">%1$s mijl</string>
 </resources>

@@ -878,4 +878,13 @@
     <string name="persona_motorsport">Automobilismo</string>
     <string name="persona_custom">Só coisas de GPS</string>
     <string name="drive_destination">Destino</string>
+    <!-- Spoken navigation guidance (VoiceGuide) -->
+    <string name="voice_route_computed">Rota calculada. %1$s até o destino.</string>
+    <string name="voice_recalculated">Rota recalculada.</string>
+    <string name="voice_arrived">Você chegou ao destino.</string>
+    <string name="voice_in_distance">Em %1$s, %2$s</string>
+    <string name="voice_dist_meters">%1$d metros</string>
+    <string name="voice_dist_kilometers">%1$s quilômetros</string>
+    <string name="voice_dist_feet">%1$d pés</string>
+    <string name="voice_dist_miles">%1$s milhas</string>
 </resources>

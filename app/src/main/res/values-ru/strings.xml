@@ -880,4 +880,13 @@
     <string name="persona_motorsport">Автоспорт</string>
     <string name="persona_custom">Просто про GPS</string>
     <string name="drive_destination">Пункт назначения</string>
+    <!-- Spoken navigation guidance (VoiceGuide) -->
+    <string name="voice_route_computed">Маршрут построен. %1$s до пункта назначения.</string>
+    <string name="voice_recalculated">Маршрут перестроен.</string>
+    <string name="voice_arrived">Вы прибыли.</string>
+    <string name="voice_in_distance">Через %1$s, %2$s</string>
+    <string name="voice_dist_meters">%1$d метров</string>
+    <string name="voice_dist_kilometers">%1$s километров</string>
+    <string name="voice_dist_feet">%1$d футов</string>
+    <string name="voice_dist_miles">%1$s миль</string>
 </resources>
