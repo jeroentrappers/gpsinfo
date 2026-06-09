@@ -110,7 +110,13 @@ platform :android do
       # status-based selection promoted the stale completed one.
       release_status: "completed",
       skip_upload_apk: true,
-      skip_upload_screenshots: false,
+      # Listing screenshots/images are persistent on the Console and don't
+      # change per release; re-uploading them every deploy added a flaky
+      # step that 500'd from the Play API (2026-06-09) and abandoned the
+      # whole edit. Manage screenshots out-of-band via the `metadata_only`
+      # lane; deploys still push the AAB + changelog + text metadata.
+      skip_upload_screenshots: true,
+      skip_upload_images: true,
       validate_only: false
     )
   end
