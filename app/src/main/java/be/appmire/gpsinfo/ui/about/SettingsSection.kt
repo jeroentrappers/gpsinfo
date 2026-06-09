@@ -55,6 +55,7 @@ fun SettingsSection(
     onOpenWaypoints: () -> Unit = {},
     onOpenStrideCalibration: () -> Unit = {},
     onOpenDashboardEditor: () -> Unit = {},
+    onOpenObdLab: () -> Unit = {},
     nmeaLoggingEnabled: Boolean = false,
     onNmeaLoggingEnabledChange: (Boolean) -> Unit = {},
     nmeaBtBridgeEnabled: Boolean = false,
@@ -104,6 +105,9 @@ fun SettingsSection(
 
             Spacer(Modifier.padding(top = 8.dp))
             CyclingPowerPairRow(onOpenCpPair = onOpenCpPair)
+
+            Spacer(Modifier.padding(top = 8.dp))
+            ObdLabRow(onOpen = onOpenObdLab)
 
             Spacer(Modifier.padding(top = 8.dp))
             SharePositionRow(onOpenSharePosition = onOpenSharePosition)
@@ -464,6 +468,24 @@ private fun CyclingPowerPairRow(onOpenCpPair: () -> Unit) {
     ) {
         Text(
             text = stringResource(R.string.settings_pair_cp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
+private fun ObdLabRow(onOpen: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpen),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.settings_obd_lab),
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,

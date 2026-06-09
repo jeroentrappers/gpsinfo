@@ -887,4 +887,5 @@
     <string name="voice_dist_kilometers">%1$s kilometrů</string>
     <string name="voice_dist_feet">%1$d stop</string>
     <string name="voice_dist_miles">%1$s mil</string>
+    <string name="settings_obd_lab">Laboratoř OBD2</string>
 </resources>

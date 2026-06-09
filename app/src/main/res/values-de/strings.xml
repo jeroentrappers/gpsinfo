@@ -889,4 +889,5 @@
     <string name="voice_dist_kilometers">%1$s Kilometer</string>
     <string name="voice_dist_feet">%1$d Fuß</string>
     <string name="voice_dist_miles">%1$s Meilen</string>
+    <string name="settings_obd_lab">OBD2-Labor</string>
 </resources>

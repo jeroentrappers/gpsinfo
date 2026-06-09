@@ -85,6 +85,7 @@ private object Routes {
     const val ExploreSimple = "explore-simple"
     const val RallySimple = "rally-simple"
     const val TrackSimple = "track-simple"
+    const val ObdLab = "obd-lab"
 }
 
 /** Activity Hub tile → the screen it opens, honouring the per-activity
@@ -457,7 +458,11 @@ class MainActivity : ComponentActivity() {
                                 onOpenWaypoints = { nav.navigate(Routes.Waypoints) },
                                 onOpenStrideCalibration = { nav.navigate(Routes.StrideCalibration) },
                                 onOpenDashboardEditor = { nav.navigate(Routes.DashboardProfileEditor) },
+                                onOpenObdLab = { nav.navigate(Routes.ObdLab) },
                             )
+                        }
+                        composable(Routes.ObdLab) {
+                            be.appmire.gpsinfo.ui.obd.ObdLabScreen(onBack = { nav.popBackStack() })
                         }
                         composable(Routes.HrPair) {
                             HeartRatePairingScreen(
