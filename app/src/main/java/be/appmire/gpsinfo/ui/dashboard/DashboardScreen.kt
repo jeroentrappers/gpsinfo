@@ -146,6 +146,9 @@ fun DashboardScreen(
      *  reached as the "Custom / Everything" and "Track & Train"
      *  activities, so it needs an explicit way back to the selector. */
     onOpenHub: () -> Unit = {},
+    /** Switch to the simple tracker (Track & Train activity Simple
+     *  view). Null hides the entry. */
+    onShowSimple: (() -> Unit)? = null,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val compass by vm.compass.collectAsStateWithLifecycle()
@@ -283,6 +286,7 @@ fun DashboardScreen(
                 isDark = isDark,
                 activeProfileId = activeProfile.id,
                 onOpenHub = { closeDrawer(); onOpenHub() },
+                onShowSimple = onShowSimple?.let { cb -> { closeDrawer(); cb() } },
                 onSelectProfile = { id ->
                     closeDrawer()
                     vm.setDashboardProfile(id)
@@ -827,6 +831,7 @@ private fun DashboardDrawerContent(
     isDark: Boolean,
     activeProfileId: String,
     onOpenHub: () -> Unit,
+    onShowSimple: (() -> Unit)?,
     onSelectProfile: (String) -> Unit,
     onNewWaypoint: () -> Unit,
     onSaveWaypoint: () -> Unit,
@@ -872,6 +877,13 @@ private fun DashboardDrawerContent(
                 icon = Icons.AutoMirrored.Outlined.ArrowBack,
                 onClick = onOpenHub,
             )
+            if (onShowSimple != null) {
+                DrawerItem(
+                    label = stringResource(R.string.drawer_simple_tracker),
+                    icon = Icons.AutoMirrored.Outlined.DirectionsRun,
+                    onClick = onShowSimple,
+                )
+            }
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp))
 

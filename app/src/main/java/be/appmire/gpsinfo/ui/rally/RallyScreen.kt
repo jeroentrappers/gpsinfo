@@ -83,6 +83,7 @@ import kotlinx.coroutines.launch
 fun RallyScreen(
     onBack: () -> Unit,
     onOpenWheelPair: () -> Unit = {},
+    onShowSimple: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val repo = remember { RallyStageRepository(context) }
@@ -107,6 +108,13 @@ fun RallyScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null)
+                    }
+                },
+                actions = {
+                    if (onShowSimple != null) {
+                        androidx.compose.material3.TextButton(onClick = onShowSimple) {
+                            Text(stringResource(R.string.detail_simple))
+                        }
                     }
                 },
             )

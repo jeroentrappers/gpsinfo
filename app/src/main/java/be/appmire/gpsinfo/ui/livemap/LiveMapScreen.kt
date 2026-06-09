@@ -77,6 +77,7 @@ import java.util.Locale
 fun LiveMapScreen(
     vm: DashboardViewModel,
     onBack: () -> Unit,
+    onShowSimple: (() -> Unit)? = null,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val recording by vm.recordingState.collectAsStateWithLifecycle()
@@ -134,6 +135,13 @@ fun LiveMapScreen(
                             Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
                         )
+                    }
+                },
+                actions = {
+                    if (onShowSimple != null) {
+                        androidx.compose.material3.TextButton(onClick = onShowSimple) {
+                            Text(stringResource(R.string.detail_simple))
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

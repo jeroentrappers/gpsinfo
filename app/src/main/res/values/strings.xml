@@ -765,6 +765,7 @@
     <string name="activity_hub_title" tools:ignore="MissingTranslation">What do you want to do?</string>
     <string name="activity_open" tools:ignore="MissingTranslation">Open</string>
     <string name="drawer_activities" tools:ignore="MissingTranslation">Activities</string>
+    <string name="drawer_simple_tracker" tools:ignore="MissingTranslation">Simple tracker</string>
     <string name="persona_picker_title" tools:ignore="MissingTranslation">What will you use GPSinfo for?</string>
     <string name="persona_picker_intro" tools:ignore="MissingTranslation">Pick what fits — you can choose more than one. We\'ll put your activities first; everything stays available.</string>
     <string name="persona_picker_continue" tools:ignore="MissingTranslation">Continue</string>
@@ -776,6 +777,22 @@
     <string name="gps_lab_accuracy" tools:ignore="MissingTranslation">Accuracy ±%1$d m</string>
     <string name="detail_detailed" tools:ignore="MissingTranslation">Detailed</string>
     <string name="detail_simple" tools:ignore="MissingTranslation">Simple</string>
+    <string name="explore_title" tools:ignore="MissingTranslation">Explore &amp; Orient</string>
+    <string name="explore_no_fix" tools:ignore="MissingTranslation">Waiting for GPS…</string>
+    <string name="explore_mark" tools:ignore="MissingTranslation">Mark here</string>
+    <string name="explore_share" tools:ignore="MissingTranslation">Share</string>
+    <string name="rally_simple_target" tools:ignore="MissingTranslation">→ %1$.0f km/h · %2$.2f km</string>
+    <string name="rally_simple_stop" tools:ignore="MissingTranslation">Stop</string>
+    <string name="rally_simple_start" tools:ignore="MissingTranslation">Start</string>
+    <string name="rally_armed" tools:ignore="MissingTranslation">Armed — waiting for the go</string>
+    <string name="rally_simple_idle" tools:ignore="MissingTranslation">No stage armed yet</string>
+    <string name="rally_simple_setup" tools:ignore="MissingTranslation">Set up a stage</string>
+    <string name="track_title" tools:ignore="MissingTranslation">Track &amp; Train</string>
+    <string name="track_distance" tools:ignore="MissingTranslation">Distance</string>
+    <string name="track_time" tools:ignore="MissingTranslation">Time</string>
+    <string name="track_pace" tools:ignore="MissingTranslation">Pace</string>
+    <string name="track_start" tools:ignore="MissingTranslation">Start recording</string>
+    <string name="track_stop" tools:ignore="MissingTranslation">Stop &amp; save</string>
     <string name="activity_why_how" tools:ignore="MissingTranslation">Why and how</string>
     <string name="action_close" tools:ignore="MissingTranslation">Close</string>
 </resources>

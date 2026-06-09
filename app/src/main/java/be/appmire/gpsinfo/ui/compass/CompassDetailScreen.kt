@@ -76,6 +76,7 @@ fun CompassDetailScreen(
     vm: DashboardViewModel,
     onBack: () -> Unit,
     onOpenCalibration: () -> Unit = {},
+    onShowSimple: (() -> Unit)? = null,
 ) {
     val reading by vm.compass.collectAsStateWithLifecycle()
 
@@ -92,6 +93,11 @@ fun CompassDetailScreen(
                     }
                 },
                 actions = {
+                    if (onShowSimple != null) {
+                        androidx.compose.material3.TextButton(onClick = onShowSimple) {
+                            Text(stringResource(R.string.detail_simple))
+                        }
+                    }
                     IconButton(onClick = onOpenCalibration) {
                         Icon(
                             Icons.Outlined.Loop,

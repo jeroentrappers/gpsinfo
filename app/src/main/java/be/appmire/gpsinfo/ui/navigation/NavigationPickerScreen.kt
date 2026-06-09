@@ -78,6 +78,8 @@ fun NavigationPickerScreen(
     /** Optional: start offline turn-by-turn driving to the target
      *  instead of the bearing-style waypoint navigation. */
     onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
+    /** Optional: switch to the full live map (Drive activity Pro view). */
+    onShowDetailed: (() -> Unit)? = null,
 ) {
     var tab by remember { mutableStateOf(0) }
     Scaffold(
@@ -90,6 +92,13 @@ fun NavigationPickerScreen(
                             Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
                         )
+                    }
+                },
+                actions = {
+                    if (onShowDetailed != null) {
+                        androidx.compose.material3.TextButton(onClick = onShowDetailed) {
+                            Text(stringResource(R.string.detail_detailed))
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
