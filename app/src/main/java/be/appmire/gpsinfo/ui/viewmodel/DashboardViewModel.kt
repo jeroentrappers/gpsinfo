@@ -952,6 +952,9 @@ class DashboardViewModel(
                 it.setDashboardProfileId(primary)
                 it.setPinnedActivities(pinned)
                 it.mergeActivityDetailLevels(detailSeed)
+                // Fresh installs went through the picker; they don't need
+                // the upgrade intro.
+                it.setActivityIntroSeen()
             }
             settings.setOnboardingSeen(true)
         }
@@ -980,6 +983,27 @@ class DashboardViewModel(
         viewModelScope.launch {
             (settings as? SettingsRepository)?.setActivityDetailLevel(activity.name, level.name)
         }
+    }
+
+    /** Last activity opened from the Hub (for the Resume shortcut). */
+    val lastActivity: StateFlow<be.appmire.gpsinfo.ui.activity.Activity?> =
+        ((settings as? SettingsRepository)?.lastActivity ?: kotlinx.coroutines.flow.flowOf(null))
+            .map { n -> n?.let { runCatching { be.appmire.gpsinfo.ui.activity.Activity.valueOf(it) }.getOrNull() } }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun setLastActivity(activity: be.appmire.gpsinfo.ui.activity.Activity) {
+        viewModelScope.launch { (settings as? SettingsRepository)?.setLastActivity(activity.name) }
+    }
+
+    /** One-time "new activity view" intro for upgrading users. Defaults
+     *  to true (seen) so it never flashes for fresh installs that went
+     *  through the persona picker. */
+    val activityIntroSeen: StateFlow<Boolean> =
+        ((settings as? SettingsRepository)?.activityIntroSeen ?: kotlinx.coroutines.flow.flowOf(true))
+            .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    fun markActivityIntroSeen() {
+        viewModelScope.launch { (settings as? SettingsRepository)?.setActivityIntroSeen() }
     }
 
     // ---------- Play Store rating nudge ----------

@@ -121,6 +121,12 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
          *  comma-separated (enum names). Absent activities default to
          *  Simple. Seeded from the persona picker. */
         val ActivityDetailLevels = stringPreferencesKey("activity_detail_levels")
+        /** Last activity opened from the Hub (enum name) — for the
+         *  "Resume" shortcut. */
+        val LastActivity = stringPreferencesKey("last_activity")
+        /** Whether the one-time "new activity view" intro has been shown
+         *  to a user upgrading from the old single-dashboard launch. */
+        val ActivityIntroSeen = booleanPreferencesKey("activity_intro_seen")
         /** Serialised card list for the user-customised dashboard
          *  profile. Comma-separated [be.appmire.gpsinfo.data.model.DashboardSection]
          *  enum names. Null when the user hasn't built one yet — the
@@ -363,6 +369,20 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
             cur.putAll(levels)
             prefs[Keys.ActivityDetailLevels] = cur.entries.joinToString(",") { "${it.key}=${it.value}" }
         }
+    }
+
+    val lastActivity: Flow<String?> = context.dataStore.data
+        .map { it[Keys.LastActivity] }
+
+    suspend fun setLastActivity(activity: String) {
+        context.dataStore.edit { it[Keys.LastActivity] = activity }
+    }
+
+    val activityIntroSeen: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.ActivityIntroSeen] ?: false }
+
+    suspend fun setActivityIntroSeen() {
+        context.dataStore.edit { it[Keys.ActivityIntroSeen] = true }
     }
 
     /** Raw serialised list — comma-joined section names. The model

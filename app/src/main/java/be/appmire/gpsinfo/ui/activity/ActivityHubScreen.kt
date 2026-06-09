@@ -4,16 +4,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +28,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,30 +42,28 @@ import androidx.compose.ui.unit.dp
 import be.appmire.gpsinfo.R
 
 /**
- * The Activity Hub — the launch screen. A grid of activity tiles, each
- * a labelled front door (icon + title + one-line "what"); an info action
- * reveals the "why + how". Tapping a tile opens that activity.
- *
- * Phase 1: fixed order, every tile routes into today's screens. Pinning,
- * resume-last and per-activity Simple layouts come later.
+ * The Activity Hub — the launch screen. Persona-pinned activities sit
+ * under "Your activities"; the rest under "More". A Resume shortcut
+ * reopens the last activity, and a one-time intro card greets users
+ * upgrading from the old single-dashboard launch. Tapping a tile opens
+ * the activity; the info action reveals the why/how.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityHubScreen(
     onOpenActivity: (Activity) -> Unit,
     pinned: Set<Activity> = emptySet(),
+    lastActivity: Activity? = null,
+    showIntro: Boolean = false,
+    onDismissIntro: () -> Unit = {},
 ) {
     var info by remember { mutableStateOf<ActivityInfo?>(null) }
-    // Persona-pinned activities float to the top; stable sort keeps the
-    // registry order within each group.
-    val ordered = remember(pinned) {
-        Activities.all.sortedBy { if (it.activity in pinned) 0 else 1 }
-    }
+    val pinnedItems = remember(pinned) { Activities.all.filter { it.activity in pinned } }
+    val restItems = remember(pinned) { Activities.all.filter { it.activity !in pinned } }
+    val resumeItem = lastActivity?.let { a -> Activities.all.firstOrNull { it.activity == a } }
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text(stringResourceSafe()) })
-        },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.activity_hub_title)) }) },
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 168.dp),
@@ -73,12 +74,30 @@ fun ActivityHubScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(ordered, key = { it.activity }) { item ->
-                ActivityTile(
-                    item = item,
-                    onOpen = { onOpenActivity(item.activity) },
-                    onInfo = { info = item },
-                )
+            if (showIntro) {
+                item(span = { GridItemSpan(maxLineSpan) }, key = "intro") {
+                    IntroCard(onDismiss = onDismissIntro)
+                }
+            }
+            if (resumeItem != null) {
+                item(span = { GridItemSpan(maxLineSpan) }, key = "resume") {
+                    ResumeRow(item = resumeItem, onClick = { onOpenActivity(resumeItem.activity) })
+                }
+            }
+
+            if (pinnedItems.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }, key = "h-yours") {
+                    SectionHeader(stringResource(R.string.activity_hub_your))
+                }
+                items(pinnedItems, key = { it.activity }) { item ->
+                    ActivityTile(item, { onOpenActivity(item.activity) }, { info = item })
+                }
+                item(span = { GridItemSpan(maxLineSpan) }, key = "h-more") {
+                    SectionHeader(stringResource(R.string.activity_hub_more))
+                }
+            }
+            items(restItems, key = { it.activity }) { item ->
+                ActivityTile(item, { onOpenActivity(item.activity) }, { info = item })
             }
         }
     }
@@ -101,6 +120,58 @@ fun ActivityHubScreen(
             title = { Text(sel.title) },
             text = { Text(sel.whyHow) },
         )
+    }
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ResumeRow(item: ActivityInfo, onClick: () -> Unit) {
+    Card(onClick = onClick, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(item.icon, contentDescription = null, tint = Color(item.accentArgb))
+            Text(
+                stringResource(R.string.activity_resume, item.title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f).padding(start = 12.dp),
+            )
+            Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+        }
+    }
+}
+
+@Composable
+private fun IntroCard(onDismiss: () -> Unit) {
+    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(R.string.activity_intro_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                stringResource(R.string.activity_intro_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
+                Text(stringResource(R.string.activity_intro_dismiss))
+            }
+        }
     }
 }
 
@@ -151,8 +222,3 @@ private fun ActivityTile(
         }
     }
 }
-
-/** Title for the hub top bar, falling back gracefully if the string is
- *  not yet present in a locale during the localization phase. */
-@Composable
-private fun stringResourceSafe(): String = stringResource(R.string.activity_hub_title)

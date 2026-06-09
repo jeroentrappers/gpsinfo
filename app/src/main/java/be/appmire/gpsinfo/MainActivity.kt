@@ -206,9 +206,15 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = nav, startDestination = Routes.Hub) {
                         composable(Routes.Hub) {
                             val pinned by vm.pinnedActivities.collectAsStateWithLifecycle()
+                            val last by vm.lastActivity.collectAsStateWithLifecycle()
+                            val introSeen by vm.activityIntroSeen.collectAsStateWithLifecycle()
                             be.appmire.gpsinfo.ui.activity.ActivityHubScreen(
                                 pinned = pinned.toSet(),
+                                lastActivity = last,
+                                showIntro = !introSeen,
+                                onDismissIntro = { vm.markActivityIntroSeen() },
                                 onOpenActivity = { activity ->
+                                    vm.setLastActivity(activity)
                                     nav.navigate(routeForActivity(activity, vm.detailLevelOf(activity)))
                                 },
                             )

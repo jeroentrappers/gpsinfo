@@ -794,5 +794,11 @@
     <string name="track_start" tools:ignore="MissingTranslation">Start recording</string>
     <string name="track_stop" tools:ignore="MissingTranslation">Stop &amp; save</string>
     <string name="activity_why_how" tools:ignore="MissingTranslation">Why and how</string>
+    <string name="activity_hub_your" tools:ignore="MissingTranslation">Your activities</string>
+    <string name="activity_hub_more" tools:ignore="MissingTranslation">More</string>
+    <string name="activity_resume" tools:ignore="MissingTranslation">Resume %1$s</string>
+    <string name="activity_intro_title" tools:ignore="MissingTranslation">New: activities</string>
+    <string name="activity_intro_body" tools:ignore="MissingTranslation">GPSinfo is now organised by what you want to do. Pick an activity to dive in; your full dashboard lives under Custom / Everything.</string>
+    <string name="activity_intro_dismiss" tools:ignore="MissingTranslation">Got it</string>
     <string name="action_close" tools:ignore="MissingTranslation">Close</string>
 </resources>
