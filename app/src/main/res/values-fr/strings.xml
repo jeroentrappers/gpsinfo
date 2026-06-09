@@ -808,4 +808,8 @@
     <string name="settings_altitude_smooth">Lisser l\'altitude</string>
     <string name="settings_altitude_smooth_body">Filtre l\'altitude GPS brute par un passe-bas pour supprimer les variations entre échantillons. La valeur affichée suit toujours les vraies montées mais cesse de fluctuer sur un trajet plat.</string>
     <string name="section_gforce">Force G</string>
+    <string name="gforce_lateral">Latéral</string>
+    <string name="gforce_longitudinal">Longitudinal</string>
+    <string name="gforce_vertical">Vertical</string>
+    <string name="gforce_peak">Pic</string>
 </resources>

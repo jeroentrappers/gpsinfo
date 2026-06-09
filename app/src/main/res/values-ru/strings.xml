@@ -806,4 +806,8 @@
     <string name="settings_altitude_smooth">Сглаживать высоту</string>
     <string name="settings_altitude_smooth_body">Пропускать сырую высоту GPS через фильтр нижних частот, чтобы убрать дрожание от выборки к выборке. Показания по-прежнему отслеживают реальные подъёмы, но перестают скакать при ходьбе по ровной местности.</string>
     <string name="section_gforce">Перегрузка</string>
+    <string name="gforce_lateral">Боковое</string>
+    <string name="gforce_longitudinal">Продольное</string>
+    <string name="gforce_vertical">Вертикальное</string>
+    <string name="gforce_peak">Пик</string>
 </resources>

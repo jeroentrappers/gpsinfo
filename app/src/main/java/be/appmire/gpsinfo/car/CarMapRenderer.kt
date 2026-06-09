@@ -17,10 +17,12 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import be.appmire.gpsinfo.data.RecordingState
+import be.appmire.gpsinfo.data.model.GForceSample
 import be.appmire.gpsinfo.data.model.GnssSnapshot
 import be.appmire.gpsinfo.data.rally.RallyState
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.log2
 import kotlin.math.min
 
@@ -89,8 +91,12 @@ class CarMapRenderer(
     private var currentZoom = ZOOM_STANDSTILL
     /** Manual nudge from buttons/pinch on top of the automatic level. */
     private var zoomBias = 0.0
-    /** 2.5D perspective on/off — flipped from the map action strip. */
-    private var tilted = true
+    /** Map view mode, cycled from the map action strip's tilt button:
+     *  flat top-down → 2.5D with flat buildings → 2.5D with 3D buildings. */
+    private var viewMode = MapViewMode.TILTED_FLAT
+    /** Tilt is on for both 2.5D modes; used by the camera pitch and the
+     *  ground-plane marker foreshortening. */
+    private val tilted get() = viewMode != MapViewMode.FLAT
 
     /** Smoothed course-over-ground driving the heading-up rotation. */
     private var smoothedBearingDeg = 0f
@@ -121,6 +127,52 @@ class CarMapRenderer(
 
     fun updatePower(kw: Double?) {
         powerKw = kw
+        scheduleRender()
+    }
+
+    /** Battery state of charge (0..100) and range remaining (km) for the
+     *  energy meter, or null when no source (Car API / OBD2) provides
+     *  them — the readouts then show a dash. */
+    private var batterySocPct: Float? = null
+    private var rangeRemainingKm: Float? = null
+
+    fun updateEnergy(socPercent: Float?, rangeKm: Float?) {
+        batterySocPct = socPercent
+        rangeRemainingKm = rangeKm
+        scheduleRender()
+    }
+
+    /** Remaining distance to the destination (km) while navigating, used
+     *  to estimate range + SOC on arrival. Null when not navigating. */
+    private var navRemainingKm: Double? = null
+
+    fun updateNavProgress(remainingMeters: Double?) {
+        navRemainingKm = remainingMeters?.div(1000.0)
+        scheduleRender()
+    }
+
+    /** Posted speed limit (km/h) for the road being driven, or null —
+     *  shown as a road-sign badge on the map. */
+    private var speedLimitKmh: Int? = null
+
+    fun updateSpeedLimit(kmh: Int?) {
+        if (kmh == speedLimitKmh) return
+        speedLimitKmh = kmh
+        scheduleRender()
+    }
+
+    /** Latest G-force sample + a short fading trail for the G-meter
+     *  dial (bottom-right corner). Fed from the phone's sensor stream,
+     *  sampled down for the car so renders stay glanceable. */
+    private var gForce: GForceSample = GForceSample(0f, 0f, 0f)
+    private val gForceTrail = ArrayDeque<GForceSample>()
+
+    fun updateGForce(sample: GForceSample) {
+        gForce = sample
+        if (gForceTrail.lastOrNull() != sample) {
+            gForceTrail.addLast(sample)
+            while (gForceTrail.size > GFORCE_TRAIL) gForceTrail.removeFirst()
+        }
         scheduleRender()
     }
 
@@ -226,8 +278,13 @@ class CarMapRenderer(
 
     fun zoomOut() = nudgeZoom(-0.5)
 
-    fun toggleTilt() {
-        tilted = !tilted
+    /** Cycle flat → 2.5D flat buildings → 2.5D 3D buildings → flat. */
+    fun cycleViewMode() {
+        viewMode = when (viewMode) {
+            MapViewMode.FLAT -> MapViewMode.TILTED_FLAT
+            MapViewMode.TILTED_FLAT -> MapViewMode.TILTED_3D
+            MapViewMode.TILTED_3D -> MapViewMode.FLAT
+        }
         scheduleRender()
     }
 
@@ -375,42 +432,75 @@ class CarMapRenderer(
         // (see withDerivedMotion) — prefer it over the raw snapshot.
         val loc = lastDrawnLocation ?: snapshot.location
 
-        // Split layout: instrument column on the left, live map on the
-        // rest. The column width is *derived from the height*: three
-        // stacked square housings, each (usable height)/3 tall — the
-        // cluster is exactly as wide as the dials need, no wider.
-        val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
-        val column = visibleArea ?: inset
-        val usableH = (column.bottom.coerceAtMost(h) - column.top).toFloat()
-        val columnW = (usableH / 3f).coerceAtMost(w * MAX_COLUMN_FRACTION)
-        drawInstrumentColumn(canvas, columnW, h, column, loc)
+        // Layout: a 2×2 block of gauges on the LEFT (speed / energy on
+        // top, compass / G-meter below), the live map on the RIGHT. The
+        // map is full-bleed to the right surface edge, so the host's map
+        // action strip (zoom / tilt / pan) and other edge chrome overlay
+        // the MAP rather than the gauges. The gauge block sits inside the
+        // host's safe area vertically so the top strip / bottom dock
+        // don't clip the dials.
+        val safe = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+        val safeLeft = safe.left.toFloat().coerceIn(0f, w.toFloat())
+        val top = safe.top.toFloat().coerceAtLeast(0f)
+        val bottom = safe.bottom.toFloat().coerceAtMost(h.toFloat())
+        val cellH = (bottom - top) / 2f
+        // Two square-ish cells wide, capped so the map keeps ≥ half.
+        val cellW = min(cellH, w * GAUGE_BLOCK_FRACTION / 2f)
+        val blockRight = safeLeft + cellW * 2f
+        drawGaugePanel(canvas, safeLeft, top, cellW, cellH, blockRight, h, loc)
 
-        val mapLeft = columnW
-        val mapW = (w - columnW).toInt()
-
+        val mapLeft = blockRight
+        // Map renders to the true right edge (full bleed under the host
+        // controls); HUD/panels centre on the *visible* map and the OSM
+        // credit pins to the visible right edge, both left of the strip.
+        val visibleRight = safe.right.toFloat().coerceIn(mapLeft, w.toFloat())
+        val mapW = (w - mapLeft).toInt()
         canvas.save()
         canvas.clipRect(mapLeft, 0f, w.toFloat(), h.toFloat())
         if (loc != null) {
             drawVectorMap(canvas, mapLeft, mapW, h, loc, dark)
         } else {
-            drawWaitingForFix(canvas, mapLeft, w, h, dark)
+            drawWaitingForFix(canvas, mapLeft, visibleRight, h, dark)
         }
-        drawHud(canvas, mapLeft, w, h, dark)
-        drawRallyPanel(canvas, mapLeft, w, h, dark)
-        drawNavStatus(canvas, mapLeft, w, h, dark)
+        drawHud(canvas, mapLeft, visibleRight, h, dark)
+        drawRallyPanel(canvas, mapLeft, visibleRight, h, dark)
+        drawNavStatus(canvas, mapLeft, visibleRight, h, dark)
+        drawSpeedLimit(canvas, mapLeft, top, h)
         canvas.restore()
+    }
+
+    /** EU-style speed-limit sign — white disc, red ring, black number —
+     *  in the map's top-left, shown only when the route gives a posted
+     *  limit for the current road. */
+    private fun drawSpeedLimit(canvas: Canvas, mapLeft: Float, top: Float, h: Int) {
+        val kmh = speedLimitKmh ?: return
+        val pad = h * 0.03f
+        val r = h * 0.085f
+        val cx = mapLeft + pad + r
+        val cy = top + pad + r
+        speedSignFillPaint.color = Color.WHITE
+        canvas.drawCircle(cx, cy, r, speedSignFillPaint)
+        speedSignRingPaint.strokeWidth = r * 0.24f
+        canvas.drawCircle(cx, cy, r * 0.88f, speedSignRingPaint)
+        val txt = kmh.toString()
+        hudTextPaint.textAlign = Paint.Align.CENTER
+        hudTextPaint.isFakeBoldText = true
+        hudTextPaint.color = Color.BLACK
+        hudTextPaint.textSize = if (txt.length >= 3) r * 0.82f else r * 1.02f
+        canvas.drawText(txt, cx, cy + hudTextPaint.textSize * 0.35f, hudTextPaint)
+        hudTextPaint.isFakeBoldText = false
     }
 
     /** Pill banner, top-centre of the map, for navigation phases that
      *  have no other on-screen representation. */
-    private fun drawNavStatus(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
+    private fun drawNavStatus(canvas: Canvas, mapLeft: Float, mapRight: Float, h: Int, dark: Boolean) {
         val text = navStatusText ?: return
         // The rally panel owns the same slot while a stage is armed or
         // running — don't fight it.
         if (rally !is RallyState.Idle) return
-        val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+        val inset = stableArea ?: visibleArea ?: Rect(0, 0, mapRight.toInt(), h)
         val pad = h * 0.03f
-        val cx = (mapLeft + w) / 2f
+        val cx = (mapLeft + mapRight) / 2f
         hudTextPaint.textAlign = Paint.Align.CENTER
         hudTextPaint.isFakeBoldText = false
         hudTextPaint.textSize = h * 0.04f
@@ -425,34 +515,57 @@ class CarMapRenderer(
         canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
     }
 
-    /** Left third: speed dial / gimballed compass / energy meter,
-     *  stacked inside the host's stable area (the bottom system rail
-     *  would otherwise eat half the energy dial). The energy needle
-     *  parks at 0 until an OBD2 power source exists — the dial itself
-     *  is the id.dash design. */
-    private fun drawInstrumentColumn(
+    /** The left-hand 2×2 gauge block: speed (top-left), energy
+     *  (top-right), compass (bottom-left), G-meter (bottom-right), each a
+     *  square RetroDial housing on a solid-black panel that runs the full
+     *  surface height. Compass rotates by GPS course (never the
+     *  magnetometer in a car); energy parks at 0 until OBD2 power arrives;
+     *  the G-meter reads the phone's fused accelerometer. */
+    private fun drawGaugePanel(
         canvas: Canvas,
-        columnW: Float,
+        panelLeft: Float,
+        top: Float,
+        cellW: Float,
+        cellH: Float,
+        blockRight: Float,
         h: Int,
-        column: Rect,
         loc: Location?,
     ) {
-        instruments.drawColumnBackground(canvas, columnW, h.toFloat())
-        val top = column.top.toFloat()
-        val bottom = column.bottom.toFloat().coerceAtMost(h.toFloat())
-        val cellH = (bottom - top) / 3f
-        instruments.drawSpeedDial(
-            canvas, RectF(0f, top, columnW, top + cellH), loc,
-        )
+        // Solid-black backing behind the whole grid, edge-to-edge in
+        // height (covers the small left host-inset too).
+        instruments.drawColumnBackground(canvas, 0f, blockRight, h.toFloat())
+        val col0 = panelLeft
+        val col1 = panelLeft + cellW
+        val row1 = top + cellH
+        val row2 = top + cellH * 2f
+        // Left column: speed (top), compass (bottom).
+        instruments.drawSpeedDial(canvas, RectF(col0, top, col0 + cellW, row1), loc)
         instruments.drawCompass(
-            canvas,
-            RectF(0f, top + cellH, columnW, top + 2 * cellH),
-            smoothedBearingDeg,
-            hasBearing,
-            loc,
+            canvas, RectF(col0, row1, col0 + cellW, row2),
+            smoothedBearingDeg, hasBearing, loc,
         )
+        // On-arrival estimates: what's left of the range after the
+        // remaining drive, and SOC scaled by the same ratio. Only when
+        // navigating AND a range is known.
+        val range = rangeRemainingKm
+        val drive = navRemainingKm
+        val arrivalRangeKm: Float?
+        val arrivalSocPct: Float?
+        if (range != null && range > 0f && drive != null) {
+            val left = range - drive.toFloat()
+            arrivalRangeKm = left
+            arrivalSocPct = batterySocPct?.let { (it * (left / range)).coerceIn(0f, it) }
+        } else {
+            arrivalRangeKm = null
+            arrivalSocPct = null
+        }
+        // Right column: energy (top), G-meter (bottom).
         instruments.drawEnergyDial(
-            canvas, RectF(0f, top + 2 * cellH, columnW, bottom), powerKw,
+            canvas, RectF(col1, top, col1 + cellW, row1), powerKw,
+            batterySocPct, rangeRemainingKm, arrivalRangeKm, arrivalSocPct,
+        )
+        instruments.drawGMeter(
+            canvas, RectF(col1, row1, col1 + cellW, row2), gForceTrail.toList(),
         )
     }
 
@@ -479,6 +592,10 @@ class CarMapRenderer(
         val camLon = loc.longitude + panLonOffset
         val bearing = if (hasBearing) smoothedBearingDeg.toDouble() else 0.0
         val pitch = if (tilted) CAR_PITCH_DEG else 0.0
+        // 3D building extrusions only in the dedicated 3D mode; the other
+        // two show flat footprints (the snapshotter hides the
+        // `building-3d` layer).
+        snapshotter.setBuildings3d(viewMode == MapViewMode.TILTED_3D)
         val cam = org.maplibre.android.camera.CameraPosition.Builder()
             .target(org.maplibre.android.geometry.LatLng(camLat, camLon))
             .zoom(currentZoom)
@@ -491,7 +608,7 @@ class CarMapRenderer(
         if (snap == null) {
             // Style/first snapshot still loading — keep the bg, show a
             // hint instead of a blank panel.
-            drawWaitingForFix(canvas, mapLeft, (mapLeft + mapW).toInt(), h, dark)
+            drawWaitingForFix(canvas, mapLeft, mapLeft + mapW, h, dark)
             return
         }
         val bmp = snap.bitmap
@@ -558,7 +675,14 @@ class CarMapRenderer(
 
     /** Vehicle marker at its projected position. Whenever the car is
      *  moving the camera bakes the course into the map bearing
-     *  (heading-up), so the chevron always points up. */
+     *  (heading-up), so the chevron always points up.
+     *
+     *  When the map is tilted (2.5D), the marker is laid onto the ground
+     *  plane: the canvas is foreshortened vertically by the camera pitch
+     *  about the anchor, so the disc reads as an ellipse on the road and
+     *  the chevron rakes toward the horizon — matching the perspective
+     *  instead of floating flat-on. The surrounding disc is drawn
+     *  semi-transparent so the road underneath stays visible. */
     private fun drawProjectedMarker(
         canvas: Canvas,
         snap: org.maplibre.android.snapshotter.MapSnapshot,
@@ -569,6 +693,8 @@ class CarMapRenderer(
         val x = mapLeft + pf.x
         val y = pf.y
         val r = MARKER_RADIUS
+        canvas.save()
+        if (tilted) canvas.scale(1f, PITCH_FORESHORTEN, x, y)
         canvas.drawCircle(x, y, r + 4f, markerRingPaint)
         canvas.drawCircle(x, y, r, markerFillPaint)
         val chevron = Path().apply {
@@ -579,15 +705,16 @@ class CarMapRenderer(
             close()
         }
         canvas.drawPath(chevron, markerChevronPaint)
+        canvas.restore()
     }
 
-    private fun drawWaitingForFix(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
+    private fun drawWaitingForFix(canvas: Canvas, mapLeft: Float, mapRight: Float, h: Int, dark: Boolean) {
         hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
         hudTextPaint.textSize = h * 0.05f
         hudTextPaint.textAlign = Paint.Align.CENTER
         canvas.drawText(
             carContext.getString(be.appmire.gpsinfo.R.string.car_waiting_fix),
-            (mapLeft + w) / 2f,
+            (mapLeft + mapRight) / 2f,
             h / 2f,
             hudTextPaint,
         )
@@ -596,10 +723,10 @@ class CarMapRenderer(
     /** Map-area HUD. Speed/heading/altitude moved to the instrument
      *  column — what remains here is the trip strip (distance,
      *  duration, REC dot) and the OSM attribution. */
-    private fun drawHud(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
-        val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+    private fun drawHud(canvas: Canvas, mapLeft: Float, mapRight: Float, h: Int, dark: Boolean) {
+        val inset = stableArea ?: visibleArea ?: Rect(0, 0, mapRight.toInt(), h)
         val pad = h * 0.03f
-        val unit = min(w - mapLeft.toInt(), h) * 0.13f
+        val unit = min((mapRight - mapLeft).toInt(), h) * 0.13f
 
         // ── Trip strip, bottom-left of the map ──
         val rec = recording as? RecordingState.Recording
@@ -632,14 +759,18 @@ class CarMapRenderer(
             canvas.drawCircle(sx + tw + recDotSpace / 2, sy - unit * 0.10f, unit * 0.13f, recDotPaint)
         }
 
-        // ── OSM attribution, bottom-right (tile-policy requirement) ──
+        // ── OSM attribution, bottom-right of the map (tile-policy
+        // requirement). Tiny, pinned 2px off the map's right edge and
+        // the visible bottom (inset.bottom — the surface extends under
+        // the host's dock, so h would hide it). Present and legible,
+        // but out of the way. ──
         hudTextPaint.textAlign = Paint.Align.RIGHT
-        hudTextPaint.textSize = h * 0.022f
+        hudTextPaint.textSize = h * 0.013f
         hudTextPaint.color = if (dark) HUD_MUTED_DARK else HUD_MUTED_LIGHT
         canvas.drawText(
             "© OpenStreetMap",
-            inset.right - pad,
-            inset.bottom - pad,
+            mapRight - 2f,
+            inset.bottom - 2f,
             hudTextPaint,
         )
     }
@@ -647,10 +778,10 @@ class CarMapRenderer(
     /** Regularity-test panel, top-centre: the early/late delta is THE
      *  number during an RT, so it gets the biggest type on the screen.
      *  Armed shows a one-line "waiting for the marshal" banner. */
-    private fun drawRallyPanel(canvas: Canvas, mapLeft: Float, w: Int, h: Int, dark: Boolean) {
-        val inset = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+    private fun drawRallyPanel(canvas: Canvas, mapLeft: Float, mapRight: Float, h: Int, dark: Boolean) {
+        val inset = stableArea ?: visibleArea ?: Rect(0, 0, mapRight.toInt(), h)
         val pad = h * 0.03f
-        val mapCx = (mapLeft + w) / 2f
+        val mapCx = (mapLeft + mapRight) / 2f
         when (val r = rally) {
             is RallyState.Running -> {
                 val delta = r.deltaSeconds
@@ -757,6 +888,11 @@ class CarMapRenderer(
     }
     private val hudTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val recDotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val speedSignFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val speedSignRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = 0xFFD32F2F.toInt()
+    }
     /** FILTER_BITMAP so the snapshot bitmap blits smoothly. */
     private val layerPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val darkScrimPaint = Paint().apply { color = TILE_DARK_SCRIM }
@@ -780,9 +916,17 @@ class CarMapRenderer(
          *  driving-mode tilt cap is 60°; 50 reads well without
          *  over-flattening the foreground. */
         const val CAR_PITCH_DEG = 50.0
-        /** Hard cap on the instrument column: even on squat screens
-         *  the map keeps at least 60% of the width. */
-        const val MAX_COLUMN_FRACTION = 0.4f
+        /** Vertical squash applied to the vehicle marker when tilted, so
+         *  it lies on the ground plane instead of facing the camera —
+         *  cos of the camera pitch. */
+        val PITCH_FORESHORTEN = cos(Math.toRadians(CAR_PITCH_DEG)).toFloat()
+        /** Cap on the left gauge block (2 columns) as a fraction of the
+         *  surface width — keeps the map at least half the screen. On
+         *  wide car screens the square cells are narrower than this. */
+        const val GAUGE_BLOCK_FRACTION = 0.5f
+        /** Recent G-force samples kept for the corner G-meter trail. At
+         *  the car sample rate (~5 Hz) this is a few seconds of history. */
+        const val GFORCE_TRAIL = 24
 
         /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
          *  far off the route. */
@@ -809,7 +953,8 @@ class CarMapRenderer(
         // casing — unmistakable against both trail cyan and OSM roads.
         const val NAV_ROUTE_COLOR = 0xFFE67635.toInt()
         const val NAV_ROUTE_CASING = 0xCCFFFFFF.toInt()
-        const val MARKER_FILL = 0xFF1A73E8.toInt()
+        // Semi-transparent so the road under the marker stays visible.
+        const val MARKER_FILL = 0x99_1A73E8.toInt()
         const val BUBBLE_DARK = 0xE61E242C.toInt()
         const val BUBBLE_LIGHT = 0xF2FFFFFF.toInt()
         const val BUBBLE_STROKE = 0x33808080
@@ -821,4 +966,14 @@ class CarMapRenderer(
         const val RALLY_NEAR = 0xFFF9A825.toInt()
         const val RALLY_OFF = 0xFFE53935.toInt()
     }
+}
+
+/** Map presentation, cycled by the tilt button. */
+enum class MapViewMode {
+    /** Top-down, no pitch — buildings read as flat footprints. */
+    FLAT,
+    /** 2.5D perspective, flat building footprints (no extrusion). */
+    TILTED_FLAT,
+    /** 2.5D perspective with extruded 3D buildings. */
+    TILTED_3D,
 }

@@ -709,7 +709,15 @@ class DashboardViewModel(
      *  from the game-rate accelerometer) so only screens showing it pay
      *  the cost. WhileSubscribed stops the sensor when nothing observes. */
     val gForce: StateFlow<be.appmire.gpsinfo.data.model.GForceSample> =
-        sensorRepo.gForceStream()
+        sensorRepo.gForceStream(
+            currentBearingDeg = {
+                // Only trust GPS course above a walking pace — below
+                // that it's noise; the stream holds the last good value.
+                locationStateFlow.value
+                    ?.takeIf { it.hasBearing() && it.hasSpeed() && it.speed > 1.5f }
+                    ?.bearing
+            },
+        )
             .sample(33L)
             .stateIn(
                 viewModelScope,

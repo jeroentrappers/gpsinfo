@@ -140,6 +140,7 @@ fun DashboardScreen(
     onOpenWaypoints: () -> Unit = {},
     onOpenGhost: () -> Unit = {},
     onOpenRally: () -> Unit = {},
+    onOpenGForce: () -> Unit = {},
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val compass by vm.compass.collectAsStateWithLifecycle()
@@ -596,7 +597,7 @@ fun DashboardScreen(
             }
             profileBuilders[be.appmire.gpsinfo.data.model.DashboardSection.GForce] =
                 DashboardSection(SectionKeys.GForce) {
-                GForceCard(sample = gForce)
+                GForceCard(sample = gForce, onClick = onOpenGForce)
             }
             profileBuilders[be.appmire.gpsinfo.data.model.DashboardSection.World] =
                 DashboardSection(SectionKeys.World) {

@@ -39,11 +39,19 @@ interface SensorDataSource {
     fun magnetometerStream(): Flow<MagnetometerSample>
 
     /**
-     * Linear-acceleration samples (gravity removed) mapped to G forces
-     * in the device frame, for the G-meter dashboard card. Lightly
-     * low-pass filtered. Emits at the game sensor rate while collected.
+     * Vehicle-frame G forces for the G-meter, gravity removed. The
+     * linear-acceleration vector is rotated into the world frame via
+     * the rotation-vector sensor (so the result is independent of how
+     * the phone is mounted), then the horizontal component is split
+     * into longitudinal (along [currentBearingDeg]) and lateral; the
+     * up component is the vertical G. [currentBearingDeg] is the GPS
+     * course over ground in degrees from north, or null when too slow
+     * to be reliable (the last good heading is then held). Lightly
+     * low-pass filtered; emits at the game sensor rate while collected.
      */
-    fun gForceStream(): Flow<be.appmire.gpsinfo.data.model.GForceSample>
+    fun gForceStream(
+        currentBearingDeg: () -> Float?,
+    ): Flow<be.appmire.gpsinfo.data.model.GForceSample>
 }
 
 /**

@@ -164,7 +164,9 @@ internal class FakeSensorDataSource : SensorDataSource {
         return flow.asStateFlow()
     }
 
-    override fun gForceStream(): Flow<be.appmire.gpsinfo.data.model.GForceSample> =
+    override fun gForceStream(
+        currentBearingDeg: () -> Float?,
+    ): Flow<be.appmire.gpsinfo.data.model.GForceSample> =
         MutableStateFlow(be.appmire.gpsinfo.data.model.GForceSample(0.18f, -0.32f, 0.05f))
             .asStateFlow()
 }

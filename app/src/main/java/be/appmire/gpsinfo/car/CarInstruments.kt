@@ -2,15 +2,19 @@ package be.appmire.gpsinfo.car
 
 import android.graphics.Camera
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.location.Location
+import be.appmire.gpsinfo.data.model.GForceSample
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.ln
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -44,10 +48,11 @@ class CarInstruments {
     private val camera = Camera()
     private val tiltMatrix = Matrix()
 
-    /** Solid-black column backdrop behind the three housings. */
-    fun drawColumnBackground(canvas: Canvas, columnW: Float, h: Float) {
+    /** Solid-black column backdrop behind a stacked pair of housings —
+     *  [left] is the column's left edge, [width] its width. */
+    fun drawColumnBackground(canvas: Canvas, left: Float, width: Float, h: Float) {
         fillPaint.color = COLUMN_BLACK
-        canvas.drawRect(0f, 0f, columnW, h, fillPaint)
+        canvas.drawRect(left, 0f, left + width, h, fillPaint)
     }
 
     // ── Speed dial ─────────────────────────────────────────────────
@@ -199,7 +204,25 @@ class CarInstruments {
 
     // ── Energy meter (id.dash power dial) ──────────────────────────
 
-    fun drawEnergyDial(canvas: Canvas, cell: RectF, kw: Double?) {
+    /**
+     * Energy meter. The kW power needle + readout stay the headline
+     * (fed by OBD2 when connected). Below it, a battery block: state of
+     * charge and range remaining, plus — while navigating — the
+     * estimated range and SOC *on arrival* (range minus the remaining
+     * drive, SOC scaled by the same ratio). Any value that's unknown
+     * (no Car API / OBD2 source) shows a dash. The lower-centre of the
+     * dial is the gauge's open gap (the 240° sweep leaves the bottom
+     * clear), so the stacked readouts never collide with the scale.
+     */
+    fun drawEnergyDial(
+        canvas: Canvas,
+        cell: RectF,
+        kw: Double?,
+        socPercent: Float?,
+        rangeKm: Float?,
+        arrivalRangeKm: Float?,
+        arrivalSocPercent: Float?,
+    ) {
         val g = housing(canvas, cell)
 
         // Coloured zones as thin arcs at the dial-face rim (0.96·r,
@@ -240,22 +263,158 @@ class CarInstruments {
 
         drawNeedle(canvas, g, START_DEG + SWEEP_DEG * powerFraction(kw ?: 0.0))
 
+        // Headline kW readout (the dial's primary value). Sign + fixed
+        // 3-digit width so it stays put across −100…240 kW.
         centerPaint.color = if (kw != null) LCD_BRIGHT else ACCURACY_GREY
-        centerPaint.textSize = g.r * 0.32f
+        centerPaint.textSize = g.r * 0.30f
         centerPaint.isFakeBoldText = true
-        // Sign + fixed 3-digit width so the needle's readout stays put
-        // across the −100…240 kW range (e.g. "+045", "-100").
         canvas.drawText(
-            kw?.let { "%+04d".format(Locale.ROOT, it.toInt().coerceIn(-999, 999)) } ?: "————",
+            kw?.let { "%+04d".format(Locale.ROOT, it.toInt().coerceIn(-999, 999)) } ?: "———",
             g.cx,
-            g.cy + g.r * 0.52f,
+            g.cy + g.r * 0.44f,
             centerPaint,
         )
         centerPaint.isFakeBoldText = false
+
+        // Battery block, in the open lower gap of the dial.
+        // Line 1: state of charge (coloured by level) · range remaining.
+        val socTxt = socPercent?.let { "${it.roundToInt()}%" } ?: "–%"
+        val rangeTxt = rangeKm?.let { "${it.roundToInt()} km" } ?: "– km"
+        drawTwoTone(
+            canvas, g.cx, g.cy + g.r * 0.66f, g.r * 0.155f,
+            left = socTxt,
+            leftColor = socPercent?.let { socColor(it) } ?: ACCURACY_GREY,
+            right = rangeTxt,
+            rightColor = if (rangeKm != null) LCD_UNIT else ACCURACY_GREY,
+        )
+        // Line 2 (only while navigating): estimated arrival range · SOC.
+        if (arrivalRangeKm != null || arrivalSocPercent != null) {
+            val aRange = arrivalRangeKm?.let { "${it.roundToInt()} km" } ?: "– km"
+            val aSoc = arrivalSocPercent?.let { "${it.roundToInt()}%" } ?: "–%"
+            // Won't-make-it: negative arrival range or near-empty SOC.
+            val short = (arrivalRangeKm != null && arrivalRangeKm < 0f) ||
+                (arrivalSocPercent != null && arrivalSocPercent < 5f)
+            val arrColor = if (short) NORTH_RED else LCD_UNIT
+            drawTwoTone(
+                canvas, g.cx, g.cy + g.r * 0.83f, g.r * 0.125f,
+                left = "→ $aRange",
+                leftColor = arrColor,
+                right = aSoc,
+                rightColor = arrColor,
+            )
+        }
+    }
+
+    /** Two-colour, single line, centred about [cx] at [baselineY]. */
+    private fun drawTwoTone(
+        canvas: Canvas,
+        cx: Float,
+        baselineY: Float,
+        textSize: Float,
+        left: String,
+        leftColor: Int,
+        right: String,
+        rightColor: Int,
+    ) {
+        centerPaint.textSize = textSize
+        centerPaint.isFakeBoldText = true
+        centerPaint.textAlign = Paint.Align.LEFT
+        val wl = centerPaint.measureText(left)
+        val gap = centerPaint.measureText("  ")
+        val wr = centerPaint.measureText(right)
+        var x = cx - (wl + gap + wr) / 2f
+        centerPaint.color = leftColor
+        canvas.drawText(left, x, baselineY, centerPaint)
+        x += wl + gap
+        centerPaint.color = rightColor
+        canvas.drawText(right, x, baselineY, centerPaint)
+        centerPaint.textAlign = Paint.Align.CENTER
+        centerPaint.isFakeBoldText = false
+    }
+
+    /** SOC colour ramp: green healthy, amber low, red critical. */
+    private fun socColor(pct: Float): Int = when {
+        pct >= 50f -> ECO_GREEN
+        pct >= 20f -> SOC_AMBER
+        else -> NORTH_RED
     }
 
     private fun powerFraction(kw: Double): Float =
         ((kw.coerceIn(KW_MIN, KW_MAX) - KW_MIN) / (KW_MAX - KW_MIN)).toFloat()
+
+    // ── G-meter ────────────────────────────────────────────────────
+
+    /**
+     * G-meter dial: the phone dashboard card ported to the car surface.
+     * A circular gauge — horizontal axis = lateral G (cornering),
+     * vertical axis = longitudinal G (braking/acceleration) — with a
+     * short fading trail of recent [trail] samples (newest last) and the
+     * horizontal-G magnitude in the centre. The radius is on the same
+     * logarithmic scale as the phone card so a gentle lean is clearly
+     * visible while a hard stop compresses toward the rim.
+     */
+    fun drawGMeter(canvas: Canvas, cell: RectF, trail: List<GForceSample>) {
+        val g = housing(canvas, cell)
+        val plotR = g.r * 0.86f
+
+        // Concentric rings on the log scale; outer ring heavier.
+        for (ring in 1..GM_RINGS) {
+            val gv = GM_MAX_G * ring / GM_RINGS
+            ringPaint.color = if (ring == GM_RINGS) TICK_MAJOR else TICK_MINOR
+            ringPaint.strokeWidth = g.side * if (ring == GM_RINGS) 0.012f else 0.006f
+            canvas.drawCircle(g.cx, g.cy, plotR * gmLogFrac(gv), ringPaint)
+        }
+        // Crosshair.
+        tickPaint.color = TICK_MINOR
+        tickPaint.strokeWidth = g.side * 0.006f
+        canvas.drawLine(g.cx - plotR, g.cy, g.cx + plotR, g.cy, tickPaint)
+        canvas.drawLine(g.cx, g.cy - plotR, g.cx, g.cy + plotR, tickPaint)
+
+        // Fading trail + live dot. Radius is log-scaled; direction kept.
+        val n = trail.size
+        trail.forEachIndexed { i, s ->
+            val frac = (i + 1f) / n
+            val f = sqrt(frac)
+            val m = s.horizontalMagnitudeG
+            val rr = plotR * gmLogFrac(m)
+            val ux = if (m > 1e-4f) s.lateralG / m else 0f
+            val uy = if (m > 1e-4f) s.longitudinalG / m else 0f
+            val px = g.cx + ux * rr
+            // Screen Y grows downward; +longitudinal (accel) plots up.
+            val py = g.cy - uy * rr
+            if (i == n - 1) {
+                fillPaint.color = Color.WHITE
+                canvas.drawCircle(px, py, g.r * 0.075f, fillPaint)
+                fillPaint.color = ACCENT
+                canvas.drawCircle(px, py, g.r * 0.055f, fillPaint)
+            } else {
+                fillPaint.color = fade(ACCENT, 0.18f + 0.62f * f)
+                canvas.drawCircle(px, py, g.r * (0.02f + 0.03f * f), fillPaint)
+            }
+        }
+
+        // Centre magnitude readout (the truthful G value, not log-scaled).
+        val mag = trail.lastOrNull()?.horizontalMagnitudeG ?: 0f
+        centerPaint.color = if (mag > GM_MAX_G) NORTH_RED else LCD_BRIGHT
+        centerPaint.textSize = g.r * 0.30f
+        centerPaint.isFakeBoldText = true
+        canvas.drawText("%.2f".format(Locale.ROOT, mag), g.cx, g.cy + g.r * 0.50f, centerPaint)
+        centerPaint.isFakeBoldText = false
+        centerPaint.color = LCD_UNIT
+        centerPaint.textSize = g.r * 0.13f
+        canvas.drawText("G", g.cx, g.cy + g.r * 0.67f, centerPaint)
+    }
+
+    /** Log radius fraction for the G-meter: small forces exaggerated,
+     *  large ones compressed. f(0)=0, f([GM_MAX_G])=1. */
+    private fun gmLogFrac(magG: Float): Float {
+        val x = (magG / GM_MAX_G).coerceIn(0f, 1f)
+        return ln(1f + GM_LOG_K * x) / ln(1f + GM_LOG_K)
+    }
+
+    /** Same RGB, replaced alpha (0..1). */
+    private fun fade(color: Int, alpha: Float): Int =
+        ((alpha.coerceIn(0f, 1f) * 255f).toInt() shl 24) or (color and 0x00FFFFFF)
 
     // ── Shared RetroDial furniture ─────────────────────────────────
 
@@ -451,6 +610,12 @@ class CarInstruments {
         const val KW_MIN = -100.0
         const val KW_MAX = 240.0
 
+        // G-meter: ±1 g full-scale (road cars rarely exceed it), log
+        // exaggeration matched to the phone dashboard card.
+        const val GM_MAX_G = 1.0f
+        const val GM_RINGS = 3
+        const val GM_LOG_K = 12f
+
         const val COMPASS_TILT_DEG = 16f
 
         // Palette — RetroDial / id.dash hexes.
@@ -467,5 +632,6 @@ class CarInstruments {
         const val NORTH_RED = 0xFFEF5350.toInt()
         const val REGEN_BLUE = 0xFF35B0E6.toInt()
         const val ECO_GREEN = 0xFF35B047.toInt()
+        const val SOC_AMBER = 0xFFF9A825.toInt()
     }
 }

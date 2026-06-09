@@ -812,4 +812,8 @@
     <string name="settings_altitude_smooth">標高を平滑化</string>
     <string name="settings_altitude_smooth_body">生の GPS 標高をローパスフィルターに通して、サンプルごとのばらつきを抑えます。実際の登りは正しく追従しつつ、平坦な道での値の上下を抑えます。</string>
     <string name="section_gforce">G フォース</string>
+    <string name="gforce_lateral">横</string>
+    <string name="gforce_longitudinal">縦</string>
+    <string name="gforce_vertical">垂直</string>
+    <string name="gforce_peak">ピーク</string>
 </resources>

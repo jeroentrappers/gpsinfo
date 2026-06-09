@@ -736,4 +736,8 @@
     <string name="settings_altitude_smooth">Yüksekliği yumuşat</string>
     <string name="settings_altitude_smooth_body">Ham GPS yüksekliğini, örnek başına titremeyi bastırmak için alçak geçiren bir filtreden geçir. Okuma gerçek tırmanışları yine izler ama düz yürüyüşte zıplamayı bırakır.</string>
     <string name="section_gforce">G kuvveti</string>
+    <string name="gforce_lateral">Yanal</string>
+    <string name="gforce_longitudinal">Boyuna</string>
+    <string name="gforce_vertical">Dikey</string>
+    <string name="gforce_peak">Tepe</string>
 </resources>

@@ -50,6 +50,9 @@ object NavigationController {
             val offRoute: Boolean,
             val destLat: Double,
             val destLon: Double,
+            /** Posted speed limit (km/h) for the segment the vehicle is
+             *  on, from the route's OSM `maxspeed`; null when untagged. */
+            val speedLimitKmh: Int? = null,
         ) : NavState
 
         data class Arrived(val destLat: Double, val destLon: Double) : NavState
@@ -284,6 +287,7 @@ object NavigationController {
             nextTurn = nextTurn,
             distanceToTurnM = distToTurn,
             offRoute = snap.crossTrackM > OFF_ROUTE_M,
+            speedLimitKmh = speedLimitAt(s.route, snap.segmentIndex),
         )
         if (nextTurn != null) voice?.maybeAnnounceTurn(nextTurn, distToTurn)
     }
@@ -309,7 +313,16 @@ object NavigationController {
             offRoute = false,
             destLat = destLat,
             destLon = destLon,
+            speedLimitKmh = speedLimitAt(route, 0),
         )
+    }
+
+    /** Posted limit for the segment the vehicle is on: the node at the
+     *  end of that segment carries the way's `maxspeed`. */
+    private fun speedLimitAt(route: OfflineRoute, segmentIndex: Int): Int? {
+        if (route.points.isEmpty()) return null
+        val idx = (segmentIndex + 1).coerceIn(route.points.indices)
+        return route.points[idx].maxspeedKmh
     }
 
     // ── Guidance math (pure, unit-testable) ────────────────────────

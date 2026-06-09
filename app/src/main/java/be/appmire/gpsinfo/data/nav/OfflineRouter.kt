@@ -9,6 +9,7 @@ import btools.router.distanceToNextMeters
 import btools.router.hints
 import btools.router.iLat
 import btools.router.iLon
+import btools.router.maxspeedKmh
 import btools.router.trackIndex
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +70,9 @@ class OfflineRouter(context: Context) {
             RoutePoint(
                 lat = n.iLat / 1e6 - 90.0,
                 lon = n.iLon / 1e6 - 180.0,
+                // Posted limit of the way leading into this node — i.e.
+                // the segment points[i-1]→points[i].
+                maxspeedKmh = n.maxspeedKmh,
             )
         }
         val turns = track.voiceHints?.hints?.map { h ->
@@ -137,7 +141,13 @@ data class OfflineRoute(
     val turns: List<TurnHint>,
 )
 
-data class RoutePoint(val lat: Double, val lon: Double)
+data class RoutePoint(
+    val lat: Double,
+    val lon: Double,
+    /** Posted speed limit (km/h) of the segment ending at this point,
+     *  from OSM `maxspeed`; null when untagged or non-numeric. */
+    val maxspeedKmh: Int? = null,
+)
 
 /** One guidance event along the route. */
 data class TurnHint(

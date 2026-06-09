@@ -804,4 +804,8 @@
     <string name="settings_altitude_smooth">Vyhladit nadmořskou výšku</string>
     <string name="settings_altitude_smooth_body">Filtruje surovou GPS nadmořskou výšku dolní propustí, aby potlačila kolísání mezi vzorky. Údaj stále sleduje skutečná stoupání, ale přestane poskakovat při chůzi po rovině.</string>
     <string name="section_gforce">Přetížení</string>
+    <string name="gforce_lateral">Boční</string>
+    <string name="gforce_longitudinal">Podélné</string>
+    <string name="gforce_vertical">Svislé</string>
+    <string name="gforce_peak">Max.</string>
 </resources>

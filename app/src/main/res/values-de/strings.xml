@@ -808,4 +808,8 @@
     <string name="settings_altitude_smooth">Höhe glätten</string>
     <string name="settings_altitude_smooth_body">Filtert die rohe GPS-Höhe per Tiefpass, um Schwankungen einzelner Messwerte zu unterdrücken. Die Anzeige folgt weiterhin echten Anstiegen, springt aber auf ebener Strecke nicht mehr.</string>
     <string name="section_gforce">G-Kraft</string>
+    <string name="gforce_lateral">Quer</string>
+    <string name="gforce_longitudinal">Längs</string>
+    <string name="gforce_vertical">Vertikal</string>
+    <string name="gforce_peak">Spitze</string>
 </resources>

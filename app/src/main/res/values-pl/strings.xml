@@ -800,4 +800,8 @@
     <string name="settings_altitude_smooth">Wygładzaj wysokość</string>
     <string name="settings_altitude_smooth_body">Filtruje surową wysokość GPS przez filtr dolnoprzepustowy, aby tłumić drgania między próbkami. Odczyt nadal śledzi rzeczywiste podjazdy, ale przestaje skakać na płaskiej trasie.</string>
     <string name="section_gforce">Przeciążenie</string>
+    <string name="gforce_lateral">Boczne</string>
+    <string name="gforce_longitudinal">Wzdłużne</string>
+    <string name="gforce_vertical">Pionowe</string>
+    <string name="gforce_peak">Maks.</string>
 </resources>

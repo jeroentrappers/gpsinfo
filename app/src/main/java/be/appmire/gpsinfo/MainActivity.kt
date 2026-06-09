@@ -79,6 +79,7 @@ private object Routes {
     fun paceTargets(id: String) = "pace-targets/$id"
     const val Rally = "rally"
     const val WheelPair = "wheel-pair"
+    const val GForce = "gforce"
 }
 
 class MainActivity : ComponentActivity() {
@@ -191,7 +192,14 @@ class MainActivity : ComponentActivity() {
                                 onOpenSports = { nav.navigate(Routes.Sports) },
                                 onOpenGhost = { nav.navigate(Routes.Ghost) },
                                 onOpenRally = { nav.navigate(Routes.Rally) },
+                                onOpenGForce = { nav.navigate(Routes.GForce) },
                                 vm = vm,
+                            )
+                        }
+                        composable(Routes.GForce) {
+                            be.appmire.gpsinfo.ui.gforce.GForceScreen(
+                                vm = vm,
+                                onBack = { nav.popBackStack() },
                             )
                         }
                         composable(Routes.Rally) {

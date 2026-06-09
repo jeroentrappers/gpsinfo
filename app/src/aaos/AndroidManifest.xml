@@ -25,6 +25,13 @@
         android:name="android.software.car.templates_host"
         android:required="false" />
 
+    <!-- Native Automotive OS energy permissions so CarInfo's EnergyLevel
+         (battery %, range) resolves on the AAOS emulator / car. Debug
+         overlay only — never ships in the projected phone build. -->
+    <uses-permission android:name="android.car.permission.CAR_ENERGY" />
+    <uses-permission android:name="android.car.permission.CAR_ENERGY_PORTS" />
+    <uses-permission android:name="android.car.permission.CAR_INFO" />
+
     <application>
         <!-- adb-triggered navigation start/stop for emulator testing
              of the car screen (see DebugNavigateReceiver). -->

@@ -804,4 +804,8 @@
     <string name="settings_altitude_smooth">Altitudine smussata</string>
     <string name="settings_altitude_smooth_body">Filtra l\'altitudine GPS grezza con un passa-basso per sopprimere il jitter dei singoli campioni. La lettura segue ancora le salite reali ma smette di oscillare in piano.</string>
     <string name="section_gforce">Forza G</string>
+    <string name="gforce_lateral">Laterale</string>
+    <string name="gforce_longitudinal">Longitudinale</string>
+    <string name="gforce_vertical">Verticale</string>
+    <string name="gforce_peak">Picco</string>
 </resources>

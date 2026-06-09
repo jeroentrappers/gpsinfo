@@ -804,4 +804,8 @@
     <string name="settings_altitude_smooth">Suavizar altitude</string>
     <string name="settings_altitude_smooth_body">Filtra a altitude bruta do GPS por um passa-baixa para suprimir o ruído por amostra. A leitura ainda acompanha subidas reais, mas para de oscilar em uma caminhada plana.</string>
     <string name="section_gforce">Força G</string>
+    <string name="gforce_lateral">Lateral</string>
+    <string name="gforce_longitudinal">Longitudinal</string>
+    <string name="gforce_vertical">Vertical</string>
+    <string name="gforce_peak">Pico</string>
 </resources>

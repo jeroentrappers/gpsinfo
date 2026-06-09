@@ -757,4 +757,8 @@
     <string name="profile_climb_summary" tools:ignore="MissingTranslation">%1$s · +%2$s</string>
     <string name="profile_climb_in" tools:ignore="MissingTranslation">In</string>
     <string name="section_gforce">G-force</string>
+    <string name="gforce_lateral">Lateral</string>
+    <string name="gforce_longitudinal">Longitudinal</string>
+    <string name="gforce_vertical">Vertical</string>
+    <string name="gforce_peak">Peak</string>
 </resources>

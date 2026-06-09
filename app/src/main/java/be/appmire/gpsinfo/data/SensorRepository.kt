@@ -354,53 +354,89 @@ class SensorRepository(private val context: Context) : SensorDataSource {
         awaitClose { sm.unregisterListener(listener) }
     }
 
-    override fun gForceStream(): Flow<be.appmire.gpsinfo.data.model.GForceSample> = callbackFlow {
-        // Prefer the fused linear-acceleration sensor (gravity already
-        // removed). Fall back to the raw accelerometer with a simple
-        // high-pass gravity filter on devices that lack the virtual one.
+    override fun gForceStream(
+        currentBearingDeg: () -> Float?,
+    ): Flow<be.appmire.gpsinfo.data.model.GForceSample> = callbackFlow {
+        // Linear acceleration (gravity removed by the fused sensor);
+        // fall back to the raw accelerometer with a high-pass gravity
+        // filter on devices lacking the virtual sensor. The rotation
+        // vector gives device→world orientation so the result is
+        // mount-independent.
         val linear = sm.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
-        val raw = if (linear == null) sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) else null
-        val sensor = linear ?: raw
-        if (sensor == null) {
+        val rawAccel = if (linear == null) sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) else null
+        val accelSensor = linear ?: rawAccel
+        val rotation = sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+        if (accelSensor == null) {
             trySend(be.appmire.gpsinfo.data.model.GForceSample(0f, 0f, 0f))
             awaitClose { }
             return@callbackFlow
         }
+
+        // device→world rotation matrix (row-major, world = ENU). Seeded
+        // to identity so we still produce output before the first
+        // rotation sample / on devices without the sensor.
+        val rotMatrix = FloatArray(9).also { it[0] = 1f; it[4] = 1f; it[8] = 1f }
         val gravity = FloatArray(3) // running gravity estimate (fallback path)
-        // Light EMA so the dot glides instead of jittering on engine buzz.
-        val smoothed = FloatArray(3)
+        val smoothed = FloatArray(3) // smoothed [lateral, longitudinal, vertical] in g
         var seeded = false
-        val listener = object : SensorEventListener {
+        var heldBearingRad = 0.0 // last good forward heading (radians, from north CW)
+
+        val rotationListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
-                val ax: Float
-                val ay: Float
-                val az: Float
-                if (raw != null) {
-                    // High-pass: isolate gravity, subtract it.
+                SensorManager.getRotationMatrixFromVector(rotMatrix, event.values)
+            }
+            override fun onAccuracyChanged(s: Sensor?, accuracy: Int) = Unit
+        }
+        val accelListener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                val dx: Float
+                val dy: Float
+                val dz: Float
+                if (rawAccel != null) {
                     val a = 0.8f
                     for (i in 0..2) gravity[i] = a * gravity[i] + (1 - a) * event.values[i]
-                    ax = event.values[0] - gravity[0]
-                    ay = event.values[1] - gravity[1]
-                    az = event.values[2] - gravity[2]
+                    dx = event.values[0] - gravity[0]
+                    dy = event.values[1] - gravity[1]
+                    dz = event.values[2] - gravity[2]
                 } else {
-                    ax = event.values[0]; ay = event.values[1]; az = event.values[2]
+                    dx = event.values[0]; dy = event.values[1]; dz = event.values[2]
                 }
-                val raw3 = floatArrayOf(ax, ay, az)
-                if (!seeded) { System.arraycopy(raw3, 0, smoothed, 0, 3); seeded = true }
+                // Rotate device acceleration into world ENU.
+                val aE = rotMatrix[0] * dx + rotMatrix[1] * dy + rotMatrix[2] * dz
+                val aN = rotMatrix[3] * dx + rotMatrix[4] * dy + rotMatrix[5] * dz
+                val aU = rotMatrix[6] * dx + rotMatrix[7] * dy + rotMatrix[8] * dz
+
+                // Forward heading from GPS course; hold the last good one
+                // while stationary (course is meaningless at a standstill).
+                currentBearingDeg()?.let { heldBearingRad = Math.toRadians(it.toDouble()) }
+                val sinB = kotlin.math.sin(heldBearingRad).toFloat()
+                val cosB = kotlin.math.cos(heldBearingRad).toFloat()
+                // forward = (sinB, cosB) in (E, N); right = (cosB, -sinB).
+                val longitudinal = aE * sinB + aN * cosB
+                val lateral = aE * cosB - aN * sinB
+
+                val target = floatArrayOf(lateral / G, longitudinal / G, aU / G)
+                if (!seeded) { System.arraycopy(target, 0, smoothed, 0, 3); seeded = true }
                 val s = SMOOTHING
-                for (i in 0..2) smoothed[i] = smoothed[i] + s * (raw3[i] - smoothed[i])
+                for (i in 0..2) smoothed[i] += s * (target[i] - smoothed[i])
                 trySend(
                     be.appmire.gpsinfo.data.model.GForceSample(
-                        lateralG = smoothed[0] / G,
-                        longitudinalG = smoothed[1] / G,
-                        verticalG = smoothed[2] / G,
+                        lateralG = smoothed[0],
+                        longitudinalG = smoothed[1],
+                        verticalG = smoothed[2],
                     )
                 )
             }
             override fun onAccuracyChanged(s: Sensor?, accuracy: Int) = Unit
         }
-        sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
-        awaitClose { sm.unregisterListener(listener) }
+        if (rotation != null) {
+            sm.registerListener(rotationListener, rotation, SensorManager.SENSOR_DELAY_GAME)
+        }
+        sm.registerListener(accelListener, accelSensor, SensorManager.SENSOR_DELAY_GAME)
+        awaitClose {
+            sm.unregisterListener(accelListener)
+            sm.unregisterListener(rotationListener)
+        }
     }
 
     private fun mapAccuracy(level: Int): MagneticAccuracy = when (level) {

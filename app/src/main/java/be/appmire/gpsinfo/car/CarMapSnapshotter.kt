@@ -10,6 +10,8 @@ import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.snapshotter.MapSnapshot
 import org.maplibre.android.snapshotter.MapSnapshotter
+import org.maplibre.android.style.layers.Property
+import org.maplibre.android.style.layers.PropertyFactory
 
 /**
  * Renders MapLibre *vector* maps onto the Android Auto projection
@@ -52,6 +54,32 @@ class CarMapSnapshotter(
     private var lastRequestedCam: CameraPosition? = null
     private val handler = Handler(Looper.getMainLooper())
 
+    /** Whether the style's `building-3d` extrusion layer should be shown.
+     *  [applied3d] tracks what's actually been pushed to the (lazily
+     *  loaded) style, so we re-apply after a (re)create or a mode flip. */
+    private var want3d = true
+    private var applied3d: Boolean? = null
+
+    /** Show / hide 3D building extrusions on the next render. */
+    fun setBuildings3d(enabled: Boolean) {
+        if (enabled == want3d) return
+        want3d = enabled
+        applied3d = null
+    }
+
+    /** Push the desired `building-3d` visibility to the style if it's
+     *  loaded and out of date. Returns true when it changed something
+     *  (so the caller renders even if the camera didn't move). */
+    private fun applyBuildings3d(snap: MapSnapshotter): Boolean {
+        if (applied3d == want3d) return false
+        val layer = runCatching { snap.getLayer(BUILDING_3D_LAYER) }.getOrNull() ?: return false
+        layer.setProperties(
+            PropertyFactory.visibility(if (want3d) Property.VISIBLE else Property.NONE),
+        )
+        applied3d = want3d
+        return true
+    }
+
     /** (Re)create the snapshotter when the map area size changes. */
     private fun ensureSized(w: Int, h: Int) {
         if (w <= 0 || h <= 0) return
@@ -67,8 +95,10 @@ class CarMapSnapshotter(
                 .withStyle(MapLibreStyle.LIBERTY)
                 .withLogo(false),
         )
-        // Force the next request to render even if the camera matches.
+        // Force the next request to render even if the camera matches,
+        // and re-apply the building-3d visibility to the fresh style.
         lastRequestedCam = null
+        applied3d = null
     }
 
     /**
@@ -78,7 +108,10 @@ class CarMapSnapshotter(
     fun request(w: Int, h: Int, cam: CameraPosition) {
         ensureSized(w, h)
         val snap = snapshotter ?: return
-        if (!cameraMovedEnough(lastRequestedCam, cam)) return
+        // A pending building-3d visibility change forces a render even if
+        // the camera is unchanged.
+        val styleChanged = applyBuildings3d(snap)
+        if (!styleChanged && !cameraMovedEnough(lastRequestedCam, cam)) return
         if (inFlight) {
             // Coalesce: remember only the freshest camera; it'll be
             // drained when the in-flight snapshot completes.
@@ -132,6 +165,9 @@ class CarMapSnapshotter(
     }
 
     private companion object {
+        /** OpenFreeMap "liberty" style's extruded-buildings layer. */
+        const val BUILDING_3D_LAYER = "building-3d"
+
         /** Re-render thresholds — below these the on-screen change
          *  isn't worth a snapshot. ~5 m of movement, 1.5° of heading,
          *  a hair of zoom. */

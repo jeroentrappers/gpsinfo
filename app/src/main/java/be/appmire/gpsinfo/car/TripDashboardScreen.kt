@@ -10,6 +10,11 @@ import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.MessageTemplate
 import androidx.car.app.model.ParkedOnlyOnClickListener
+import androidx.car.app.hardware.CarHardwareManager
+import androidx.car.app.hardware.common.CarValue
+import androidx.car.app.hardware.common.OnCarDataAvailableListener
+import androidx.car.app.hardware.info.CarInfo
+import androidx.car.app.hardware.info.EnergyLevel
 import androidx.car.app.model.Template
 import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.core.content.ContextCompat
@@ -20,6 +25,7 @@ import androidx.lifecycle.lifecycleScope
 import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.LocationRepository
 import be.appmire.gpsinfo.data.RecordingState
+import be.appmire.gpsinfo.data.SensorRepository
 import be.appmire.gpsinfo.data.TrailRecordingController
 import be.appmire.gpsinfo.data.TrailRepository
 import be.appmire.gpsinfo.data.nav.NavigationController
@@ -31,6 +37,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 
 /**
@@ -61,6 +68,27 @@ class TripDashboardScreen(
     private var rally: RallyState = RallyState.Idle
     private var nav: NavigationController.NavState = NavigationController.NavState.Idle
     private var collectJob: Job? = null
+    private var gForceJob: Job? = null
+
+    /** Latest trustworthy GPS course, handed to the mount-independent
+     *  G-force fusion as the "forward" reference (null below a walking
+     *  pace, where the stream holds the last good heading). */
+    @Volatile
+    private var lastBearingDeg: Float? = null
+
+    /** Car-hardware energy feed. Available on Android Automotive OS and
+     *  hosts that expose it; over Android Auto projection it's usually
+     *  unimplemented, so the readouts stay dashed until OBD2 fills them. */
+    private var carInfo: CarInfo? = null
+    private val energyListener = OnCarDataAvailableListener<EnergyLevel> { level ->
+        // Prefer EV state of charge; fall back to fuel % for combustion.
+        val soc = floatOrNull(level.batteryPercent) ?: floatOrNull(level.fuelPercent)
+        val rangeKm = floatOrNull(level.rangeRemainingMeters)?.div(1000f)
+        renderer.updateEnergy(soc, rangeKm)
+    }
+
+    private fun floatOrNull(cv: CarValue<Float>): Float? =
+        if (cv.status == CarValue.STATUS_SUCCESS) cv.value else null
 
     init {
         lifecycle.addObserver(this)
@@ -68,11 +96,41 @@ class TripDashboardScreen(
 
     override fun onStart(owner: LifecycleOwner) {
         if (hasLocationPermission()) startCollecting()
+        startEnergyUpdates()
     }
 
     override fun onStop(owner: LifecycleOwner) {
         collectJob?.cancel()
         collectJob = null
+        gForceJob?.cancel()
+        gForceJob = null
+        stopEnergyUpdates()
+    }
+
+    /** Subscribe to the car's energy level (battery %, range). Wrapped
+     *  because hosts without car-hardware support throw on access. */
+    private fun startEnergyUpdates() {
+        if (carInfo != null) return
+        try {
+            val mgr = carContext.getCarService(CarHardwareManager::class.java)
+            carInfo = mgr.carInfo.also {
+                it.addEnergyLevelListener(
+                    ContextCompat.getMainExecutor(carContext), energyListener,
+                )
+            }
+        } catch (_: Exception) {
+            // No car-hardware on this host — readouts stay dashed.
+            carInfo = null
+        }
+    }
+
+    private fun stopEnergyUpdates() {
+        try {
+            carInfo?.removeEnergyLevelListener(energyListener)
+        } catch (_: Exception) {
+            // Host already tore the binding down; nothing to recover.
+        }
+        carInfo = null
     }
 
     private fun hasLocationPermission(): Boolean =
@@ -113,6 +171,9 @@ class TripDashboardScreen(
                 // the phone or the recording service also feed them.
                 RallyController.offer(gnss)
                 NavigationController.offer(gnss)
+                lastBearingDeg = gnss.location
+                    ?.takeIf { it.hasBearing() && it.hasSpeed() && it.speed > 1.5f }
+                    ?.bearing
                 val recordingToggled =
                     (rec is RecordingState.Recording) != (recording is RecordingState.Recording)
                 val rallyPhaseChanged = rallyState::class != rally::class
@@ -131,8 +192,26 @@ class TripDashboardScreen(
                         else -> null
                     }
                 )
+                renderer.updateNavProgress(
+                    (navState as? NavigationController.NavState.Navigating)?.distanceRemainingM
+                )
+                renderer.updateSpeedLimit(
+                    (navState as? NavigationController.NavState.Navigating)?.speedLimitKmh
+                )
                 if (recordingToggled || rallyPhaseChanged || navChanged) invalidate()
             }
+            .launchIn(lifecycleScope)
+
+        // G-meter feed, on its own job. The fused accelerometer stream
+        // runs at the game sensor rate (~50 Hz); sample it down to a
+        // few frames a second so the corner dial animates smoothly
+        // without flooding the surface with redraws — the snapshotter
+        // dedupes the unchanged map camera, so each extra frame is just
+        // a cheap re-blit of the cached bitmap plus the gauge.
+        val sensorRepo = SensorRepository(carContext.applicationContext)
+        gForceJob = sensorRepo.gForceStream { lastBearingDeg }
+            .sample(GFORCE_SAMPLE_MS)
+            .onEach { renderer.updateGForce(it) }
             .launchIn(lifecycleScope)
     }
 
@@ -263,7 +342,7 @@ class TripDashboardScreen(
             .addAction(
                 Action.Builder()
                     .setIcon(carIcon(R.drawable.ic_car_tilt))
-                    .setOnClickListener { renderer.toggleTilt() }
+                    .setOnClickListener { renderer.cycleViewMode() }
                     .build()
             )
             .addAction(Action.PAN)
@@ -474,5 +553,11 @@ class TripDashboardScreen(
         )
             .setRemainingTimeSeconds(n.etaSeconds.toLong())
             .build()
+    }
+
+    private companion object {
+        /** G-meter redraw cadence on the car — ~5 fps for the corner
+         *  dial. Glanceable, not a game. */
+        const val GFORCE_SAMPLE_MS = 200L
     }
 }
