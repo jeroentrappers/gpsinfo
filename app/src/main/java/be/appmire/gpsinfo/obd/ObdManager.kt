@@ -56,8 +56,22 @@ class ObdManager(
 
     suspend fun runInit() {
         for (cmd in ElmInit.SEQUENCE) {
-            val timeout = if (cmd == "ATZ") 5_000L else 2_000L
-            raw(cmd, timeout)
+            val timeout = when (cmd) {
+                "ATZ" -> 5_000L
+                // Protocol auto-detect (triggered by the first OBD request)
+                // routinely takes several seconds of "SEARCHING…".
+                "0100" -> 12_000L
+                else -> 2_000L
+            }
+            try {
+                raw(cmd, timeout)
+            } catch (e: Exception) {
+                // The trailing 0100 only wakes the bus / triggers protocol
+                // auto-detect; on a BEV it may never answer (no generic
+                // OBD) and that's fine — vehicle profiles force their own
+                // protocol (ATSP6/7). Never let init abort the probe.
+                log("init '$cmd' failed: ${e.message}")
+            }
             if (cmd == "ATZ") delay(500) // ELM needs a gap after reset
         }
     }
