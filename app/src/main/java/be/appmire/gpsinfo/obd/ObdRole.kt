@@ -26,7 +26,8 @@ enum class ObdRole(
     POWER_KW("Power", "kW", energyDial = true, tier = PollTier.FAST),
     BATTERY_SOC("Battery SoC", "%", energyDial = true, tier = PollTier.SLOW),
     RANGE_KM("Range", "km", energyDial = true, tier = PollTier.SLOW),
-    HV_VOLTAGE("HV pack", "V"),
+    // FAST because MEB power is derived V×I — both terms need to be fresh.
+    HV_VOLTAGE("HV pack", "V", tier = PollTier.FAST),
     HV_CURRENT("HV current", "A", tier = PollTier.FAST),
     HV_TEMP("HV pack temp", "°C"),
     MOTOR_TEMP("Motor inverter", "°C"),

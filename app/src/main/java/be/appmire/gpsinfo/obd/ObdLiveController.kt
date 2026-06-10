@@ -91,12 +91,25 @@ object ObdLiveController {
                     slowUds.forEach { e -> add { m -> mapOf(e.key to pollSingle(m, e.value)) } }
                 }
 
+                // Power is a single DID on some makes, but on MEB it must
+                // be computed V×I — derive it when no direct power role is
+                // mapped but voltage + current are (both FAST so it tracks).
+                val derivePower = ObdRole.POWER_KW !in mapping.roles &&
+                    ObdRole.HV_VOLTAGE in mapping.roles && ObdRole.HV_CURRENT in mapping.roles
+
                 val acc = LinkedHashMap<ObdRole, Double?>()
                 var cycle = 0L
                 var rr = 0
                 var lastPublish = System.currentTimeMillis()
                 while (isActive) {
                     for ((role, request) in fast) acc[role] = pollSingle(mgr, request)
+                    if (derivePower) {
+                        val v = acc[ObdRole.HV_VOLTAGE]
+                        val i = acc[ObdRole.HV_CURRENT]
+                        // Sign so consumption (discharge, I<0) reads positive
+                        // on the energy dial and regen reads negative.
+                        if (v != null && i != null) acc[ObdRole.POWER_KW] = -(v * i) / 1000.0
+                    }
                     if (slowUnits.isNotEmpty() && cycle % SLOW_EVERY == 0L) {
                         slowUnits[rr % slowUnits.size](mgr).forEach { (r, v) -> acc[r] = v }
                         rr++
