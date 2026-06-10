@@ -108,13 +108,18 @@ class ObdProbeController(context: Context) {
         _state.value = _state.value.copy(status = ObdStatus.Idle)
     }
 
-    /** Confirm step: persist the suggested mapping as the active vehicle
-     *  and (re)start the live feed for it. Returns false if there's
-     *  nothing to save (no mapped roles). The probe connection is closed
-     *  first so the live feed can own the adapter. */
-    fun saveActiveMapping(): Boolean {
-        val mapping = _state.value.report?.suggestion?.mapping ?: return false
+    /** Confirm step: apply a tested profile to this vehicle — persist it
+     *  as active and (re)start the live feed. The user picks the profile;
+     *  its decoders are fixed in [ObdProfiles], so this only records
+     *  *which* tested reads to use, never how to decode them. Returns
+     *  false if the profile has no live sensors on this car. */
+    fun applyProfile(profileId: String): Boolean {
+        val report = _state.value.report ?: return false
         val address = lastAddress ?: return false
+        val vehicleKey = report.vin?.takeIf { it.isNotBlank() } ?: address
+        val mapping = MappingSuggester
+            .suggest(vehicleKey, report.roleReadings, forced = profileId)
+            .mapping ?: return false
         job?.cancel()
         connection.close()
         ObdMappingRepository(appContext).saveActive(mapping, address)

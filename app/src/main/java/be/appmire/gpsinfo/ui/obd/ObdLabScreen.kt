@@ -149,7 +149,7 @@ fun ObdLabScreen(onBack: () -> Unit) {
 
             state.report?.let { report ->
                 ReportSummary(report)
-                MappingCard(report = report, onSave = { controller.saveActiveMapping() })
+                ProfileCard(report = report, onApply = { controller.applyProfile(it) })
             }
 
             // Live transcript console.
@@ -229,45 +229,79 @@ private fun ReportSummary(report: be.appmire.gpsinfo.obd.ProbeReport) {
     }
 }
 
-/** The confirm step: the auto-suggested role→sensor mapping with live
- *  values, and a button to persist it + start the live feed. */
+/** The confirm step: apply a *tested profile*. The user picks which
+ *  profile fits their car (auto-detected default) and sees the live
+ *  values it produces — they never touch decode parameters; those live
+ *  in the compiled, tested profile. "Apply" persists the choice and
+ *  starts the live feed. */
 @Composable
-private fun MappingCard(report: be.appmire.gpsinfo.obd.ProbeReport, onSave: () -> Unit) {
-    val mapping = report.suggestion.mapping ?: return
-    val profile = be.appmire.gpsinfo.obd.ObdProfiles.byId(report.suggestion.profileId)
-    var saved by remember { mutableStateOf(false) }
+private fun ProfileCard(
+    report: be.appmire.gpsinfo.obd.ProbeReport,
+    onApply: (String) -> Unit,
+) {
+    val profiles = be.appmire.gpsinfo.obd.ObdProfiles.all
+    var selected by remember(report) { mutableStateOf(report.suggestion.profileId) }
+    var appliedId by remember(report) { mutableStateOf<String?>(null) }
+
+    val vehicleKey = report.vin?.takeIf { it.isNotBlank() } ?: "this adapter"
+    val mapping = remember(report, selected) {
+        be.appmire.gpsinfo.obd.MappingSuggester
+            .suggest(vehicleKey, report.roleReadings, forced = selected)
+            .mapping
+    }
+
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Suggested mapping", style = MaterialTheme.typography.titleSmall)
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Vehicle profile", style = MaterialTheme.typography.titleSmall)
             Text(
-                "Profile: ${profile.displayName} · key ${mapping.vehicleKey}",
+                "Auto-detected: ${profiles.first { it.id == report.suggestion.profileId }.displayName}",
                 style = MaterialTheme.typography.bodySmall,
             )
-            Spacer(Modifier.height(4.dp))
-            mapping.roles.forEach { (role, request) ->
-                val reading = report.roleReadings.firstOrNull {
-                    it.role == role && it.request == request
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(
-                        "${role.label}  ←  $request",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                    )
-                    Text(
-                        text = reading?.value?.let { "%.1f %s".format(Locale.ROOT, it, role.unit) }
-                            ?: "—",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                profiles.forEach { p ->
+                    androidx.compose.material3.FilterChip(
+                        selected = selected == p.id,
+                        onClick = { selected = p.id; appliedId = null },
+                        label = { Text(p.displayName) },
                     )
                 }
             }
-            Spacer(Modifier.height(6.dp))
+
+            // Live values this profile produces on this car — role names,
+            // no raw requests or formulas.
+            if (mapping == null || mapping.roles.isEmpty()) {
+                Text(
+                    "No live sensors for this profile on this vehicle.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                mapping.roles.forEach { (role, request) ->
+                    val reading = report.roleReadings.firstOrNull {
+                        it.role == role && it.request == request
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(role.label, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            text = reading?.value?.let { "%.1f %s".format(Locale.ROOT, it, role.unit) }
+                                ?: "—",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+
             Button(
-                onClick = { onSave(); saved = true },
+                onClick = { onApply(selected); appliedId = selected },
+                enabled = mapping != null && mapping.roles.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (saved) "Saved — live feed started" else "Use this mapping (start live feed)") }
+            ) {
+                Text(
+                    if (appliedId == selected) "Applied — live feed started"
+                    else "Apply this profile",
+                )
+            }
         }
     }
 }

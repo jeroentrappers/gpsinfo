@@ -60,20 +60,31 @@ object MappingSuggester {
     data class Suggestion(val profileId: String, val mapping: ObdMapping?)
 
     /**
-     * Pick the best profile (the make profile that lit up the most
-     * energy-dial roles, else generic) and, per role, the live reading
-     * from that profile, falling back to a generic live reading.
+     * Build a mapping for a profile. With [forced] null, auto-picks the
+     * best profile (the make profile that lit up the most energy-dial
+     * roles, else generic); otherwise builds for the user-chosen profile.
+     * Per role it takes that profile's live reading, falling back to a
+     * generic live reading for roles the profile doesn't cover.
+     *
+     * Decoders are never chosen here — only *which tested read* fills a
+     * role. The byte/scale/offset/sign all stay in [ObdProfiles].
      */
-    fun suggest(vehicleKey: String, readings: List<RoleReading>): Suggestion {
+    fun suggest(
+        vehicleKey: String,
+        readings: List<RoleReading>,
+        forced: String? = null,
+    ): Suggestion {
         val live = readings.filter { it.live }
-        val bestMake = live
-            .filter { it.profileId != ObdProfiles.GENERIC.id }
-            .groupBy { it.profileId }
-            .maxByOrNull { e -> e.value.count { it.role.energyDial } }
-        val chosen = if (bestMake != null && bestMake.value.any { it.role.energyDial }) {
-            bestMake.key
-        } else {
-            ObdProfiles.GENERIC.id
+        val chosen = forced ?: run {
+            val bestMake = live
+                .filter { it.profileId != ObdProfiles.GENERIC.id }
+                .groupBy { it.profileId }
+                .maxByOrNull { e -> e.value.count { it.role.energyDial } }
+            if (bestMake != null && bestMake.value.any { it.role.energyDial }) {
+                bestMake.key
+            } else {
+                ObdProfiles.GENERIC.id
+            }
         }
         val roles = ObdRole.entries.mapNotNull { role ->
             val r = live.firstOrNull { it.role == role && it.profileId == chosen }
