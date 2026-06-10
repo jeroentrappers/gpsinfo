@@ -33,21 +33,8 @@ object ObdResponse {
      *                         mode 01/05/09, 2 for mode 22)
      */
     fun extractPayload(raw: String, mode: Int, expectedPidBytes: Int = 1): IntArray? {
-        val cleaned = raw
-            .replace(">", "")
-            .lines()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-
-        if (cleaned.any { it.uppercase() in ERROR_LINES }) return null
-
+        val joined = joinedHex(raw) ?: return null
         val responseByteHex = "%02X".format((mode + 0x40) and 0xFF)
-        val joined = cleaned
-            .map { it.replace(" ", "") }
-            .filter { HEX.matches(it) }
-            .joinToString("")
-            .uppercase()
-        if (joined.isEmpty()) return null
 
         // The positive-response byte (mode+0x40) marks where the payload
         // header begins; everything before it is the echoed command.
@@ -62,6 +49,42 @@ object ObdResponse {
         return IntArray(payloadHex.length / 2) { i ->
             payloadHex.substring(i * 2, i * 2 + 2).toInt(16)
         }
+    }
+
+    /** Clean an ELM reply to one uppercase hex string (echo/space/prompt
+     *  stripped), or null on an error line / empty reply. */
+    private fun joinedHex(raw: String): String? {
+        val lines = raw.replace(">", "").lines().map { it.trim() }.filter { it.isNotEmpty() }
+        if (lines.any { it.uppercase() in ERROR_LINES }) return null
+        val joined = lines.map { it.replace(" ", "") }
+            .filter { HEX.matches(it) }
+            .joinToString("")
+            .uppercase()
+        return joined.ifEmpty { null }
+    }
+
+    /**
+     * Split a multi-PID mode-01 reply into per-PID payloads. A request
+     * like "010C0D46" returns "41 0C 1A F8 0D 32 46 50" — one 0x41, then
+     * (PID, data…) repeated. The response carries no lengths, so [lengthFor]
+     * supplies each PID's data-byte count; parsing stops at the first PID
+     * it doesn't know (can't find the next boundary).
+     */
+    fun splitMode01(raw: String, lengthFor: (Int) -> Int?): Map<Int, IntArray> {
+        val joined = joinedHex(raw) ?: return emptyMap()
+        val idx = joined.indexOf("41")
+        if (idx < 0) return emptyMap()
+        val out = LinkedHashMap<Int, IntArray>()
+        var pos = idx + 2
+        while (pos + 2 <= joined.length) {
+            val pid = joined.substring(pos, pos + 2).toInt(16)
+            pos += 2
+            val len = lengthFor(pid) ?: break
+            if (pos + len * 2 > joined.length) break
+            out[pid] = IntArray(len) { joined.substring(pos + it * 2, pos + it * 2 + 2).toInt(16) }
+            pos += len * 2
+        }
+        return out
     }
 
     /** Raw payload string of a mode-09 VIN reply (0902) → the 17-char

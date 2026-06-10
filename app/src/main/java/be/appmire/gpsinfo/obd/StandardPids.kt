@@ -49,6 +49,17 @@ object StandardPids {
     private fun cmd(pid: Int, key: String, label: String, unit: String, decode: (IntArray) -> Double?) =
         pid to ObdCommand(key, label, unit, pidRequest(pid), decode)
 
+    /** Data-byte count per mode-01 PID — needed to slice a multi-PID
+     *  reply (which carries no per-PID lengths). Matches the decoders. */
+    val DATA_BYTES: Map<Int, Int> = mapOf(
+        0x04 to 1, 0x05 to 1, 0x0A to 1, 0x0B to 1, 0x0C to 2, 0x0D to 1,
+        0x0E to 1, 0x0F to 1, 0x10 to 2, 0x11 to 1, 0x1F to 2, 0x21 to 2,
+        0x2F to 1, 0x33 to 1, 0x42 to 2, 0x43 to 2, 0x46 to 1, 0x5B to 1,
+        0x5C to 1, 0x5E to 2,
+    )
+
+    fun dataLength(pid: Int): Int? = DATA_BYTES[pid]
+
     private fun u8(b: IntArray, i: Int): Int? = b.getOrNull(i)
     private fun u16(b: IntArray, i: Int): Int? {
         val hi = b.getOrNull(i) ?: return null

@@ -10,17 +10,27 @@ package be.appmire.gpsinfo.obd
  * consumes today (CarMapRenderer.updatePower / updateEnergy); the rest
  * are surfaced in the OBD Lab and available for future readouts.
  */
-enum class ObdRole(val label: String, val unit: String, val energyDial: Boolean = false) {
-    SPEED("Speed", "km/h"),
-    RPM("Motor RPM", "rpm"),
+enum class ObdRole(
+    val label: String,
+    val unit: String,
+    val energyDial: Boolean = false,
+    /** How often the live feed should refresh this — the power gauge
+     *  needle needs FAST; charge/range drift slowly; temps barely move. */
+    val tier: PollTier = PollTier.VERY_SLOW,
+) {
+    SPEED("Speed", "km/h", tier = PollTier.VERY_SLOW),
+    RPM("Motor RPM", "rpm", tier = PollTier.VERY_SLOW),
     COOLANT_TEMP("Coolant", "°C"),
     AMBIENT_TEMP("Outside temp", "°C"),
     VOLTAGE_12V("12V battery", "V"),
-    POWER_KW("Power", "kW", energyDial = true),
-    BATTERY_SOC("Battery SoC", "%", energyDial = true),
-    RANGE_KM("Range", "km", energyDial = true),
+    POWER_KW("Power", "kW", energyDial = true, tier = PollTier.FAST),
+    BATTERY_SOC("Battery SoC", "%", energyDial = true, tier = PollTier.SLOW),
+    RANGE_KM("Range", "km", energyDial = true, tier = PollTier.SLOW),
     HV_VOLTAGE("HV pack", "V"),
-    HV_CURRENT("HV current", "A"),
+    HV_CURRENT("HV current", "A", tier = PollTier.FAST),
     HV_TEMP("HV pack temp", "°C"),
     MOTOR_TEMP("Motor inverter", "°C"),
 }
+
+/** Refresh tier for the live poller. */
+enum class PollTier { FAST, SLOW, VERY_SLOW }

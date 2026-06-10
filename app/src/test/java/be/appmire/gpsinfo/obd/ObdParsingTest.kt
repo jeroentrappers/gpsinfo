@@ -76,6 +76,30 @@ class ObdParsingTest {
     }
 
     @Test
+    fun `splitMode01 splits a multi-PID reply by known lengths`() {
+        // request 010C0D46 → 41 0C 1A F8 | 0D 32 | 46 50
+        val m = ObdResponse.splitMode01("410C1AF80D324650>") { StandardPids.dataLength(it) }
+        assertEquals(listOf(0x1A, 0xF8), m[0x0C]!!.toList())
+        assertEquals(listOf(0x32), m[0x0D]!!.toList())
+        assertEquals(listOf(0x50), m[0x46]!!.toList())
+        // decode spot-check: 0x46 → 0x50(80) - 40 = 40 °C
+        assertEquals(40.0, StandardPids.BY_PID[0x46]!!.decode(m[0x46]!!)!!, 0.001)
+    }
+
+    @Test
+    fun `splitMode01 stops at an unknown PID boundary`() {
+        // 0xAB has no length → parsing can't continue past it
+        val m = ObdResponse.splitMode01("410D32AB99") { StandardPids.dataLength(it) }
+        assertEquals(listOf(0x32), m[0x0D]!!.toList())
+        assertEquals(1, m.size)
+    }
+
+    @Test
+    fun `splitMode01 returns empty on NO DATA`() {
+        assertEquals(0, ObdResponse.splitMode01("NO DATA>") { StandardPids.dataLength(it) }.size)
+    }
+
+    @Test
     fun `parseVin extracts 17 chars with leading count byte`() {
         // 49 02 01 + ASCII "1HGCM82633A004352" (17 chars)
         val vinAscii = "1HGCM82633A004352"

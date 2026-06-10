@@ -19,6 +19,20 @@ class ObdManager(
 
     private val ioLock = Mutex()
 
+    /** The header/filter AT-prefix currently set on the adapter, so we
+     *  only re-send ATSH/ATCRA when the target ECU changes — the key to
+     *  hammering one DID (e.g. power) at high frequency. */
+    private var currentPrefix: List<String>? = null
+
+    /** Set the ECU header/filter prefix, skipping it if unchanged. An
+     *  empty prefix restores standard functional OBD addressing. */
+    private suspend fun applyPrefix(prefix: List<String>) {
+        val target = prefix.ifEmpty { DEFAULT_PREFIX }
+        if (target == currentPrefix) return
+        for (c in target) raw(c)
+        currentPrefix = target
+    }
+
     /** Send an ELM327 command and read the reply up to the ">" prompt. */
     suspend fun raw(command: String, timeoutMs: Long = 2_000): String = ioLock.withLock {
         log("» $command")
@@ -44,12 +58,15 @@ class ObdManager(
     suspend fun poll(cmd: ObdCommand): Double? = readPayload(cmd)?.let { cmd.decode(it) }
 
     /** Run a (possibly composite) command and return its decoded payload
-     *  bytes, or null on NO DATA / error. Liveness = non-null payload. */
+     *  bytes, or null on NO DATA / error. The leading ATSH/ATCRA parts
+     *  are applied via [applyPrefix] (sent only when the ECU changes), so
+     *  repeated polls of the same DID cost just the DID. Liveness =
+     *  non-null payload. */
     suspend fun readPayload(cmd: ObdCommand): IntArray? {
         val parts = cmd.request.split(';').map { it.trim() }.filter { it.isNotEmpty() }
         if (parts.isEmpty()) return null
         return try {
-            for (i in 0 until parts.lastIndex) raw(parts[i])
+            applyPrefix(parts.dropLast(1))
             val finalRequest = parts.last()
             val reply = raw(finalRequest)
             val mode = finalRequest.substring(0, 2).toInt(16)
@@ -62,6 +79,26 @@ class ObdManager(
             log("✗ ${cmd.key}: ${e.message}")
             null
         }
+    }
+
+    /** Read several standard mode-01 PIDs in one request (CAN allows up
+     *  to 6) → payload bytes per PID. Standard functional addressing. */
+    suspend fun readMode01Batch(pids: List<Int>): Map<Int, IntArray> {
+        if (pids.isEmpty()) return emptyMap()
+        return try {
+            applyPrefix(emptyList())
+            val req = "01" + pids.joinToString("") { "%02X".format(it) }
+            val reply = raw(req)
+            ObdResponse.splitMode01(reply) { StandardPids.dataLength(it) }
+        } catch (e: Exception) {
+            log("✗ batch ${pids.joinToString { "%02X".format(it) }}: ${e.message}")
+            emptyMap()
+        }
+    }
+
+    private companion object {
+        /** Restore standard functional OBD addressing after a UDS read. */
+        val DEFAULT_PREFIX = listOf("ATSH7DF", "ATCRA")
     }
 
     /** Raw reply for an arbitrary request, for probing PIDs we don't yet

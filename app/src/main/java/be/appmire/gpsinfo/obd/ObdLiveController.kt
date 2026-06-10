@@ -67,14 +67,33 @@ object ObdLiveController {
                 val mgr = ObdManager(conn)
                 mgr.runInit()
                 _state.value = ObdLiveData(connected = true, values = emptyMap())
-                val requests = mapping.roles.entries.toList()
+
+                // Tier the mapped roles: FAST polled every cycle (the
+                // power needle); the rest trickle round-robin so they
+                // refresh on their own slow cadence without stalling power.
+                val fast = mapping.roles.entries.filter { it.key.tier == PollTier.FAST }
+                val slow = mapping.roles.entries.filter { it.key.tier != PollTier.FAST }
+                val slowStd = slow.filter { isStdPid(it.value) }
+                val slowUds = slow.filter { !isStdPid(it.value) }
+                // One round-robin "unit" per slow signal; the standard PIDs
+                // collapse into a single multi-PID batch unit.
+                val slowUnits: List<suspend (ObdManager) -> Map<ObdRole, Double?>> = buildList {
+                    if (slowStd.isNotEmpty()) add { m -> pollBatch(m, slowStd) }
+                    slowUds.forEach { e -> add { m -> mapOf(e.key to pollSingle(m, e.value)) } }
+                }
+
+                val acc = LinkedHashMap<ObdRole, Double?>()
+                var cycle = 0L
+                var rr = 0
                 while (isActive) {
-                    val out = LinkedHashMap<ObdRole, Double?>()
-                    for ((role, request) in requests) {
-                        out[role] = pollRole(mgr, request)
+                    for ((role, request) in fast) acc[role] = pollSingle(mgr, request)
+                    if (slowUnits.isNotEmpty() && cycle % SLOW_EVERY == 0L) {
+                        slowUnits[rr % slowUnits.size](mgr).forEach { (r, v) -> acc[r] = v }
+                        rr++
                     }
-                    _state.value = ObdLiveData(connected = conn.isConnected, values = out)
-                    delay(POLL_INTERVAL_MS)
+                    _state.value = ObdLiveData(connected = conn.isConnected, values = LinkedHashMap(acc))
+                    delay(CYCLE_MS)
+                    cycle++
                 }
             } catch (_: Exception) {
                 // Surface as disconnected; a future start() retries.
@@ -93,11 +112,26 @@ object ObdLiveController {
         _state.value = ObdLiveData(connected = false)
     }
 
-    /** Poll one mapped request and decode it with whatever command in any
-     *  profile owns it (matching by request string). */
-    private suspend fun pollRole(mgr: ObdManager, request: String): Double? {
+    /** Poll one mapped request, decoding with whatever profile command
+     *  owns it (matched by request string). Header reuse is handled in
+     *  ObdManager, so repeated FAST polls cost just the DID. */
+    private suspend fun pollSingle(mgr: ObdManager, request: String): Double? {
         val cmd = commandForRequest(request) ?: return null
-        return mgr.poll(cmd)
+        return mgr.readPayload(cmd)?.let { cmd.decode(it) }
+    }
+
+    /** Poll several standard-PID roles in one (chunked-to-6) batch. */
+    private suspend fun pollBatch(
+        mgr: ObdManager,
+        entries: List<Map.Entry<ObdRole, String>>,
+    ): Map<ObdRole, Double?> {
+        val merged = HashMap<Int, IntArray>()
+        entries.map { pidOf(it.value) }.chunked(6).forEach { merged.putAll(mgr.readMode01Batch(it)) }
+        return entries.associate { e ->
+            val payload = merged[pidOf(e.value)]
+            val cmd = commandForRequest(e.value)
+            e.key to (if (payload != null && cmd != null) cmd.decode(payload) else null)
+        }
     }
 
     private fun commandForRequest(request: String): ObdCommand? =
@@ -106,5 +140,13 @@ object ObdLiveController {
             .firstOrNull { it.command.request == request }
             ?.command
 
-    private const val POLL_INTERVAL_MS = 1_000L
+    private fun isStdPid(req: String): Boolean =
+        !req.contains(';') && req.startsWith("01") && req.length == 4
+
+    private fun pidOf(req: String): Int = req.substring(2, 4).toInt(16)
+
+    /** ~50 ms pacing on top of the blocking reads → power lands ~5–10 Hz
+     *  depending on adapter; a slow unit ticks every [SLOW_EVERY] cycles. */
+    private const val CYCLE_MS = 50L
+    private const val SLOW_EVERY = 10L
 }
