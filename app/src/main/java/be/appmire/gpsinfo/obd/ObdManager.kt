@@ -15,6 +15,9 @@ class ObdManager(
     private val conn: ObdConnection,
     /** Every request and reply is mirrored here for the session log. */
     private val log: (String) -> Unit = {},
+    /** Per-read outcome for adaptive pacing: (ok, busy, timedOut,
+     *  latencyMs). `busy` = an ELM overload marker in the reply. */
+    private val onRead: (Boolean, Boolean, Boolean, Long) -> Unit = { _, _, _, _ -> },
 ) {
 
     private val ioLock = Mutex()
@@ -37,7 +40,16 @@ class ObdManager(
     suspend fun raw(command: String, timeoutMs: Long = 2_000): String = ioLock.withLock {
         log("» $command")
         conn.write((command + "\r").toByteArray(Charsets.US_ASCII))
-        val reply = conn.readUntilPrompt(timeoutMs)
+        val t0 = System.currentTimeMillis()
+        val reply = try {
+            conn.readUntilPrompt(timeoutMs)
+        } catch (e: Exception) {
+            onRead(false, false, true, System.currentTimeMillis() - t0)
+            throw e
+        }
+        val latency = System.currentTimeMillis() - t0
+        val busy = BUSY_MARKERS.any { reply.uppercase().contains(it) }
+        onRead(!busy, busy, false, latency)
         log("« ${reply.replace("\r", "⏎").replace(">", "").trim()}")
         reply
     }
@@ -99,6 +111,13 @@ class ObdManager(
     private companion object {
         /** Restore standard functional OBD addressing after a UDS read. */
         val DEFAULT_PREFIX = listOf("ATSH7DF", "ATCRA")
+
+        /** ELM/bus replies that signal the adapter is overwhelmed (vs
+         *  NO DATA / '?', which are prompt, non-overload responses). */
+        val BUSY_MARKERS = listOf(
+            "BUFFER FULL", "BUS BUSY", "RX ERROR", "FB ERROR",
+            "DATA ERROR", "CAN ERROR", "UNABLE TO CONNECT",
+        )
     }
 
     /** Raw reply for an arbitrary request, for probing PIDs we don't yet

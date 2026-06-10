@@ -17,6 +17,9 @@ import kotlinx.coroutines.launch
 data class ObdLiveData(
     val connected: Boolean = false,
     val values: Map<ObdRole, Double?> = emptyMap(),
+    /** Measured period of the last poll cycle (ms) — the settled cadence
+     *  the adaptive pacer converged to. 0 until the first cycle. */
+    val pollIntervalMs: Long = 0,
 ) {
     val powerKw: Double? get() = values[ObdRole.POWER_KW]
     val socPercent: Double? get() = values[ObdRole.BATTERY_SOC]
@@ -64,7 +67,13 @@ object ObdLiveController {
             val conn = ObdConnection(appContext)
             try {
                 conn.connect(address)
-                val mgr = ObdManager(conn)
+                val monitor = ObdLoadMonitor()
+                val mgr = ObdManager(
+                    conn,
+                    onRead = { ok, busy, timedOut, latencyMs ->
+                        monitor.onOutcome(ok, busy, timedOut, latencyMs)
+                    },
+                )
                 mgr.runInit()
                 _state.value = ObdLiveData(connected = true, values = emptyMap())
 
@@ -85,14 +94,23 @@ object ObdLiveController {
                 val acc = LinkedHashMap<ObdRole, Double?>()
                 var cycle = 0L
                 var rr = 0
+                var lastPublish = System.currentTimeMillis()
                 while (isActive) {
                     for ((role, request) in fast) acc[role] = pollSingle(mgr, request)
                     if (slowUnits.isNotEmpty() && cycle % SLOW_EVERY == 0L) {
                         slowUnits[rr % slowUnits.size](mgr).forEach { (r, v) -> acc[r] = v }
                         rr++
                     }
-                    _state.value = ObdLiveData(connected = conn.isConnected, values = LinkedHashMap(acc))
-                    delay(CYCLE_MS)
+                    val now = System.currentTimeMillis()
+                    _state.value = ObdLiveData(
+                        connected = conn.isConnected,
+                        values = LinkedHashMap(acc),
+                        pollIntervalMs = now - lastPublish,
+                    )
+                    lastPublish = now
+                    // Adaptive pacing: back off when the bus/adapter is
+                    // overloaded, speed up when it's keeping up.
+                    delay(monitor.delayMs())
                     cycle++
                 }
             } catch (_: Exception) {
@@ -145,8 +163,7 @@ object ObdLiveController {
 
     private fun pidOf(req: String): Int = req.substring(2, 4).toInt(16)
 
-    /** ~50 ms pacing on top of the blocking reads → power lands ~5–10 Hz
-     *  depending on adapter; a slow unit ticks every [SLOW_EVERY] cycles. */
-    private const val CYCLE_MS = 50L
+    /** A slow unit ticks every [SLOW_EVERY] cycles; the cycle delay itself
+     *  is adaptive (see [ObdLoadMonitor]). */
     private const val SLOW_EVERY = 10L
 }
