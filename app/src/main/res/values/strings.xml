@@ -844,4 +844,5 @@
     <string name="settings_obd_lab">OBD2 Lab</string>
     <string name="metric_outside_temp">Outside</string>
     <string name="about_map_attribution">Map data © OpenStreetMap contributors · Tiles by OpenFreeMap · Rendering by MapLibre</string>
+    <string name="nav_calculating">Calculating route…</string>
 </resources>

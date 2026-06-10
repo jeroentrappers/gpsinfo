@@ -246,12 +246,18 @@ fun LiveMapScreen(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // Turn-by-turn maneuver banner while navigating an
-                // offline route.
-                (navState as? NavigationController.NavState.Navigating)?.let { navg ->
-                    navg.nextTurn?.let { turn ->
-                        ManeuverBanner(turn = turn, distanceM = navg.distanceToTurnM)
-                    }
+                // Navigation status banner: a progress spinner while the
+                // route computes (so it doesn't look stuck), the failure
+                // reason if it fails, or the turn-by-turn maneuver once
+                // navigating.
+                when (val ns = navState) {
+                    is NavigationController.NavState.Preparing -> PreparingBanner(ns.detail)
+                    is NavigationController.NavState.Failed -> FailedBanner(ns.message)
+                    is NavigationController.NavState.Navigating ->
+                        ns.nextTurn?.let { turn ->
+                            ManeuverBanner(turn = turn, distanceM = ns.distanceToTurnM)
+                        }
+                    else -> Unit
                 }
                 // Top strip (Pro only): precise speed + its margin of
                 // error, heading and altitude. In Simple the bottom-left
@@ -482,6 +488,68 @@ private fun LabeledMapControl(label: String, button: @Composable () -> Unit) {
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
             )
         }
+    }
+}
+
+/** Route-computing banner: a spinner + the current phase (tile download
+ *  percentage / "computing route") so the prepare step doesn't look
+ *  frozen. */
+@Composable
+private fun PreparingBanner(detail: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 3.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            androidx.compose.material3.CircularProgressIndicator(
+                modifier = Modifier.size(22.dp),
+                strokeWidth = 2.5.dp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            Column(modifier = Modifier.padding(start = 16.dp)) {
+                Text(
+                    text = stringResource(R.string.nav_calculating),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                if (detail.isNotBlank()) {
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Transient banner shown when route preparation fails (no fix, no route,
+ *  tile download error) — the controller clears it after a few seconds. */
+@Composable
+private fun FailedBanner(message: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 3.dp,
+    ) {
+        Text(
+            text = message,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+        )
     }
 }
 

@@ -894,4 +894,5 @@
     <string name="settings_obd_lab">Labo OBD2</string>
     <string name="metric_outside_temp">Extérieur</string>
     <string name="about_map_attribution">Données cartographiques © contributeurs OpenStreetMap · Tuiles par OpenFreeMap · Rendu par MapLibre</string>
+    <string name="nav_calculating">Calcul de l\'itinéraire…</string>
 </resources>
