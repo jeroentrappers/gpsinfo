@@ -45,10 +45,22 @@ object ObdProfiles {
     private fun bms(did: String) = "ATSP7;ATSH17FC007B;ATCRA17FE007B;$did"
     private fun hvac(did: String) = "ATSP7;ATSH00000746;ATCRA000007B0;$did"
 
-    private fun u16(b: IntArray): Int? = if (b.size < 2) null else b[0] * 256 + b[1]
-    private fun u32(b: IntArray): Long? =
-        if (b.size < 4) null
-        else b[0].toLong() * 0x1000000L + b[1] * 0x10000L + b[2] * 0x100L + b[3]
+    // Byte extractors at an offset within the decoded payload (multi-frame
+    // platforms pack many values into one long response).
+    private fun u8(b: IntArray, i: Int): Int? = b.getOrNull(i)
+    private fun s8(b: IntArray, i: Int): Int? = b.getOrNull(i)?.let { if (it >= 0x80) it - 0x100 else it }
+    private fun u16(b: IntArray, i: Int): Int? {
+        val h = b.getOrNull(i) ?: return null
+        val l = b.getOrNull(i + 1) ?: return null
+        return h * 256 + l
+    }
+    private fun s16(b: IntArray, i: Int): Int? = u16(b, i)?.let { if (it >= 0x8000) it - 0x10000 else it }
+    private fun u32(b: IntArray, i: Int): Long? {
+        if (b.size < i + 4) return null
+        return b[i].toLong() * 0x1000000L + b[i + 1] * 0x10000L + b[i + 2] * 0x100L + b[i + 3]
+    }
+    private fun s32(b: IntArray, i: Int): Long? =
+        u32(b, i)?.let { if (it >= 0x80000000L) it - 0x100000000L else it }
 
     val VW_MEB: VehicleProfile = VehicleProfile(
         id = "vw_meb",
@@ -69,7 +81,7 @@ object ObdProfiles {
             ProfileCommand(
                 ObdRole.HV_VOLTAGE,
                 ObdCommand("hv_v", "HV pack", "V", bms("221E3B")) { b ->
-                    u16(b)?.let { it / 4.0 }
+                    u16(b, 0)?.let { it / 4.0 }
                 },
             ),
             // HV pack current (DID 1E3D, 4 bytes, (u32 − 150000) ÷ 100).
@@ -78,7 +90,7 @@ object ObdProfiles {
             ProfileCommand(
                 ObdRole.HV_CURRENT,
                 ObdCommand("hv_a", "HV current", "A", bms("221E3D")) { b ->
-                    u32(b)?.let { (it - 150_000L) / 100.0 }
+                    u32(b, 0)?.let { (it - 150_000L) / 100.0 }
                 },
             ),
             // Main HV battery temperature (DID 2A0B, 1 byte ÷ 2 − 40).
@@ -99,7 +111,95 @@ object ObdProfiles {
         ),
     )
 
-    val all: List<VehicleProfile> = listOf(GENERIC, VW_MEB)
+    // ── Hyundai / Kia (E-GMP: Ioniq 5/6, EV6/9, GV60; + Kona/Niro EV) ──
+    // 11-bit addressing. The BMS (7E4→7EC) answers 220101 / 220105 with
+    // long multi-frame ISO-TP responses (flow control required); values
+    // live at fixed byte offsets within them. Outside temp comes from the
+    // HVAC ECU (7B3→7BB), single-frame. DIDs/offsets corroborated across
+    // JejuSoul, Esprit1st, evDash and OVMS. Power is derived V×I.
+    private fun hkBms(did: String) =
+        "ATSP6;ATSH7E4;ATCRA7EC;ATFCSH7E4;ATFCSD300000;ATFCSM1;$did"
+    private fun hkHvac(did: String) = "ATSP6;ATSH7B3;ATCRA7BB;$did"
+
+    val HYUNDAI_KIA: VehicleProfile = VehicleProfile(
+        id = "hyundai_kia",
+        displayName = "Hyundai / Kia EV",
+        wmiPrefixes = listOf("KMH", "KNA", "KNE", "KME", "U5Y", "U6Y", "TMA", "LJ"),
+        commands = listOf(
+            // Display SoC: 220105 data byte 31 ÷ 2 (dashboard value).
+            ProfileCommand(
+                ObdRole.BATTERY_SOC,
+                ObdCommand("soc", "Battery SoC", "%", hkBms("220105")) { b -> u8(b, 31)?.let { it / 2.0 } },
+            ),
+            // From 220101: voltage bytes 12-13 ÷10; current bytes 10-11
+            // signed ÷10 (raw +=charge, −=discharge); temp byte 14 (int8).
+            ProfileCommand(
+                ObdRole.HV_VOLTAGE,
+                ObdCommand("hv_v", "HV pack", "V", hkBms("220101")) { b -> u16(b, 12)?.let { it / 10.0 } },
+            ),
+            ProfileCommand(
+                ObdRole.HV_CURRENT,
+                ObdCommand("hv_a", "HV current", "A", hkBms("220101")) { b -> s16(b, 10)?.let { it / 10.0 } },
+            ),
+            ProfileCommand(
+                ObdRole.HV_TEMP,
+                ObdCommand("hv_t", "HV pack temp", "°C", hkBms("220101")) { b -> s8(b, 14)?.toDouble() },
+            ),
+            ProfileCommand(
+                ObdRole.AMBIENT_TEMP,
+                ObdCommand("ambient", "Outside temp", "°C", hkHvac("220100")) { b -> u8(b, 6)?.let { it / 2.0 - 40.0 } },
+            ),
+        ),
+    )
+
+    // ── BMW EVs ── D-CAN extended 11-bit addressing: tester 6F1, target
+    // ECU via ATCEA (SME battery = 07 → resp 607; cluster KOM = 60 → 660).
+    // DIDs/formulas from OVMS (i3) + OBDb. Two profiles: i3 (SoC DDBC) and
+    // the G-platform i4/iX/iX1/iX3/i5/i7 (SoC E5CE); the rest of the SME
+    // DIDs (voltage/current/temp) are shared. Power derived V×I; current
+    // raw is −=discharge (no negation here → derive matches the dial).
+    private fun bmwSme(did: String) =
+        "ATSP6;ATSH6F1;ATCEA07;ATCRA607;ATFCSH6F1;ATFCSD300000;ATFCSM1;$did"
+    private fun bmwKom(did: String) = "ATSP6;ATSH6F1;ATCEA60;ATCRA660;$did"
+
+    private fun bmwSmeCommands(socDid: String, socDiv: Double) = listOf(
+        ProfileCommand(
+            ObdRole.BATTERY_SOC,
+            ObdCommand("soc", "Battery SoC", "%", bmwSme(socDid)) { b -> u16(b, 0)?.let { it / socDiv } },
+        ),
+        ProfileCommand(
+            ObdRole.HV_VOLTAGE,
+            ObdCommand("hv_v", "HV pack", "V", bmwSme("22DD68")) { b -> u16(b, 0)?.let { it / 100.0 } },
+        ),
+        ProfileCommand(
+            ObdRole.HV_CURRENT,
+            ObdCommand("hv_a", "HV current", "A", bmwSme("22DD69")) { b -> s32(b, 0)?.let { it / 100.0 } },
+        ),
+        ProfileCommand(
+            ObdRole.HV_TEMP,
+            ObdCommand("hv_t", "HV pack temp", "°C", bmwSme("22DDC0")) { b -> s16(b, 2)?.let { it / 100.0 } },
+        ),
+        ProfileCommand(
+            ObdRole.AMBIENT_TEMP,
+            ObdCommand("ambient", "Outside temp", "°C", bmwKom("22D112")) { b -> u8(b, 0)?.let { it / 2.0 - 40.0 } },
+        ),
+    )
+
+    val BMW_I3: VehicleProfile = VehicleProfile(
+        id = "bmw_i3",
+        displayName = "BMW i3",
+        wmiPrefixes = listOf("WBY"),
+        commands = bmwSmeCommands(socDid = "22DDBC", socDiv = 10.0),
+    )
+
+    val BMW_G: VehicleProfile = VehicleProfile(
+        id = "bmw_g",
+        displayName = "BMW iX / i4 / i5 / i7 / iX1 / iX3",
+        wmiPrefixes = listOf("WBA", "WBX", "WBS", "5UX"),
+        commands = bmwSmeCommands(socDid = "22E5CE", socDiv = 100.0),
+    )
+
+    val all: List<VehicleProfile> = listOf(GENERIC, VW_MEB, HYUNDAI_KIA, BMW_I3, BMW_G)
 
     /** Make-specific profiles only (skip generic) — what the probe tries
      *  for EV data after the standard PID sweep. */

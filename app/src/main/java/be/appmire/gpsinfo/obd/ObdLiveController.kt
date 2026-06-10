@@ -86,10 +86,11 @@ object ObdLiveController {
                 val slowUds = slow.filter { !isStdPid(it.value) }
                 // One round-robin "unit" per slow signal; the standard PIDs
                 // collapse into a single multi-PID batch unit.
-                val slowUnits: List<suspend (ObdManager) -> Map<ObdRole, Double?>> = buildList {
-                    if (slowStd.isNotEmpty()) add { m -> pollBatch(m, slowStd) }
-                    slowUds.forEach { e -> add { m -> mapOf(e.key to pollSingle(m, e.value)) } }
-                }
+                val slowUnits: List<suspend (ObdManager, MutableMap<String, IntArray?>) -> Map<ObdRole, Double?>> =
+                    buildList {
+                        if (slowStd.isNotEmpty()) add { m, _ -> pollBatch(m, slowStd) }
+                        slowUds.forEach { e -> add { m, c -> mapOf(e.key to pollSingle(m, e.key, e.value, c)) } }
+                    }
 
                 // Power is a single DID on some makes, but on MEB it must
                 // be computed V×I — derive it when no direct power role is
@@ -102,7 +103,11 @@ object ObdLiveController {
                 var rr = 0
                 var lastPublish = System.currentTimeMillis()
                 while (isActive) {
-                    for ((role, request) in fast) acc[role] = pollSingle(mgr, request)
+                    // Per-cycle response cache: roles that share one request
+                    // (e.g. Hyundai voltage+current+temp all from 220101)
+                    // trigger a single ELM read, decoded per role.
+                    val cache = HashMap<String, IntArray?>()
+                    for ((role, request) in fast) acc[role] = pollSingle(mgr, role, request, cache)
                     if (derivePower) {
                         val v = acc[ObdRole.HV_VOLTAGE]
                         val i = acc[ObdRole.HV_CURRENT]
@@ -111,7 +116,7 @@ object ObdLiveController {
                         if (v != null && i != null) acc[ObdRole.POWER_KW] = -(v * i) / 1000.0
                     }
                     if (slowUnits.isNotEmpty() && cycle % SLOW_EVERY == 0L) {
-                        slowUnits[rr % slowUnits.size](mgr).forEach { (r, v) -> acc[r] = v }
+                        slowUnits[rr % slowUnits.size](mgr, cache).forEach { (r, v) -> acc[r] = v }
                         rr++
                     }
                     val now = System.currentTimeMillis()
@@ -143,12 +148,24 @@ object ObdLiveController {
         _state.value = ObdLiveData(connected = false)
     }
 
-    /** Poll one mapped request, decoding with whatever profile command
-     *  owns it (matched by request string). Header reuse is handled in
-     *  ObdManager, so repeated FAST polls cost just the DID. */
-    private suspend fun pollSingle(mgr: ObdManager, request: String): Double? {
-        val cmd = commandForRequest(request) ?: return null
-        return mgr.readPayload(cmd)?.let { cmd.decode(it) }
+    /** Poll one mapped role, decoding with the command that fills THAT
+     *  role for THIS request (so roles sharing a request — same payload,
+     *  different offsets — decode correctly). The raw payload is cached
+     *  per cycle so a shared request reads the ELM once. Header reuse in
+     *  ObdManager keeps repeated FAST polls down to just the DID. */
+    private suspend fun pollSingle(
+        mgr: ObdManager,
+        role: ObdRole,
+        request: String,
+        cache: MutableMap<String, IntArray?>,
+    ): Double? {
+        val cmd = commandFor(role, request) ?: return null
+        val payload = if (cache.containsKey(request)) {
+            cache[request]
+        } else {
+            mgr.readPayload(cmd).also { cache[request] = it }
+        }
+        return payload?.let { cmd.decode(it) }
     }
 
     /** Poll several standard-PID roles in one (chunked-to-6) batch. */
@@ -160,15 +177,17 @@ object ObdLiveController {
         entries.map { pidOf(it.value) }.chunked(6).forEach { merged.putAll(mgr.readMode01Batch(it)) }
         return entries.associate { e ->
             val payload = merged[pidOf(e.value)]
-            val cmd = commandForRequest(e.value)
+            val cmd = commandFor(e.key, e.value)
             e.key to (if (payload != null && cmd != null) cmd.decode(payload) else null)
         }
     }
 
-    private fun commandForRequest(request: String): ObdCommand? =
+    /** The command that fills [role] via [request] — disambiguates roles
+     *  that share a request (e.g. HV voltage vs current both from 220101). */
+    private fun commandFor(role: ObdRole, request: String): ObdCommand? =
         ObdProfiles.all
             .flatMap { it.commands }
-            .firstOrNull { it.command.request == request }
+            .firstOrNull { it.role == role && it.command.request == request }
             ?.command
 
     private fun isStdPid(req: String): Boolean =

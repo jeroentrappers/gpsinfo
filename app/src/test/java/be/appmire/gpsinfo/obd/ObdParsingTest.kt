@@ -95,6 +95,19 @@ class ObdParsingTest {
     }
 
     @Test
+    fun `multi-frame ISO-TP framed lines are reassembled`() {
+        // ELM (headers off, CAF on) prints a length line + 0:/1:/2: frames.
+        // 62 0101 + 16 data bytes; data[10..11]=FF38, [12..13]=0F00, [14]=19.
+        val reply = "013\r0:62010100000000\r1:000000000000FF\r2:380F001900\r>"
+        val p = ObdResponse.extractPayload(reply, mode = 0x22, expectedPidBytes = 2)!!
+        assertEquals(16, p.size)
+        assertEquals(0xFF, p[10])
+        assertEquals(0x38, p[11])
+        assertEquals(0x0F, p[12])
+        assertEquals(0x19, p[14])
+    }
+
+    @Test
     fun `splitMode01 returns empty on NO DATA`() {
         assertEquals(0, ObdResponse.splitMode01("NO DATA>") { StandardPids.dataLength(it) }.size)
     }

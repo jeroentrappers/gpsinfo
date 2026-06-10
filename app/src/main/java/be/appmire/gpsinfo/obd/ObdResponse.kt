@@ -52,16 +52,27 @@ object ObdResponse {
     }
 
     /** Clean an ELM reply to one uppercase hex string (echo/space/prompt
-     *  stripped), or null on an error line / empty reply. */
+     *  stripped), or null on an error line / empty reply.
+     *
+     *  Handles multi-frame ISO-TP output: with headers off + CAN
+     *  auto-format on, a long response prints a length line then
+     *  sequence-numbered frames `0:..`, `1:..`, `2:..`. We strip the
+     *  `N:` prefixes, concatenate the frames in order, and drop the
+     *  standalone length line. Single-frame replies are unaffected. */
     private fun joinedHex(raw: String): String? {
         val lines = raw.replace(">", "").lines().map { it.trim() }.filter { it.isNotEmpty() }
         if (lines.any { it.uppercase() in ERROR_LINES }) return null
-        val joined = lines.map { it.replace(" ", "") }
-            .filter { HEX.matches(it) }
-            .joinToString("")
-            .uppercase()
-        return joined.ifEmpty { null }
+        val framed = lines.filter { it.length > 2 && it[1] == ':' && it[0].isHexDigit() }
+        val parts = if (framed.isNotEmpty()) {
+            framed.map { it.substring(2).replace(" ", "") }
+        } else {
+            lines.map { it.replace(" ", "") }.filter { HEX.matches(it) }
+        }
+        return parts.joinToString("").uppercase().ifEmpty { null }
     }
+
+    private fun Char.isHexDigit(): Boolean =
+        this in '0'..'9' || this in 'A'..'F' || this in 'a'..'f'
 
     /**
      * Split a multi-PID mode-01 reply into per-PID payloads. A request
