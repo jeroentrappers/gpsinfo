@@ -167,6 +167,12 @@ private class MapHolder {
     fun onMapReady(view: MapView, map: MapLibreMap) {
         this.map = map
         this.view = view
+        // Hide MapLibre's logo + attribution (i) icon — we surface the
+        // OSM/OpenFreeMap credit elsewhere (About) instead of on the map.
+        map.uiSettings.apply {
+            isLogoEnabled = false
+            isAttributionEnabled = false
+        }
         loadStyle(MapLibreStyle.forDark(wantDark))
     }
 
@@ -207,22 +213,42 @@ private class MapHolder {
                 iconIgnorePlacement = true
                 iconRotationAlignment = Property.ICON_ROTATION_ALIGNMENT_MAP
             }
+            // OpenFreeMap's dark style is near-black with low-contrast
+            // roads; brighten the road network + water so features read.
+            if (uri == MapLibreStyle.DARK) tuneDarkStyle(style)
             loadedUri = uri
             styleLoading = false
         }
     }
 
+    /** Make the dark style legible for driving: roads to a clear light
+     *  grey, water to a distinguishable blue. Per-layer best-effort. */
+    private fun tuneDarkStyle(style: Style) {
+        for (layer in style.layers) {
+            val id = layer.id.lowercase()
+            runCatching {
+                when {
+                    id.startsWith("highway") || id.startsWith("road") ||
+                        id.contains("transportation") || id.startsWith("bridge") ||
+                        id.startsWith("tunnel") ->
+                        layer.setProperties(PropertyFactory.lineColor(NIGHT_ROAD))
+                    id == "water" || id == "ocean" ->
+                        layer.setProperties(PropertyFactory.fillColor(NIGHT_WATER))
+                }
+            }
+        }
+    }
+
     /** Declutter the base map for navigation: hide POI icons/labels,
-     *  minor place + water/name labels and aeroways so the route reads
-     *  clearly. Toggled by id-substring so it survives style differences
-     *  (Liberty vs Dark) and missing layers. */
+     *  minor place labels and aeroways so the route reads clearly. Keeps
+     *  road/place/water names — those help while driving. Toggled by
+     *  id-substring so it survives style differences and missing layers. */
     private fun applySimplify(on: Boolean) {
         val style = style ?: return
         val vis = if (on) Property.NONE else Property.VISIBLE
         for (layer in style.layers) {
             val id = layer.id.lowercase()
             val clutter = id.startsWith("poi") ||
-                id.contains("_name") ||
                 id.startsWith("aeroway") ||
                 id.contains("village") || id.contains("hamlet") ||
                 id.contains("suburb") || id.contains("neighbo")
@@ -430,6 +456,9 @@ private class MapHolder {
     private companion object {
         /** OpenFreeMap style's extruded-buildings layer (Liberty + Dark). */
         const val BUILDING_3D_LAYER = "building-3d"
+        /** Night-map legibility overrides for the dark style. */
+        const val NIGHT_ROAD = "#8E97A3"
+        const val NIGHT_WATER = "#1C2A3A"
         /** Camera pitch in heading-up (driving) mode — 2.5D perspective. */
         const val HEADING_UP_PITCH_DEG = 50.0
         const val PUCK_IMAGE = "nav_puck"
