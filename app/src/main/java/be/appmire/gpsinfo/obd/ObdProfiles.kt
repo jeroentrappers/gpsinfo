@@ -42,7 +42,11 @@ object ObdProfiles {
     // Instantaneous power is NOT a DID on MEB — it's derived V×I by the
     // live feed. Remaining range and motor/inverter temp aren't reliably
     // documented, so they're intentionally omitted rather than guessed.
-    private fun bms(did: String) = "ATSP7;ATSH17FC007B;ATCRA17FE007B;$did"
+    // Flow control (ATFCSH/ATFCSD/ATFCSM) is required: the current DID
+    // returns a multi-frame ISO-TP reply on the real ID.Buzz, and without
+    // it only the first frame arrives (current → power can't decode).
+    private fun bms(did: String) =
+        "ATSP7;ATSH17FC007B;ATCRA17FE007B;ATFCSH17FC007B;ATFCSD300000;ATFCSM1;$did"
     private fun hvac(did: String) = "ATSP7;ATSH00000746;ATCRA000007B0;$did"
 
     // Byte extractors at an offset within the decoded payload (multi-frame
@@ -93,11 +97,13 @@ object ObdProfiles {
                     u32(b, 0)?.let { (it - 150_000L) / 100.0 }
                 },
             ),
-            // Main HV battery temperature (DID 2A0B, 1 byte ÷ 2 − 40).
+            // HV battery (max cell) temperature. 222A0B returned NO DATA
+            // on a real 2026 ID.Buzz, so use 221E0E (evDash "max battery
+            // temp", 2 bytes ÷ 64) instead.
             ProfileCommand(
                 ObdRole.HV_TEMP,
-                ObdCommand("hv_t", "HV pack temp", "°C", bms("222A0B")) { b ->
-                    b.getOrNull(0)?.let { it / 2.0 - 40.0 }
+                ObdCommand("hv_t", "HV pack temp", "°C", bms("221E0E")) { b ->
+                    u16(b, 0)?.let { it / 64.0 }
                 },
             ),
             // Outside/ambient temp from the HVAC ECU (DID 2609, 1 byte ÷

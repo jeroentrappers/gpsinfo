@@ -29,8 +29,8 @@ class ObdProfilesTest {
     }
 
     @Test
-    fun `MEB HV temp is byte over 2 minus 40`() {
-        assertEquals(10.0, decode(ObdRole.HV_TEMP, intArrayOf(0x64))!!, 0.001) // 100/2-40
+    fun `MEB HV temp is u16 over 64`() {
+        assertEquals(40.0, decode(ObdRole.HV_TEMP, intArrayOf(0x0A, 0x00))!!, 0.001) // 2560/64
     }
 
     @Test
