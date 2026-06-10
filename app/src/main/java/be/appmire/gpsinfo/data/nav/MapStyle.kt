@@ -9,4 +9,11 @@ package be.appmire.gpsinfo.data.nav
  */
 object MapLibreStyle {
     const val LIBERTY = "https://tiles.openfreemap.org/styles/liberty"
+
+    /** OpenFreeMap's dark style (same OpenMapTiles schema as Liberty, so
+     *  the same annotation layers + offline tiles work). Used on the live
+     *  map when the app is in dark mode. */
+    const val DARK = "https://tiles.openfreemap.org/styles/dark"
+
+    fun forDark(dark: Boolean): String = if (dark) DARK else LIBERTY
 }

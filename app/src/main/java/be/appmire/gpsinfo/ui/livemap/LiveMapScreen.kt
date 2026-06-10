@@ -115,6 +115,15 @@ fun LiveMapScreen(
     }
     val outsideTempC = obdLive.ambientTempC?.takeIf { obdLive.connected }
 
+    // Map styling: dark base style in dark mode, and a decluttered map
+    // while navigating so the route reads clearly.
+    val darkMap = when (state.themeOverride) {
+        ThemeOverride.Dark -> true
+        ThemeOverride.Light -> false
+        ThemeOverride.System -> androidx.compose.foundation.isSystemInDarkTheme()
+    }
+    val navigating = navState is NavigationController.NavState.Navigating
+
     var follow by remember { mutableStateOf(true) }
     // Map presentation, cycled by the view-mode button (mirrors the car):
     // flat north-up → 2.5D heading-up → 2.5D heading-up + 3D buildings.
@@ -221,6 +230,8 @@ fun LiveMapScreen(
                 navigationTarget = navigationTarget,
                 tbtRoute = tbtRoute,
                 recenterTrigger = recenterTrigger,
+                darkMap = darkMap,
+                simplified = navigating,
             )
 
             // Top overlay — speed, heading, altitude. Translucent so

@@ -16,6 +16,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import be.appmire.gpsinfo.car.MapViewMode
 import be.appmire.gpsinfo.data.RecordingState
+import be.appmire.gpsinfo.data.nav.MapLibreStyle
 import be.appmire.gpsinfo.data.model.NavigationTarget
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
@@ -66,6 +67,11 @@ fun MapLibreMapHost(
     tbtRoute: List<be.appmire.gpsinfo.data.nav.RoutePoint>? = null,
     /** Bumped by the caller to force a one-shot recenter on the user. */
     recenterTrigger: Int,
+    /** Use OpenFreeMap's dark style instead of Liberty. */
+    darkMap: Boolean = false,
+    /** Declutter the base map (hide POIs / minor place + name labels) —
+     *  on while navigating so the road ahead reads clearly. */
+    simplified: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -110,7 +116,7 @@ fun MapLibreMapHost(
             lastRecenter[0] = recenterTrigger
             holder.update(
                 loc, follow || forceRecenter, viewMode, gpsBearingDeg,
-                recording, navigationTarget, tbtRoute,
+                recording, navigationTarget, tbtRoute, darkMap, simplified,
             )
         },
     )
@@ -124,10 +130,22 @@ fun MapLibreMapHost(
  */
 private class MapHolder {
     private var map: MapLibreMap? = null
+    private var view: MapView? = null
     private var style: Style? = null
     private var circles: CircleManager? = null
     private var lines: LineManager? = null
     private var symbols: SymbolManager? = null
+
+    /** Which style URI is currently loaded, and whether a (re)load is in
+     *  flight — the style is swapped at runtime when the theme changes. */
+    private var loadedUri: String? = null
+    private var styleLoading = false
+
+    @Volatile
+    private var wantDark = false
+
+    /** Last applied declutter state, so we only walk the layers on change. */
+    private var lastSimplified: Boolean? = null
 
     /** What we last pushed to the style's `building-3d` layer, so the
      *  visibility is only set when the mode actually flips (and re-set
@@ -148,10 +166,34 @@ private class MapHolder {
 
     fun onMapReady(view: MapView, map: MapLibreMap) {
         this.map = map
-        map.setStyle(Style.Builder().fromUri(STYLE_URI)) { style ->
+        this.view = view
+        loadStyle(MapLibreStyle.forDark(wantDark))
+    }
+
+    /** (Re)load a style and rebuild the annotation managers on top of it.
+     *  Called initially and again whenever the theme flips the style —
+     *  a style swap drops all annotations, so the long-lived objects are
+     *  nulled and recreated by the next [update]. */
+    private fun loadStyle(uri: String) {
+        val map = map ?: return
+        val view = view ?: return
+        styleLoading = true
+        // The old annotations belong to the outgoing style; invalidate them.
+        circles = null
+        lines = null
+        symbols = null
+        style = null
+        userPuck = null
+        destDot = null
+        trailLine = null
+        routeLine = null
+        tbtLine = null
+        lastRoutePointCount = -1
+        lastTbtPointCount = -1
+        applied3d = null
+        lastSimplified = null
+        map.setStyle(Style.Builder().fromUri(uri)) { style ->
             this.style = style
-            // A fresh style needs the building-3d visibility (re)applied.
-            applied3d = null
             // Managers must outlive the style; LineManager added first
             // so the trail/route draw beneath the position markers.
             lines = LineManager(view, map, style)
@@ -165,6 +207,26 @@ private class MapHolder {
                 iconIgnorePlacement = true
                 iconRotationAlignment = Property.ICON_ROTATION_ALIGNMENT_MAP
             }
+            loadedUri = uri
+            styleLoading = false
+        }
+    }
+
+    /** Declutter the base map for navigation: hide POI icons/labels,
+     *  minor place + water/name labels and aeroways so the route reads
+     *  clearly. Toggled by id-substring so it survives style differences
+     *  (Liberty vs Dark) and missing layers. */
+    private fun applySimplify(on: Boolean) {
+        val style = style ?: return
+        val vis = if (on) Property.NONE else Property.VISIBLE
+        for (layer in style.layers) {
+            val id = layer.id.lowercase()
+            val clutter = id.startsWith("poi") ||
+                id.contains("_name") ||
+                id.startsWith("aeroway") ||
+                id.contains("village") || id.contains("hamlet") ||
+                id.contains("suburb") || id.contains("neighbo")
+            if (clutter) runCatching { layer.setProperties(PropertyFactory.visibility(vis)) }
         }
     }
 
@@ -176,10 +238,30 @@ private class MapHolder {
         recording: RecordingState,
         navigationTarget: NavigationTarget?,
         tbtRoute: List<be.appmire.gpsinfo.data.nav.RoutePoint>?,
+        darkMap: Boolean,
+        simplified: Boolean,
     ) {
+        wantDark = darkMap
         val map = map ?: return
+
+        // Swap the base style when the theme flips. A style reload drops
+        // all annotations, so they're rebuilt on the following frame.
+        val desiredUri = MapLibreStyle.forDark(darkMap)
+        if (styleLoading) return
+        if (desiredUri != loadedUri) {
+            loadStyle(desiredUri)
+            return
+        }
+
         val circles = circles ?: return
         val lines = lines ?: return
+
+        // Declutter for navigation when requested (only walks layers on
+        // change).
+        if (lastSimplified != simplified) {
+            applySimplify(simplified)
+            lastSimplified = simplified
+        }
 
         // Tilt is on for both 2.5D modes; 3D building extrusions only in
         // the dedicated 3D mode (the other two show flat footprints).
@@ -346,8 +428,7 @@ private class MapHolder {
     }
 
     private companion object {
-        val STYLE_URI = be.appmire.gpsinfo.data.nav.MapLibreStyle.LIBERTY
-        /** OpenFreeMap "liberty" style's extruded-buildings layer. */
+        /** OpenFreeMap style's extruded-buildings layer (Liberty + Dark). */
         const val BUILDING_3D_LAYER = "building-3d"
         /** Camera pitch in heading-up (driving) mode — 2.5D perspective. */
         const val HEADING_UP_PITCH_DEG = 50.0
