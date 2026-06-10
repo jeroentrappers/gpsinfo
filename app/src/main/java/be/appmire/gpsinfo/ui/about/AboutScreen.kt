@@ -536,6 +536,13 @@ private fun LicenseCard() {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+            Spacer(Modifier.height(12.dp))
+            // Map data attribution (the live map hides the on-map credit).
+            Text(
+                text = stringResource(R.string.about_map_attribution),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

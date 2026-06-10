@@ -221,13 +221,21 @@ private class MapHolder {
         }
     }
 
-    /** Make the dark style legible for driving: roads to a clear light
-     *  grey, water to a distinguishable blue. Per-layer best-effort. */
+    /** Make the dark style legible for driving: roads to a clear grey,
+     *  water to a distinguishable blue, and — crucially — every label to
+     *  near-white text with a strong dark halo so it reads on both the
+     *  dark background and the lightened roads. Per-layer best-effort. */
     private fun tuneDarkStyle(style: Style) {
         for (layer in style.layers) {
             val id = layer.id.lowercase()
             runCatching {
                 when {
+                    layer is org.maplibre.android.style.layers.SymbolLayer ->
+                        layer.setProperties(
+                            PropertyFactory.textColor(NIGHT_TEXT),
+                            PropertyFactory.textHaloColor(NIGHT_TEXT_HALO),
+                            PropertyFactory.textHaloWidth(1.6f),
+                        )
                     id.startsWith("highway") || id.startsWith("road") ||
                         id.contains("transportation") || id.startsWith("bridge") ||
                         id.startsWith("tunnel") ->
@@ -457,8 +465,10 @@ private class MapHolder {
         /** OpenFreeMap style's extruded-buildings layer (Liberty + Dark). */
         const val BUILDING_3D_LAYER = "building-3d"
         /** Night-map legibility overrides for the dark style. */
-        const val NIGHT_ROAD = "#8E97A3"
+        const val NIGHT_ROAD = "#7E8794"
         const val NIGHT_WATER = "#1C2A3A"
+        const val NIGHT_TEXT = "#ECEFF3"
+        const val NIGHT_TEXT_HALO = "#0B0E13"
         /** Camera pitch in heading-up (driving) mode — 2.5D perspective. */
         const val HEADING_UP_PITCH_DEG = 50.0
         const val PUCK_IMAGE = "nav_puck"

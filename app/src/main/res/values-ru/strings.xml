@@ -891,4 +891,5 @@
     <string name="voice_dist_miles">%1$s миль</string>
     <string name="settings_obd_lab">Лаборатория OBD2</string>
     <string name="metric_outside_temp">Снаружи</string>
+    <string name="about_map_attribution">Картографические данные © участники OpenStreetMap · Тайлы OpenFreeMap · Отрисовка MapLibre</string>
 </resources>

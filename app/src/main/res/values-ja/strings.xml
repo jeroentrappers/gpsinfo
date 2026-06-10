@@ -897,4 +897,5 @@
     <string name="voice_dist_miles">%1$sマイル</string>
     <string name="settings_obd_lab">OBD2 ラボ</string>
     <string name="metric_outside_temp">外気温</string>
+    <string name="about_map_attribution">地図データ © OpenStreetMap コントリビューター · タイル提供 OpenFreeMap · 描画 MapLibre</string>
 </resources>

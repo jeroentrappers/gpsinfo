@@ -891,4 +891,5 @@
     <string name="voice_dist_miles">%1$s Meilen</string>
     <string name="settings_obd_lab">OBD2-Labor</string>
     <string name="metric_outside_temp">Außen</string>
+    <string name="about_map_attribution">Kartendaten © OpenStreetMap-Mitwirkende · Kacheln von OpenFreeMap · Darstellung mit MapLibre</string>
 </resources>
