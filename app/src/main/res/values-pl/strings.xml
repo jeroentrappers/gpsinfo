@@ -884,4 +884,5 @@
     <string name="voice_dist_feet">%1$d stóp</string>
     <string name="voice_dist_miles">%1$s mil</string>
     <string name="settings_obd_lab">Laboratorium OBD2</string>
+    <string name="metric_outside_temp">Na zewnątrz</string>
 </resources>

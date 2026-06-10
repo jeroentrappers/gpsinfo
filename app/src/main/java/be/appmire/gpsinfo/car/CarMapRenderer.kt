@@ -161,6 +161,16 @@ class CarMapRenderer(
         scheduleRender()
     }
 
+    /** Outside (ambient) air temperature in °C from OBD, or null — shown
+     *  as a small badge top-left of the map. */
+    private var ambientTempC: Double? = null
+
+    fun updateAmbientTemp(celsius: Double?) {
+        if (celsius == ambientTempC) return
+        ambientTempC = celsius
+        scheduleRender()
+    }
+
     /** Latest G-force sample + a short fading trail for the G-meter
      *  dial (bottom-right corner). Fed from the phone's sensor stream,
      *  sampled down for the car so renders stay glanceable. */
@@ -704,6 +714,22 @@ class CarMapRenderer(
         val inset = stableArea ?: visibleArea ?: Rect(0, 0, mapRight.toInt(), h)
         val pad = h * 0.03f
         val unit = min((mapRight - mapLeft).toInt(), h) * 0.13f
+
+        // ── Outside-temp badge, top-left of the map (OBD ambient temp) ──
+        ambientTempC?.let { c ->
+            val txt = "%.0f°C".format(Locale.ROOT, c)
+            hudTextPaint.textAlign = Paint.Align.LEFT
+            hudTextPaint.textSize = unit * 0.36f
+            val tx = mapLeft + pad * 1.5f
+            val ty = inset.top + pad * 1.5f + hudTextPaint.textSize
+            val tw = hudTextPaint.measureText(txt)
+            bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+            val rect = RectF(tx - pad / 2, ty - hudTextPaint.textSize, tx + tw + pad / 2, ty + pad / 2)
+            canvas.drawRoundRect(rect, rect.height() / 2, rect.height() / 2, bubblePaint)
+            canvas.drawRoundRect(rect, rect.height() / 2, rect.height() / 2, bubbleStrokePaint)
+            hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+            canvas.drawText(txt, tx, ty - hudTextPaint.textSize * 0.18f, hudTextPaint)
+        }
 
         // ── Trip strip, bottom-left of the map ──
         val rec = recording as? RecordingState.Recording

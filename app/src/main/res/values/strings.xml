@@ -842,4 +842,5 @@
     <string name="voice_dist_feet">%1$d feet</string>
     <string name="voice_dist_miles">%1$s miles</string>
     <string name="settings_obd_lab">OBD2 Lab</string>
+    <string name="metric_outside_temp">Outside</string>
 </resources>

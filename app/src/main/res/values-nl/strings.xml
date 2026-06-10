@@ -892,4 +892,5 @@
     <string name="voice_dist_feet">%1$d voet</string>
     <string name="voice_dist_miles">%1$s mijl</string>
     <string name="settings_obd_lab">OBD2-lab</string>
+    <string name="metric_outside_temp">Buiten</string>
 </resources>

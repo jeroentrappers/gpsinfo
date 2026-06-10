@@ -21,6 +21,7 @@ data class ObdLiveData(
     val powerKw: Double? get() = values[ObdRole.POWER_KW]
     val socPercent: Double? get() = values[ObdRole.BATTERY_SOC]
     val rangeKm: Double? get() = values[ObdRole.RANGE_KM]
+    val ambientTempC: Double? get() = values[ObdRole.AMBIENT_TEMP]
 }
 
 /**

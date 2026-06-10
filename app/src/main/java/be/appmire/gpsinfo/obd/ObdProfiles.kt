@@ -21,6 +21,9 @@ object ObdProfiles {
             StandardPids.BY_PID[0x0D]?.let { add(ProfileCommand(ObdRole.SPEED, it)) }
             StandardPids.BY_PID[0x0C]?.let { add(ProfileCommand(ObdRole.RPM, it)) }
             StandardPids.BY_PID[0x05]?.let { add(ProfileCommand(ObdRole.COOLANT_TEMP, it)) }
+            // Ambient/outside air temperature (PID 0146) — many cars expose
+            // it; those that only have intake temp return NO DATA and drop.
+            StandardPids.BY_PID[0x46]?.let { add(ProfileCommand(ObdRole.AMBIENT_TEMP, it)) }
             StandardPids.BY_PID[0x42]?.let { add(ProfileCommand(ObdRole.VOLTAGE_12V, it)) }
             // Hybrid battery remaining-life ≈ SoC on many hybrids/PHEVs.
             StandardPids.BY_PID[0x5B]?.let { add(ProfileCommand(ObdRole.BATTERY_SOC, it)) }

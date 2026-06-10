@@ -106,6 +106,15 @@ fun LiveMapScreen(
     val loc = state.gnss.location
     val unit = state.unitSystem
 
+    // OBD live feed — outside temp etc. Only active if the user configured
+    // an adapter in the OBD Lab (startIfConfigured no-ops otherwise).
+    val obdLive by be.appmire.gpsinfo.obd.ObdLiveController.state.collectAsStateWithLifecycle()
+    val liveMapCtx = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        be.appmire.gpsinfo.obd.ObdLiveController.startIfConfigured(liveMapCtx)
+    }
+    val outsideTempC = obdLive.ambientTempC?.takeIf { obdLive.connected }
+
     var follow by remember { mutableStateOf(true) }
     // Map presentation, cycled by the view-mode button (mirrors the car):
     // flat north-up → 2.5D heading-up → 2.5D heading-up + 3D buildings.
@@ -244,6 +253,7 @@ fun LiveMapScreen(
                             ?.speedAccuracyMetersPerSecond?.times(3.6f),
                         gpsBearingDeg = gpsBearing,
                         altMeters = loc?.takeIf { it.hasAltitude() }?.altitude,
+                        outsideTempC = outsideTempC,
                         unit = unit,
                     )
                 }
@@ -531,6 +541,8 @@ private fun TopOverlay(
     speedAccuracyKmh: Float?,
     gpsBearingDeg: Float?,
     altMeters: Double?,
+    /** OBD ambient temperature in °C, or null when no OBD feed. */
+    outsideTempC: Double? = null,
     unit: UnitSystem,
     modifier: Modifier = Modifier,
 ) {
@@ -560,6 +572,16 @@ private fun TopOverlay(
                 } ?: "—",
                 unit = lengthUnitLabel(unit),
             )
+            // Outside temp — only when an OBD adapter is feeding it.
+            if (outsideTempC != null) {
+                val imperial = unit == UnitSystem.Imperial
+                val shown = if (imperial) outsideTempC * 9.0 / 5.0 + 32.0 else outsideTempC
+                Stat(
+                    label = stringResource(R.string.metric_outside_temp),
+                    value = "%.0f".format(Locale.ROOT, shown),
+                    unit = if (imperial) "°F" else "°C",
+                )
+            }
         }
     }
 }

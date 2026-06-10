@@ -896,4 +896,5 @@
     <string name="voice_dist_feet">%1$dフィート</string>
     <string name="voice_dist_miles">%1$sマイル</string>
     <string name="settings_obd_lab">OBD2 ラボ</string>
+    <string name="metric_outside_temp">外気温</string>
 </resources>

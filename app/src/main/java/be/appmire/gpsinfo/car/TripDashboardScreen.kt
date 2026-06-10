@@ -129,12 +129,14 @@ class TripDashboardScreen(
             .onEach { d ->
                 if (d.connected) {
                     renderer.updatePower(d.powerKw)
+                    renderer.updateAmbientTemp(d.ambientTempC)
                     if (d.socPercent != null || d.rangeKm != null) {
                         obdProvidesEnergy = true
                         renderer.updateEnergy(d.socPercent?.toFloat(), d.rangeKm?.toFloat())
                     }
                 } else {
                     obdProvidesEnergy = false
+                    renderer.updateAmbientTemp(null)
                 }
             }
             .launchIn(lifecycleScope)

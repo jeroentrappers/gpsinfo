@@ -14,6 +14,7 @@ enum class ObdRole(val label: String, val unit: String, val energyDial: Boolean 
     SPEED("Speed", "km/h"),
     RPM("Motor RPM", "rpm"),
     COOLANT_TEMP("Coolant", "°C"),
+    AMBIENT_TEMP("Outside temp", "°C"),
     VOLTAGE_12V("12V battery", "V"),
     POWER_KW("Power", "kW", energyDial = true),
     BATTERY_SOC("Battery SoC", "%", energyDial = true),
