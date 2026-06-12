@@ -96,11 +96,6 @@ private object Routes {
     const val Rally = "rally"
     const val WheelPair = "wheel-pair"
     const val GForce = "gforce"
-    const val Hub = "hub"
-    const val GpsLabSimple = "gps-lab-simple"
-    const val ExploreSimple = "explore-simple"
-    const val RallySimple = "rally-simple"
-    const val TrackSimple = "track-simple"
     const val ObdLab = "obd-lab"
     const val Tools = "tools"
 }
@@ -133,30 +128,6 @@ private fun MainBottomBar(nav: androidx.navigation.NavController, currentRoute: 
                 label = { Text(stringResource(tab.labelRes)) },
             )
         }
-    }
-}
-
-/** Activity Hub tile → the screen it opens, honouring the per-activity
- *  Simple/Pro detail level (Phase 3). Only GPS Lab has a Simple layout so
- *  far; the others open their existing (Pro) screen regardless. */
-private fun routeForActivity(
-    a: be.appmire.gpsinfo.ui.activity.Activity,
-    detail: be.appmire.gpsinfo.ui.activity.DetailLevel,
-): String {
-    val simple = detail == be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
-    return when (a) {
-        // Drive & Navigate is always the map; Simple/Pro is an in-screen
-        // info-density toggle (not a separate screen).
-        be.appmire.gpsinfo.ui.activity.Activity.DRIVE_NAVIGATE -> Routes.LiveMap
-        be.appmire.gpsinfo.ui.activity.Activity.TRACK_TRAIN ->
-            if (simple) Routes.TrackSimple else Routes.Dashboard
-        be.appmire.gpsinfo.ui.activity.Activity.EXPLORE_ORIENT ->
-            if (simple) Routes.ExploreSimple else Routes.Compass
-        be.appmire.gpsinfo.ui.activity.Activity.GPS_LAB ->
-            if (simple) Routes.GpsLabSimple else Routes.Satellites
-        be.appmire.gpsinfo.ui.activity.Activity.RALLY ->
-            if (simple) Routes.RallySimple else Routes.Rally
-        be.appmire.gpsinfo.ui.activity.Activity.CUSTOM -> Routes.Dashboard
     }
 }
 
@@ -269,61 +240,15 @@ class MainActivity : ComponentActivity() {
                         startDestination = Routes.Dashboard,
                         modifier = Modifier.padding(shellPadding),
                     ) {
-                        composable(Routes.Hub) {
-                            val pinned by vm.pinnedActivities.collectAsStateWithLifecycle()
-                            val last by vm.lastActivity.collectAsStateWithLifecycle()
-                            val introSeen by vm.activityIntroSeen.collectAsStateWithLifecycle()
-                            be.appmire.gpsinfo.ui.activity.ActivityHubScreen(
-                                pinned = pinned.toSet(),
-                                lastActivity = last,
-                                showIntro = !introSeen,
-                                onDismissIntro = { vm.markActivityIntroSeen() },
-                                onOpenActivity = { activity ->
-                                    vm.setLastActivity(activity)
-                                    nav.navigate(routeForActivity(activity, vm.detailLevelOf(activity)))
-                                },
-                            )
-                        }
                         composable(Routes.Dashboard) {
                             DashboardScreen(
-                                isDark = effectiveDark,
-                                onToggleTheme = {
-                                    val next = when (state.themeOverride) {
-                                        ThemeOverride.System -> if (systemDark) ThemeOverride.Light else ThemeOverride.Dark
-                                        ThemeOverride.Light -> ThemeOverride.Dark
-                                        ThemeOverride.Dark -> ThemeOverride.Light
-                                    }
-                                    vm.setThemeOverride(next)
-                                },
+                                vm = vm,
                                 onOpenSatellites = { nav.navigate(Routes.Satellites) },
                                 onOpenCompass = { nav.navigate(Routes.Compass) },
                                 onOpenCalibration = { nav.navigate(Routes.Calibration) },
                                 onOpenSpeed = { nav.navigate(Routes.Speed) },
                                 onOpenAbout = { nav.navigate(Routes.About) },
-                                onOpenTrails = { nav.navigate(Routes.Trails) },
-                                onOpenLiveMap = { nav.navigate(Routes.LiveMap) },
-                                onOpenNavPicker = { nav.navigate(Routes.NavPicker) },
-                                onOpenWaypoints = { nav.navigate(Routes.Waypoints) },
-                                onOpenSports = { nav.navigate(Routes.Sports) },
-                                onOpenGhost = { nav.navigate(Routes.Ghost) },
-                                onOpenRally = { nav.navigate(Routes.Rally) },
                                 onOpenGForce = { nav.navigate(Routes.GForce) },
-                                onOpenHub = {
-                                    nav.navigate(Routes.Hub) {
-                                        popUpTo(Routes.Hub) { inclusive = false }
-                                        launchSingleTop = true
-                                    }
-                                },
-                                onShowSimple = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.TRACK_TRAIN,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE,
-                                    )
-                                    nav.navigate(Routes.TrackSimple) {
-                                        popUpTo(Routes.Dashboard) { inclusive = true }
-                                    }
-                                },
-                                vm = vm,
                             )
                         }
                         composable(Routes.GForce) {
@@ -336,61 +261,6 @@ class MainActivity : ComponentActivity() {
                             be.appmire.gpsinfo.ui.rally.RallyScreen(
                                 onBack = { nav.popBackStack() },
                                 onOpenWheelPair = { nav.navigate(Routes.WheelPair) },
-                                onShowSimple = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.RALLY,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE,
-                                    )
-                                    nav.navigate(Routes.RallySimple) {
-                                        popUpTo(Routes.Rally) { inclusive = true }
-                                    }
-                                },
-                            )
-                        }
-                        composable(Routes.RallySimple) {
-                            be.appmire.gpsinfo.ui.activity.RallySimpleScreen(
-                                onBack = { nav.popBackStack() },
-                                onShowDetailed = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.RALLY,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.PRO,
-                                    )
-                                    nav.navigate(Routes.Rally) {
-                                        popUpTo(Routes.RallySimple) { inclusive = true }
-                                    }
-                                },
-                            )
-                        }
-                        composable(Routes.ExploreSimple) {
-                            be.appmire.gpsinfo.ui.activity.ExploreSimpleScreen(
-                                vm = vm,
-                                onBack = { nav.popBackStack() },
-                                onShowDetailed = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.EXPLORE_ORIENT,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.PRO,
-                                    )
-                                    nav.navigate(Routes.Compass) {
-                                        popUpTo(Routes.ExploreSimple) { inclusive = true }
-                                    }
-                                },
-                                onMark = { nav.navigate(Routes.Waypoints) },
-                                onShare = { nav.navigate(Routes.SharePosition) },
-                            )
-                        }
-                        composable(Routes.TrackSimple) {
-                            be.appmire.gpsinfo.ui.activity.TrackSimpleScreen(
-                                vm = vm,
-                                onBack = { nav.popBackStack() },
-                                onShowDetailed = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.TRACK_TRAIN,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.PRO,
-                                    )
-                                    nav.navigate(Routes.Dashboard) {
-                                        popUpTo(Routes.TrackSimple) { inclusive = true }
-                                    }
-                                },
                             )
                         }
                         composable(Routes.WheelPair) {
@@ -446,30 +316,6 @@ class MainActivity : ComponentActivity() {
                                 vm = vm,
                                 onBack = { nav.popBackStack() },
                                 onOpenNmea = { nav.navigate(Routes.Nmea) },
-                                onShowSimple = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.GPS_LAB,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE,
-                                    )
-                                    nav.navigate(Routes.GpsLabSimple) {
-                                        popUpTo(Routes.Satellites) { inclusive = true }
-                                    }
-                                },
-                            )
-                        }
-                        composable(Routes.GpsLabSimple) {
-                            be.appmire.gpsinfo.ui.activity.GpsLabSimpleScreen(
-                                vm = vm,
-                                onBack = { nav.popBackStack() },
-                                onShowDetailed = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.GPS_LAB,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.PRO,
-                                    )
-                                    nav.navigate(Routes.Satellites) {
-                                        popUpTo(Routes.GpsLabSimple) { inclusive = true }
-                                    }
-                                },
                             )
                         }
                         composable(Routes.Nmea) {
@@ -480,15 +326,6 @@ class MainActivity : ComponentActivity() {
                                 vm = vm,
                                 onBack = { nav.popBackStack() },
                                 onOpenCalibration = { nav.navigate(Routes.Calibration) },
-                                onShowSimple = {
-                                    vm.setActivityDetail(
-                                        be.appmire.gpsinfo.ui.activity.Activity.EXPLORE_ORIENT,
-                                        be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE,
-                                    )
-                                    nav.navigate(Routes.ExploreSimple) {
-                                        popUpTo(Routes.Compass) { inclusive = true }
-                                    }
-                                },
                             )
                         }
                         composable(Routes.Calibration) {
@@ -582,7 +419,8 @@ class MainActivity : ComponentActivity() {
                             ] ?: be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
                             be.appmire.gpsinfo.ui.livemap.LiveMapScreen(
                                 vm = vm,
-                                onBack = { nav.popBackStack() },
+                                // Top-level tab → no back arrow.
+                                onBack = null,
                                 onOpenDestination = { nav.navigate(Routes.NavPicker) },
                                 detailLevel = driveDetail,
                                 onToggleDetail = {

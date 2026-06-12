@@ -20,40 +20,29 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
-import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.outlined.AddLocationAlt
-import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.FiberManualRecord
 import androidx.compose.material.icons.outlined.Flag
-import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material.icons.outlined.Map
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.MyLocation
-import androidx.compose.material.icons.outlined.NearMe
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PinDrop
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.SportsScore
-import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Stop
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -126,29 +115,13 @@ private data class DashboardSection(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun DashboardScreen(
-    isDark: Boolean,
-    onToggleTheme: () -> Unit,
     vm: DashboardViewModel,
     onOpenSatellites: () -> Unit = {},
     onOpenCompass: () -> Unit = {},
     onOpenCalibration: () -> Unit = {},
     onOpenSpeed: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
-    onOpenTrails: () -> Unit = {},
-    onOpenLiveMap: () -> Unit = {},
-    onOpenNavPicker: () -> Unit = {},
-    onOpenSports: () -> Unit = {},
-    onOpenWaypoints: () -> Unit = {},
-    onOpenGhost: () -> Unit = {},
-    onOpenRally: () -> Unit = {},
     onOpenGForce: () -> Unit = {},
-    /** Return to the Activity Hub (the launch screen). The dashboard is
-     *  reached as the "Custom / Everything" and "Track & Train"
-     *  activities, so it needs an explicit way back to the selector. */
-    onOpenHub: () -> Unit = {},
-    /** Switch to the simple tracker (Track & Train activity Simple
-     *  view). Null hides the entry. */
-    onShowSimple: (() -> Unit)? = null,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val compass by vm.compass.collectAsStateWithLifecycle()
@@ -165,10 +138,10 @@ fun DashboardScreen(
     val activeProfile by vm.dashboardProfile.collectAsStateWithLifecycle()
     val headingMode by vm.headingMode.collectAsStateWithLifecycle()
     var showPaceGoalDialog by remember { mutableStateOf(false) }
-    // Lifted out of the (now-removed) top-bar action lambda so the
-    // slide-out drawer can trigger the same waypoint-capture sheet.
+    // Drives the waypoint-capture sheet, opened from the top-bar overflow.
     var captureOpen by remember { mutableStateOf(false) }
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    // Top-bar overflow menu (New waypoint / Save location / Settings).
+    var overflowOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
     var pendingSaveDialog by remember { mutableStateOf(false) }
@@ -221,7 +194,6 @@ fun DashboardScreen(
         }
         Unit
     }
-    val closeDrawer = { scope.launch { drawerState.close() }; Unit }
 
     // Recording start needs two best-effort runtime permissions. We
     // register the launchers here (composable scope) so the top-bar
@@ -278,43 +250,6 @@ fun DashboardScreen(
         MaterialTheme.colorScheme.onBackground
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            DashboardDrawerContent(
-                isRecording = isRecording,
-                isDark = isDark,
-                activeProfileId = activeProfile.id,
-                onOpenHub = { closeDrawer(); onOpenHub() },
-                onShowSimple = onShowSimple?.let { cb -> { closeDrawer(); cb() } },
-                onSelectProfile = { id ->
-                    closeDrawer()
-                    vm.setDashboardProfile(id)
-                },
-                onNewWaypoint = {
-                    closeDrawer()
-                    captureOpen = true
-                },
-                onSaveWaypoint = {
-                    closeDrawer()
-                    saveQuickWaypoint()
-                },
-                onMarkLap = {
-                    closeDrawer()
-                    markLapWithToast()
-                },
-                onOpenLiveMap = { closeDrawer(); onOpenLiveMap() },
-                onOpenTrails = { closeDrawer(); onOpenTrails() },
-                onOpenNavPicker = { closeDrawer(); onOpenNavPicker() },
-                onOpenWaypoints = { closeDrawer(); onOpenWaypoints() },
-                onOpenSports = { closeDrawer(); onOpenSports() },
-                onOpenGhost = { closeDrawer(); onOpenGhost() },
-                onOpenRally = { closeDrawer(); onOpenRally() },
-                onToggleTheme = onToggleTheme,
-                onOpenSettings = { closeDrawer(); onOpenAbout() },
-            )
-        },
-    ) {
     Scaffold(
         // testTagsAsResourceId surfaces every Modifier.testTag(...) as an
         // Android resource-id, which UiAutomator can then findObject(By.res …)
@@ -348,14 +283,11 @@ fun DashboardScreen(
                             )
                         }
                     } else {
-                        Text(stringResource(R.string.app_name))
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                        Icon(
-                            Icons.Outlined.Menu,
-                            contentDescription = stringResource(R.string.drawer_open),
+                        // The profile chip replaces the static app-name title:
+                        // tap to swap dashboard layouts (Default/Runner/…).
+                        DashboardProfileChip(
+                            active = activeProfile,
+                            onSelect = { vm.setDashboardProfile(it) },
                         )
                     }
                 },
@@ -388,6 +320,43 @@ fun DashboardScreen(
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
+                    }
+                    // Overflow: contextual quick-actions that no longer have
+                    // a drawer to live in, plus a path to Settings.
+                    IconButton(onClick = { overflowOpen = true }) {
+                        Icon(
+                            Icons.Outlined.MoreVert,
+                            contentDescription = stringResource(R.string.action_more),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = overflowOpen,
+                        onDismissRequest = { overflowOpen = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.waypoint_capture_title)) },
+                            leadingIcon = { Icon(Icons.Outlined.PinDrop, contentDescription = null) },
+                            onClick = {
+                                overflowOpen = false
+                                captureOpen = true
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.trail_waypoint_save)) },
+                            leadingIcon = { Icon(Icons.Outlined.AddLocationAlt, contentDescription = null) },
+                            onClick = {
+                                overflowOpen = false
+                                saveQuickWaypoint()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.screen_settings)) },
+                            leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                            onClick = {
+                                overflowOpen = false
+                                onOpenAbout()
+                            },
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -715,10 +684,9 @@ fun DashboardScreen(
             }
         }
     }
-    }
 
-    // Waypoint-capture sheet, triggered from the drawer's "New
-    // waypoint" entry. Lifted here so it overlays the whole screen.
+    // Waypoint-capture sheet, triggered from the top-bar overflow's
+    // "New waypoint" entry. Lifted here so it overlays the whole screen.
     if (captureOpen) {
         be.appmire.gpsinfo.ui.waypoints.WaypointCaptureSheet(
             vm = vm,
@@ -811,218 +779,66 @@ private fun TwoColumnLayout(
 }
 
 /**
- * Slide-out navigation drawer. Replaces the old top-bar action strip,
- * which had grown to ~10 unlabeled icons. Everything is now grouped
- * into labelled sections with an icon AND text, so destinations are
- * self-explanatory:
- *
- *  - Quick actions : new waypoint, save-location pin, mark lap.
- *  - Go to         : live map, trails, navigate, waypoints, sports.
- *  - Dashboard     : the persona-profile picker (was a top-bar dropdown).
- *  - App           : theme toggle, settings.
- *
- * Recording-only entries (Mark lap, Sports view) appear only while a
- * trail recording is active. The single time-critical action (Mark
- * lap) is also mirrored in the top bar for one-tap access.
+ * The dashboard-profile switcher, surfaced as a pill chip in the top
+ * bar (it replaced the old navigation drawer's profile section). Tapping
+ * opens a dropdown of the built-in profiles plus "Custom"; the active
+ * one is shown inline with its accent swatch.
  */
 @Composable
-private fun DashboardDrawerContent(
-    isRecording: Boolean,
-    isDark: Boolean,
-    activeProfileId: String,
-    onOpenHub: () -> Unit,
-    onShowSimple: (() -> Unit)?,
-    onSelectProfile: (String) -> Unit,
-    onNewWaypoint: () -> Unit,
-    onSaveWaypoint: () -> Unit,
-    onMarkLap: () -> Unit,
-    onOpenLiveMap: () -> Unit,
-    onOpenTrails: () -> Unit,
-    onOpenNavPicker: () -> Unit,
-    onOpenWaypoints: () -> Unit,
-    onOpenSports: () -> Unit,
-    onOpenGhost: () -> Unit,
-    onOpenRally: () -> Unit,
-    onToggleTheme: () -> Unit,
-    onOpenSettings: () -> Unit,
+private fun DashboardProfileChip(
+    active: be.appmire.gpsinfo.data.model.DashboardProfile,
+    onSelect: (String) -> Unit,
 ) {
-    ModalDrawerSheet {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+    var expanded by remember { mutableStateOf(false) }
+    val customId = be.appmire.gpsinfo.data.model.DashboardProfile.CUSTOM_ID
+    val customLabel = stringResource(R.string.dashboard_profile_custom)
+    val label = if (active.id == customId) customLabel else active.displayName
+    Box {
+        Surface(
+            onClick = { expanded = true },
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ) {
-            // Brand header.
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 28.dp, top = 22.dp, bottom = 14.dp, end = 28.dp),
+            Row(
+                modifier = Modifier.padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(R.string.drawer_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                ProfileSwatch(argb = active.accentArgb)
+                Text(label, style = MaterialTheme.typography.titleMedium)
+                Icon(Icons.Outlined.ArrowDropDown, contentDescription = null)
             }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp))
-
-            // Back to the Activity Hub — the launch screen / selector.
-            DrawerItem(
-                label = stringResource(R.string.drawer_activities),
-                icon = Icons.AutoMirrored.Outlined.ArrowBack,
-                onClick = onOpenHub,
-            )
-            if (onShowSimple != null) {
-                DrawerItem(
-                    label = stringResource(R.string.drawer_simple_tracker),
-                    icon = Icons.AutoMirrored.Outlined.DirectionsRun,
-                    onClick = onShowSimple,
-                )
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp))
-
-            // --- Quick actions --- //
-            DrawerSectionLabel(stringResource(R.string.drawer_section_quick))
-            DrawerItem(
-                label = stringResource(R.string.waypoint_capture_title),
-                icon = Icons.Outlined.PinDrop,
-                onClick = onNewWaypoint,
-            )
-            DrawerItem(
-                label = stringResource(R.string.trail_waypoint_save),
-                icon = Icons.Outlined.AddLocationAlt,
-                onClick = onSaveWaypoint,
-            )
-            if (isRecording) {
-                DrawerItem(
-                    label = stringResource(R.string.lap_action),
-                    icon = Icons.Outlined.Flag,
-                    onClick = onMarkLap,
-                )
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp))
-
-            // --- Navigation destinations --- //
-            DrawerSectionLabel(stringResource(R.string.drawer_section_navigate))
-            DrawerItem(
-                label = stringResource(R.string.live_map_open),
-                icon = Icons.Outlined.MyLocation,
-                onClick = onOpenLiveMap,
-            )
-            DrawerItem(
-                label = stringResource(R.string.trails_open),
-                icon = Icons.Outlined.Map,
-                onClick = onOpenTrails,
-            )
-            DrawerItem(
-                label = stringResource(R.string.nav_start),
-                icon = Icons.Outlined.NearMe,
-                onClick = onOpenNavPicker,
-            )
-            DrawerItem(
-                label = stringResource(R.string.settings_waypoints),
-                icon = Icons.AutoMirrored.Outlined.List,
-                onClick = onOpenWaypoints,
-            )
-            if (isRecording) {
-                DrawerItem(
-                    label = stringResource(R.string.sports_dashboard_open),
-                    icon = Icons.AutoMirrored.Outlined.DirectionsRun,
-                    onClick = onOpenSports,
-                )
-            }
-            DrawerItem(
-                label = stringResource(R.string.settings_ghost),
-                icon = Icons.Outlined.SportsScore,
-                onClick = onOpenGhost,
-            )
-            DrawerItem(
-                label = stringResource(R.string.drawer_rally),
-                icon = Icons.Outlined.Timer,
-                onClick = onOpenRally,
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp))
-
-            // --- Dashboard profile picker (was a top-bar dropdown) --- //
-            DrawerSectionLabel(stringResource(R.string.drawer_section_dashboard))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             be.appmire.gpsinfo.data.model.DashboardProfile.builtIns.forEach { p ->
-                NavigationDrawerItem(
-                    label = { Text(p.displayName) },
-                    selected = p.id == activeProfileId,
-                    onClick = { onSelectProfile(p.id) },
-                    icon = { ProfileSwatch(argb = p.accentArgb) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                DropdownMenuItem(
+                    text = { Text(p.displayName) },
+                    leadingIcon = { ProfileSwatch(argb = p.accentArgb) },
+                    trailingIcon = {
+                        if (p.id == active.id) Icon(Icons.Outlined.Check, contentDescription = null)
+                    },
+                    onClick = {
+                        onSelect(p.id)
+                        expanded = false
+                    },
                 )
             }
-            val customId = be.appmire.gpsinfo.data.model.DashboardProfile.CUSTOM_ID
-            NavigationDrawerItem(
-                label = { Text(stringResource(R.string.dashboard_profile_custom)) },
-                selected = activeProfileId == customId,
-                onClick = { onSelectProfile(customId) },
-                icon = {
-                    ProfileSwatch(
-                        argb = be.appmire.gpsinfo.data.model.DashboardProfile.COLOR_ORANGE,
-                    )
+            DropdownMenuItem(
+                text = { Text(customLabel) },
+                leadingIcon = {
+                    ProfileSwatch(argb = be.appmire.gpsinfo.data.model.DashboardProfile.COLOR_ORANGE)
                 },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                trailingIcon = {
+                    if (active.id == customId) Icon(Icons.Outlined.Check, contentDescription = null)
+                },
+                onClick = {
+                    onSelect(customId)
+                    expanded = false
+                },
             )
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp))
-
-            // --- App --- //
-            DrawerSectionLabel(stringResource(R.string.drawer_section_app))
-            // Theme toggle stays open so the user sees the drawer (and the
-            // whole UI) recolour live, and can flip back in one tap.
-            DrawerItem(
-                label = stringResource(R.string.action_toggle_theme),
-                icon = if (isDark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
-                onClick = onToggleTheme,
-            )
-            DrawerItem(
-                label = stringResource(R.string.screen_settings),
-                icon = Icons.Outlined.Settings,
-                onClick = onOpenSettings,
-            )
-            Spacer(Modifier.height(16.dp))
         }
     }
-}
-
-/** Tracked-out uppercase section heading inside the drawer. */
-@Composable
-private fun DrawerSectionLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 28.dp, top = 16.dp, bottom = 4.dp),
-    )
-}
-
-/** A standard icon+label drawer row. Non-selectable (these are
- *  actions / one-shot navigations, not a persistent destination
- *  selection — that pattern is reserved for the profile picker). */
-@Composable
-private fun DrawerItem(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
-) {
-    NavigationDrawerItem(
-        label = { Text(label) },
-        selected = false,
-        onClick = onClick,
-        icon = { Icon(icon, contentDescription = null) },
-        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-    )
 }
 
 /** Compact elapsed-time formatter for the recording title:

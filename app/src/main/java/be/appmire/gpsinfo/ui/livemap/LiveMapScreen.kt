@@ -83,7 +83,8 @@ import java.util.Locale
 @Composable
 fun LiveMapScreen(
     vm: DashboardViewModel,
-    onBack: () -> Unit,
+    /** Back navigation. Null when shown as a top-level tab (no back arrow). */
+    onBack: (() -> Unit)? = null,
     /** Open the destination picker (search / saved places). */
     onOpenDestination: (() -> Unit)? = null,
     /** Drive & Navigate detail level: Simple shows just speed + guidance,
@@ -154,11 +155,13 @@ fun LiveMapScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.live_map_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back),
+                            )
+                        }
                     }
                 },
                 actions = {

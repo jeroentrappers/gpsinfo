@@ -934,38 +934,12 @@ class DashboardViewModel(
             }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    /** First-run completion: [selectedProfileIds] are persona ids in
-     *  selection order (the first is primary). Seeds the active dashboard
-     *  profile + accent, the pinned activities (union across personas),
-     *  and marks onboarding done. */
     /** New onboarding: the Language/Units/Theme prefs are written by the
      *  screen as they're picked; this just seeds the default dashboard
      *  profile and marks onboarding done (→ lands on the Dashboard). */
     fun finishOnboarding() {
         viewModelScope.launch {
             (settings as? SettingsRepository)?.setDashboardProfileId("default")
-            settings.setOnboardingSeen(true)
-        }
-    }
-
-    fun completeOnboarding(selectedProfileIds: List<String>) {
-        val primary = selectedProfileIds.firstOrNull() ?: "default"
-        val pinned = be.appmire.gpsinfo.ui.activity.Personas
-            .pinnedActivitiesFor(selectedProfileIds).map { it.name }
-        // Seed each pinned activity's detail level from the primary
-        // persona's default (geeks → Pro, casual → Simple).
-        val seed = be.appmire.gpsinfo.ui.activity.Personas.byId(primary)
-            ?.defaultDetail ?: be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
-        val detailSeed = pinned.associateWith { seed.name }
-        viewModelScope.launch {
-            (settings as? SettingsRepository)?.let {
-                it.setDashboardProfileId(primary)
-                it.setPinnedActivities(pinned)
-                it.mergeActivityDetailLevels(detailSeed)
-                // Fresh installs went through the picker; they don't need
-                // the upgrade intro.
-                it.setActivityIntroSeen()
-            }
             settings.setOnboardingSeen(true)
         }
     }

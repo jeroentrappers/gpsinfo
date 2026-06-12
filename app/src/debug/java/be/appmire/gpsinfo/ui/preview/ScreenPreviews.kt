@@ -31,8 +31,6 @@ import be.appmire.gpsinfo.ui.trails.TrailsListScreen
 private fun PreviewDashboardScreen() {
     GPSinfoTheme(forceDark = true) {
         DashboardScreen(
-            isDark = true,
-            onToggleTheme = {},
             vm = rememberPreviewVm(),
         )
     }
@@ -43,8 +41,6 @@ private fun PreviewDashboardScreen() {
 private fun PreviewDashboardScreenLight() {
     GPSinfoTheme(forceDark = false) {
         DashboardScreen(
-            isDark = false,
-            onToggleTheme = {},
             vm = rememberPreviewVm(),
         )
     }
@@ -55,8 +51,6 @@ private fun PreviewDashboardScreenLight() {
 private fun PreviewDashboardScreenWide() {
     GPSinfoTheme(forceDark = true) {
         DashboardScreen(
-            isDark = true,
-            onToggleTheme = {},
             vm = rememberPreviewVm(),
         )
     }

@@ -65,10 +65,18 @@ density setting, and every feature screen.
 
 ## Phasing
 
-1. **Onboarding** — new Language/Units/Theme flow; first run → Dashboard.
-2. **Bottom-nav shell** — `Scaffold` + `NavigationBar` with the 4 tabs
+1. ✅ **Onboarding** — new Language/Units/Theme flow; first run → Dashboard.
+2. ✅ **Bottom-nav shell** — `Scaffold` + `NavigationBar` with the 4 tabs
    wired to existing screens (Dashboard, Map=LiveMap, Record=Trails,
-   Tools=new list); Settings gear.
-3. **Fold + retire** — Drive/Explore into Map, Track into Record; move
-   dashboard-profile to a chip; delete Hub, drawer, Simple screens,
-   persona picker, `routeForActivity`.
+   Tools=new list).
+3. ✅ **Fold + retire** — dashboard-profile is now a top-bar **chip**
+   (with an overflow menu for New waypoint / Save location / Settings);
+   the hamburger **drawer** is gone; Map (LiveMap) drops its back arrow
+   as a top-level tab. Deleted: `ActivityHubScreen` (Hub) + `Routes.Hub`,
+   `PersonaPickerScreen`, the four `*Simple` screens + routes, the
+   per-screen Simple/Pro toggles (`onShowSimple` on Rally/Satellite/
+   Compass), `routeForActivity`, and `DashboardViewModel.completeOnboarding`.
+
+   Kept (still feed dashboard profiles / detail-density): the `Activity`
+   enum + `detailLevels`, `Persona`/`Personas`/`PersonaLayouts`. A future
+   pass could retire those too if profiles stop depending on personas.
