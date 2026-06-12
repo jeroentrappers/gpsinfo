@@ -461,7 +461,9 @@ private class MapHolder {
     /** Chevron-in-translucent-blue-disc navigation puck, drawn once and
      *  registered as a style image the SymbolManager references. */
     private fun navPuckBitmap(): Bitmap {
-        val s = 96
+        // 96 → 173 px: an 80% larger puck (geometry below is all relative
+        // to s, so proportions are preserved and it stays crisp).
+        val s = 173
         val bmp = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         val cx = s / 2f
@@ -500,8 +502,9 @@ private class MapHolder {
         const val NIGHT_ROAD_CASING = "#3C4858" // thin darker road outline
         const val NIGHT_TEXT = "#DCE3ED" // soft near-white labels
         const val NIGHT_TEXT_HALO = "#1A2230" // halo matched to bg
-        /** Camera pitch in heading-up (driving) mode — 2.5D perspective. */
-        const val HEADING_UP_PITCH_DEG = 50.0
+        /** Camera pitch in heading-up (driving) mode — 2.5D perspective.
+         *  Near MapLibre's 60° cap for a strong driving lean. */
+        const val HEADING_UP_PITCH_DEG = 58.0
         const val PUCK_IMAGE = "nav_puck"
         /** Top camera padding (fraction of map height) in heading-up mode
          *  — pushes the puck toward the bottom so the road ahead shows. */
