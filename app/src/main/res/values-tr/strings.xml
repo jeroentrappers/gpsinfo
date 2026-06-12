@@ -821,7 +821,7 @@
     <string name="metric_outside_temp">Dış</string>
     <string name="about_map_attribution">Harita verileri © OpenStreetMap katkıda bulunanlar · Döşemeler OpenFreeMap · İşleme MapLibre</string>
     <string name="nav_calculating">Rota hesaplanıyor…</string>
-    <string name="onboarding_prefs_subtitle">Birkaç tercih belirleyin. İstediğiniz zaman Ayarlar'dan değiştirebilirsiniz.</string>
+    <string name="onboarding_prefs_subtitle">Birkaç tercih belirleyin. İstediğiniz zaman Ayarlar\'dan değiştirebilirsiniz.</string>
     <string name="pref_language">Dil</string>
     <string name="pref_units">Birimler</string>
     <string name="pref_theme">Tema</string>
