@@ -907,4 +907,8 @@
     <string name="theme_light">ライト</string>
     <string name="theme_dark">ダーク</string>
     <string name="onboarding_get_started">始める</string>
+    <string name="tab_dashboard">ダッシュボード</string>
+    <string name="tab_map">地図</string>
+    <string name="tab_record">記録</string>
+    <string name="tab_tools">ツール</string>
 </resources>

@@ -899,4 +899,8 @@
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Escuro</string>
     <string name="onboarding_get_started">Começar</string>
+    <string name="tab_dashboard">Painel</string>
+    <string name="tab_map">Mapa</string>
+    <string name="tab_record">Gravar</string>
+    <string name="tab_tools">Ferramentas</string>
 </resources>

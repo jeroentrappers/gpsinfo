@@ -853,4 +853,8 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="onboarding_get_started">Get started</string>
+    <string name="tab_dashboard">Dashboard</string>
+    <string name="tab_map">Map</string>
+    <string name="tab_record">Record</string>
+    <string name="tab_tools">Tools</string>
 </resources>

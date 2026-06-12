@@ -901,4 +901,8 @@
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Тёмная</string>
     <string name="onboarding_get_started">Начать</string>
+    <string name="tab_dashboard">Панель</string>
+    <string name="tab_map">Карта</string>
+    <string name="tab_record">Запись</string>
+    <string name="tab_tools">Инструменты</string>
 </resources>

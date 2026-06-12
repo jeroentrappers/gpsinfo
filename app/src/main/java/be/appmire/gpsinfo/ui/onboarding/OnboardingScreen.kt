@@ -54,14 +54,14 @@ import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 @Composable
 fun OnboardingScreen(vm: DashboardViewModel, onDone: () -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-    ) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+        ) {
         Text(
             text = stringResource(R.string.onboarding_title),
             style = MaterialTheme.typography.headlineSmall,
@@ -122,6 +122,7 @@ fun OnboardingScreen(vm: DashboardViewModel, onDone: () -> Unit) {
             Text(stringResource(R.string.onboarding_get_started))
         }
         Spacer(Modifier.height(16.dp))
+        }
     }
 }
 

@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,9 +25,24 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.SpaceDashboard
+import androidx.compose.material.icons.outlined.Timeline
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.res.stringResource
+import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.ThemeOverride
 import be.appmire.gpsinfo.ui.about.AboutScreen
 import be.appmire.gpsinfo.ui.calibration.CalibrationViewModel
@@ -86,6 +102,38 @@ private object Routes {
     const val RallySimple = "rally-simple"
     const val TrackSimple = "track-simple"
     const val ObdLab = "obd-lab"
+    const val Tools = "tools"
+}
+
+/** The four bottom-nav pillars (IA v2). Map = live map, Record = trails. */
+private val TAB_ROUTES = listOf(Routes.Dashboard, Routes.LiveMap, Routes.Trails, Routes.Tools)
+
+@Composable
+private fun MainBottomBar(nav: androidx.navigation.NavController, currentRoute: String?) {
+    if (currentRoute !in TAB_ROUTES) return
+    data class Tab(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val labelRes: Int)
+    val tabs = listOf(
+        Tab(Routes.Dashboard, Icons.Outlined.SpaceDashboard, R.string.tab_dashboard),
+        Tab(Routes.LiveMap, Icons.Outlined.Map, R.string.tab_map),
+        Tab(Routes.Trails, Icons.Outlined.Timeline, R.string.tab_record),
+        Tab(Routes.Tools, Icons.Outlined.Tune, R.string.tab_tools),
+    )
+    NavigationBar {
+        tabs.forEach { tab ->
+            NavigationBarItem(
+                selected = currentRoute == tab.route,
+                onClick = {
+                    nav.navigate(tab.route) {
+                        popUpTo(nav.graph.startDestinationId) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                icon = { Icon(tab.icon, contentDescription = null) },
+                label = { Text(stringResource(tab.labelRes)) },
+            )
+        }
+    }
 }
 
 /** Activity Hub tile → the screen it opens, honouring the per-activity
@@ -207,7 +255,15 @@ class MainActivity : ComponentActivity() {
                         )
                     } else {
                     val nav = rememberNavController()
-                    NavHost(navController = nav, startDestination = Routes.Dashboard) {
+                    val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+                    Scaffold(
+                        bottomBar = { MainBottomBar(nav, currentRoute) },
+                    ) { shellPadding ->
+                    NavHost(
+                        navController = nav,
+                        startDestination = Routes.Dashboard,
+                        modifier = Modifier.padding(shellPadding),
+                    ) {
                         composable(Routes.Hub) {
                             val pinned by vm.pinnedActivities.collectAsStateWithLifecycle()
                             val last by vm.lastActivity.collectAsStateWithLifecycle()
@@ -560,6 +616,20 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+                        composable(Routes.Tools) {
+                            be.appmire.gpsinfo.ui.tools.ToolsScreen(
+                                onOpenGpsLab = { nav.navigate(Routes.Satellites) },
+                                onOpenCompass = { nav.navigate(Routes.Compass) },
+                                onOpenSpeed = { nav.navigate(Routes.Speed) },
+                                onOpenNmea = { nav.navigate(Routes.Nmea) },
+                                onOpenRally = { nav.navigate(Routes.Rally) },
+                                onOpenObdLab = { nav.navigate(Routes.ObdLab) },
+                                onOpenGhost = { nav.navigate(Routes.Ghost) },
+                                onOpenNavigate = { nav.navigate(Routes.NavPicker) },
+                                onOpenSettings = { nav.navigate(Routes.About) },
+                            )
+                        }
+                    }
                     }
                     }
                 } else {

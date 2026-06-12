@@ -895,4 +895,8 @@
     <string name="theme_light">Jasny</string>
     <string name="theme_dark">Ciemny</string>
     <string name="onboarding_get_started">Zaczynaj</string>
+    <string name="tab_dashboard">Pulpit</string>
+    <string name="tab_map">Mapa</string>
+    <string name="tab_record">Nagrywaj</string>
+    <string name="tab_tools">Narzędzia</string>
 </resources>

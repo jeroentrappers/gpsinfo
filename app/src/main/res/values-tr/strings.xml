@@ -829,4 +829,8 @@
     <string name="theme_light">Açık</string>
     <string name="theme_dark">Koyu</string>
     <string name="onboarding_get_started">Başla</string>
+    <string name="tab_dashboard">Panel</string>
+    <string name="tab_map">Harita</string>
+    <string name="tab_record">Kaydet</string>
+    <string name="tab_tools">Araçlar</string>
 </resources>

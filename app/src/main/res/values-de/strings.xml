@@ -901,4 +901,8 @@
     <string name="theme_light">Hell</string>
     <string name="theme_dark">Dunkel</string>
     <string name="onboarding_get_started">Loslegen</string>
+    <string name="tab_dashboard">Dashboard</string>
+    <string name="tab_map">Karte</string>
+    <string name="tab_record">Aufnehmen</string>
+    <string name="tab_tools">Werkzeuge</string>
 </resources>
