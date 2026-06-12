@@ -895,4 +895,12 @@
     <string name="metric_outside_temp">Exterior</string>
     <string name="about_map_attribution">Datos de mapa © colaboradores de OpenStreetMap · Teselas de OpenFreeMap · Renderizado con MapLibre</string>
     <string name="nav_calculating">Calculando ruta…</string>
+    <string name="onboarding_prefs_subtitle">Configura algunas preferencias. Puedes cambiarlas cuando quieras en Ajustes.</string>
+    <string name="pref_language">Idioma</string>
+    <string name="pref_units">Unidades</string>
+    <string name="pref_theme">Tema</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="onboarding_get_started">Empezar</string>
 </resources>

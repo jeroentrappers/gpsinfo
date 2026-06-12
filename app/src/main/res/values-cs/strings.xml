@@ -891,4 +891,12 @@
     <string name="metric_outside_temp">Venku</string>
     <string name="about_map_attribution">Mapová data © přispěvatelé OpenStreetMap · Dlaždice OpenFreeMap · Vykreslení MapLibre</string>
     <string name="nav_calculating">Výpočet trasy…</string>
+    <string name="onboarding_prefs_subtitle">Nastav pár předvoleb. Kdykoli je můžeš změnit v Nastavení.</string>
+    <string name="pref_language">Jazyk</string>
+    <string name="pref_units">Jednotky</string>
+    <string name="pref_theme">Motiv</string>
+    <string name="theme_system">Systém</string>
+    <string name="theme_light">Světlý</string>
+    <string name="theme_dark">Tmavý</string>
+    <string name="onboarding_get_started">Začít</string>
 </resources>

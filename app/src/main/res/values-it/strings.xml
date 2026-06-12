@@ -891,4 +891,12 @@
     <string name="metric_outside_temp">Esterno</string>
     <string name="about_map_attribution">Dati cartografici © contributori OpenStreetMap · Tile di OpenFreeMap · Rendering con MapLibre</string>
     <string name="nav_calculating">Calcolo del percorso…</string>
+    <string name="onboarding_prefs_subtitle">Imposta alcune preferenze. Puoi modificarle in qualsiasi momento nelle Impostazioni.</string>
+    <string name="pref_language">Lingua</string>
+    <string name="pref_units">Unità</string>
+    <string name="pref_theme">Tema</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Chiaro</string>
+    <string name="theme_dark">Scuro</string>
+    <string name="onboarding_get_started">Inizia</string>
 </resources>

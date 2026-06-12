@@ -540,24 +540,6 @@ private fun UnitsRow(
     }
 }
 
-private data class AppLanguage(val tag: String?, val endonym: String)
-
-private val supportedLanguages = listOf(
-    AppLanguage(null, ""),
-    AppLanguage("en", "English"),
-    AppLanguage("cs", "Čeština"),
-    AppLanguage("de", "Deutsch"),
-    AppLanguage("es", "Español"),
-    AppLanguage("fr", "Français"),
-    AppLanguage("it", "Italiano"),
-    AppLanguage("nl", "Nederlands"),
-    AppLanguage("pl", "Polski"),
-    AppLanguage("pt-BR", "Português (Brasil)"),
-    AppLanguage("ru", "Русский"),
-    AppLanguage("tr", "Türkçe"),
-    AppLanguage("ja", "日本語"),
-)
-
 @androidx.annotation.RequiresApi(33)
 @Composable
 private fun LanguageRow() {
@@ -572,8 +554,8 @@ private fun LanguageRow() {
         if (list.isEmpty) null else list[0].toLanguageTag()
     }
     val systemDefaultLabel = stringResource(R.string.language_system)
-    val currentLabel = supportedLanguages
-        .firstOrNull { matches(it.tag, currentTag) }
+    val currentLabel = AppLanguages.all
+        .firstOrNull { AppLanguages.matches(it.tag, currentTag) }
         ?.let { if (it.tag == null) systemDefaultLabel else it.endonym }
         ?: systemDefaultLabel
 
@@ -615,9 +597,9 @@ private fun LanguageRow() {
                         .heightIn(max = 420.dp)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    supportedLanguages.forEach { lang ->
+                    AppLanguages.all.forEach { lang ->
                         val label = if (lang.tag == null) systemDefaultLabel else lang.endonym
-                        val selected = matches(lang.tag, currentTag)
+                        val selected = AppLanguages.matches(lang.tag, currentTag)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -645,12 +627,3 @@ private fun LanguageRow() {
 
 /** BCP47 tags can be returned with either dash or region-script variants;
  *  match leniently so "pt-BR" in our list also matches "pt-Latn-BR" etc. */
-private fun matches(option: String?, current: String?): Boolean {
-    if (option == null) return current.isNullOrEmpty()
-    if (current.isNullOrEmpty()) return false
-    val normOption = option.lowercase().replace('_', '-')
-    val normCurrent = current.lowercase().replace('_', '-')
-    return normCurrent == normOption ||
-        normCurrent.startsWith("$normOption-") ||
-        normOption.startsWith("$normCurrent-")
-}

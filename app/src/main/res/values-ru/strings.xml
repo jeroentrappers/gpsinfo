@@ -893,4 +893,12 @@
     <string name="metric_outside_temp">Снаружи</string>
     <string name="about_map_attribution">Картографические данные © участники OpenStreetMap · Тайлы OpenFreeMap · Отрисовка MapLibre</string>
     <string name="nav_calculating">Расчёт маршрута…</string>
+    <string name="onboarding_prefs_subtitle">Задайте несколько настроек. Их можно изменить в любой момент в Настройках.</string>
+    <string name="pref_language">Язык</string>
+    <string name="pref_units">Единицы</string>
+    <string name="pref_theme">Тема</string>
+    <string name="theme_system">Система</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="onboarding_get_started">Начать</string>
 </resources>

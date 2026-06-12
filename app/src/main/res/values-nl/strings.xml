@@ -895,4 +895,12 @@
     <string name="metric_outside_temp">Buiten</string>
     <string name="about_map_attribution">Kaartgegevens © OpenStreetMap-bijdragers · Tegels van OpenFreeMap · Weergave door MapLibre</string>
     <string name="nav_calculating">Route berekenen…</string>
+    <string name="onboarding_prefs_subtitle">Stel een paar voorkeuren in. Je kunt ze altijd wijzigen in Instellingen.</string>
+    <string name="pref_language">Taal</string>
+    <string name="pref_units">Eenheden</string>
+    <string name="pref_theme">Thema</string>
+    <string name="theme_system">Systeem</string>
+    <string name="theme_light">Licht</string>
+    <string name="theme_dark">Donker</string>
+    <string name="onboarding_get_started">Aan de slag</string>
 </resources>

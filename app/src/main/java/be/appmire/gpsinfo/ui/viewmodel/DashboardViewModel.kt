@@ -938,6 +938,16 @@ class DashboardViewModel(
      *  selection order (the first is primary). Seeds the active dashboard
      *  profile + accent, the pinned activities (union across personas),
      *  and marks onboarding done. */
+    /** New onboarding: the Language/Units/Theme prefs are written by the
+     *  screen as they're picked; this just seeds the default dashboard
+     *  profile and marks onboarding done (→ lands on the Dashboard). */
+    fun finishOnboarding() {
+        viewModelScope.launch {
+            (settings as? SettingsRepository)?.setDashboardProfileId("default")
+            settings.setOnboardingSeen(true)
+        }
+    }
+
     fun completeOnboarding(selectedProfileIds: List<String>) {
         val primary = selectedProfileIds.firstOrNull() ?: "default"
         val pinned = be.appmire.gpsinfo.ui.activity.Personas

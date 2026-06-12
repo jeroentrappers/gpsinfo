@@ -199,13 +199,15 @@ class MainActivity : ComponentActivity() {
                 if (hasPermission) {
                     val onboardingSeen by vm.onboardingSeen.collectAsStateWithLifecycle()
                     if (!onboardingSeen) {
-                        // First run: pick persona(s), seed pins + profile.
-                        be.appmire.gpsinfo.ui.activity.PersonaPickerScreen(
-                            onDone = { ids -> vm.completeOnboarding(ids) },
+                        // First run: capture Language / Units / Theme, then
+                        // land on the Dashboard (no persona gate).
+                        be.appmire.gpsinfo.ui.onboarding.OnboardingScreen(
+                            vm = vm,
+                            onDone = { vm.finishOnboarding() },
                         )
                     } else {
                     val nav = rememberNavController()
-                    NavHost(navController = nav, startDestination = Routes.Hub) {
+                    NavHost(navController = nav, startDestination = Routes.Dashboard) {
                         composable(Routes.Hub) {
                             val pinned by vm.pinnedActivities.collectAsStateWithLifecycle()
                             val last by vm.lastActivity.collectAsStateWithLifecycle()

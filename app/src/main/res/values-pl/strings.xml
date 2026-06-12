@@ -887,4 +887,12 @@
     <string name="metric_outside_temp">Na zewnątrz</string>
     <string name="about_map_attribution">Dane mapy © współtwórcy OpenStreetMap · Kafelki od OpenFreeMap · Renderowanie przez MapLibre</string>
     <string name="nav_calculating">Obliczanie trasy…</string>
+    <string name="onboarding_prefs_subtitle">Ustaw kilka preferencji. Możesz je zmienić w każdej chwili w Ustawieniach.</string>
+    <string name="pref_language">Język</string>
+    <string name="pref_units">Jednostki</string>
+    <string name="pref_theme">Motyw</string>
+    <string name="theme_system">Systemowy</string>
+    <string name="theme_light">Jasny</string>
+    <string name="theme_dark">Ciemny</string>
+    <string name="onboarding_get_started">Zaczynaj</string>
 </resources>
