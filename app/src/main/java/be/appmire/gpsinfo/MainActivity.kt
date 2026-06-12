@@ -257,6 +257,11 @@ class MainActivity : ComponentActivity() {
                     val nav = rememberNavController()
                     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
                     Scaffold(
+                        // Inner screens own their status-bar / side insets via their
+                        // own Scaffolds; the shell only contributes the bottom-bar
+                        // height. Zeroing contentWindowInsets here avoids consuming
+                        // the system-bar insets twice (which left fat top/bottom gaps).
+                        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
                         bottomBar = { MainBottomBar(nav, currentRoute) },
                     ) { shellPadding ->
                     NavHost(
