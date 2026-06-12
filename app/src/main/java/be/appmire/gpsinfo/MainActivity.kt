@@ -468,6 +468,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenRally = { nav.navigate(Routes.Rally) },
                                 onOpenObdLab = { nav.navigate(Routes.ObdLab) },
                                 onOpenGhost = { nav.navigate(Routes.Ghost) },
+                                onOpenSports = { nav.navigate(Routes.Sports) },
                                 onOpenNavigate = { nav.navigate(Routes.NavPicker) },
                                 onOpenSettings = { nav.navigate(Routes.About) },
                             )

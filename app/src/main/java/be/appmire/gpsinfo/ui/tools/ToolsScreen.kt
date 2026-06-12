@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.SatelliteAlt
 import androidx.compose.material.icons.outlined.Settings
@@ -50,6 +51,7 @@ fun ToolsScreen(
     onOpenRally: () -> Unit,
     onOpenObdLab: () -> Unit,
     onOpenGhost: () -> Unit,
+    onOpenSports: () -> Unit,
     onOpenNavigate: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -60,6 +62,7 @@ fun ToolsScreen(
         ToolItem(Icons.Outlined.Terminal, R.string.screen_nmea, onOpenNmea),
         ToolItem(Icons.Outlined.Navigation, R.string.nav_start, onOpenNavigate),
         ToolItem(Icons.Outlined.SportsScore, R.string.rally_title, onOpenRally),
+        ToolItem(Icons.Outlined.FitnessCenter, R.string.sports_dashboard_open, onOpenSports),
         ToolItem(Icons.Outlined.Tune, R.string.settings_obd_lab, onOpenObdLab),
         ToolItem(Icons.AutoMirrored.Outlined.DirectionsRun, R.string.ghost_picker_title, onOpenGhost),
         ToolItem(Icons.Outlined.Settings, R.string.screen_settings, onOpenSettings),
