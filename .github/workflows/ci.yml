@@ -12,6 +12,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Run JS actions on Node 24. The action majors below are already Node-24
+# native; this also covers laggards that have no Node-24 release yet
+# (e.g. android-actions/setup-android), silencing the Node-20 deprecation
+# warning until those upstreams ship a Node-24 version.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build:
     name: Lint + unit tests + assembleDebug
@@ -20,13 +27,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # JDK 21 matches gradle/gradle-daemon-jvm.properties (toolchainVersion=21).
       # Don't bump in lockstep with Kotlin/AGP — the build's expected JDK is
       # 21 regardless.
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -37,7 +44,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Unit tests
         run: ./gradlew testDebugUnitTest --stacktrace
