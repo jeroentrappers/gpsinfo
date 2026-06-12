@@ -33,8 +33,12 @@ import org.maplibre.android.plugins.annotation.LineOptions
 import org.maplibre.android.plugins.annotation.Symbol
 import org.maplibre.android.plugins.annotation.SymbolManager
 import org.maplibre.android.plugins.annotation.SymbolOptions
+import org.maplibre.android.style.layers.BackgroundLayer
+import org.maplibre.android.style.layers.FillLayer
+import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.SymbolLayer
 
 /**
  * MapLibre Native vector-map host. Renders OpenStreetMap *vector*
@@ -221,31 +225,53 @@ private class MapHolder {
         }
     }
 
-    /** Make the dark style legible for driving: roads to a clear grey,
-     *  water to a distinguishable blue, and — crucially — every label to
-     *  near-white text with a strong dark halo so it reads on both the
-     *  dark background and the lightened roads. Per-layer best-effort. */
+    /** Re-skin OpenFreeMap's near-black dark style into a Waze-like night
+     *  map: a blue-slate background + land, muted parks, dark-blue water,
+     *  slightly-lighter buildings, blue-grey roads with thin darker
+     *  casings, and soft light labels. Applied per layer by type + id so
+     *  it survives missing/renamed layers (best-effort, runCatching). */
     private fun tuneDarkStyle(style: Style) {
         for (layer in style.layers) {
             val id = layer.id.lowercase()
             runCatching {
-                when {
-                    layer is org.maplibre.android.style.layers.SymbolLayer ->
+                when (layer) {
+                    is BackgroundLayer ->
+                        layer.setProperties(PropertyFactory.backgroundColor(NIGHT_BG))
+
+                    is SymbolLayer ->
                         layer.setProperties(
                             PropertyFactory.textColor(NIGHT_TEXT),
                             PropertyFactory.textHaloColor(NIGHT_TEXT_HALO),
-                            PropertyFactory.textHaloWidth(1.6f),
+                            PropertyFactory.textHaloWidth(1.2f),
                         )
-                    id.startsWith("highway") || id.startsWith("road") ||
-                        id.contains("transportation") || id.startsWith("bridge") ||
-                        id.startsWith("tunnel") ->
-                        layer.setProperties(PropertyFactory.lineColor(NIGHT_ROAD))
-                    id == "water" || id == "ocean" ->
-                        layer.setProperties(PropertyFactory.fillColor(NIGHT_WATER))
+
+                    is LineLayer ->
+                        if (isRoad(id)) {
+                            val casing = id.contains("casing") || id.contains("outline")
+                            layer.setProperties(
+                                PropertyFactory.lineColor(if (casing) NIGHT_ROAD_CASING else NIGHT_ROAD),
+                            )
+                        }
+
+                    is FillLayer -> {
+                        val color = when {
+                            id.contains("water") -> NIGHT_WATER
+                            id.contains("park") || id.contains("wood") || id.contains("forest") ||
+                                id.contains("grass") || id.contains("golf") || id.contains("cemetery") ||
+                                id.contains("vegetation") || id.contains("scrub") -> NIGHT_GREEN
+                            id.contains("building") -> NIGHT_BUILDING
+                            else -> NIGHT_LAND // landcover / landuse / earth / etc.
+                        }
+                        layer.setProperties(PropertyFactory.fillColor(color))
+                    }
                 }
             }
         }
     }
+
+    private fun isRoad(id: String): Boolean =
+        id.startsWith("highway") || id.startsWith("road") || id.contains("transportation") ||
+            id.startsWith("bridge") || id.startsWith("tunnel") || id.startsWith("street")
 
     /** Declutter the base map for navigation: hide POI icons/labels,
      *  minor place labels and aeroways so the route reads clearly. Keeps
@@ -464,11 +490,16 @@ private class MapHolder {
     private companion object {
         /** OpenFreeMap style's extruded-buildings layer (Liberty + Dark). */
         const val BUILDING_3D_LAYER = "building-3d"
-        /** Night-map legibility overrides for the dark style. */
-        const val NIGHT_ROAD = "#7E8794"
-        const val NIGHT_WATER = "#1C2A3A"
-        const val NIGHT_TEXT = "#ECEFF3"
-        const val NIGHT_TEXT_HALO = "#0B0E13"
+        /** Waze-like night palette layered over the dark style. */
+        const val NIGHT_BG = "#28313D" // blue-slate background
+        const val NIGHT_LAND = "#28313D" // land fills (match bg, no black patches)
+        const val NIGHT_GREEN = "#2E3C34" // parks / woods
+        const val NIGHT_WATER = "#1C2836" // dark blue water
+        const val NIGHT_BUILDING = "#333D4B" // slightly lighter than land
+        const val NIGHT_ROAD = "#5E6E84" // road fill, clearly lighter/blue
+        const val NIGHT_ROAD_CASING = "#3C4858" // thin darker road outline
+        const val NIGHT_TEXT = "#DCE3ED" // soft near-white labels
+        const val NIGHT_TEXT_HALO = "#1A2230" // halo matched to bg
         /** Camera pitch in heading-up (driving) mode — 2.5D perspective. */
         const val HEADING_UP_PITCH_DEG = 50.0
         const val PUCK_IMAGE = "nav_puck"
