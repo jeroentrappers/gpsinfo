@@ -1,0 +1,6 @@
+---
+# Test + reload atomically (a failing `nginx -t` aborts loudly rather than
+# leaving stale config — same pattern as the other appmire workloads).
+- name: reload nginx
+  ansible.builtin.shell: nginx -t && systemctl reload nginx
+  changed_when: true

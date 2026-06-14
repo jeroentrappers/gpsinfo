@@ -1,0 +1,5 @@
+# Managed by Ansible. Rate-limit zones for the GPSinfo tile vhost (http context).
+# A panning map pulls bursts of tile ranges, so the static zone is generous;
+# /extract is CPU-heavy, so its zone is tight.
+limit_req_zone $binary_remote_addr zone=gpsinfo_tiles:10m rate=20r/s;
+limit_req_zone $binary_remote_addr zone=gpsinfo_extract:10m rate=1r/s;

@@ -1,0 +1,61 @@
+# Managed by Ansible — GPSinfo vector tile server ({{ tiles_domain }}).
+# Host nginx serves the static pmtiles/styles/fonts/sprites directly (Range
+# native) and proxies /extract to the loopback extractor. The ?key= gate lives
+# inside the locations (not server scope) so it never blocks ACME challenges.
+{% if have_cert | default(false) %}
+server {
+    server_name {{ tiles_domain }};
+    listen [::]:443 ssl;
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/{{ tiles_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ tiles_domain }}/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    root {{ app_dir }}/data;
+    gzip on;
+    gzip_types application/json;
+
+    # Offline-region extractor (CPU-heavy → tight limit).
+    location /extract {
+        if ($arg_key != "{{ tiles_api_key }}") { return 403; }
+        limit_req zone=gpsinfo_extract burst=5 nodelay;
+        proxy_pass http://127.0.0.1:{{ extract_port }};
+        proxy_read_timeout 300s;
+    }
+
+    # Static tiles / styles / fonts / sprites.
+    location / {
+        if ($arg_key != "{{ tiles_api_key }}") { return 403; }
+        limit_req zone=gpsinfo_tiles burst=60 nodelay;
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=86400";
+    }
+}
+
+server {
+    server_name {{ tiles_domain }};
+    listen 80;
+    listen [::]:80;
+    return 301 https://$host$request_uri;
+}
+{% else %}
+# HTTP-only until certbot issues a cert (first deploy on this domain).
+server {
+    server_name {{ tiles_domain }};
+    listen 80;
+    listen [::]:80;
+
+    root {{ app_dir }}/data;
+
+    location /extract {
+        if ($arg_key != "{{ tiles_api_key }}") { return 403; }
+        proxy_pass http://127.0.0.1:{{ extract_port }};
+        proxy_read_timeout 300s;
+    }
+    location / {
+        if ($arg_key != "{{ tiles_api_key }}") { return 403; }
+        try_files $uri =404;
+    }
+}
+{% endif %}

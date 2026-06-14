@@ -1,141 +1,55 @@
 # Self-hosted vector tiles (PMTiles) for GPSinfo
 
-Replaces the dependency on `tiles.openfreemap.org` with our own server on
-`appmire-hetz1`. MapLibre Native (≥ 11.7) reads a `.pmtiles` file directly
-over HTTP **Range** requests, so the server is **pure static hosting** — no
-tile-server process, just Caddy serving four things:
+`tiles.appmire.be` on the shared **appmire-hetz1** box. MapLibre Native reads
+the `.pmtiles` file directly over HTTP Range, so the host **nginx** serves the
+static assets directly and proxies only `/extract` to a small container:
 
 ```
-/srv/tiles/
-  planet.pmtiles            # the map data (OpenMapTiles schema)
-  styles/liberty.json       # repointed OpenFreeMap styles
-  styles/dark.json
-  fonts/{fontstack}/{range}.pbf   # glyphs
-  sprites/sprite{,@2x}.{json,png} # sprite sheet
+/opt/gpsinfo-tiles/
+  data/           # served by nginx (root)
+    planet.pmtiles            # map data (OpenMapTiles schema), built by Planetiler
+    styles/{liberty,dark}.json  # OpenFreeMap styles, repointed at our host (+?key=)
+    fonts/<stack>/<range>.pbf   # glyphs, mirrored from OpenFreeMap
+    sprites/ofm_f384/ofm*       # sprite sheet, mirrored
+  cache/          # /extract region-cut cache
+  extract/        # the Go extractor (built into a container)
+  docker-compose.yml
 ```
 
-The phone live map and the car snapshotter render from these; offline
-region/corridor downloads **still use OpenFreeMap for now** (MapLibre's
-offline downloader can't read a `pmtiles://` source — see Phase 2 below).
+The `ne2_shaded` low-zoom raster relief is left pointing at OpenFreeMap
+(tiny, cosmetic, keyless). Access is gated by a `?key=` query param checked in
+nginx (coarse — the key ships in the app; abuse is bounded by `limit_req`).
 
----
-
-## 1. Build the tiles (PMTiles, OpenMapTiles schema)
-
-Use **Planetiler** — its default profile emits the OpenMapTiles schema the
-Liberty/dark styles expect. Run on the box (needs Java 21+, SSD, and RAM
-roughly = 1.5× the region's `.osm.pbf`; the full planet wants a big machine,
-a single country is trivial).
+## Deploy (Ansible — `deploy/ansible/`, like the other appmire workloads)
 
 ```bash
-# one country to start (fast, ~hundreds of MB):
-java -Xmx8g -jar planetiler.jar --download --area=belgium --output=planet.pmtiles
-
-# the whole planet (hours, ~100–130 GB output, lots of RAM):
-java -Xmx100g -jar planetiler.jar --download --area=planet --output=planet.pmtiles
+cd deploy/ansible
+ansible-playbook site.yml --tags app      # dirs, styles, fonts, sprites, extract container
+ansible-playbook site.yml --tags nginx    # vhost + certbot TLS for tiles.appmire.be
+ansible-playbook site.yml --tags build    # launch the throttled planet build (detached, hours)
 ```
 
-Output `planet.pmtiles` is a single immutable file. Refresh monthly by
-rebuilding and atomically swapping it (`mv new.pmtiles planet.pmtiles`).
+- The key lives in the gitignored `deploy/ansible/secrets.yml` (this repo is
+  public) and in the app's `keystore.properties`.
+- The planet build is throttled (`docker --cpus` + low blk-IO + mmap storage +
+  capped heap) and detached as a `systemd-run` unit, with a disk-headroom guard
+  so it can't fill `/` under the co-hosted live sites. Watch:
+  `journalctl -u gpsinfo-planet-build -f`.
+- Everything except `planet.pmtiles` comes up immediately, so the endpoint is
+  live (styles/fonts/sprites/extract) while the planet bakes.
 
-## 2. Glyphs + sprites (one-time asset mirror)
+## Point the app at it
 
-The styles reference fonts and a sprite sheet that also need self-hosting:
-
-```bash
-# Glyphs — prebuilt OpenMapTiles font stacks:
-git clone https://github.com/openmaptiles/fonts && cd fonts
-npm install && node ./generate.js           # writes ./_output/{fontstack}/{range}.pbf
-cp -r _output /srv/tiles/fonts
-
-# Sprites — lift the Liberty sprite (4 files) and serve under /sprites:
-for f in sprite.json sprite.png sprite@2x.json sprite@2x.png; do
-  curl -fsSL "https://tiles.openfreemap.org/sprites/ofm_f384/$f" -o "/srv/tiles/sprites/$f"
-done
-```
-
-> Check the exact sprite path in the live style first:
-> `curl -s https://tiles.openfreemap.org/styles/liberty | jq .sprite`
-
-## 3. Repoint the styles
-
-```bash
-./repoint-style.sh https://tiles.appmire.be "$SHARED_KEY"
-cp styles/*.json /srv/tiles/styles/
-```
-
-This rewrites the vector source to `pmtiles://…/planet.pmtiles`, and the
-`glyphs` / `sprite` URLs to our host, all carrying `?key=`.
-
-## 4. Serve it
-
-Edit `Caddyfile` — set the hostname and `REPLACE_WITH_SHARED_KEY` — then:
-
-```bash
-xcaddy build --with github.com/mholt/caddy-ratelimit   # rate-limit module
-./caddy run --config Caddyfile
-```
-
-Caddy handles TLS automatically and serves Range requests for the PMTiles.
-
-## 5. Point the app at it
-
-Set these in `keystore.properties` (the local secrets file) or via env, then
-build — the live map cuts over; with them empty the app stays on OpenFreeMap:
+In `keystore.properties` (gitignored), then rebuild:
 
 ```properties
 tilesBaseUrl=https://tiles.appmire.be
-tilesApiKey=SHARED_KEY
+tilesApiKey=<the key from secrets.yml>
 ```
 
-(`MapLibreStyle` builds the style URLs from these; the key rides as `?key=`.)
+## Offline (Phase 2)
 
-## 6. Verify
-
-```bash
-curl -I "https://tiles.appmire.be/styles/liberty.json?key=$SHARED_KEY"   # 200
-curl -I "https://tiles.appmire.be/styles/liberty.json"                   # 403
-curl -sI -H 'Range: bytes=0-99' \
-     "https://tiles.appmire.be/planet.pmtiles?key=$SHARED_KEY" | grep -i 206
-```
-
----
-
-## Phase 2 — offline on PMTiles (decided: server-side extract)
-
-MapLibre's `OfflineManager` **cannot** pre-download a `pmtiles://` source, so
-the region + corridor downloaders (`OfflineMapRepository`,
-`NavigationController`) still target OpenFreeMap via
-`MapLibreStyle.OFFLINE_DOWNLOAD`. The chosen path off that dependency: a
-**server-side extract endpoint** (`extract/`) cuts an arbitrary bbox subset
-from the planet on demand; the app downloads that `.pmtiles` and renders it
-from a `file://` source. Keeps the current "download this area" + automatic
-corridor pre-download behaviour.
-
-### Server: run the extractor
-
-```bash
-# Build + run alongside Caddy (Caddy proxies /extract → 127.0.0.1:8081):
-docker build -t gpsinfo-extract extract/
-docker run -d --name gpsinfo-extract \
-  -v /srv/tiles:/data:ro -v /srv/extract-cache:/cache \
-  -p 127.0.0.1:8081:8081 gpsinfo-extract
-
-curl -o be.pmtiles \
-  "https://tiles.appmire.be/extract?bbox=2.5,49.5,6.4,51.5&maxzoom=14&key=$SHARED_KEY"
-```
-
-The Caddyfile already has the `/extract*` route (with a tighter rate limit).
-The service caps requested area × zoom so nobody can re-extract the planet.
-
-> ⚠️ `extract/main.go` + `Dockerfile` are an **untested scaffold** — review,
-> `go build`, and smoke-test on the box before wiring the app to it.
-
-### App side (still TODO — do it once the server is reachable, so it's tested)
-
-Rewrite `OfflineMapRepository` to: call `/extract`, stream the `.pmtiles` to
-`filesDir/offline/<name>.pmtiles`, track regions in a small store, and report
-download progress. Then teach the map to render a local region by pointing the
-style's source at `file://…/<name>.pmtiles` (this replaces the current
-ambient-cache merge model — offline becomes "render this downloaded region").
-Finally drop `MapLibreStyle.OFFLINE_DOWNLOAD` and the OpenFreeMap fallback.
+The app downloads regional `.pmtiles` from `/extract` (`extract/main.go`) and
+renders them from a `file://` source. The download/store half is in
+`OfflineMapRepository`; the render wiring + bundled offline glyphs/sprites are
+still TODO — see the project notes.

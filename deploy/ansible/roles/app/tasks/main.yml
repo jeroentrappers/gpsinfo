@@ -1,0 +1,98 @@
+# App layer for the GPSinfo tile server: on-disk layout, the repointed styles,
+# mirrored glyphs + sprite, and the extract container. No root needed except to
+# own /opt (the ansible user is in the docker group, like the other workloads).
+---
+- name: Ensure app dir (owned by deploy user)
+  become: true
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Ensure subdirs
+  ansible.builtin.file:
+    path: "{{ app_dir }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - data
+    - data/styles
+    - data/fonts
+    - data/sprites/{{ sprite_dir }}
+    - cache
+    - build
+
+- name: Copy the extract service source
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../tiles/extract/"
+    dest: "{{ app_dir }}/extract/"
+    mode: "0644"
+
+- name: Render docker-compose
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ app_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Build + start the extract container
+  ansible.builtin.command:
+    chdir: "{{ app_dir }}"
+    cmd: docker compose up -d --build
+  register: up
+  changed_when: "'Started' in up.stderr or 'Created' in up.stderr or 'Built' in up.stderr or 'Recreate' in up.stderr"
+
+- name: Wait for extract /healthz on loopback
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ extract_port }}/healthz"
+    status_code: [200]
+  register: ex_up
+  retries: 15
+  delay: 4
+  until: ex_up.status == 200
+
+# --- Styles -----------------------------------------------------------------
+- name: Stage the repoint script
+  ansible.builtin.copy:
+    src: repoint_style.py
+    dest: "{{ app_dir }}/repoint_style.py"
+    mode: "0755"
+
+- name: Render repointed styles (vector → our pmtiles; glyphs/sprite → our host)
+  ansible.builtin.command:
+    cmd: >-
+      python3 {{ app_dir }}/repoint_style.py
+      {{ ofm_base }}/styles/{{ item }}
+      https://{{ tiles_domain }}
+      {{ tiles_api_key }}
+      {{ app_dir }}/data/styles/{{ item }}.json
+  loop:
+    - liberty
+    - dark
+  changed_when: true
+
+# --- Sprite (4 files) -------------------------------------------------------
+- name: Mirror the sprite sheet
+  ansible.builtin.get_url:
+    url: "{{ ofm_base }}/sprites/{{ sprite_dir }}/{{ sprite_name }}{{ item }}"
+    dest: "{{ app_dir }}/data/sprites/{{ sprite_dir }}/{{ sprite_name }}{{ item }}"
+    mode: "0644"
+  loop:
+    - ".json"
+    - ".png"
+    - "@2x.json"
+    - "@2x.png"
+
+# --- Glyphs -----------------------------------------------------------------
+- name: Stage the font-mirror script
+  ansible.builtin.copy:
+    src: mirror-fonts.sh
+    dest: "{{ app_dir }}/mirror-fonts.sh"
+    mode: "0755"
+
+- name: Mirror glyph ranges for each font stack (idempotent; sparse 404s skipped)
+  ansible.builtin.command:
+    argv: "{{ ['bash', app_dir + '/mirror-fonts.sh', ofm_base, app_dir + '/data/fonts'] + font_stacks }}"
+  register: fonts
+  changed_when: "'mirrored 0 glyph' not in fonts.stdout"

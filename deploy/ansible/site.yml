@@ -1,0 +1,24 @@
+# Deploy the GPSinfo vector-tile server to the shared appmire-hetz1 box.
+#
+#   cd deploy/ansible
+#   ansible-playbook site.yml --tags app      # dirs, styles, fonts, sprites, extract container
+#   ansible-playbook site.yml --tags nginx    # vhost + certbot TLS (once DNS points at hetz1)
+#   ansible-playbook site.yml --tags build    # kick off the throttled planet build (background)
+#
+# The planet tiles take hours; everything else (styles/fonts/sprites/extract)
+# comes up immediately, so tiles.appmire.be is live except map data until the
+# build finishes.
+---
+- name: GPSinfo vector tiles
+  hosts: tiles
+  vars_files:
+    - secrets.yml
+  roles:
+    - role: app
+      tags: [app]
+    - role: nginx
+      become: true
+      tags: [nginx]
+    - role: build
+      become: true
+      tags: [build, never]   # opt-in: only runs when --tags build is given

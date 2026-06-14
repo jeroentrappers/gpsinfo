@@ -8,7 +8,7 @@ RUN go mod init gpsinfo-extract && go build -o /gpsinfo-extract .
 
 # Grab the official pmtiles CLI binary.
 FROM alpine:3.20 AS pmtiles
-ARG PMTILES_VERSION=1.22.3
+ARG PMTILES_VERSION=1.30.3
 ARG TARGETARCH=amd64
 RUN apk add --no-cache curl tar \
  && curl -fsSL "https://github.com/protomaps/go-pmtiles/releases/download/v${PMTILES_VERSION}/go-pmtiles_${PMTILES_VERSION}_Linux_x86_64.tar.gz" \

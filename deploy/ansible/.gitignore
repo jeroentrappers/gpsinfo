@@ -1,0 +1,4 @@
+# Secrets stay out of this (public) repo.
+secrets.yml
+.vault-pass
+*.retry

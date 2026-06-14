@@ -1,0 +1,32 @@
+# GPSinfo tile-server knobs. Secret (tiles_api_key) lives in the gitignored
+# secrets.yml (loaded via vars_files in site.yml) — this repo is public.
+---
+project: gpsinfo-tiles
+app_dir: /opt/gpsinfo-tiles
+
+tiles_domain: tiles.appmire.be
+certbot_email: jeroen.trappers@secutec.com
+enable_tls: true
+
+# Upstream open-source we derive from (OpenMapTiles schema). The live map
+# styles, glyphs and sprite are mirrored from here once; the low-zoom
+# `ne2_shaded` raster layer is left pointing at OpenFreeMap (tiny, cosmetic).
+ofm_base: https://tiles.openfreemap.org
+font_stacks:
+  - "Noto Sans Regular"
+  - "Noto Sans Bold"
+  - "Noto Sans Italic"
+sprite_dir: ofm_f384         # serves /sprites/ofm_f384/ofm{,@2x}.{json,png}
+sprite_name: ofm
+
+# Extract service (offline region cutter) — bound to loopback, fronted by nginx.
+extract_port: 8081
+
+# Planet build — throttled, since this runs on a box with live sites.
+#   --storage/--nodemap-storage=mmap keeps RAM modest (uses disk),
+#   capped threads + nice/ionice keep CPU/IO polite.
+planetiler_image: "ghcr.io/onthegomap/planetiler:latest"
+planetiler_area: planet
+build_threads: 4
+build_xmx: "40g"
+build_nice: 15

@@ -1,0 +1,18 @@
+# Managed by Ansible. Offline-region extractor for the GPSinfo tile server.
+# Static assets (pmtiles/styles/fonts/sprites) are served directly by the host
+# nginx; this container only handles on-demand /extract region cuts.
+services:
+  extract:
+    build: ./extract
+    image: gpsinfo-extract:latest
+    container_name: gpsinfo-extract
+    restart: unless-stopped
+    environment:
+      PLANET: /data/planet.pmtiles
+      CACHE: /cache
+      ADDR: ":{{ extract_port }}"
+    volumes:
+      - ./data:/data:ro       # planet.pmtiles appears here once the build lands
+      - ./cache:/cache
+    ports:
+      - "127.0.0.1:{{ extract_port }}:{{ extract_port }}"
