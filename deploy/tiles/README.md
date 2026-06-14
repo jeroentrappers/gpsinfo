@@ -101,18 +101,41 @@ curl -sI -H 'Range: bytes=0-99' \
 
 ---
 
-## Phase 2 — offline on PMTiles (not done yet)
+## Phase 2 — offline on PMTiles (decided: server-side extract)
 
 MapLibre's `OfflineManager` **cannot** pre-download a `pmtiles://` source, so
 the region + corridor downloaders (`OfflineMapRepository`,
 `NavigationController`) still target OpenFreeMap via
-`MapLibreStyle.OFFLINE_DOWNLOAD`. To fully drop the OpenFreeMap dependency,
-offline must move to downloaded `.pmtiles` region files referenced with a
-`file://` source. That needs either:
+`MapLibreStyle.OFFLINE_DOWNLOAD`. The chosen path off that dependency: a
+**server-side extract endpoint** (`extract/`) cuts an arbitrary bbox subset
+from the planet on demand; the app downloads that `.pmtiles` and renders it
+from a `file://` source. Keeps the current "download this area" + automatic
+corridor pre-download behaviour.
 
-- a **server-side `pmtiles extract`** endpoint (cut an arbitrary bbox subset
-  on demand — small dynamic service, no longer pure-static), or
-- **pre-cut country `.pmtiles`** the user picks from (static, but no
-  arbitrary corridors).
+### Server: run the extractor
 
-Decide which before building Phase 2.
+```bash
+# Build + run alongside Caddy (Caddy proxies /extract → 127.0.0.1:8081):
+docker build -t gpsinfo-extract extract/
+docker run -d --name gpsinfo-extract \
+  -v /srv/tiles:/data:ro -v /srv/extract-cache:/cache \
+  -p 127.0.0.1:8081:8081 gpsinfo-extract
+
+curl -o be.pmtiles \
+  "https://tiles.appmire.be/extract?bbox=2.5,49.5,6.4,51.5&maxzoom=14&key=$SHARED_KEY"
+```
+
+The Caddyfile already has the `/extract*` route (with a tighter rate limit).
+The service caps requested area × zoom so nobody can re-extract the planet.
+
+> ⚠️ `extract/main.go` + `Dockerfile` are an **untested scaffold** — review,
+> `go build`, and smoke-test on the box before wiring the app to it.
+
+### App side (still TODO — do it once the server is reachable, so it's tested)
+
+Rewrite `OfflineMapRepository` to: call `/extract`, stream the `.pmtiles` to
+`filesDir/offline/<name>.pmtiles`, track regions in a small store, and report
+download progress. Then teach the map to render a local region by pointing the
+style's source at `file://…/<name>.pmtiles` (this replaces the current
+ambient-cache merge model — offline becomes "render this downloaded region").
+Finally drop `MapLibreStyle.OFFLINE_DOWNLOAD` and the OpenFreeMap fallback.

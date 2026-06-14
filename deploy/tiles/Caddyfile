@@ -45,6 +45,22 @@ tiles.appmire.be {
 	@assets path /styles/* /fonts/* /sprites/*
 	header @assets Cache-Control "public, max-age=86400"
 
+	# --- Offline region extractor (Phase 2) ------------------------------
+	# Proxy /extract to the gpsinfo-extract service, which cuts a regional
+	# .pmtiles from the planet on demand. Extraction is CPU-heavier than a
+	# static read, so rate-limit it harder.
+	@extract path /extract*
+	handle @extract {
+		rate_limit {
+			zone extract {
+				key {remote_host}
+				events 20
+				window 1m
+			}
+		}
+		reverse_proxy 127.0.0.1:8081
+	}
+
 	encode gzip {
 		# never compress the planet file
 		match {
