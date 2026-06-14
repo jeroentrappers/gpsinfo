@@ -77,6 +77,16 @@ density setting, and every feature screen.
    per-screen Simple/Pro toggles (`onShowSimple` on Rally/Satellite/
    Compass), `routeForActivity`, and `DashboardViewModel.completeOnboarding`.
 
-   Kept (still feed dashboard profiles / detail-density): the `Activity`
-   enum + `detailLevels`, `Persona`/`Personas`/`PersonaLayouts`. A future
-   pass could retire those too if profiles stop depending on personas.
+   **Follow-up cleanup (2026-06-14):** deleted the redundant **Sports
+   Dashboard** (whole `ui/sports/` package + `RouteProjection` + its test
+   + the `sports_*` strings + the sports-tutorial setting) — the
+   Runner/Cyclist/Motorsport dashboard *profiles* cover it. Retired the
+   leftover **persona machinery**: `Persona.kt` (`Personas`/`PersonaOption`,
+   zero callers) and the dead `pinnedActivities` / `lastActivity` /
+   `activityIntroSeen` VM + repository members and their DataStore keys,
+   plus the `persona_*` picker/display strings.
+
+   Kept (load-bearing): the `Activity` enum + `detailLevels` (Map/Live
+   detail toggle), `PersonaLayouts.kt` (renders the bespoke per-profile
+   dashboard faces), and `DashboardProfile` (independent of the deleted
+   persona system — uses literal display names).

@@ -78,8 +78,6 @@
     <string name="metric_power" tools:ignore="MissingTranslation">Power</string>
     <string name="metric_cadence" tools:ignore="MissingTranslation">Cadence</string>
     <string name="metric_stride" tools:ignore="MissingTranslation">Stride</string>
-    <string name="persona_runner_idle_hint" tools:ignore="MissingTranslation">Tap the record button on the dashboard to start a run.</string>
-    <string name="persona_runner_recording_hint" tools:ignore="MissingTranslation">Recording — tap the Sports view icon for guided coaching.</string>
     <string name="persona_hiker_until_sunset" tools:ignore="MissingTranslation">UNTIL SUNSET</string>
     <string name="persona_hiker_sunset_at" tools:ignore="MissingTranslation">Sunset at %1$s</string>
     <string name="persona_sailor_sog" tools:ignore="MissingTranslation">SOG</string>
@@ -215,17 +213,6 @@
     <string name="qs_tile_state_idle" tools:ignore="MissingTranslation">Tap to start recording</string>
     <string name="settings_vibration_cues" tools:ignore="MissingTranslation">Vibration cues</string>
     <string name="settings_vibration_cues_body" tools:ignore="MissingTranslation">Distinct vibration patterns when pace drifts or HR crosses a zone boundary. Independent of audible cues.</string>
-    <string name="sports_tutorial_title" tools:ignore="MissingTranslation">Welcome to the Sports view</string>
-    <string name="sports_tutorial_lede" tools:ignore="MissingTranslation">Four glanceable instruments coach you through the run. Here\'s what each one tells you.</string>
-    <string name="sports_tutorial_pace_title" tools:ignore="MissingTranslation">Pace-deviation gauge</string>
-    <string name="sports_tutorial_pace_body" tools:ignore="MissingTranslation">Needle centred = on target. Left of centre = too slow. Right = too fast. Numeric label inside is the seconds offset.</string>
-    <string name="sports_tutorial_hr_title" tools:ignore="MissingTranslation">Heart-rate zone gauge</string>
-    <string name="sports_tutorial_hr_body" tools:ignore="MissingTranslation">Coloured bands are Z1-Z5 from your configured zones. BPM in the bowl, current zone tag on the right.</string>
-    <string name="sports_tutorial_intensity_title" tools:ignore="MissingTranslation">Intensity profile</string>
-    <string name="sports_tutorial_intensity_body" tools:ignore="MissingTranslation">Colour-graded preview of the next stretch by climb steepness, with ETA to the next big climb.</string>
-    <string name="sports_tutorial_cues_title" tools:ignore="MissingTranslation">Audible &amp; vibration cues</string>
-    <string name="sports_tutorial_cues_body" tools:ignore="MissingTranslation">Enable from Settings to get voice / vibration nudges when pace drifts or HR crosses zones. Music ducks instead of cutting.</string>
-    <string name="sports_tutorial_dismiss" tools:ignore="MissingTranslation">Got it</string>
     <string name="lap_action" tools:ignore="MissingTranslation">Mark lap</string>
     <string name="lap_recorded_toast" tools:ignore="MissingTranslation">Lap %1$d · %2$.2f km in %3$d:%4$02d</string>
     <string name="laps_section_title" tools:ignore="MissingTranslation">Laps</string>
@@ -725,15 +712,6 @@
     <string name="hr_card_disconnect" tools:ignore="MissingTranslation">Disconnect monitor</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title" tools:ignore="MissingTranslation">Sports view</string>
-    <string name="sports_dashboard_open" tools:ignore="MissingTranslation">Open sports view</string>
-    <string name="sports_dashboard_idle_body" tools:ignore="MissingTranslation">Start a recording from the dashboard, then open the sports view to see live pace, gait and heart-rate.</string>
-    <string name="sports_metric_elapsed" tools:ignore="MissingTranslation">Elapsed</string>
-    <string name="sports_metric_distance" tools:ignore="MissingTranslation">Distance</string>
-    <string name="sports_metric_cadence" tools:ignore="MissingTranslation">Cadence</string>
-    <string name="sports_metric_stride" tools:ignore="MissingTranslation">Stride</string>
-    <string name="sports_metric_now" tools:ignore="MissingTranslation">Now</string>
-    <string name="sports_metric_avg" tools:ignore="MissingTranslation">Avg</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title" tools:ignore="MissingTranslation">Pace vs goal</string>
@@ -766,9 +744,6 @@
     <string name="activity_open">Open</string>
     <string name="drawer_activities">Activities</string>
     <string name="drawer_simple_tracker">Simple tracker</string>
-    <string name="persona_picker_title">What will you use GPSinfo for?</string>
-    <string name="persona_picker_intro">Pick what fits — you can choose more than one. We\'ll put your activities first; everything stays available.</string>
-    <string name="persona_picker_continue">Continue</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Good fix</string>
     <string name="gps_lab_weak">Weak fix (2D)</string>
@@ -820,16 +795,6 @@
     <string name="activity_custom_what">Your full, editable dashboard — all cards on one screen.</string>
     <string name="activity_custom_whyhow">The classic all-in-one dashboard: pick exactly which cards show and in what order. Everything the app can do, on a single screen, the way you arrange it.</string>
     <!-- Persona picker display names. -->
-    <string name="persona_driver">Driver</string>
-    <string name="persona_runner">Runner</string>
-    <string name="persona_cyclist">Cyclist</string>
-    <string name="persona_hiker">Hiker</string>
-    <string name="persona_sailor">Sailor</string>
-    <string name="persona_motorcyclist">Motorcyclist</string>
-    <string name="persona_geocacher">Geocacher</string>
-    <string name="persona_ham">Ham / SOTA</string>
-    <string name="persona_motorsport">Motorsport</string>
-    <string name="persona_custom">Just GPS stuff</string>
     <string name="action_close">Close</string>
     <string name="drive_destination">Destination</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->

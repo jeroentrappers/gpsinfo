@@ -380,15 +380,6 @@
     <string name="hr_card_zone">Zone</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Sportansicht</string>
-    <string name="sports_dashboard_open">Sportansicht öffnen</string>
-    <string name="sports_dashboard_idle_body">Starte eine Aufzeichnung im Dashboard und öffne dann die Sportansicht für Live-Pace, Schritte und Herzfrequenz.</string>
-    <string name="sports_metric_elapsed">Verstrichen</string>
-    <string name="sports_metric_distance">Distanz</string>
-    <string name="sports_metric_cadence">Schrittfrequenz</string>
-    <string name="sports_metric_stride">Schrittlänge</string>
-    <string name="sports_metric_now">Jetzt</string>
-    <string name="sports_metric_avg">Ø</string>
 
     <!-- Trail stats: HR & score -->
     <string name="trail_stats_avg_hr">Ø HF</string>
@@ -452,8 +443,6 @@
     <string name="metric_power">Leistung</string>
     <string name="metric_cadence">Schrittfrequenz</string>
     <string name="metric_stride">Schrittlänge</string>
-    <string name="persona_runner_idle_hint">Tippe auf dem Dashboard auf die Aufnahmetaste, um einen Lauf zu starten.</string>
-    <string name="persona_runner_recording_hint">Aufzeichnung läuft — tippe auf das Sportansicht-Symbol für geführtes Coaching.</string>
     <string name="persona_hiker_until_sunset">BIS SONNENUNTERGANG</string>
     <string name="persona_hiker_sunset_at">Sonnenuntergang um %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -498,17 +487,6 @@
     <string name="settings_vibration_cues_body">Eigene Vibrationsmuster, wenn die Pace abweicht oder die HF eine Zonengrenze überschreitet. Unabhängig von der Sprachausgabe.</string>
 
     <!-- Sports tutorial -->
-    <string name="sports_tutorial_title">Willkommen in der Sportansicht</string>
-    <string name="sports_tutorial_lede">Vier Instrumente auf einen Blick begleiten dich durch den Lauf. So liest du jedes davon.</string>
-    <string name="sports_tutorial_pace_title">Pace-Abweichungsanzeige</string>
-    <string name="sports_tutorial_pace_body">Nadel mittig = im Ziel. Links der Mitte = zu langsam. Rechts = zu schnell. Die Zahl in der Mitte ist die Abweichung in Sekunden.</string>
-    <string name="sports_tutorial_hr_title">Herzfrequenzzonen-Anzeige</string>
-    <string name="sports_tutorial_hr_body">Die farbigen Bänder sind Z1–Z5 aus deinen eingestellten Zonen. BPM in der Schale, aktuelle Zone rechts.</string>
-    <string name="sports_tutorial_intensity_title">Intensitätsprofil</string>
-    <string name="sports_tutorial_intensity_body">Farbabgestufte Vorschau des nächsten Abschnitts nach Steigung, mit ETA zum nächsten großen Anstieg.</string>
-    <string name="sports_tutorial_cues_title">Sprach- &amp; Vibrationshinweise</string>
-    <string name="sports_tutorial_cues_body">Aktiviere sie in den Einstellungen für Sprach- bzw. Vibrationshinweise, wenn die Pace abweicht oder die HF Zonen wechselt. Die Musik wird leiser, statt zu stoppen.</string>
-    <string name="sports_tutorial_dismiss">Verstanden</string>
 
     <!-- Laps -->
     <string name="lap_action">Runde markieren</string>
@@ -818,9 +796,6 @@
     <string name="action_close">Schließen</string>
     <string name="drawer_activities">Aktivitäten</string>
     <string name="drawer_simple_tracker">Einfacher Tracker</string>
-    <string name="persona_picker_title">Wofür nutzt du GPSinfo?</string>
-    <string name="persona_picker_intro">Wähle, was passt — du kannst mehrere auswählen. Wir stellen deine Aktivitäten nach vorne; alles bleibt verfügbar.</string>
-    <string name="persona_picker_continue">Weiter</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Guter Fix</string>
     <string name="gps_lab_weak">Schwacher Fix (2D)</string>
@@ -869,16 +844,6 @@
     <string name="activity_custom_title">Eigenes / Alles</string>
     <string name="activity_custom_what">Dein vollständiges, anpassbares Dashboard — alle Karten auf einem Bildschirm.</string>
     <string name="activity_custom_whyhow">Das klassische Alles-in-einem-Dashboard: Lege genau fest, welche Karten in welcher Reihenfolge erscheinen. Alles, was die App kann, auf einem Bildschirm, so wie du es anordnest.</string>
-    <string name="persona_driver">Autofahrer</string>
-    <string name="persona_runner">Läufer</string>
-    <string name="persona_cyclist">Radfahrer</string>
-    <string name="persona_hiker">Wanderer</string>
-    <string name="persona_sailor">Segler</string>
-    <string name="persona_motorcyclist">Motorradfahrer</string>
-    <string name="persona_geocacher">Geocacher</string>
-    <string name="persona_ham">Funkamateur / SOTA</string>
-    <string name="persona_motorsport">Motorsport</string>
-    <string name="persona_custom">Einfach GPS-Kram</string>
     <string name="drive_destination">Ziel</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Route berechnet. %1$s bis zum Ziel.</string>

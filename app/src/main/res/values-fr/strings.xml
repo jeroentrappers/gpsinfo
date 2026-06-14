@@ -381,15 +381,6 @@
     <string name="hr_card_disconnect">Dissocier le cardiofréquencemètre</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Vue sport</string>
-    <string name="sports_dashboard_open">Ouvrir la vue sport</string>
-    <string name="sports_dashboard_idle_body">Lancez un enregistrement depuis le tableau de bord, puis ouvrez la vue sport pour suivre en direct l\'allure, la foulée et la fréquence cardiaque.</string>
-    <string name="sports_metric_elapsed">Écoulé</string>
-    <string name="sports_metric_distance">Distance</string>
-    <string name="sports_metric_cadence">Cadence</string>
-    <string name="sports_metric_stride">Foulée</string>
-    <string name="sports_metric_now">Actuelle</string>
-    <string name="sports_metric_avg">Moy.</string>
 
     <!-- Trail stats — heart rate and pace score -->
     <string name="trail_stats_avg_hr">FC moy.</string>
@@ -452,8 +443,6 @@
     <string name="metric_stride">Foulée</string>
 
     <!-- Persona hints -->
-    <string name="persona_runner_idle_hint">Touchez le bouton d\'enregistrement du tableau de bord pour démarrer une course.</string>
-    <string name="persona_runner_recording_hint">Enregistrement — touchez l\'icône de la vue sport pour un coaching guidé.</string>
     <string name="persona_hiker_until_sunset">AVANT LE COUCHER</string>
     <string name="persona_hiker_sunset_at">Coucher à %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -498,17 +487,6 @@
     <string name="settings_vibration_cues_body">Motifs de vibration distincts lorsque l\'allure dérive ou que la FC franchit une limite de zone. Indépendants des signaux sonores.</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">Bienvenue dans la vue sport</string>
-    <string name="sports_tutorial_lede">Quatre instruments lisibles d\'un coup d\'œil vous guident pendant la course. Voici ce que chacun vous indique.</string>
-    <string name="sports_tutorial_pace_title">Jauge d\'écart d\'allure</string>
-    <string name="sports_tutorial_pace_body">Aiguille centrée = dans la cible. À gauche du centre = trop lent. À droite = trop rapide. Le chiffre à l\'intérieur indique l\'écart en secondes.</string>
-    <string name="sports_tutorial_hr_title">Jauge de zone de fréquence cardiaque</string>
-    <string name="sports_tutorial_hr_body">Les bandes colorées sont les zones Z1-Z5 de votre configuration. BPM dans la coupelle, zone actuelle indiquée à droite.</string>
-    <string name="sports_tutorial_intensity_title">Profil d\'intensité</string>
-    <string name="sports_tutorial_intensity_body">Aperçu coloré du tronçon à venir selon la pente des montées, avec l\'ETA jusqu\'à la prochaine grosse montée.</string>
-    <string name="sports_tutorial_cues_title">Signaux sonores &amp; vibrations</string>
-    <string name="sports_tutorial_cues_body">Activez-les dans les Paramètres pour recevoir des rappels vocaux / par vibration lorsque l\'allure dérive ou que la FC change de zone. La musique baisse au lieu de se couper.</string>
-    <string name="sports_tutorial_dismiss">J\'ai compris</string>
 
     <!-- Laps -->
     <string name="lap_action">Marquer un tour</string>
@@ -820,9 +798,6 @@
     <string name="action_close">Fermer</string>
     <string name="drawer_activities">Activités</string>
     <string name="drawer_simple_tracker">Enregistreur simple</string>
-    <string name="persona_picker_title">À quoi vous servira GPSinfo ?</string>
-    <string name="persona_picker_intro">Choisissez ce qui vous convient — vous pouvez en sélectionner plusieurs. Nous placerons vos activités en premier ; tout reste accessible.</string>
-    <string name="persona_picker_continue">Continuer</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Bon fix</string>
     <string name="gps_lab_weak">Fix faible (2D)</string>
@@ -871,16 +846,6 @@
     <string name="activity_custom_title">Personnalisé / Tout</string>
     <string name="activity_custom_what">Votre tableau de bord complet et modifiable — toutes les cartes sur un seul écran.</string>
     <string name="activity_custom_whyhow">Le tableau de bord tout-en-un classique : choisissez exactement quelles cartes s\'affichent et dans quel ordre. Tout ce que l\'application peut faire, sur un seul écran, arrangé à votre façon.</string>
-    <string name="persona_driver">Automobiliste</string>
-    <string name="persona_runner">Coureur</string>
-    <string name="persona_cyclist">Cycliste</string>
-    <string name="persona_hiker">Randonneur</string>
-    <string name="persona_sailor">Marin</string>
-    <string name="persona_motorcyclist">Motard</string>
-    <string name="persona_geocacher">Géocacheur</string>
-    <string name="persona_ham">Radioamateur / SOTA</string>
-    <string name="persona_motorsport">Sport automobile</string>
-    <string name="persona_custom">Juste du GPS</string>
     <string name="drive_destination">Destination</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Itinéraire calculé. %1$s jusqu\'à destination.</string>

@@ -385,15 +385,6 @@
     <string name="hr_card_disconnect">Disconnetti sensore</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Vista sport</string>
-    <string name="sports_dashboard_open">Apri la vista sport</string>
-    <string name="sports_dashboard_idle_body">Avvia una registrazione dalla dashboard, poi apri la vista sport per vedere in tempo reale passo, falcata e frequenza cardiaca.</string>
-    <string name="sports_metric_elapsed">Trascorso</string>
-    <string name="sports_metric_distance">Distanza</string>
-    <string name="sports_metric_cadence">Cadenza</string>
-    <string name="sports_metric_stride">Falcata</string>
-    <string name="sports_metric_now">Attuale</string>
-    <string name="sports_metric_avg">Media</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title">Passo vs obiettivo</string>
@@ -448,8 +439,6 @@
     <string name="metric_power">Potenza</string>
     <string name="metric_cadence">Cadenza</string>
     <string name="metric_stride">Falcata</string>
-    <string name="persona_runner_idle_hint">Tocca il pulsante di registrazione nella dashboard per iniziare una corsa.</string>
-    <string name="persona_runner_recording_hint">Registrazione — tocca l\'icona della vista sport per il coaching guidato.</string>
     <string name="persona_hiker_until_sunset">AL TRAMONTO</string>
     <string name="persona_hiker_sunset_at">Tramonto alle %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -494,17 +483,6 @@
     <string name="settings_vibration_cues_body">Pattern di vibrazione distinti quando il passo si scosta o la FC supera il limite di una zona. Indipendente dai segnali acustici.</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">Benvenuto nella vista sport</string>
-    <string name="sports_tutorial_lede">Quattro strumenti a colpo d\'occhio ti guidano durante la corsa. Ecco cosa indica ciascuno.</string>
-    <string name="sports_tutorial_pace_title">Indicatore scostamento passo</string>
-    <string name="sports_tutorial_pace_body">Ago al centro = in linea. A sinistra del centro = troppo lento. A destra = troppo veloce. Il valore numerico interno è lo scostamento in secondi.</string>
-    <string name="sports_tutorial_hr_title">Indicatore zona frequenza cardiaca</string>
-    <string name="sports_tutorial_hr_body">Le fasce colorate sono Z1-Z5 secondo le zone configurate. BPM nel centro, etichetta della zona attuale a destra.</string>
-    <string name="sports_tutorial_intensity_title">Profilo intensità</string>
-    <string name="sports_tutorial_intensity_body">Anteprima del tratto successivo graduata per colore in base alla pendenza, con ETA alla prossima salita importante.</string>
-    <string name="sports_tutorial_cues_title">Segnali acustici &amp; vibrazione</string>
-    <string name="sports_tutorial_cues_body">Attivali dalle Impostazioni per ricevere segnali vocali / vibrazione quando il passo si scosta o la FC cambia zona. La musica si abbassa invece di interrompersi.</string>
-    <string name="sports_tutorial_dismiss">Ho capito</string>
 
     <!-- Laps -->
     <string name="lap_action">Segna giro</string>
@@ -816,9 +794,6 @@
     <string name="action_close">Chiudi</string>
     <string name="drawer_activities">Attività</string>
     <string name="drawer_simple_tracker">Tracker semplice</string>
-    <string name="persona_picker_title">Per cosa userai GPSinfo?</string>
-    <string name="persona_picker_intro">Scegli ciò che fa per te — puoi selezionarne più di una. Metteremo le tue attività in primo piano; tutto resta disponibile.</string>
-    <string name="persona_picker_continue">Continua</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Fix buono</string>
     <string name="gps_lab_weak">Fix debole (2D)</string>
@@ -867,16 +842,6 @@
     <string name="activity_custom_title">Personalizzato / Tutto</string>
     <string name="activity_custom_what">La tua dashboard completa e modificabile — tutte le schede su una schermata.</string>
     <string name="activity_custom_whyhow">La classica dashboard tutto-in-uno: scegli esattamente quali schede mostrare e in quale ordine. Tutto ciò che l\'app sa fare, su una sola schermata, disposto come vuoi tu.</string>
-    <string name="persona_driver">Automobilista</string>
-    <string name="persona_runner">Podista</string>
-    <string name="persona_cyclist">Ciclista</string>
-    <string name="persona_hiker">Escursionista</string>
-    <string name="persona_sailor">Velista</string>
-    <string name="persona_motorcyclist">Motociclista</string>
-    <string name="persona_geocacher">Geocacher</string>
-    <string name="persona_ham">Radioamatore / SOTA</string>
-    <string name="persona_motorsport">Motorsport</string>
-    <string name="persona_custom">Solo cose GPS</string>
     <string name="drive_destination">Destinazione</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Percorso calcolato. %1$s alla destinazione.</string>

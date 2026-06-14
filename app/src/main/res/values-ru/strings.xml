@@ -385,15 +385,6 @@
     <string name="hr_card_disconnect">Отключить пульсометр</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Спорт</string>
-    <string name="sports_dashboard_open">Открыть спортивный экран</string>
-    <string name="sports_dashboard_idle_body">Запустите запись на главном экране, затем откройте спортивный экран, чтобы видеть темп, каденс и пульс в реальном времени.</string>
-    <string name="sports_metric_elapsed">Время</string>
-    <string name="sports_metric_distance">Дистанция</string>
-    <string name="sports_metric_cadence">Каденс</string>
-    <string name="sports_metric_stride">Длина шага</string>
-    <string name="sports_metric_now">Сейчас</string>
-    <string name="sports_metric_avg">Сред.</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title">Темп и цель</string>
@@ -448,8 +439,6 @@
     <string name="metric_power">Мощность</string>
     <string name="metric_cadence">Каденс</string>
     <string name="metric_stride">Длина шага</string>
-    <string name="persona_runner_idle_hint">Нажмите кнопку записи на панели, чтобы начать пробежку.</string>
-    <string name="persona_runner_recording_hint">Идёт запись — нажмите значок спортивного экрана для тренировки с подсказками.</string>
     <string name="persona_hiker_until_sunset">ДО ЗАКАТА</string>
     <string name="persona_hiker_sunset_at">Закат в %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -494,17 +483,6 @@
     <string name="settings_vibration_cues_body">Разные вибрации при отклонении от темпа или переходе пульса через границу зоны. Не зависят от звуковых подсказок.</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">Знакомство со спортивным экраном</string>
-    <string name="sports_tutorial_lede">Четыре наглядных прибора ведут вас во время пробежки. Вот что показывает каждый из них.</string>
-    <string name="sports_tutorial_pace_title">Шкала отклонения темпа</string>
-    <string name="sports_tutorial_pace_body">Стрелка по центру — в графике. Левее — слишком медленно. Правее — слишком быстро. Число внутри — отклонение в секундах.</string>
-    <string name="sports_tutorial_hr_title">Шкала зоны пульса</string>
-    <string name="sports_tutorial_hr_body">Цветные полосы — это Z1–Z5 из ваших настроек зон. Пульс в центре, метка текущей зоны справа.</string>
-    <string name="sports_tutorial_intensity_title">Профиль интенсивности</string>
-    <string name="sports_tutorial_intensity_body">Цветной обзор ближайшего отрезка по крутизне подъёма с расчётным временем до следующего большого подъёма.</string>
-    <string name="sports_tutorial_cues_title">Звуковые и вибрационные подсказки</string>
-    <string name="sports_tutorial_cues_body">Включите в настройках голосовые и вибрационные подсказки при отклонении от темпа или переходе пульса через зоны. Музыка приглушается, а не обрывается.</string>
-    <string name="sports_tutorial_dismiss">Понятно</string>
 
     <!-- Laps -->
     <string name="lap_action">Отметить круг</string>
@@ -818,9 +796,6 @@
     <string name="action_close">Закрыть</string>
     <string name="drawer_activities">Занятия</string>
     <string name="drawer_simple_tracker">Простой трекер</string>
-    <string name="persona_picker_title">Для чего вы будете использовать GPSinfo?</string>
-    <string name="persona_picker_intro">Выберите подходящее — можно несколько. Ваши занятия будут первыми; всё остальное останется доступным.</string>
-    <string name="persona_picker_continue">Продолжить</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Хорошая фиксация</string>
     <string name="gps_lab_weak">Слабая фиксация (2D)</string>
@@ -869,16 +844,6 @@
     <string name="activity_custom_title">Своё / Всё</string>
     <string name="activity_custom_what">Ваша полная редактируемая панель — все карточки на одном экране.</string>
     <string name="activity_custom_whyhow">Классическая панель «всё в одном»: выберите, какие именно карточки показывать и в каком порядке. Всё, что умеет приложение, на одном экране, как вы расположите.</string>
-    <string name="persona_driver">Водитель</string>
-    <string name="persona_runner">Бегун</string>
-    <string name="persona_cyclist">Велосипедист</string>
-    <string name="persona_hiker">Турист</string>
-    <string name="persona_sailor">Моряк</string>
-    <string name="persona_motorcyclist">Мотоциклист</string>
-    <string name="persona_geocacher">Геокешер</string>
-    <string name="persona_ham">Радиолюбитель / SOTA</string>
-    <string name="persona_motorsport">Автоспорт</string>
-    <string name="persona_custom">Просто про GPS</string>
     <string name="drive_destination">Пункт назначения</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Маршрут построен. %1$s до пункта назначения.</string>

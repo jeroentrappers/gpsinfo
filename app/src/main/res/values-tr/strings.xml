@@ -381,15 +381,6 @@
     <string name="hr_card_disconnect">Ölçer bağlantısını kes</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Antrenman görünümü</string>
-    <string name="sports_dashboard_open">Antrenman görünümünü aç</string>
-    <string name="sports_dashboard_idle_body">Panodan bir kayıt başlat, ardından canlı tempo, adım ve nabzı görmek için antrenman görünümünü aç.</string>
-    <string name="sports_metric_elapsed">Geçen süre</string>
-    <string name="sports_metric_distance">Mesafe</string>
-    <string name="sports_metric_cadence">Kadans</string>
-    <string name="sports_metric_stride">Adım uzunluğu</string>
-    <string name="sports_metric_now">Şimdi</string>
-    <string name="sports_metric_avg">Ort.</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title">Tempo ve hedef</string>
@@ -446,8 +437,6 @@
     <string name="metric_power">Güç</string>
     <string name="metric_cadence">Kadans</string>
     <string name="metric_stride">Adım uzunluğu</string>
-    <string name="persona_runner_idle_hint">Koşuya başlamak için panodaki kayıt düğmesine dokun.</string>
-    <string name="persona_runner_recording_hint">Kaydediliyor — rehberli koçluk için Antrenman görünümü simgesine dokun.</string>
     <string name="persona_hiker_until_sunset">GÜN BATIMINA</string>
     <string name="persona_hiker_sunset_at">Gün batımı %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -478,17 +467,6 @@
     <string name="qs_tile_state_idle">Kaydı başlatmak için dokun</string>
     <string name="settings_vibration_cues">Titreşimli uyarılar</string>
     <string name="settings_vibration_cues_body">Tempo saptığında veya nabız bir bölge sınırını geçtiğinde belirgin titreşim desenleri. Sesli uyarılardan bağımsızdır.</string>
-    <string name="sports_tutorial_title">Antrenman görünümüne hoş geldin</string>
-    <string name="sports_tutorial_lede">Dört hızlı bakış göstergesi koşu boyunca sana koçluk eder. İşte her birinin sana ne anlattığı.</string>
-    <string name="sports_tutorial_pace_title">Tempo sapma göstergesi</string>
-    <string name="sports_tutorial_pace_body">İğne ortada = hedefte. Ortanın solunda = çok yavaş. Sağında = çok hızlı. İçindeki sayı, saniye cinsinden farktır.</string>
-    <string name="sports_tutorial_hr_title">Nabız bölgesi göstergesi</string>
-    <string name="sports_tutorial_hr_body">Renkli bantlar, ayarladığın bölgelerden Z1-Z5\'tir. Ortadaki BPM, sağdaki ise mevcut bölge etiketidir.</string>
-    <string name="sports_tutorial_intensity_title">Yoğunluk profili</string>
-    <string name="sports_tutorial_intensity_body">Önündeki kesimin tırmanış dikliğine göre renk dereceli önizlemesi ve bir sonraki büyük tırmanışa kalan süre.</string>
-    <string name="sports_tutorial_cues_title">Sesli &amp; titreşimli uyarılar</string>
-    <string name="sports_tutorial_cues_body">Tempo saptığında veya nabız bölgeleri geçtiğinde sesli / titreşimli uyarı almak için Ayarlar\'dan etkinleştir. Müzik kesilmek yerine kısılır.</string>
-    <string name="sports_tutorial_dismiss">Anladım</string>
     <string name="lap_action">Tur işaretle</string>
     <string name="lap_recorded_toast">Tur %1$d · %3$d:%4$02d içinde %2$.2f km</string>
     <string name="laps_section_title">Turlar</string>
@@ -746,9 +724,6 @@
     <string name="action_close">Kapat</string>
     <string name="drawer_activities">Etkinlikler</string>
     <string name="drawer_simple_tracker">Basit izleyici</string>
-    <string name="persona_picker_title">GPSinfo\'yu ne için kullanacaksın?</string>
-    <string name="persona_picker_intro">Sana uyanı seç — birden fazla seçebilirsin. Etkinliklerini öne koyarız; her şey erişilebilir kalır.</string>
-    <string name="persona_picker_continue">Devam et</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">İyi sabitleme</string>
     <string name="gps_lab_weak">Zayıf sabitleme (2D)</string>
@@ -797,16 +772,6 @@
     <string name="activity_custom_title">Özel / Her şey</string>
     <string name="activity_custom_what">Tam, düzenlenebilir panon — tüm kartlar tek ekranda.</string>
     <string name="activity_custom_whyhow">Klasik hepsi bir arada pano: hangi kartların ve hangi sırayla görüneceğini tam olarak seç. Uygulamanın yapabildiği her şey, tek ekranda, senin düzenlediğin şekilde.</string>
-    <string name="persona_driver">Sürücü</string>
-    <string name="persona_runner">Koşucu</string>
-    <string name="persona_cyclist">Bisikletçi</string>
-    <string name="persona_hiker">Yürüyüşçü</string>
-    <string name="persona_sailor">Denizci</string>
-    <string name="persona_motorcyclist">Motosikletçi</string>
-    <string name="persona_geocacher">Geocache\'ci</string>
-    <string name="persona_ham">Ham / SOTA</string>
-    <string name="persona_motorsport">Motor sporu</string>
-    <string name="persona_custom">Sadece GPS işleri</string>
     <string name="drive_destination">Hedef</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Rota hesaplandı. Hedefe %1$s.</string>

@@ -385,15 +385,6 @@
     <string name="hr_card_disconnect" tools:ignore="MissingTranslation">Meter ontkoppelen</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title" tools:ignore="MissingTranslation">Sportscherm</string>
-    <string name="sports_dashboard_open" tools:ignore="MissingTranslation">Sportscherm openen</string>
-    <string name="sports_dashboard_idle_body" tools:ignore="MissingTranslation">Start een opname vanuit het dashboard en open daarna het sportscherm om live tempo, looppatroon en hartslag te zien.</string>
-    <string name="sports_metric_elapsed" tools:ignore="MissingTranslation">Verstreken</string>
-    <string name="sports_metric_distance" tools:ignore="MissingTranslation">Afstand</string>
-    <string name="sports_metric_cadence" tools:ignore="MissingTranslation">Cadans</string>
-    <string name="sports_metric_stride" tools:ignore="MissingTranslation">Paslengte</string>
-    <string name="sports_metric_now" tools:ignore="MissingTranslation">Nu</string>
-    <string name="sports_metric_avg" tools:ignore="MissingTranslation">Gem</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title" tools:ignore="MissingTranslation">Tempo vs doel</string>
@@ -450,8 +441,6 @@
     <string name="metric_stride">Paslengte</string>
 
     <!-- Persona hints -->
-    <string name="persona_runner_idle_hint">Tik op de opnameknop in het dashboard om een run te starten.</string>
-    <string name="persona_runner_recording_hint">Bezig met opnemen — tik op het sportscherm-icoon voor begeleide coaching.</string>
     <string name="persona_hiker_until_sunset">TOT ZONSONDERGANG</string>
     <string name="persona_hiker_sunset_at">Zonsondergang om %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -496,17 +485,6 @@
     <string name="settings_vibration_cues_body">Aparte trilpatronen wanneer je tempo afwijkt of je hartslag een zonegrens overschrijdt. Los van de gesproken signalen.</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">Welkom bij het sportscherm</string>
-    <string name="sports_tutorial_lede">Vier snel afleesbare instrumenten begeleiden je tijdens de run. Dit is wat ze je vertellen.</string>
-    <string name="sports_tutorial_pace_title">Tempo-afwijkingsmeter</string>
-    <string name="sports_tutorial_pace_body">Naald in het midden = op tempo. Links van het midden = te traag. Rechts = te snel. Het getal binnenin is de afwijking in seconden.</string>
-    <string name="sports_tutorial_hr_title">Hartslagzonemeter</string>
-    <string name="sports_tutorial_hr_body">De gekleurde banden zijn Z1-Z5 op basis van je ingestelde zones. BPM in de kom, huidige zone rechts.</string>
-    <string name="sports_tutorial_intensity_title">Intensiteitsprofiel</string>
-    <string name="sports_tutorial_intensity_body">Kleurgecodeerd voorbeeld van het volgende stuk op basis van klimsteilheid, met ETA tot de volgende grote klim.</string>
-    <string name="sports_tutorial_cues_title">Gesproken &amp; trilsignalen</string>
-    <string name="sports_tutorial_cues_body">Schakel ze in bij Instellingen voor gesproken/trilsignalen wanneer je tempo afwijkt of je hartslag een zone overschrijdt. De muziek wordt zachter in plaats van onderbroken.</string>
-    <string name="sports_tutorial_dismiss">Begrepen</string>
 
     <!-- Laps -->
     <string name="lap_action">Ronde markeren</string>
@@ -820,9 +798,6 @@
     <string name="action_close">Sluiten</string>
     <string name="drawer_activities">Activiteiten</string>
     <string name="drawer_simple_tracker">Eenvoudige tracker</string>
-    <string name="persona_picker_title">Waarvoor ga je GPSinfo gebruiken?</string>
-    <string name="persona_picker_intro">Kies wat bij je past — je mag er meer dan één kiezen. We zetten je activiteiten vooraan; alles blijft beschikbaar.</string>
-    <string name="persona_picker_continue">Doorgaan</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Goede fix</string>
     <string name="gps_lab_weak">Zwakke fix (2D)</string>
@@ -871,16 +846,6 @@
     <string name="activity_custom_title">Aangepast / alles</string>
     <string name="activity_custom_what">Je volledige, bewerkbare dashboard — alle kaarten op één scherm.</string>
     <string name="activity_custom_whyhow">Het klassieke alles-in-één-dashboard: kies precies welke kaarten worden getoond en in welke volgorde. Alles wat de app kan, op één scherm, zoals jij het indeelt.</string>
-    <string name="persona_driver">Bestuurder</string>
-    <string name="persona_runner">Loper</string>
-    <string name="persona_cyclist">Fietser</string>
-    <string name="persona_hiker">Wandelaar</string>
-    <string name="persona_sailor">Zeiler</string>
-    <string name="persona_motorcyclist">Motorrijder</string>
-    <string name="persona_geocacher">Geocacher</string>
-    <string name="persona_ham">Ham / SOTA</string>
-    <string name="persona_motorsport">Motorsport</string>
-    <string name="persona_custom">Gewoon GPS-dingen</string>
     <string name="drive_destination">Bestemming</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Route berekend. %1$s tot bestemming.</string>

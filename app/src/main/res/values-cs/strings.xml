@@ -385,15 +385,6 @@
     <string name="hr_card_disconnect">Odpojit snímač</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Sportovní zobrazení</string>
-    <string name="sports_dashboard_open">Otevřít sportovní zobrazení</string>
-    <string name="sports_dashboard_idle_body">Spusťte záznam z hlavní obrazovky a poté otevřete sportovní zobrazení pro sledování aktuálního tempa, kadence a tepové frekvence.</string>
-    <string name="sports_metric_elapsed">Uplynulý čas</string>
-    <string name="sports_metric_distance">Vzdálenost</string>
-    <string name="sports_metric_cadence">Kadence</string>
-    <string name="sports_metric_stride">Délka kroku</string>
-    <string name="sports_metric_now">Nyní</string>
-    <string name="sports_metric_avg">Prům.</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title">Tempo vs. cíl</string>
@@ -449,8 +440,6 @@
     <string name="metric_power">Výkon</string>
     <string name="metric_cadence">Kadence</string>
     <string name="metric_stride">Délka kroku</string>
-    <string name="persona_runner_idle_hint">Záznam běhu spustíte klepnutím na tlačítko záznamu na hlavní obrazovce.</string>
-    <string name="persona_runner_recording_hint">Zaznamenává se — klepnutím na ikonu sportovního zobrazení získáte vedený koučink.</string>
     <string name="persona_hiker_until_sunset">DO ZÁPADU SLUNCE</string>
     <string name="persona_hiker_sunset_at">Západ slunce v %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -494,17 +483,6 @@
     <string name="settings_vibration_cues_body">Odlišné vibrační vzory, když se tempo odchýlí nebo TF překročí hranici zóny. Nezávislé na zvukových pokynech.</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">Vítejte ve sportovním zobrazení</string>
-    <string name="sports_tutorial_lede">Čtyři přehledné přístroje vás provedou během běhu. Zde je, co každý z nich ukazuje.</string>
-    <string name="sports_tutorial_pace_title">Ukazatel odchylky tempa</string>
-    <string name="sports_tutorial_pace_body">Ručička uprostřed = v tempu. Vlevo od středu = příliš pomalu. Vpravo = příliš rychle. Číslo uvnitř je odchylka v sekundách.</string>
-    <string name="sports_tutorial_hr_title">Ukazatel zóny tepové frekvence</string>
-    <string name="sports_tutorial_hr_body">Barevné pásy jsou Z1–Z5 z vámi nastavených zón. BPM uvnitř, štítek aktuální zóny vpravo.</string>
-    <string name="sports_tutorial_intensity_title">Profil intenzity</string>
-    <string name="sports_tutorial_intensity_body">Barevně odstupňovaný náhled dalšího úseku podle strmosti stoupání, s ETA do dalšího velkého stoupání.</string>
-    <string name="sports_tutorial_cues_title">Zvukové &amp; vibrační pokyny</string>
-    <string name="sports_tutorial_cues_body">Zapněte v nastavení a získejte hlasové / vibrační upozornění, když se tempo odchýlí nebo TF překročí zóny. Hudba se ztiší, místo aby se přerušila.</string>
-    <string name="sports_tutorial_dismiss">Rozumím</string>
 
     <!-- Laps -->
     <string name="lap_action">Označit kolo</string>
@@ -816,9 +794,6 @@
     <string name="action_close">Zavřít</string>
     <string name="drawer_activities">Aktivity</string>
     <string name="drawer_simple_tracker">Jednoduchý záznamník</string>
-    <string name="persona_picker_title">K čemu budete GPSinfo používat?</string>
-    <string name="persona_picker_intro">Vyberte, co vám sedí — můžete jich zvolit více. Vaše aktivity dáme na první místo; vše ostatní zůstane dostupné.</string>
-    <string name="persona_picker_continue">Pokračovat</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Dobrý fix</string>
     <string name="gps_lab_weak">Slabý fix (2D)</string>
@@ -867,16 +842,6 @@
     <string name="activity_custom_title">Vlastní / Vše</string>
     <string name="activity_custom_what">Váš úplný, upravitelný dashboard — všechny karty na jedné obrazovce.</string>
     <string name="activity_custom_whyhow">Klasický dashboard vše v jednom: vyberte přesně, které karty se zobrazí a v jakém pořadí. Vše, co aplikace umí, na jediné obrazovce, uspořádané podle vás.</string>
-    <string name="persona_driver">Řidič</string>
-    <string name="persona_runner">Běžec</string>
-    <string name="persona_cyclist">Cyklista</string>
-    <string name="persona_hiker">Turista</string>
-    <string name="persona_sailor">Námořník</string>
-    <string name="persona_motorcyclist">Motorkář</string>
-    <string name="persona_geocacher">Geocacher</string>
-    <string name="persona_ham">Radioamatér / SOTA</string>
-    <string name="persona_motorsport">Motorsport</string>
-    <string name="persona_custom">Jen věci kolem GPS</string>
     <string name="drive_destination">Cíl</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Trasa vypočítána. %1$s do cíle.</string>

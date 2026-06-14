@@ -60,7 +60,6 @@ import be.appmire.gpsinfo.ui.navigation.NavigationPickerScreen
 import be.appmire.gpsinfo.ui.nmea.NmeaReadoutScreen
 import be.appmire.gpsinfo.ui.satellite.SatelliteListScreen
 import be.appmire.gpsinfo.ui.speed.SpeedGaugeScreen
-import be.appmire.gpsinfo.ui.sports.SportsDashboardScreen
 import be.appmire.gpsinfo.ui.theme.GPSinfoTheme
 import be.appmire.gpsinfo.ui.trails.PaceTargetsEditor
 import be.appmire.gpsinfo.ui.trails.TrailMapScreen
@@ -90,7 +89,6 @@ private object Routes {
     const val StrideCalibration = "stride-calibration"
     const val DashboardProfileEditor = "dashboard-profile-editor"
     const val LiveMap = "live-map"
-    const val Sports = "sports"
     const val PaceTargets = "pace-targets/{trailId}"
     fun paceTargets(id: String) = "pace-targets/$id"
     const val Rally = "rally"
@@ -433,12 +431,6 @@ class MainActivity : ComponentActivity() {
                                 },
                             )
                         }
-                        composable(Routes.Sports) {
-                            SportsDashboardScreen(
-                                vm = vm,
-                                onBack = { nav.popBackStack() },
-                            )
-                        }
                         composable(Routes.PaceTargets) { entry ->
                             val id = entry.arguments?.getString("trailId").orEmpty()
                             var loaded by remember { mutableStateOf<be.appmire.gpsinfo.data.model.Trail?>(null) }
@@ -468,7 +460,6 @@ class MainActivity : ComponentActivity() {
                                 onOpenRally = { nav.navigate(Routes.Rally) },
                                 onOpenObdLab = { nav.navigate(Routes.ObdLab) },
                                 onOpenGhost = { nav.navigate(Routes.Ghost) },
-                                onOpenSports = { nav.navigate(Routes.Sports) },
                                 onOpenNavigate = { nav.navigate(Routes.NavPicker) },
                                 onOpenSettings = { nav.navigate(Routes.About) },
                             )

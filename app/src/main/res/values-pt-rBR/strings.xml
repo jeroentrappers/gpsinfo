@@ -385,15 +385,6 @@
     <string name="hr_card_disconnect">Desconectar monitor</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Modo esportivo</string>
-    <string name="sports_dashboard_open">Abrir modo esportivo</string>
-    <string name="sports_dashboard_idle_body">Inicie uma gravação pelo painel e abra o modo esportivo para ver pace, passada e frequência cardíaca em tempo real.</string>
-    <string name="sports_metric_elapsed">Decorrido</string>
-    <string name="sports_metric_distance">Distância</string>
-    <string name="sports_metric_cadence">Cadência</string>
-    <string name="sports_metric_stride">Passada</string>
-    <string name="sports_metric_now">Agora</string>
-    <string name="sports_metric_avg">Méd</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title">Pace vs meta</string>
@@ -451,8 +442,6 @@
     <string name="metric_stride">Passada</string>
 
     <!-- Persona hints -->
-    <string name="persona_runner_idle_hint">Toque no botão de gravação no painel para iniciar uma corrida.</string>
-    <string name="persona_runner_recording_hint">Gravando — toque no ícone do modo esportivo para coaching guiado.</string>
     <string name="persona_hiker_until_sunset">ATÉ O PÔR DO SOL</string>
     <string name="persona_hiker_sunset_at">Pôr do sol às %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -496,17 +485,6 @@
     <string name="settings_vibration_cues_body">Padrões de vibração distintos quando o pace desvia ou a FC cruza o limite de uma zona. Independente dos avisos sonoros.</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">Boas-vindas ao modo esportivo</string>
-    <string name="sports_tutorial_lede">Quatro instrumentos de visão rápida orientam você durante a corrida. Veja o que cada um indica.</string>
-    <string name="sports_tutorial_pace_title">Indicador de desvio de pace</string>
-    <string name="sports_tutorial_pace_body">Ponteiro centralizado = no pace certo. À esquerda do centro = lento demais. À direita = rápido demais. O número dentro é o desvio em segundos.</string>
-    <string name="sports_tutorial_hr_title">Indicador de zona de FC</string>
-    <string name="sports_tutorial_hr_body">As faixas coloridas são Z1-Z5 das suas zonas configuradas. BPM no centro, a zona atual à direita.</string>
-    <string name="sports_tutorial_intensity_title">Perfil de intensidade</string>
-    <string name="sports_tutorial_intensity_body">Prévia em cores do próximo trecho conforme a inclinação da subida, com ETA até a próxima grande subida.</string>
-    <string name="sports_tutorial_cues_title">Avisos sonoros e por vibração</string>
-    <string name="sports_tutorial_cues_body">Ative nas Configurações para receber avisos de voz / vibração quando o pace desvia ou a FC cruza zonas. A música abaixa o volume em vez de parar.</string>
-    <string name="sports_tutorial_dismiss">Entendi</string>
 
     <!-- Laps -->
     <string name="lap_action">Marcar volta</string>
@@ -816,9 +794,6 @@
     <string name="action_close">Fechar</string>
     <string name="drawer_activities">Atividades</string>
     <string name="drawer_simple_tracker">Rastreador simples</string>
-    <string name="persona_picker_title">Para que você vai usar o GPSinfo?</string>
-    <string name="persona_picker_intro">Escolha o que combina com você — pode marcar mais de um. Vamos colocar suas atividades em primeiro lugar; tudo continua disponível.</string>
-    <string name="persona_picker_continue">Continuar</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Fix bom</string>
     <string name="gps_lab_weak">Fix fraco (2D)</string>
@@ -867,16 +842,6 @@
     <string name="activity_custom_title">Personalizado / Tudo</string>
     <string name="activity_custom_what">Seu painel completo e editável — todos os cards numa tela só.</string>
     <string name="activity_custom_whyhow">O clássico painel tudo-em-um: escolha exatamente quais cards aparecem e em que ordem. Tudo o que o app faz, em uma única tela, do jeito que você organizar.</string>
-    <string name="persona_driver">Motorista</string>
-    <string name="persona_runner">Corredor</string>
-    <string name="persona_cyclist">Ciclista</string>
-    <string name="persona_hiker">Caminhante</string>
-    <string name="persona_sailor">Velejador</string>
-    <string name="persona_motorcyclist">Motociclista</string>
-    <string name="persona_geocacher">Geocacher</string>
-    <string name="persona_ham">Radioamador / SOTA</string>
-    <string name="persona_motorsport">Automobilismo</string>
-    <string name="persona_custom">Só coisas de GPS</string>
     <string name="drive_destination">Destino</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Rota calculada. %1$s até o destino.</string>

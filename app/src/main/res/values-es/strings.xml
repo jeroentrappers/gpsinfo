@@ -385,15 +385,6 @@
     <string name="hr_card_disconnect">Desconectar monitor</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Vista deportiva</string>
-    <string name="sports_dashboard_open">Abrir vista deportiva</string>
-    <string name="sports_dashboard_idle_body">Inicia una grabación desde el panel y luego abre la vista deportiva para ver ritmo, zancada y frecuencia cardiaca en directo.</string>
-    <string name="sports_metric_elapsed">Transcurrido</string>
-    <string name="sports_metric_distance">Distancia</string>
-    <string name="sports_metric_cadence">Cadencia</string>
-    <string name="sports_metric_stride">Zancada</string>
-    <string name="sports_metric_now">Ahora</string>
-    <string name="sports_metric_avg">Media</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title">Ritmo vs objetivo</string>
@@ -450,8 +441,6 @@
     <string name="metric_stride">Zancada</string>
 
     <!-- Persona hints -->
-    <string name="persona_runner_idle_hint">Toca el botón de grabación en el panel para empezar una carrera.</string>
-    <string name="persona_runner_recording_hint">Grabando — toca el icono de la vista deportiva para tener guía de entrenamiento.</string>
     <string name="persona_hiker_until_sunset">HASTA EL ANOCHECER</string>
     <string name="persona_hiker_sunset_at">Anochecer a las %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -496,17 +485,6 @@
     <string name="settings_vibration_cues_body">Patrones de vibración distintos cuando el ritmo se desvía o la FC cruza el límite de una zona. Independiente de los avisos por voz.</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">Te damos la bienvenida a la vista deportiva</string>
-    <string name="sports_tutorial_lede">Cuatro instrumentos de un vistazo te guían durante la carrera. Esto es lo que indica cada uno.</string>
-    <string name="sports_tutorial_pace_title">Indicador de desviación del ritmo</string>
-    <string name="sports_tutorial_pace_body">Aguja centrada = en el ritmo. A la izquierda = demasiado lento. A la derecha = demasiado rápido. La cifra del interior es el desfase en segundos.</string>
-    <string name="sports_tutorial_hr_title">Indicador de zona de frecuencia cardiaca</string>
-    <string name="sports_tutorial_hr_body">Las bandas de color son Z1-Z5 según tus zonas configuradas. Los ppm en el centro, la zona actual a la derecha.</string>
-    <string name="sports_tutorial_intensity_title">Perfil de intensidad</string>
-    <string name="sports_tutorial_intensity_body">Vista previa por colores del siguiente tramo según la pendiente de subida, con el tiempo estimado hasta la próxima subida importante.</string>
-    <string name="sports_tutorial_cues_title">Avisos por voz y vibración</string>
-    <string name="sports_tutorial_cues_body">Actívalos en Ajustes para recibir avisos de voz o vibración cuando el ritmo se desvíe o la FC cruce de zona. La música baja de volumen en vez de cortarse.</string>
-    <string name="sports_tutorial_dismiss">Entendido</string>
 
     <!-- Laps -->
     <string name="lap_action">Marcar vuelta</string>
@@ -820,9 +798,6 @@
     <string name="action_close">Cerrar</string>
     <string name="drawer_activities">Actividades</string>
     <string name="drawer_simple_tracker">Registro simple</string>
-    <string name="persona_picker_title">¿Para qué usarás GPSinfo?</string>
-    <string name="persona_picker_intro">Elige lo que encaje — puedes seleccionar más de uno. Pondremos tus actividades primero; todo sigue disponible.</string>
-    <string name="persona_picker_continue">Continuar</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Buena señal</string>
     <string name="gps_lab_weak">Señal débil (2D)</string>
@@ -871,16 +846,6 @@
     <string name="activity_custom_title">Personalizado / Todo</string>
     <string name="activity_custom_what">Tu panel completo y editable — todas las tarjetas en una pantalla.</string>
     <string name="activity_custom_whyhow">El clásico panel todo en uno: elige exactamente qué tarjetas se muestran y en qué orden. Todo lo que la app puede hacer, en una sola pantalla, como tú lo organices.</string>
-    <string name="persona_driver">Conductor</string>
-    <string name="persona_runner">Corredor</string>
-    <string name="persona_cyclist">Ciclista</string>
-    <string name="persona_hiker">Senderista</string>
-    <string name="persona_sailor">Navegante</string>
-    <string name="persona_motorcyclist">Motociclista</string>
-    <string name="persona_geocacher">Geocacher</string>
-    <string name="persona_ham">Radioaficionado / SOTA</string>
-    <string name="persona_motorsport">Automovilismo</string>
-    <string name="persona_custom">Solo cosas de GPS</string>
     <string name="drive_destination">Destino</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Ruta calculada. %1$s hasta el destino.</string>

@@ -67,9 +67,6 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         /** Whether tactile (vibration) cues fire on the same threshold
          *  crosses as the audible ones. Off by default. */
         val VibrationCuesEnabled = booleanPreferencesKey("vibration_cues_enabled")
-        /** Whether the first-time Sports-view tutorial has been
-         *  dismissed by the user. */
-        val SportsTutorialSeen = booleanPreferencesKey("sports_tutorial_seen")
         /** Dashboard density preset — "standard" (current default) or
          *  "glanceable" (larger spacing and roomier cards). */
         val DashboardDensity = stringPreferencesKey("dashboard_density")
@@ -113,20 +110,10 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
          *  the special "custom" sentinel, or "default" when nothing has
          *  been chosen. */
         val DashboardProfileId = stringPreferencesKey("dashboard_profile_id")
-        /** Activity Hub: activities pinned to the top, comma-separated
-         *  [be.appmire.gpsinfo.ui.activity.Activity] names. Seeded from
-         *  the first-run persona picker. */
-        val PinnedActivities = stringPreferencesKey("pinned_activities")
         /** Per-activity Simple/Pro detail level: "ACTIVITY=LEVEL"
          *  comma-separated (enum names). Absent activities default to
-         *  Simple. Seeded from the persona picker. */
+         *  Simple. */
         val ActivityDetailLevels = stringPreferencesKey("activity_detail_levels")
-        /** Last activity opened from the Hub (enum name) — for the
-         *  "Resume" shortcut. */
-        val LastActivity = stringPreferencesKey("last_activity")
-        /** Whether the one-time "new activity view" intro has been shown
-         *  to a user upgrading from the old single-dashboard launch. */
-        val ActivityIntroSeen = booleanPreferencesKey("activity_intro_seen")
         /** Serialised card list for the user-customised dashboard
          *  profile. Comma-separated [be.appmire.gpsinfo.data.model.DashboardSection]
          *  enum names. Null when the user hasn't built one yet — the
@@ -231,13 +218,6 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         context.dataStore.edit { it[Keys.VibrationCuesEnabled] = value }
     }
 
-    val sportsTutorialSeen: Flow<Boolean> = context.dataStore.data
-        .map { it[Keys.SportsTutorialSeen] ?: false }
-
-    suspend fun setSportsTutorialSeen(value: Boolean) {
-        context.dataStore.edit { it[Keys.SportsTutorialSeen] = value }
-    }
-
     val dashboardDensity: Flow<DashboardDensity> = context.dataStore.data
         .map { DashboardDensity.fromString(it[Keys.DashboardDensity]) }
 
@@ -337,14 +317,6 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         context.dataStore.edit { it[Keys.DashboardProfileId] = value }
     }
 
-    /** Activities pinned to the top of the Hub (enum names), in order. */
-    val pinnedActivities: Flow<List<String>> = context.dataStore.data
-        .map { p -> p[Keys.PinnedActivities]?.split(',')?.filter { it.isNotBlank() } ?: emptyList() }
-
-    suspend fun setPinnedActivities(ids: List<String>) {
-        context.dataStore.edit { it[Keys.PinnedActivities] = ids.joinToString(",") }
-    }
-
     private fun decodeDetail(raw: String?): Map<String, String> =
         raw?.split(',')?.mapNotNull {
             val kv = it.split('='); if (kv.size == 2 && kv[0].isNotBlank()) kv[0] to kv[1] else null
@@ -360,29 +332,6 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
             cur[activity] = level
             prefs[Keys.ActivityDetailLevels] = cur.entries.joinToString(",") { "${it.key}=${it.value}" }
         }
-    }
-
-    /** Merge several activity → level defaults (first-run seeding). */
-    suspend fun mergeActivityDetailLevels(levels: Map<String, String>) {
-        context.dataStore.edit { prefs ->
-            val cur = decodeDetail(prefs[Keys.ActivityDetailLevels]).toMutableMap()
-            cur.putAll(levels)
-            prefs[Keys.ActivityDetailLevels] = cur.entries.joinToString(",") { "${it.key}=${it.value}" }
-        }
-    }
-
-    val lastActivity: Flow<String?> = context.dataStore.data
-        .map { it[Keys.LastActivity] }
-
-    suspend fun setLastActivity(activity: String) {
-        context.dataStore.edit { it[Keys.LastActivity] = activity }
-    }
-
-    val activityIntroSeen: Flow<Boolean> = context.dataStore.data
-        .map { it[Keys.ActivityIntroSeen] ?: false }
-
-    suspend fun setActivityIntroSeen() {
-        context.dataStore.edit { it[Keys.ActivityIntroSeen] = true }
     }
 
     /** Raw serialised list — comma-joined section names. The model

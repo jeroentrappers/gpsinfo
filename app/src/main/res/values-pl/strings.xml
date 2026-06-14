@@ -381,15 +381,6 @@
     <string name="hr_card_disconnect">Rozłącz pulsometr</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title">Widok sportowy</string>
-    <string name="sports_dashboard_open">Otwórz widok sportowy</string>
-    <string name="sports_dashboard_idle_body">Rozpocznij nagrywanie na pulpicie, a następnie otwórz widok sportowy, aby zobaczyć bieżące tempo, parametry kroku i tętno.</string>
-    <string name="sports_metric_elapsed">Czas</string>
-    <string name="sports_metric_distance">Dystans</string>
-    <string name="sports_metric_cadence">Kadencja</string>
-    <string name="sports_metric_stride">Długość kroku</string>
-    <string name="sports_metric_now">Teraz</string>
-    <string name="sports_metric_avg">Śr.</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title">Tempo wzgl. celu</string>
@@ -446,8 +437,6 @@
     <string name="metric_stride">Długość kroku</string>
 
     <!-- Persona dashboards -->
-    <string name="persona_runner_idle_hint">Dotknij przycisku nagrywania na pulpicie, aby rozpocząć bieg.</string>
-    <string name="persona_runner_recording_hint">Nagrywanie — dotknij ikony widoku sportowego, aby uzyskać prowadzenie treningowe.</string>
     <string name="persona_hiker_until_sunset">DO ZACHODU SŁOŃCA</string>
     <string name="persona_hiker_sunset_at">Zachód słońca o %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -492,17 +481,6 @@
     <string name="settings_vibration_cues_body">Odrębne wzorce wibracji, gdy tempo zmienia się lub tętno przekracza granicę strefy. Niezależne od sygnałów dźwiękowych.</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">Witaj w widoku sportowym</string>
-    <string name="sports_tutorial_lede">Cztery czytelne na rzut oka wskaźniki prowadzą Cię przez bieg. Oto, co pokazuje każdy z nich.</string>
-    <string name="sports_tutorial_pace_title">Wskaźnik odchylenia tempa</string>
-    <string name="sports_tutorial_pace_body">Wskazówka pośrodku = w tempie. Na lewo = za wolno. Na prawo = za szybko. Liczba w środku to odchylenie w sekundach.</string>
-    <string name="sports_tutorial_hr_title">Wskaźnik strefy tętna</string>
-    <string name="sports_tutorial_hr_body">Kolorowe pasma to strefy Z1–Z5 z Twojej konfiguracji. Wartość ud/min w środku, bieżąca strefa po prawej.</string>
-    <string name="sports_tutorial_intensity_title">Profil intensywności</string>
-    <string name="sports_tutorial_intensity_body">Podgląd najbliższego odcinka pokolorowany według stromości podjazdu, z czasem ETA do następnego dużego podjazdu.</string>
-    <string name="sports_tutorial_cues_title">Sygnały dźwiękowe i wibracyjne</string>
-    <string name="sports_tutorial_cues_body">Włącz w Ustawieniach, aby otrzymywać głosowe / wibracyjne sygnały, gdy tempo zmienia się lub tętno przekracza strefy. Muzyka jest przyciszana, a nie przerywana.</string>
-    <string name="sports_tutorial_dismiss">Rozumiem</string>
 
     <!-- Laps -->
     <string name="lap_action">Zaznacz okrążenie</string>
@@ -812,9 +790,6 @@
     <string name="action_close">Zamknij</string>
     <string name="drawer_activities">Aktywności</string>
     <string name="drawer_simple_tracker">Prosty rejestrator</string>
-    <string name="persona_picker_title">Do czego użyjesz GPSinfo?</string>
-    <string name="persona_picker_intro">Wybierz, co Ci pasuje — możesz zaznaczyć więcej niż jedno. Twoje aktywności pokażemy na początku; wszystko pozostaje dostępne.</string>
-    <string name="persona_picker_continue">Dalej</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">Dobry fix</string>
     <string name="gps_lab_weak">Słaby fix (2D)</string>
@@ -863,16 +838,6 @@
     <string name="activity_custom_title">Własny / Wszystko</string>
     <string name="activity_custom_what">Twój pełny, edytowalny pulpit — wszystkie karty na jednym ekranie.</string>
     <string name="activity_custom_whyhow">Klasyczny pulpit wszystko-w-jednym: wybierz dokładnie, które karty się pokazują i w jakiej kolejności. Wszystko, co aplikacja potrafi, na jednym ekranie, ułożone po Twojemu.</string>
-    <string name="persona_driver">Kierowca</string>
-    <string name="persona_runner">Biegacz</string>
-    <string name="persona_cyclist">Rowerzysta</string>
-    <string name="persona_hiker">Turysta pieszy</string>
-    <string name="persona_sailor">Żeglarz</string>
-    <string name="persona_motorcyclist">Motocyklista</string>
-    <string name="persona_geocacher">Geocacher</string>
-    <string name="persona_ham">Krótkofalowiec / SOTA</string>
-    <string name="persona_motorsport">Sporty motorowe</string>
-    <string name="persona_custom">Tylko GPS</string>
     <string name="drive_destination">Cel</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">Trasa wyznaczona. %1$s do celu.</string>

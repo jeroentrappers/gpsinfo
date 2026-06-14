@@ -385,15 +385,6 @@
     <string name="hr_card_disconnect" tools:ignore="MissingTranslation">モニターのペアリングを解除</string>
 
     <!-- Sports Dashboard (guided-run view) -->
-    <string name="sports_dashboard_title" tools:ignore="MissingTranslation">スポーツビュー</string>
-    <string name="sports_dashboard_open" tools:ignore="MissingTranslation">スポーツビューを開く</string>
-    <string name="sports_dashboard_idle_body" tools:ignore="MissingTranslation">ダッシュボードから記録を開始してからスポーツビューを開くと、ペース・フォーム・心拍数をリアルタイムに表示します。</string>
-    <string name="sports_metric_elapsed" tools:ignore="MissingTranslation">経過</string>
-    <string name="sports_metric_distance" tools:ignore="MissingTranslation">距離</string>
-    <string name="sports_metric_cadence" tools:ignore="MissingTranslation">ケイデンス</string>
-    <string name="sports_metric_stride" tools:ignore="MissingTranslation">ストライド</string>
-    <string name="sports_metric_now" tools:ignore="MissingTranslation">現在</string>
-    <string name="sports_metric_avg" tools:ignore="MissingTranslation">平均</string>
 
     <!-- Gauge headings on the Sports view -->
     <string name="gauge_pace_title" tools:ignore="MissingTranslation">ペース vs 目標</string>
@@ -448,8 +439,6 @@
     <string name="metric_power">パワー</string>
     <string name="metric_cadence">ケイデンス</string>
     <string name="metric_stride">ストライド</string>
-    <string name="persona_runner_idle_hint">ダッシュボードの記録ボタンをタップしてランを開始します。</string>
-    <string name="persona_runner_recording_hint">記録中 — スポーツビューのアイコンをタップするとコーチング表示になります。</string>
     <string name="persona_hiker_until_sunset">日の入りまで</string>
     <string name="persona_hiker_sunset_at">日の入り %1$s</string>
     <string name="persona_sailor_sog">SOG</string>
@@ -494,17 +483,6 @@
     <string name="settings_vibration_cues_body">ペースがずれたとき、または心拍がゾーン境界を越えたときに、それぞれ異なる振動パターンで通知します。音声フィードバックとは独立して動作します。</string>
 
     <!-- Sports view tutorial -->
-    <string name="sports_tutorial_title">スポーツビューへようこそ</string>
-    <string name="sports_tutorial_lede">一目で確認できる 4 つの計器がランをサポートします。それぞれの見方を紹介します。</string>
-    <string name="sports_tutorial_pace_title">ペースずれゲージ</string>
-    <string name="sports_tutorial_pace_body">針が中央 = 目標どおり。中央より左 = 遅すぎ。右 = 速すぎ。中の数値はずれの秒数です。</string>
-    <string name="sports_tutorial_hr_title">心拍数ゾーンゲージ</string>
-    <string name="sports_tutorial_hr_body">色帯は設定したゾーンの Z1〜Z5 です。BPM は中央、現在のゾーンタグは右側に表示されます。</string>
-    <string name="sports_tutorial_intensity_title">強度プロファイル</string>
-    <string name="sports_tutorial_intensity_body">この先の区間を登りの急さで色分けしてプレビューし、次の大きな登りまでの ETA を表示します。</string>
-    <string name="sports_tutorial_cues_title">音声 &amp; 振動フィードバック</string>
-    <string name="sports_tutorial_cues_body">設定で有効にすると、ペースがずれたとき、または心拍がゾーンを越えたときに音声・振動で通知します。音楽は途切れず音量が下がるだけです。</string>
-    <string name="sports_tutorial_dismiss">OK</string>
 
     <!-- Laps -->
     <string name="lap_action">ラップを記録</string>
@@ -824,9 +802,6 @@
     <string name="action_close">閉じる</string>
     <string name="drawer_activities">アクティビティ</string>
     <string name="drawer_simple_tracker">シンプルトラッカー</string>
-    <string name="persona_picker_title">GPSinfo を何に使いますか？</string>
-    <string name="persona_picker_intro">合うものを選んでください。複数選べます。選んだアクティビティを優先表示しますが、すべての機能は引き続き利用できます。</string>
-    <string name="persona_picker_continue">続ける</string>
     <string name="gps_lab_title">GPS Lab</string>
     <string name="gps_lab_good">良好な測位</string>
     <string name="gps_lab_weak">弱い測位（2D）</string>
@@ -875,16 +850,6 @@
     <string name="activity_custom_title">カスタム / すべて</string>
     <string name="activity_custom_what">編集できるフル機能のダッシュボード — すべてのカードを 1 画面に。</string>
     <string name="activity_custom_whyhow">従来のオールインワンダッシュボード。表示するカードと順序を自由に選べます。このアプリでできるすべてを、1 画面に、好きなように配置できます。</string>
-    <string name="persona_driver">ドライバー</string>
-    <string name="persona_runner">ランナー</string>
-    <string name="persona_cyclist">サイクリスト</string>
-    <string name="persona_hiker">ハイカー</string>
-    <string name="persona_sailor">セーラー</string>
-    <string name="persona_motorcyclist">ライダー</string>
-    <string name="persona_geocacher">ジオキャッシャー</string>
-    <string name="persona_ham">ハム / SOTA</string>
-    <string name="persona_motorsport">モータースポーツ</string>
-    <string name="persona_custom">GPS のことだけ</string>
     <string name="drive_destination">目的地</string>
     <!-- Spoken navigation guidance (VoiceGuide) -->
     <string name="voice_route_computed">ルートを計算しました。目的地まで%1$s。</string>

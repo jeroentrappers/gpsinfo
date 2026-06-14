@@ -276,17 +276,6 @@ class DashboardViewModel(
         }
     }
 
-    val sportsTutorialSeen: StateFlow<Boolean> =
-        (settings as? SettingsRepository)?.sportsTutorialSeen
-            ?.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-            ?: MutableStateFlow(false)
-
-    fun markSportsTutorialSeen() {
-        viewModelScope.launch {
-            (settings as? SettingsRepository)?.setSportsTutorialSeen(true)
-        }
-    }
-
     val personalStrideMeters: StateFlow<Float?> =
         (settings as? SettingsRepository)?.personalStrideMeters
             ?.stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -400,8 +389,8 @@ class DashboardViewModel(
     private val _ghost = MutableStateFlow<be.appmire.gpsinfo.data.model.Ghost?>(null)
     val ghost: StateFlow<be.appmire.gpsinfo.data.model.Ghost?> = _ghost.asStateFlow()
 
-    // The loaded ghost trail, kept for the Sports GhostPacerCard (which
-    // renders the trail name). Null unless racing a past run.
+    // The loaded ghost trail (exposes the trail name to racing UIs).
+    // Null unless racing a past run.
     private val _ghostTrail = MutableStateFlow<be.appmire.gpsinfo.data.model.Trail?>(null)
     val ghostTrail: StateFlow<be.appmire.gpsinfo.data.model.Trail?> = _ghostTrail.asStateFlow()
 
@@ -922,18 +911,6 @@ class DashboardViewModel(
         viewModelScope.launch { settings.setOnboardingSeen(false) }
     }
 
-    /** Activities pinned to the top of the Hub, seeded by the first-run
-     *  persona picker. Empty until onboarding completes. */
-    val pinnedActivities: StateFlow<List<be.appmire.gpsinfo.ui.activity.Activity>> =
-        ((settings as? SettingsRepository)?.pinnedActivities
-            ?: kotlinx.coroutines.flow.flowOf(emptyList()))
-            .map { names ->
-                names.mapNotNull {
-                    runCatching { be.appmire.gpsinfo.ui.activity.Activity.valueOf(it) }.getOrNull()
-                }
-            }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
     /** New onboarding: the Language/Units/Theme prefs are written by the
      *  screen as they're picked; this just seeds the default dashboard
      *  profile and marks onboarding done (→ lands on the Dashboard). */
@@ -967,27 +944,6 @@ class DashboardViewModel(
         viewModelScope.launch {
             (settings as? SettingsRepository)?.setActivityDetailLevel(activity.name, level.name)
         }
-    }
-
-    /** Last activity opened from the Hub (for the Resume shortcut). */
-    val lastActivity: StateFlow<be.appmire.gpsinfo.ui.activity.Activity?> =
-        ((settings as? SettingsRepository)?.lastActivity ?: kotlinx.coroutines.flow.flowOf(null))
-            .map { n -> n?.let { runCatching { be.appmire.gpsinfo.ui.activity.Activity.valueOf(it) }.getOrNull() } }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
-
-    fun setLastActivity(activity: be.appmire.gpsinfo.ui.activity.Activity) {
-        viewModelScope.launch { (settings as? SettingsRepository)?.setLastActivity(activity.name) }
-    }
-
-    /** One-time "new activity view" intro for upgrading users. Defaults
-     *  to true (seen) so it never flashes for fresh installs that went
-     *  through the persona picker. */
-    val activityIntroSeen: StateFlow<Boolean> =
-        ((settings as? SettingsRepository)?.activityIntroSeen ?: kotlinx.coroutines.flow.flowOf(true))
-            .stateIn(viewModelScope, SharingStarted.Eagerly, true)
-
-    fun markActivityIntroSeen() {
-        viewModelScope.launch { (settings as? SettingsRepository)?.setActivityIntroSeen() }
     }
 
     // ---------- Play Store rating nudge ----------
