@@ -43,6 +43,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -92,6 +95,10 @@ fun LiveMapScreen(
     detailLevel: DetailLevel = DetailLevel.PRO,
     /** Flip the detail level (Simple ⇄ Pro) in place. */
     onToggleDetail: (() -> Unit)? = null,
+    /** Reports the immersive chrome's visibility up to the shell so the
+     *  bottom navigation bar can hide/show in lock-step with the map's
+     *  own top bar. */
+    onChromeVisibilityChanged: (Boolean) -> Unit = {},
 ) {
     val pro = detailLevel == DetailLevel.PRO
     val state by vm.state.collectAsStateWithLifecycle()
@@ -150,8 +157,27 @@ fun LiveMapScreen(
     var offlineBusy by remember { mutableStateOf(false) }
     var offlineProgress by remember { mutableStateOf(0) }
 
+    // Immersive chrome: the map is full-screen by default; the top bar
+    // (with the back arrow) and the shell's bottom nav reveal on any
+    // touch of the map, then auto-hide a few seconds later. revealTick
+    // is bumped on each touch to (re)start the hide countdown.
+    var chromeVisible by remember { mutableStateOf(true) }
+    var revealTick by remember { mutableStateOf(0) }
+    androidx.compose.runtime.LaunchedEffect(chromeVisible) {
+        onChromeVisibilityChanged(chromeVisible)
+    }
+    androidx.compose.runtime.LaunchedEffect(revealTick) {
+        kotlinx.coroutines.delay(3500L)
+        chromeVisible = false
+    }
+    val revealChrome = {
+        chromeVisible = true
+        revealTick++
+    }
+
     Scaffold(
         topBar = {
+            if (chromeVisible) {
             TopAppBar(
                 title = { Text(stringResource(R.string.live_map_title)) },
                 navigationIcon = {
@@ -215,10 +241,26 @@ fun LiveMapScreen(
                     navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
                 ),
             )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                // Reveal the chrome on any touch of the map, without
+                // consuming the gesture (Initial pass) so the map still
+                // pans/zooms and the controls still receive their taps.
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val ev = awaitPointerEvent(PointerEventPass.Initial)
+                            if (ev.type == PointerEventType.Press) revealChrome()
+                        }
+                    }
+                },
+        ) {
             // MapLibre Native vector map (OpenFreeMap style, no key).
             // The host owns the GL MapView + its annotation layers; we
             // just feed it the current fix, follow/heading toggles and

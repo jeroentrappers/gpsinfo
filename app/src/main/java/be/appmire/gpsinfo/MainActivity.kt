@@ -102,8 +102,15 @@ private object Routes {
 private val TAB_ROUTES = listOf(Routes.Dashboard, Routes.LiveMap, Routes.Trails, Routes.Tools)
 
 @Composable
-private fun MainBottomBar(nav: androidx.navigation.NavController, currentRoute: String?) {
+private fun MainBottomBar(
+    nav: androidx.navigation.NavController,
+    currentRoute: String?,
+    // On the immersive Map tab the bar hides in lock-step with the map's
+    // own chrome (revealed on touch, auto-hidden a few seconds later).
+    mapChromeVisible: Boolean,
+) {
     if (currentRoute !in TAB_ROUTES) return
+    if (currentRoute == Routes.LiveMap && !mapChromeVisible) return
     data class Tab(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val labelRes: Int)
     val tabs = listOf(
         Tab(Routes.Dashboard, Icons.Outlined.SpaceDashboard, R.string.tab_dashboard),
@@ -225,13 +232,16 @@ class MainActivity : ComponentActivity() {
                     } else {
                     val nav = rememberNavController()
                     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+                    // Immersive Map tab: the bottom nav hides/shows together
+                    // with the map's own top bar (LiveMapScreen reports it).
+                    var mapChromeVisible by remember { mutableStateOf(true) }
                     Scaffold(
                         // Inner screens own their status-bar / side insets via their
                         // own Scaffolds; the shell only contributes the bottom-bar
                         // height. Zeroing contentWindowInsets here avoids consuming
                         // the system-bar insets twice (which left fat top/bottom gaps).
                         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
-                        bottomBar = { MainBottomBar(nav, currentRoute) },
+                        bottomBar = { MainBottomBar(nav, currentRoute, mapChromeVisible) },
                     ) { shellPadding ->
                     NavHost(
                         navController = nav,
@@ -417,8 +427,16 @@ class MainActivity : ComponentActivity() {
                             ] ?: be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
                             be.appmire.gpsinfo.ui.livemap.LiveMapScreen(
                                 vm = vm,
-                                // Top-level tab → no back arrow.
-                                onBack = null,
+                                // Immersive tab: the back arrow lives in the
+                                // reveal-on-touch top bar and returns home.
+                                onBack = {
+                                    nav.navigate(Routes.Dashboard) {
+                                        popUpTo(nav.graph.startDestinationId) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onChromeVisibilityChanged = { mapChromeVisible = it },
                                 onOpenDestination = { nav.navigate(Routes.NavPicker) },
                                 detailLevel = driveDetail,
                                 onToggleDetail = {
