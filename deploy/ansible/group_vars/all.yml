@@ -24,12 +24,15 @@ sprite_name: ofm
 extract_port: 8791
 
 # Planet build — throttled, since this runs on a box with live sites.
-#   --storage/--nodemap-storage=mmap keeps RAM modest (uses disk),
-#   capped threads + nice/ionice keep CPU/IO polite.
+#   PBF + output stage on the 1 TB Storage Box (sequential, network-friendly);
+#   the random-IO temp (node map / feature store) stays on local NVMe.
+#   --nodemap-storage/--storage=mmap keeps RAM modest; capped CPU + low blk-IO
+#   keep the box polite. A disk watchdog aborts if local free drops too low.
 planetiler_image: "ghcr.io/onthegomap/planetiler:latest"
-planetiler_area: europe        # full planet peaks ~260-300 GB; the shared box
-                               # has ~253 GB free, so Europe for now (~100 GB peak).
+planetiler_area: planet
 build_threads: 4
 build_xmx: "40g"
-build_nice: 15
-build_min_free_gb: 120         # required headroom before a build starts
+storagebox_build_dir: /mnt/storagebox/gpsinfo-build   # PBF + output (network)
+build_tmp_local: "{{ app_dir }}/buildtmp"             # random-IO temp (local NVMe)
+build_min_free_gb: 210         # local headroom required before starting (temp)
+watchdog_min_free_gb: 25       # abort the build if local free drops below this

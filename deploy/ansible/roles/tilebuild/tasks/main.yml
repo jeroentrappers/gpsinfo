@@ -1,11 +1,8 @@
-# Kick off the planet PMTiles build. THROTTLED for the shared box: capped CPU
-# (docker --cpus) + low block-IO weight + mmap storage (modest RAM) + a JVM heap
-# cap. It runs for hours, so it's launched as a detached systemd transient unit
-# (survives our SSH session, logs to the journal) and this play returns at once.
-#
-# DISK: a planet build needs the ~80 GB OSM PBF + temp + the ~100–130 GB output.
-# We refuse to start unless there's comfortable headroom, so a runaway can't fill
-# / and take down the co-hosted live sites.
+# Kick off the full-planet PMTiles build, THROTTLED for the shared box:
+# PBF + output on the Storage Box, random-IO temp on local NVMe, capped CPU +
+# low blk-IO + mmap storage + a JVM heap cap. Runs for hours, launched as a
+# detached systemd transient unit (survives our SSH session, logs to the
+# journal). A disk watchdog in the script aborts if local free drops too low.
 ---
 - name: Skip if the planet tiles are already in place
   ansible.builtin.stat:
@@ -18,19 +15,45 @@
   changed_when: false
   failed_when: false
 
-- name: Free space on / (KB)
+- name: Require the Storage Box to be mounted (PBF + output stage there)
+  ansible.builtin.command: mountpoint -q /mnt/storagebox
+  register: sb_mounted
+  changed_when: false
+  failed_when: false
+
+- name: Fail if the Storage Box isn't mounted
+  ansible.builtin.assert:
+    that: "sb_mounted.rc == 0"
+    fail_msg: "/mnt/storagebox is not mounted — start gpsinfo-storagebox.service first."
+  when: not planet_done.stat.exists
+
+- name: Local free space on {{ app_dir }} (KB)
   ansible.builtin.shell: "df -P {{ app_dir }} | awk 'NR==2{print $4}'"
   register: df_free
   changed_when: false
 
-- name: "Refuse to build without ~{{ build_min_free_gb }} GB free"
+- name: "Refuse to build without ~{{ build_min_free_gb }} GB local free (for temp)"
   ansible.builtin.assert:
     that: "df_free.stdout | int > build_min_free_gb | int * 1024 * 1024"
     fail_msg: >-
       Only {{ (df_free.stdout | int / 1024 / 1024) | round(1) }} GB free on {{ app_dir }};
-      need ~{{ build_min_free_gb }} GB headroom for a {{ planetiler_area }} build.
-      Free space or build a smaller area.
+      need ~{{ build_min_free_gb }} GB local headroom for the planet build's temp.
   when: not planet_done.stat.exists
+
+- name: Ensure local temp + Storage Box build dirs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ build_tmp_local }}"
+    - "{{ storagebox_build_dir }}"
+
+- name: Stage the build script
+  ansible.builtin.copy:
+    src: run-planet-build.sh
+    dest: "{{ app_dir }}/run-planet-build.sh"
+    mode: "0755"
 
 - name: Launch the throttled planet build (detached)
   when:
@@ -39,24 +62,20 @@
   ansible.builtin.command:
     cmd: >-
       systemd-run --unit=gpsinfo-planet-build --collect
-      --setenv=HOME=/root
-      bash -lc '
-      set -euo pipefail;
-      docker run --rm --name gpsinfo-planetiler
-      --cpus={{ build_threads }} --blkio-weight=100
-      -e JAVA_TOOL_OPTIONS=-Xmx{{ build_xmx }}
-      -v {{ app_dir }}/build:/data
-      {{ planetiler_image }}
-      --area={{ planetiler_area }} --download
-      --output=/data/planet.pmtiles
-      --nodemap-storage=mmap --storage=mmap --threads={{ build_threads }}
-      && chmod 644 {{ app_dir }}/build/planet.pmtiles
-      && mv {{ app_dir }}/build/planet.pmtiles {{ app_dir }}/data/planet.pmtiles
-      '
+      --setenv=PLANETILER_IMAGE={{ planetiler_image }}
+      --setenv=AREA={{ planetiler_area }}
+      --setenv=THREADS={{ build_threads }}
+      --setenv=XMX={{ build_xmx }}
+      --setenv=STORAGE_BUILD_DIR={{ storagebox_build_dir }}
+      --setenv=LOCAL_TMP={{ build_tmp_local }}
+      --setenv=DATA_DIR={{ app_dir }}/data
+      --setenv=WATCHDOG_MIN_FREE_KB={{ watchdog_min_free_gb | int * 1024 * 1024 }}
+      {{ app_dir }}/run-planet-build.sh
   changed_when: true
 
 - name: Where to watch it
   ansible.builtin.debug:
     msg: >-
-      Planet build launched (or already running). Watch:
-      journalctl -u gpsinfo-planet-build -f   |   docker logs -f gpsinfo-planetiler
+      Planet build launched. Watch: journalctl -u gpsinfo-planet-build -f
+      (PBF + output on the Storage Box, temp on local NVMe; auto-copies to
+      {{ app_dir }}/data/planet.pmtiles on success).
