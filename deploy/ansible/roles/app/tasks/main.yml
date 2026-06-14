@@ -78,6 +78,8 @@
     url: "{{ ofm_base }}/sprites/{{ sprite_dir }}/{{ sprite_name }}{{ item }}"
     dest: "{{ app_dir }}/data/sprites/{{ sprite_dir }}/{{ sprite_name }}{{ item }}"
     mode: "0644"
+    headers:
+      User-Agent: "Mozilla/5.0 (gpsinfo-tiles)"
   loop:
     - ".json"
     - ".png"

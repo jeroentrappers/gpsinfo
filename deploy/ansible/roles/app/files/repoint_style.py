@@ -12,7 +12,9 @@ import urllib.request
 ofm_url, base, key, out = sys.argv[1], sys.argv[2].rstrip("/"), sys.argv[3], sys.argv[4]
 q = f"?key={key}" if key else ""
 
-with urllib.request.urlopen(ofm_url, timeout=30) as r:
+# OpenFreeMap 403s the default Python-urllib UA — present a normal one.
+req = urllib.request.Request(ofm_url, headers={"User-Agent": "Mozilla/5.0 (gpsinfo-tiles)"})
+with urllib.request.urlopen(req, timeout=30) as r:
     style = json.load(r)
 
 for name, src in style.get("sources", {}).items():

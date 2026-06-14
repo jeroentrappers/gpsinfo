@@ -23,12 +23,13 @@
   register: df_free
   changed_when: false
 
-- name: Refuse to build without ~260 GB free
+- name: "Refuse to build without ~{{ build_min_free_gb }} GB free"
   ansible.builtin.assert:
-    that: "df_free.stdout | int > 260 * 1024 * 1024"
+    that: "df_free.stdout | int > build_min_free_gb | int * 1024 * 1024"
     fail_msg: >-
       Only {{ (df_free.stdout | int / 1024 / 1024) | round(1) }} GB free on {{ app_dir }};
-      a planet build needs ~260 GB headroom. Free space or build a smaller area.
+      need ~{{ build_min_free_gb }} GB headroom for a {{ planetiler_area }} build.
+      Free space or build a smaller area.
   when: not planet_done.stat.exists
 
 - name: Launch the throttled planet build (detached)
