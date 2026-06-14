@@ -1,0 +1,57 @@
+# GPSinfo self-hosted vector tiles — static PMTiles + style + glyphs + sprites.
+#
+# MapLibre Native reads the .pmtiles file directly via HTTP Range requests
+# (pmtiles:// source in the style JSON), so this is *only* static hosting —
+# no tile-server process. Caddy gives auto-TLS; the ?key= gate is a coarse
+# filter (the key ships in the client and is extractable — real abuse
+# protection is the rate limit below, which needs the caddy-ratelimit plugin).
+#
+# Build Caddy with the rate-limit module:
+#   xcaddy build --with github.com/mholt/caddy-ratelimit
+# Then run:  caddy run --config Caddyfile
+
+{
+	# email you@appmire.be   # uncomment for Let's Encrypt notifications
+	order rate_limit before basic_auth
+}
+
+tiles.appmire.be {
+	root * /srv/tiles
+
+	# --- Coarse key gate -------------------------------------------------
+	# Reject anything without the shared key. Rotate by editing this value
+	# and shipping an app build with the matching tilesApiKey.
+	@badkey not query key=REPLACE_WITH_SHARED_KEY
+	respond @badkey "forbidden" 403
+
+	# --- Rate limit (needs caddy-ratelimit plugin) -----------------------
+	# Bounds scraping regardless of whether someone has the key. Tune to
+	# taste; a panning map pulls bursts of tile ranges, so keep it generous.
+	rate_limit {
+		zone tiles {
+			key {remote_host}
+			events 600
+			window 1m
+		}
+	}
+
+	# --- Static assets ---------------------------------------------------
+	# file_server honours Range requests (required for PMTiles). Do NOT
+	# gzip the .pmtiles — range + content-encoding don't mix.
+	@pmtiles path *.pmtiles
+	header @pmtiles Cache-Control "public, max-age=86400"
+
+	# Style JSON / glyphs / sprites are small + cacheable.
+	@assets path /styles/* /fonts/* /sprites/*
+	header @assets Cache-Control "public, max-age=86400"
+
+	encode gzip {
+		# never compress the planet file
+		match {
+			header Content-Type application/json
+			header Content-Type application/x-protobuf
+		}
+	}
+
+	file_server
+}

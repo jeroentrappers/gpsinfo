@@ -32,6 +32,17 @@ val hasReleaseSigning =
     signingStoreFile != null && signingStorePassword != null &&
         signingKeyAlias != null && signingKeyPassword != null
 
+// Self-hosted vector-tile server (PMTiles + style + glyphs + sprites).
+// Empty base → the app falls back to OpenFreeMap's public endpoint, so
+// dev builds need no config. Set these in keystore.properties (the local
+// secrets file) or via env to cut the live map over to your own server.
+//   tilesBaseUrl / GPSINFO_TILES_BASE_URL   e.g. https://tiles.appmire.be
+//   tilesApiKey  / GPSINFO_TILES_API_KEY    shared key, checked by Caddy
+val tilesBaseUrl = keystoreProps.getProperty("tilesBaseUrl")
+    ?: System.getenv("GPSINFO_TILES_BASE_URL") ?: ""
+val tilesApiKey = keystoreProps.getProperty("tilesApiKey")
+    ?: System.getenv("GPSINFO_TILES_API_KEY") ?: ""
+
 android {
     namespace = "be.appmire.gpsinfo"
     compileSdk = 37
@@ -44,6 +55,9 @@ android {
         versionName = "2.3.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // minSdk 24 has reliable native VectorDrawable support — no support library needed.
+
+        buildConfigField("String", "TILES_BASE_URL", "\"$tilesBaseUrl\"")
+        buildConfigField("String", "TILES_API_KEY", "\"$tilesApiKey\"")
     }
 
     // Strip everything except the languages we actually ship resources for.
@@ -98,6 +112,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     // Compose compiler is now configured via the

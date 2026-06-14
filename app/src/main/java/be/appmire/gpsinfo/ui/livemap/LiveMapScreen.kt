@@ -463,7 +463,7 @@ fun LiveMapScreen(
                                     offlineRepo.downloadRegion(
                                         name = "area-${l.latitude.toInt()}-${l.longitude.toInt()}",
                                         bounds = bounds,
-                                        styleUrl = MapLibreStyle.LIBERTY,
+                                        styleUrl = MapLibreStyle.OFFLINE_DOWNLOAD,
                                         minZoom = 6.0,
                                         maxZoom = 15.0,
                                     ).collect { st ->

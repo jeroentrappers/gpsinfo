@@ -189,7 +189,7 @@ object NavigationController {
             repo.downloadRegion(
                 name = "corridor-${System.currentTimeMillis()}",
                 bounds = bounds,
-                styleUrl = MapLibreStyle.LIBERTY,
+                styleUrl = MapLibreStyle.OFFLINE_DOWNLOAD,
                 minZoom = 6.0,
                 maxZoom = maxZoom,
             ).collect { st ->
