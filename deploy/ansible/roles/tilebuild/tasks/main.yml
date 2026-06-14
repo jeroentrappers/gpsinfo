@@ -62,7 +62,8 @@
   ansible.builtin.command:
     cmd: >-
       systemd-run --unit=gpsinfo-planet-build --collect
-      --setenv=PLANETILER_IMAGE={{ planetiler_image }}
+      --setenv=JAVA={{ java_bin }}
+      --setenv=JAR={{ planetiler_jar }}
       --setenv=AREA={{ planetiler_area }}
       --setenv=THREADS={{ build_threads }}
       --setenv=XMX={{ build_xmx }}

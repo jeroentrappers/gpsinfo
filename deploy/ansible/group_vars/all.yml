@@ -23,12 +23,14 @@ sprite_name: ofm
 # 8081 (and the 80xx/810x range) are taken by other workloads on the box.
 extract_port: 8791
 
-# Planet build — throttled, since this runs on a box with live sites.
+# Planet build — throttled, since this runs on a box with live sites. Run via
+# Java directly (NOT Docker — Docker can't bind-mount the sshfs Storage Box).
 #   PBF + output stage on the 1 TB Storage Box (sequential, network-friendly);
 #   the random-IO temp (node map / feature store) stays on local NVMe.
-#   --nodemap-storage/--storage=mmap keeps RAM modest; capped CPU + low blk-IO
-#   keep the box polite. A disk watchdog aborts if local free drops too low.
-planetiler_image: "ghcr.io/onthegomap/planetiler:latest"
+#   --nodemap-storage/--storage=mmap keeps RAM modest; nice/ionice + capped
+#   threads keep the box polite. A disk watchdog aborts if local free drops low.
+planetiler_jar: "{{ app_dir }}/planetiler.jar"
+java_bin: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
 planetiler_area: planet
 build_threads: 4
 build_xmx: "40g"
