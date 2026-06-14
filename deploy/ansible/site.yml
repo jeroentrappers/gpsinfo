@@ -19,6 +19,6 @@
     - role: nginx
       become: true
       tags: [nginx]
-    - role: build
+    - role: tilebuild        # role dir name avoids the repo's build/ gitignore
       become: true
       tags: [build, never]   # opt-in: only runs when --tags build is given

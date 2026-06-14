@@ -1,0 +1,61 @@
+# Kick off the planet PMTiles build. THROTTLED for the shared box: capped CPU
+# (docker --cpus) + low block-IO weight + mmap storage (modest RAM) + a JVM heap
+# cap. It runs for hours, so it's launched as a detached systemd transient unit
+# (survives our SSH session, logs to the journal) and this play returns at once.
+#
+# DISK: a planet build needs the ~80 GB OSM PBF + temp + the ~100–130 GB output.
+# We refuse to start unless there's comfortable headroom, so a runaway can't fill
+# / and take down the co-hosted live sites.
+---
+- name: Skip if the planet tiles are already in place
+  ansible.builtin.stat:
+    path: "{{ app_dir }}/data/planet.pmtiles"
+  register: planet_done
+
+- name: Check the build isn't already running
+  ansible.builtin.command: systemctl is-active gpsinfo-planet-build.service
+  register: build_active
+  changed_when: false
+  failed_when: false
+
+- name: Free space on / (KB)
+  ansible.builtin.shell: "df -P {{ app_dir }} | awk 'NR==2{print $4}'"
+  register: df_free
+  changed_when: false
+
+- name: Refuse to build without ~260 GB free
+  ansible.builtin.assert:
+    that: "df_free.stdout | int > 260 * 1024 * 1024"
+    fail_msg: >-
+      Only {{ (df_free.stdout | int / 1024 / 1024) | round(1) }} GB free on {{ app_dir }};
+      a planet build needs ~260 GB headroom. Free space or build a smaller area.
+  when: not planet_done.stat.exists
+
+- name: Launch the throttled planet build (detached)
+  when:
+    - not planet_done.stat.exists
+    - build_active.stdout != "active"
+  ansible.builtin.command:
+    cmd: >-
+      systemd-run --unit=gpsinfo-planet-build --collect
+      --setenv=HOME=/root
+      bash -lc '
+      set -euo pipefail;
+      docker run --rm --name gpsinfo-planetiler
+      --cpus={{ build_threads }} --blkio-weight=100
+      -e JAVA_TOOL_OPTIONS=-Xmx{{ build_xmx }}
+      -v {{ app_dir }}/build:/data
+      {{ planetiler_image }}
+      --area={{ planetiler_area }} --download
+      --output=/data/planet.pmtiles.part
+      --nodemap-storage=mmap --storage=mmap --threads={{ build_threads }}
+      && mv {{ app_dir }}/build/planet.pmtiles.part {{ app_dir }}/data/planet.pmtiles
+      && chmod 644 {{ app_dir }}/data/planet.pmtiles
+      '
+  changed_when: true
+
+- name: Where to watch it
+  ansible.builtin.debug:
+    msg: >-
+      Planet build launched (or already running). Watch:
+      journalctl -u gpsinfo-planet-build -f   |   docker logs -f gpsinfo-planetiler
