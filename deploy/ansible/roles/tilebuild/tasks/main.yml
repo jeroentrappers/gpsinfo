@@ -48,10 +48,10 @@
       -v {{ app_dir }}/build:/data
       {{ planetiler_image }}
       --area={{ planetiler_area }} --download
-      --output=/data/planet.pmtiles.part
+      --output=/data/planet.pmtiles
       --nodemap-storage=mmap --storage=mmap --threads={{ build_threads }}
-      && mv {{ app_dir }}/build/planet.pmtiles.part {{ app_dir }}/data/planet.pmtiles
-      && chmod 644 {{ app_dir }}/data/planet.pmtiles
+      && chmod 644 {{ app_dir }}/build/planet.pmtiles
+      && mv {{ app_dir }}/build/planet.pmtiles {{ app_dir }}/data/planet.pmtiles
       '
   changed_when: true
 
