@@ -33,14 +33,33 @@ server {
         limit_req zone=gpsinfo_tiles burst=60 nodelay;
         try_files $uri =404;
         add_header Cache-Control "no-cache";
+        # Browser map clients (e.g. the Pluvio web PWA) read these cross-origin;
+        # MapLibre Native (the app) doesn't care. Key still gates access. Range
+        # is a CORS-safelisted request header, so GETs need no preflight.
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Range, Content-Length" always;
     }
 
-    # Static styles / fonts / sprites (stable — long cache).
+    # Style JSON — small, and we still tweak the palette, so revalidate
+    # (cheap 304s) rather than pin clients to a stale style for a day.
+    location /styles/ {
+        if ($arg_key != "{{ tiles_api_key }}") { return 403; }
+        limit_req zone=gpsinfo_tiles burst=60 nodelay;
+        try_files $uri =404;
+        add_header Cache-Control "no-cache";
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Range, Content-Length" always;
+    }
+
+    # Static fonts / sprites (stable — long cache).
     location / {
         if ($arg_key != "{{ tiles_api_key }}") { return 403; }
         limit_req zone=gpsinfo_tiles burst=60 nodelay;
         try_files $uri =404;
         add_header Cache-Control "public, max-age=86400";
+        # CORS for browser map clients (see the .pmtiles location).
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Range, Content-Length" always;
     }
 }
 
@@ -67,6 +86,8 @@ server {
     location / {
         if ($arg_key != "{{ tiles_api_key }}") { return 403; }
         try_files $uri =404;
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Range, Content-Length" always;
     }
 }
 {% endif %}
