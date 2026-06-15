@@ -24,7 +24,18 @@ server {
         proxy_read_timeout 300s;
     }
 
-    # Static tiles / styles / fonts / sprites.
+    # The tile archive is swapped as build stages complete (coverage grows:
+    # belgium -> europe -> planet), so it must revalidate — otherwise a client
+    # caches a smaller, stale file for a day. ETag/mtime → cheap 304s when
+    # unchanged, fresh fetch when it grows.
+    location ~ \.pmtiles$ {
+        if ($arg_key != "{{ tiles_api_key }}") { return 403; }
+        limit_req zone=gpsinfo_tiles burst=60 nodelay;
+        try_files $uri =404;
+        add_header Cache-Control "no-cache";
+    }
+
+    # Static styles / fonts / sprites (stable — long cache).
     location / {
         if ($arg_key != "{{ tiles_api_key }}") { return 403; }
         limit_req zone=gpsinfo_tiles burst=60 nodelay;
