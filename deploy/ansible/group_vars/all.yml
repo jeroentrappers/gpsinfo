@@ -31,6 +31,8 @@ extract_port: 8791
 #   threads keep the box polite. A disk watchdog aborts if local free drops low.
 planetiler_jar: "{{ app_dir }}/planetiler.jar"
 java_bin: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# Full planet needs ~420 GB local temp (read phase). After pruning ~737 GB of
+# Docker build cache the box has ~830 GB free, so the planet now fits on-box.
 planetiler_area: planet
 build_threads: 4
 build_xmx: "40g"
@@ -39,7 +41,9 @@ build_xmx: "40g"
 # scoped to the gpsinfo-build folder, so its share root IS the build dir.
 storagebox_share: //u614373-sub1.your-storagebox.de/u614373-sub1
 storagebox_mount: /mnt/storagebox
-storagebox_build_dir: /mnt/storagebox                 # subaccount root = gpsinfo-build
+# CIFS subaccount mounts its own root = the gpsinfo-build folder, so staging
+# (PBF + output) lives directly at /mnt/storagebox; temp stays on local NVMe.
+storagebox_build_dir: /mnt/storagebox                 # PBF + output (network, CIFS)
 build_tmp_local: "{{ app_dir }}/buildtmp"             # random-IO temp (local NVMe)
-build_min_free_gb: 210         # local headroom required before starting (temp)
+build_min_free_gb: 450         # local headroom for the planet's ~420 GB temp
 watchdog_min_free_gb: 25       # abort the build if local free drops below this
