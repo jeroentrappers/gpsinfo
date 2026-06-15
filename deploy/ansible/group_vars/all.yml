@@ -37,8 +37,12 @@ java_bin: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
 # priority collapses to: belgium -> europe -> planet.
 # (Full planet needs ~420 GB local temp; fits after the build-cache prune.)
 planetiler_areas: "belgium europe planet"
-build_threads: 4
-build_xmx: "40g"
+# Push hard: 14 of 16 cores (leave 2 for system/IO). `nice -n 15` in the build
+# script still makes it yield the moment a live site wants CPU, so this is
+# "use all spare capacity" rather than "hog the box". Heap sized for the
+# parallel feature-sort workers (~2 GB each).
+build_threads: 14
+build_xmx: "48g"
 # Storage Box, mounted over CIFS (kernel mount; same ~90 MB/s as sshfs here,
 # but no FUSE userspace overhead and Docker-bind-mountable). The subaccount is
 # scoped to the gpsinfo-build folder, so its share root IS the build dir.
