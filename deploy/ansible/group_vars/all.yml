@@ -34,7 +34,12 @@ java_bin: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
 planetiler_area: planet
 build_threads: 4
 build_xmx: "40g"
-storagebox_build_dir: /mnt/storagebox/gpsinfo-build   # PBF + output (network)
+# Storage Box, mounted over CIFS (kernel mount; same ~90 MB/s as sshfs here,
+# but no FUSE userspace overhead and Docker-bind-mountable). The subaccount is
+# scoped to the gpsinfo-build folder, so its share root IS the build dir.
+storagebox_share: //u614373-sub1.your-storagebox.de/u614373-sub1
+storagebox_mount: /mnt/storagebox
+storagebox_build_dir: /mnt/storagebox                 # subaccount root = gpsinfo-build
 build_tmp_local: "{{ app_dir }}/buildtmp"             # random-IO temp (local NVMe)
 build_min_free_gb: 210         # local headroom required before starting (temp)
 watchdog_min_free_gb: 25       # abort the build if local free drops below this

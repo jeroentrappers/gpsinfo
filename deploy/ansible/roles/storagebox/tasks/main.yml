@@ -1,0 +1,63 @@
+# Mount the Hetzner Storage Box subaccount over CIFS at {{ storagebox_mount }}.
+# Used as build staging (PBF + output). The systemd .mount unit name must match
+# the mount path: /mnt/storagebox -> mnt-storagebox.mount.
+---
+- name: Retire the old sshfs mount service if present (we use CIFS now)
+  ansible.builtin.systemd_service:
+    name: gpsinfo-storagebox.service
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: Unmount any stale (sshfs) mount at the mountpoint
+  ansible.builtin.command: "umount {{ storagebox_mount }}"
+  failed_when: false
+  changed_when: false
+
+- name: Ensure cifs-utils present
+  ansible.builtin.apt:
+    name: cifs-utils
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure config dir
+  ansible.builtin.file:
+    path: /etc/gpsinfo-tiles
+    state: directory
+    mode: "0755"
+
+- name: Write root-only SMB credentials
+  ansible.builtin.copy:
+    dest: /etc/gpsinfo-tiles/smb.cred
+    mode: "0600"
+    owner: root
+    group: root
+    content: |
+      username={{ smb_username }}
+      password={{ smb_password }}
+  no_log: true
+
+- name: Install the CIFS mount unit
+  ansible.builtin.template:
+    src: mnt-storagebox.mount.j2
+    dest: /etc/systemd/system/mnt-storagebox.mount
+    mode: "0644"
+  register: mount_unit
+
+- name: Ensure mountpoint
+  ansible.builtin.file:
+    path: "{{ storagebox_mount }}"
+    state: directory
+    mode: "0755"
+
+- name: Reload systemd + enable/start the CIFS mount
+  ansible.builtin.systemd_service:
+    name: mnt-storagebox.mount
+    daemon_reload: true
+    enabled: true
+    state: started
+
+- name: Verify it mounted
+  ansible.builtin.command: mountpoint -q {{ storagebox_mount }}
+  changed_when: false
