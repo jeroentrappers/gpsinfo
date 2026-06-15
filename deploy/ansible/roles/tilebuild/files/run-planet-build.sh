@@ -40,6 +40,7 @@ for AREA in $AREAS; do
   if nice -n 15 ionice -c2 -n7 \
       "$JAVA" -Xmx"$XMX" -jar "$JAR" \
       --area="$AREA" --download \
+      --download-threads=8 --download-chunk-size-mb=200 \
       --output="$out" \
       --tmpdir="$LOCAL_TMP" \
       --nodemap-storage=mmap --storage=mmap --threads="$THREADS"
