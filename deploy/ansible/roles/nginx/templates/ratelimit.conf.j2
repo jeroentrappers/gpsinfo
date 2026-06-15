@@ -3,3 +3,11 @@
 # /extract is CPU-heavy, so its zone is tight.
 limit_req_zone $binary_remote_addr zone=gpsinfo_tiles:10m rate=20r/s;
 limit_req_zone $binary_remote_addr zone=gpsinfo_extract:10m rate=1r/s;
+
+# CORS allowlist: echo the Origin back only for our own web apps (see
+# tiles_cors_origin_regex). A non-match yields "" → add_header omits the header
+# → the browser blocks the cross-origin read. The native app ignores CORS.
+map $http_origin $cors_allow_origin {
+    default "";
+    "~{{ tiles_cors_origin_regex }}" $http_origin;
+}

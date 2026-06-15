@@ -36,7 +36,8 @@ server {
         # Browser map clients (e.g. the Pluvio web PWA) read these cross-origin;
         # MapLibre Native (the app) doesn't care. Key still gates access. Range
         # is a CORS-safelisted request header, so GETs need no preflight.
-        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Origin $cors_allow_origin always;
+        add_header Vary Origin always;
         add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Range, Content-Length" always;
     }
 
@@ -47,7 +48,8 @@ server {
         limit_req zone=gpsinfo_tiles burst=60 nodelay;
         try_files $uri =404;
         add_header Cache-Control "no-cache";
-        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Origin $cors_allow_origin always;
+        add_header Vary Origin always;
         add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Range, Content-Length" always;
     }
 
@@ -58,7 +60,8 @@ server {
         try_files $uri =404;
         add_header Cache-Control "public, max-age=86400";
         # CORS for browser map clients (see the .pmtiles location).
-        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Origin $cors_allow_origin always;
+        add_header Vary Origin always;
         add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Range, Content-Length" always;
     }
 }
@@ -86,7 +89,8 @@ server {
     location / {
         if ($arg_key != "{{ tiles_api_key }}") { return 403; }
         try_files $uri =404;
-        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Origin $cors_allow_origin always;
+        add_header Vary Origin always;
         add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Range, Content-Length" always;
     }
 }

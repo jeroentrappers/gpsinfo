@@ -8,6 +8,13 @@ tiles_domain: tiles.appmire.be
 certbot_email: jeroen.trappers@secutec.com
 enable_tls: true
 
+# CORS allowlist (PCRE) — which browser origins may read the tiles cross-origin.
+# The native app uses MapLibre Native, which ignores CORS, so only the web PWAs
+# need listing; a non-matching origin gets no Access-Control-Allow-Origin header
+# (the browser blocks the cross-origin read). The ?key= gate + rate-limit still
+# bound non-browser clients. localhost is for `pnpm dev`.
+tiles_cors_origin_regex: '^https://(charging|pluvio)\.appmire\.be$|^http://localhost(:[0-9]+)?$'
+
 # Upstream open-source we derive from (OpenMapTiles schema). The live map
 # styles, glyphs and sprite are mirrored from here once; the low-zoom
 # `ne2_shaded` raster layer is left pointing at OpenFreeMap (tiny, cosmetic).
