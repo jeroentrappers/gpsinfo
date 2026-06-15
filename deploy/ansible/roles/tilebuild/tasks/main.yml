@@ -55,28 +55,31 @@
     dest: "{{ app_dir }}/run-planet-build.sh"
     mode: "0755"
 
-- name: Launch the throttled planet build (detached)
+- name: Launch the staged build pipeline (detached)
   when:
     - not planet_done.stat.exists
     - build_active.stdout != "active"
   ansible.builtin.command:
-    cmd: >-
-      systemd-run --unit=gpsinfo-planet-build --collect
-      --setenv=JAVA={{ java_bin }}
-      --setenv=JAR={{ planetiler_jar }}
-      --setenv=AREA={{ planetiler_area }}
-      --setenv=THREADS={{ build_threads }}
-      --setenv=XMX={{ build_xmx }}
-      --setenv=STORAGE_BUILD_DIR={{ storagebox_build_dir }}
-      --setenv=LOCAL_TMP={{ build_tmp_local }}
-      --setenv=DATA_DIR={{ app_dir }}/data
-      --setenv=WATCHDOG_MIN_FREE_KB={{ watchdog_min_free_gb | int * 1024 * 1024 }}
-      {{ app_dir }}/run-planet-build.sh
+    # argv form so AREAS ("belgium europe planet") survives as a single env var.
+    argv:
+      - systemd-run
+      - --unit=gpsinfo-planet-build
+      - --collect
+      - "--setenv=JAVA={{ java_bin }}"
+      - "--setenv=JAR={{ planetiler_jar }}"
+      - "--setenv=AREAS={{ planetiler_areas }}"
+      - "--setenv=THREADS={{ build_threads }}"
+      - "--setenv=XMX={{ build_xmx }}"
+      - "--setenv=STORAGE_BUILD_DIR={{ storagebox_build_dir }}"
+      - "--setenv=LOCAL_TMP={{ build_tmp_local }}"
+      - "--setenv=DATA_DIR={{ app_dir }}/data"
+      - "--setenv=WATCHDOG_MIN_FREE_KB={{ watchdog_min_free_gb | int * 1024 * 1024 }}"
+      - "{{ app_dir }}/run-planet-build.sh"
   changed_when: true
 
 - name: Where to watch it
   ansible.builtin.debug:
     msg: >-
-      Planet build launched. Watch: journalctl -u gpsinfo-planet-build -f
-      (PBF + output on the Storage Box, temp on local NVMe; auto-copies to
-      {{ app_dir }}/data/planet.pmtiles on success).
+      Staged build launched ({{ planetiler_areas }}). Watch:
+      journalctl -u gpsinfo-planet-build -f — each area swaps into
+      {{ app_dir }}/data/planet.pmtiles as it finishes (coverage grows).

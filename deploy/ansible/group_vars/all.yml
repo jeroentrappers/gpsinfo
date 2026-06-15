@@ -31,9 +31,12 @@ extract_port: 8791
 #   threads keep the box polite. A disk watchdog aborts if local free drops low.
 planetiler_jar: "{{ app_dir }}/planetiler.jar"
 java_bin: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
-# Full planet needs ~420 GB local temp (read phase). After pruning ~737 GB of
-# Docker build cache the box has ~830 GB free, so the planet now fits on-box.
-planetiler_area: planet
+# Staged builds, in order — each swaps into the served file as it finishes, so
+# coverage grows progressively. Geofabrik's "europe" already covers Benelux,
+# Germany, France, UK + the rest of Europe, so the home->continent->global
+# priority collapses to: belgium -> europe -> planet.
+# (Full planet needs ~420 GB local temp; fits after the build-cache prune.)
+planetiler_areas: "belgium europe planet"
 build_threads: 4
 build_xmx: "40g"
 # Storage Box, mounted over CIFS (kernel mount; same ~90 MB/s as sshfs here,
