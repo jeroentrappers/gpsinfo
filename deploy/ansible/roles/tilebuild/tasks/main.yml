@@ -4,11 +4,6 @@
 # detached systemd transient unit (survives our SSH session, logs to the
 # journal). A disk watchdog in the script aborts if local free drops too low.
 ---
-- name: Skip if the planet tiles are already in place
-  ansible.builtin.stat:
-    path: "{{ app_dir }}/data/planet.pmtiles"
-  register: planet_done
-
 - name: Check the build isn't already running
   ansible.builtin.command: systemctl is-active gpsinfo-planet-build.service
   register: build_active
@@ -25,7 +20,6 @@
   ansible.builtin.assert:
     that: "sb_mounted.rc == 0"
     fail_msg: "/mnt/storagebox is not mounted — start gpsinfo-storagebox.service first."
-  when: not planet_done.stat.exists
 
 - name: Local free space on {{ app_dir }} (KB)
   ansible.builtin.shell: "df -P {{ app_dir }} | awk 'NR==2{print $4}'"
@@ -38,7 +32,6 @@
     fail_msg: >-
       Only {{ (df_free.stdout | int / 1024 / 1024) | round(1) }} GB free on {{ app_dir }};
       need ~{{ build_min_free_gb }} GB local headroom for the planet build's temp.
-  when: not planet_done.stat.exists
 
 - name: Ensure local temp + Storage Box build dirs
   ansible.builtin.file:
@@ -56,9 +49,7 @@
     mode: "0755"
 
 - name: Launch the staged build pipeline (detached)
-  when:
-    - not planet_done.stat.exists
-    - build_active.stdout != "active"
+  when: build_active.stdout != "active"
   ansible.builtin.command:
     # argv form so AREAS ("belgium europe planet") survives as a single env var.
     argv:
