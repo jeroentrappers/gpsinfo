@@ -1,0 +1,2 @@
+• Android Auto: a clear "Where to?" button to start directions, plus in-car address search
+• Turn-by-turn now shows the next turn and ETA on the instrument cluster
