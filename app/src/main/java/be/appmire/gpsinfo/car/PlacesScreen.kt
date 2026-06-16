@@ -65,9 +65,19 @@ class PlacesScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
         val builder = ListTemplate.Builder()
             .setTitle(carContext.getString(R.string.car_places_title))
             .setHeaderAction(Action.BACK)
-            // Recorded trails moved here from the nav strip.
+            // Search (free-form address/place entry) + recorded trails.
+            // Both icon-only — the ListTemplate strip (SIMPLE constraints)
+            // takes two actions and no custom titles.
             .setActionStrip(
                 androidx.car.app.model.ActionStrip.Builder()
+                    .addAction(
+                        Action.Builder()
+                            .setIcon(carIcon(R.drawable.ic_car_search))
+                            .setOnClickListener {
+                                screenManager.push(SearchScreen(carContext))
+                            }
+                            .build()
+                    )
                     .addAction(
                         Action.Builder()
                             .setIcon(carIcon(R.drawable.ic_car_trails))

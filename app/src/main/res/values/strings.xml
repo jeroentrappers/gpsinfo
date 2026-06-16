@@ -296,6 +296,10 @@
     <string name="car_action_end_nav" tools:ignore="MissingTranslation">End route</string>
     <string name="car_action_navigate" tools:ignore="MissingTranslation">Where to?</string>
     <string name="car_nav_destination" tools:ignore="MissingTranslation">Destination</string>
+    <string name="car_search_hint" tools:ignore="MissingTranslation">Search address or place</string>
+    <string name="car_search_prompt" tools:ignore="MissingTranslation">Type a destination to search</string>
+    <string name="car_search_empty" tools:ignore="MissingTranslation">No matches found</string>
+    <string name="car_search_offline" tools:ignore="MissingTranslation">No connection — pick a saved place instead</string>
     <string name="car_nav_turn_left" tools:ignore="MissingTranslation">Turn left</string>
     <string name="car_nav_slight_left" tools:ignore="MissingTranslation">Keep slightly left</string>
     <string name="car_nav_sharp_left" tools:ignore="MissingTranslation">Turn sharply left</string>
@@ -324,7 +328,7 @@
     <string name="nav_place_save_label" tools:ignore="MissingTranslation">Save label</string>
     <string name="nav_place_delete" tools:ignore="MissingTranslation">Delete</string>
     <string name="car_places_title" tools:ignore="MissingTranslation">Places</string>
-    <string name="car_places_empty" tools:ignore="MissingTranslation">No saved or recent places yet. Pick an address on your phone first.</string>
+    <string name="car_places_empty" tools:ignore="MissingTranslation">No saved or recent places yet — tap the search icon to find an address.</string>
     <string name="car_action_places" tools:ignore="MissingTranslation">Places</string>
     <string name="car_places_section_saved" tools:ignore="MissingTranslation">Saved</string>
     <string name="car_places_section_recent" tools:ignore="MissingTranslation">Recent</string>

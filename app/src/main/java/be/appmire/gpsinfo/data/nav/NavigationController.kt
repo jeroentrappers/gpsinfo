@@ -65,6 +65,12 @@ object NavigationController {
     private val _state = MutableStateFlow<NavState>(NavState.Idle)
     val state: StateFlow<NavState> = _state.asStateFlow()
 
+    /** Most recent GNSS position seen via [offer] (or [navigateTo]'s
+     *  origin), null before the first fix — used to bias destination
+     *  search toward where the driver actually is. */
+    val lastKnownLatLon: Pair<Double, Double>?
+        get() = lastLocation?.let { it.latitude to it.longitude }
+
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var routeJob: Job? = null
     private var corridorJob: Job? = null
