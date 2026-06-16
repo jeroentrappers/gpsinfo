@@ -31,9 +31,16 @@ class TripDashboardSession : Session() {
 
     private var renderer: CarMapRenderer? = null
 
+    /** Feeds turn-by-turn to the instrument cluster via NavigationManager
+     *  for the whole projection cycle (it must outlive screen pushes and
+     *  own the host's single nav session, so it lives on the Session, not
+     *  the screen). Constructed once; tears itself down with [lifecycle]. */
+    private var clusterReporter: ClusterNavReporter? = null
+
     override fun onCreateScreen(intent: Intent): Screen {
         val mapRenderer = CarMapRenderer(carContext, lifecycle)
         renderer = mapRenderer
+        clusterReporter = ClusterNavReporter(carContext, lifecycle)
         // A cold start may itself be a navigate intent.
         startNavigationFromIntent(intent)
         return TripDashboardScreen(carContext, mapRenderer)

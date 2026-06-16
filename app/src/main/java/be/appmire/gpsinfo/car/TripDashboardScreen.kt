@@ -29,7 +29,6 @@ import be.appmire.gpsinfo.data.SensorRepository
 import be.appmire.gpsinfo.data.TrailRecordingController
 import be.appmire.gpsinfo.data.TrailRepository
 import be.appmire.gpsinfo.data.nav.NavigationController
-import be.appmire.gpsinfo.data.nav.TurnCommand
 import be.appmire.gpsinfo.data.rally.RallyController
 import be.appmire.gpsinfo.data.rally.RallyState
 import be.appmire.gpsinfo.util.TrailNaming
@@ -47,10 +46,11 @@ import kotlinx.coroutines.launch
  * recording controls top-right, zoom on the map strip — everything else
  * is drawn by us.
  *
- * Navigation category, not POI: it's the only category granted surface
- * access, and a live trip map + driving readouts is squarely the
- * "maps / driver assistance" bucket Google opened the category to in
- * 2024. We still ship no turn-by-turn and never claim routing.
+ * Navigation category: a live trip map + driving readouts plus offline
+ * turn-by-turn (the maneuver card here, fed by [NavigationController]).
+ * Next-turn guidance also reaches the instrument cluster via
+ * [ClusterNavReporter] on the owning [TripDashboardSession]. Starting a
+ * route is the labelled "Where to?" action on the strip.
  *
  * Host-constraint gotchas (enforced with an IllegalArgumentException at
  * template-build time, i.e. a crash):
@@ -279,11 +279,14 @@ class TripDashboardScreen(
                 if (isRecording) stopAndSave() else startRecordingSafely()
             }
             .build()
-        // Places: saved + recent destinations (and trails, inside).
-        // Replaces the old standalone Trails action. Icon-only — the
-        // record action already carries the strip's one custom title.
+        // "Where to?" — the turn-by-turn entry point: opens the saved +
+        // recent destination picker (trails live inside). Labelled, not
+        // icon-only: a Play review flagged that starting directions wasn't
+        // discoverable. The navigation action strip permits several custom
+        // titles, so this coexists with the record/end-route titles.
         val placesAction = Action.Builder()
             .setIcon(carIcon(R.drawable.ic_car_places))
+            .setTitle(carContext.getString(R.string.car_action_navigate))
             .setOnClickListener {
                 screenManager.push(PlacesScreen(carContext))
             }
@@ -494,94 +497,30 @@ class TripDashboardScreen(
 
     // ── Turn-by-turn template furniture ────────────────────────────
 
-    /** Host-rendered maneuver card: turn arrow + distance countdown.
-     *  The host draws standard arrows from the maneuver type — no
-     *  icons to ship. */
+    /** Host-rendered maneuver card: turn arrow + distance countdown,
+     *  built from the shared [CarManeuvers] mapping so the screen and the
+     *  instrument cluster ([ClusterNavReporter]) always show the same turn.
+     *  The host draws standard arrows from the maneuver type — no icons. */
     private fun routingInfo(
         n: NavigationController.NavState.Navigating,
     ): androidx.car.app.navigation.model.RoutingInfo {
         val turn = n.nextTurn
-        val builder = androidx.car.app.navigation.model.RoutingInfo.Builder()
-        if (turn == null) {
-            return builder.setLoading(true).build()
-        }
-        val maneuverType = when (turn.command) {
-            TurnCommand.TURN_LEFT ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_NORMAL_LEFT
-            TurnCommand.TURN_SLIGHT_LEFT ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_SLIGHT_LEFT
-            TurnCommand.TURN_SHARP_LEFT ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_SHARP_LEFT
-            TurnCommand.TURN_RIGHT ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_NORMAL_RIGHT
-            TurnCommand.TURN_SLIGHT_RIGHT ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_SLIGHT_RIGHT
-            TurnCommand.TURN_SHARP_RIGHT ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_TURN_SHARP_RIGHT
-            TurnCommand.KEEP_LEFT ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_KEEP_LEFT
-            TurnCommand.KEEP_RIGHT ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_KEEP_RIGHT
-            TurnCommand.U_TURN ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_U_TURN_LEFT
-            TurnCommand.ROUNDABOUT ->
-                // Right-hand traffic → counter-clockwise roundabouts.
-                androidx.car.app.navigation.model.Maneuver
-                    .TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW
-            TurnCommand.STRAIGHT, TurnCommand.OFF_ROUTE, TurnCommand.UNKNOWN ->
-                androidx.car.app.navigation.model.Maneuver.TYPE_STRAIGHT
-        }
-        val maneuver = androidx.car.app.navigation.model.Maneuver.Builder(maneuverType).apply {
-            if (maneuverType ==
-                androidx.car.app.navigation.model.Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW &&
-                turn.exitNumber > 0
-            ) {
-                setRoundaboutExitNumber(turn.exitNumber)
-            }
-        }.build()
-        val step = androidx.car.app.navigation.model.Step.Builder()
-            .setManeuver(maneuver)
-            .setCue(cueFor(turn))
-            .build()
-        return builder
-            .setCurrentStep(step, carDistance(n.distanceToTurnM))
+            ?: return androidx.car.app.navigation.model.RoutingInfo.Builder()
+                .setLoading(true).build()
+        return androidx.car.app.navigation.model.RoutingInfo.Builder()
+            .setCurrentStep(
+                CarManeuvers.step(carContext, turn),
+                CarManeuvers.carDistance(n.distanceToTurnM),
+            )
             .build()
     }
-
-    private fun cueFor(turn: be.appmire.gpsinfo.data.nav.TurnHint): String = when (turn.command) {
-        TurnCommand.TURN_LEFT -> carContext.getString(R.string.car_nav_turn_left)
-        TurnCommand.TURN_SLIGHT_LEFT -> carContext.getString(R.string.car_nav_slight_left)
-        TurnCommand.TURN_SHARP_LEFT -> carContext.getString(R.string.car_nav_sharp_left)
-        TurnCommand.TURN_RIGHT -> carContext.getString(R.string.car_nav_turn_right)
-        TurnCommand.TURN_SLIGHT_RIGHT -> carContext.getString(R.string.car_nav_slight_right)
-        TurnCommand.TURN_SHARP_RIGHT -> carContext.getString(R.string.car_nav_sharp_right)
-        TurnCommand.KEEP_LEFT -> carContext.getString(R.string.car_nav_keep_left)
-        TurnCommand.KEEP_RIGHT -> carContext.getString(R.string.car_nav_keep_right)
-        TurnCommand.U_TURN -> carContext.getString(R.string.car_nav_u_turn)
-        TurnCommand.ROUNDABOUT ->
-            if (turn.exitNumber > 0)
-                carContext.getString(R.string.car_nav_roundabout_exit, turn.exitNumber)
-            else carContext.getString(R.string.car_nav_roundabout)
-        else -> carContext.getString(R.string.car_nav_continue)
-    }
-
-    private fun carDistance(meters: Double): androidx.car.app.model.Distance =
-        if (meters >= 1000) {
-            androidx.car.app.model.Distance.create(
-                meters / 1000.0, androidx.car.app.model.Distance.UNIT_KILOMETERS,
-            )
-        } else {
-            androidx.car.app.model.Distance.create(
-                (meters / 10).toInt() * 10.0, androidx.car.app.model.Distance.UNIT_METERS,
-            )
-        }
 
     private fun travelEstimate(
         n: NavigationController.NavState.Navigating,
     ): androidx.car.app.navigation.model.TravelEstimate {
         val arrivalMillis = System.currentTimeMillis() + n.etaSeconds * 1000L
         return androidx.car.app.navigation.model.TravelEstimate.Builder(
-            carDistance(n.distanceRemainingM),
+            CarManeuvers.carDistance(n.distanceRemainingM),
             androidx.car.app.model.DateTimeWithZone.create(
                 arrivalMillis, java.util.TimeZone.getDefault(),
             ),

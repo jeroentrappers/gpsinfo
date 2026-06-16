@@ -50,6 +50,9 @@ object NavigationController {
             val offRoute: Boolean,
             val destLat: Double,
             val destLon: Double,
+            /** Human label for the destination (saved-place title, geocoded
+             *  name, …) — shown on the cluster Trip; null when unnamed. */
+            val destName: String? = null,
             /** Posted speed limit (km/h) for the segment the vehicle is
              *  on, from the route's OSM `maxspeed`; null when untagged. */
             val speedLimitKmh: Int? = null,
@@ -76,6 +79,11 @@ object NavigationController {
     private var reRouting = false
     private var lastLocation: Location? = null
 
+    /** Destination label of the active route — carried into
+     *  [NavState.Navigating] (and reused across silent re-routes, which
+     *  keep the same destination) so the cluster can name it. */
+    private var lastDestName: String? = null
+
     /** Start navigating from the current position to ([destLat],
      *  [destLon]). Downloads missing segment tiles first. [destName]
      *  (+ optional [destDetail]) is recorded into recent places so it
@@ -88,6 +96,7 @@ object NavigationController {
         destDetail: String = "",
     ) {
         val appContext = context.applicationContext
+        lastDestName = destName?.takeIf { it.isNotBlank() }
         if (!destName.isNullOrBlank()) {
             PlacesRepository(appContext)
                 .recordVisit(destLat, destLon, destName, destDetail, System.currentTimeMillis())
@@ -313,6 +322,7 @@ object NavigationController {
             offRoute = false,
             destLat = destLat,
             destLon = destLon,
+            destName = lastDestName,
             speedLimitKmh = speedLimitAt(route, 0),
         )
     }
