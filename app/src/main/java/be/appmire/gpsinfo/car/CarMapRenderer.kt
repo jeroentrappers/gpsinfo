@@ -483,13 +483,17 @@ class CarMapRenderer(
         val layout = gaugeLayout(w, h)
         drawGaugePanel(canvas, layout, loc)
         drawHud(canvas, layout, h, dark)
-        drawRallyPanel(canvas, 0f, w.toFloat(), h, dark)
-        drawNavStatus(canvas, 0f, w.toFloat(), h, dark)
+        // Centre the banners on the safe area, not the raw screen, so they
+        // track the host's chrome layout instead of hiding under it.
+        val bannerLeft = layout.safe.left.toFloat().coerceIn(0f, w.toFloat())
+        val bannerRight = layout.safe.right.toFloat().coerceIn(bannerLeft, w.toFloat())
+        drawRallyPanel(canvas, bannerLeft, bannerRight, h, dark)
+        drawNavStatus(canvas, bannerLeft, bannerRight, h, dark)
     }
 
-    /** Corner-anchored gauge geometry within the host safe area: the
-     *  speed/odometer dial bottom-left, the optional power dial top-left,
-     *  the merged compass/G-meter (smaller) bottom-right. */
+    /** Gauge geometry within the host safe area (so it tracks the host's
+     *  chrome positions): the speed/odometer dial centre-left, the optional
+     *  power dial top-left, the merged compass/G-meter (smaller) bottom-right. */
     private class GaugeLayout(
         val speedCell: RectF,
         val powerCell: RectF?,
@@ -512,21 +516,25 @@ class CarMapRenderer(
         // The dynamics dial is the supporting instrument — a touch smaller.
         val miniSide = mainSide * 0.82f
 
-        // Speed + odometer: CENTRE-LEFT, hugging the physical screen edge
-        // and vertically centred on the full surface — so during
-        // navigation it nestles in the gap between the host's turn card
-        // (top-left) and ETA card (bottom-left), which are flush to the
-        // screen edge (outside the safe area). Sized off screen height so
-        // it stays put as the safe area shrinks under those cards.
-        val speedSide = min(h * 0.34f, w * 0.22f)
-        val speedCell = RectF(
-            margin, (h - speedSide) / 2f,
-            margin + speedSide, (h + speedSide) / 2f,
-        )
+        // Everything anchors to the host-reported safe area (stable/visible),
+        // never to fixed screen edges — the host's turn card, ETA and action
+        // strips are positioned differently per head unit, and the safe area
+        // already excludes wherever they land. So the dials track those
+        // positions automatically: they hug the screen edge when it's free
+        // and pull inward when the host occupies it.
         val powerCell = if (obdConnected) RectF(
             left + margin, top + margin,
             left + margin + mainSide, top + margin + mainSide,
         ) else null
+        // Speed + odometer: left edge of the safe area, vertically centred
+        // in the space below the power dial (or the safe top) — i.e. in
+        // whatever the host leaves free on the leading side.
+        val speedTop = (powerCell?.bottom?.plus(margin)) ?: top
+        val speedCy = (speedTop + bottom) / 2f
+        val speedCell = RectF(
+            left + margin, speedCy - mainSide / 2f,
+            left + margin + mainSide, speedCy + mainSide / 2f,
+        )
         val compassCell = RectF(
             right - margin - miniSide, bottom - margin - miniSide,
             right - margin, bottom - margin,
