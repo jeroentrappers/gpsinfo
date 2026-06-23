@@ -48,16 +48,15 @@ class CarInstruments {
     private val camera = Camera()
     private val tiltMatrix = Matrix()
 
-    /** Solid-black column backdrop behind a stacked pair of housings —
-     *  [left] is the column's left edge, [width] its width. */
-    fun drawColumnBackground(canvas: Canvas, left: Float, width: Float, h: Float) {
-        fillPaint.color = COLUMN_BLACK
-        canvas.drawRect(left, 0f, left + width, h, fillPaint)
-    }
-
     // ── Speed dial ─────────────────────────────────────────────────
 
-    fun drawSpeedDial(canvas: Canvas, cell: RectF, loc: Location?, speedLimitKmh: Int?) {
+    fun drawSpeedDial(
+        canvas: Canvas,
+        cell: RectF,
+        loc: Location?,
+        speedLimitKmh: Int?,
+        odometerKm: Double,
+    ) {
         val g = housing(canvas, cell)
 
         drawDialScale(
@@ -105,9 +104,20 @@ class CarInstruments {
         canvas.drawText(digit, g.cx, g.cy + g.r * 0.40f, centerPaint)
         centerPaint.isFakeBoldText = false
 
+        // Trip odometer — distance driven this session, tucked in the
+        // open lower gap under the speed digit.
+        centerPaint.color = LCD_UNIT
+        centerPaint.textSize = g.r * 0.15f
+        centerPaint.isFakeBoldText = true
+        canvas.drawText(
+            "%.1f km".format(Locale.ROOT, odometerKm),
+            g.cx, g.cy + g.r * 0.62f, centerPaint,
+        )
+        centerPaint.isFakeBoldText = false
+
         // Posted-limit roundel at the dial's bottom centre (EU sign),
         // always present — a muted dash when no limit is known.
-        drawLimitSign(canvas, g.cx, g.cy + g.r * 0.74f, g.r * 0.18f, speedLimitKmh)
+        drawLimitSign(canvas, g.cx, g.cy + g.r * 0.85f, g.r * 0.135f, speedLimitKmh)
     }
 
     /** EU-style posted-limit roundel — white disc, red ring, black
@@ -134,20 +144,30 @@ class CarInstruments {
         else (0.6 + (v - SPEED_PIVOT) / (SPEED_MAX - SPEED_PIVOT) * 0.4).toFloat()
     }
 
-    // ── Gimballed compass ──────────────────────────────────────────
+    // ── Merged compass / G-meter ───────────────────────────────────
 
-    fun drawCompass(
+    /**
+     * One dynamics dial combining the gimballed compass (where the car
+     * points, world frame) with the G-meter (how it's being driven, car
+     * frame). The rose — ticks + cardinals + red North — rides the rim
+     * and rotates by GPS course; the inner plot is the G-meter (lateral
+     * = cornering, longitudinal = braking/accel) with a short fading
+     * trail, drawn un-rotated in the car's own frame. Heading reads at
+     * the top gap, the live horizontal-G magnitude at the bottom. Sized
+     * a touch smaller than the speed/power dials — it's the supporting
+     * instrument, not the headline.
+     */
+    fun drawCompassGMeter(
         canvas: Canvas,
         cell: RectF,
         headingDeg: Float,
         hasHeading: Boolean,
         loc: Location?,
+        trail: List<GForceSample>,
     ) {
         val g = housing(canvas, cell)
 
-        // The "gimbal": a fixed forward tilt of the rose plane — the
-        // dashboard card uses 12°; a touch more reads better across
-        // the car cabin.
+        // ── Compass rose on the rim (gimballed + course-rotated) ──
         camera.save()
         camera.setLocation(0f, 0f, -8f * 12f)
         camera.rotateX(COMPASS_TILT_DEG)
@@ -160,8 +180,6 @@ class CarInstruments {
         canvas.concat(tiltMatrix)
         canvas.rotate(if (hasHeading) -headingDeg else 0f, g.cx, g.cy)
 
-        // Rose ring + ticks: minors every 10°, majors every 30°,
-        // cardinals heavier; inner ends share a ring like RetroDial.
         ringPaint.color = TICK_MINOR
         canvas.drawCircle(g.cx, g.cy, g.r * 0.95f, ringPaint)
         var deg = 0
@@ -177,7 +195,8 @@ class CarInstruments {
             val rad = Math.toRadians((deg - 90).toDouble())
             val c = cos(rad).toFloat()
             val s = sin(rad).toFloat()
-            val inner = g.r * if (cardinal) 0.78f else if (major) 0.84f else 0.90f
+            // Ticks hug the rim so the inner disc is free for the G-plot.
+            val inner = g.r * if (cardinal) 0.86f else if (major) 0.89f else 0.92f
             canvas.drawLine(
                 g.cx + inner * c, g.cy + inner * s,
                 g.cx + g.r * 0.95f * c, g.cy + g.r * 0.95f * s,
@@ -185,17 +204,16 @@ class CarInstruments {
             )
             deg += 10
         }
-        // Cardinal letters rotate with the card; N stays red.
         val cards = arrayOf("N", "E", "S", "W")
         cards.forEachIndexed { i, cName ->
             val a = Math.toRadians((i * 90 - 90).toDouble())
-            labelPaint.textSize = g.r * 0.22f
+            labelPaint.textSize = g.r * 0.17f
             labelPaint.isFakeBoldText = true
             labelPaint.color = if (i == 0) NORTH_RED else TICK_MAJOR
             canvas.drawText(
                 cName,
-                g.cx + (g.r * 0.60f) * cos(a).toFloat(),
-                g.cy + (g.r * 0.60f) * sin(a).toFloat() + labelPaint.textSize * 0.35f,
+                g.cx + (g.r * 0.74f) * cos(a).toFloat(),
+                g.cy + (g.r * 0.74f) * sin(a).toFloat() + labelPaint.textSize * 0.35f,
                 labelPaint,
             )
             labelPaint.isFakeBoldText = false
@@ -204,31 +222,65 @@ class CarInstruments {
 
         // Fixed lubber line at the bowl top (vehicle axis).
         val lubber = Path().apply {
-            moveTo(g.cx, g.cy - g.r * 0.80f)
-            lineTo(g.cx - g.r * 0.06f, g.cy - g.r * 0.94f)
-            lineTo(g.cx + g.r * 0.06f, g.cy - g.r * 0.94f)
+            moveTo(g.cx, g.cy - g.r * 0.84f)
+            lineTo(g.cx - g.r * 0.055f, g.cy - g.r * 0.95f)
+            lineTo(g.cx + g.r * 0.055f, g.cy - g.r * 0.95f)
             close()
         }
         fillPaint.color = LCD_UNIT
         canvas.drawPath(lubber, fillPaint)
 
-        // Centre readout (untilted, always legible): heading + altitude.
+        // ── Inner G-plot (car frame, un-rotated) ── kept clear of the
+        // cardinal-letter band (0.74·r) and the heading/G readouts.
+        val plotR = g.r * 0.42f
+        for (ring in 1..2) {
+            val gv = GM_MAX_G * ring / 2f
+            ringPaint.color = if (ring == 2) TICK_MAJOR else TICK_MINOR
+            ringPaint.strokeWidth = g.side * if (ring == 2) 0.010f else 0.005f
+            canvas.drawCircle(g.cx, g.cy, plotR * gmLogFrac(gv), ringPaint)
+        }
+        tickPaint.color = TICK_MINOR
+        tickPaint.strokeWidth = g.side * 0.005f
+        canvas.drawLine(g.cx - plotR, g.cy, g.cx + plotR, g.cy, tickPaint)
+        canvas.drawLine(g.cx, g.cy - plotR, g.cx, g.cy + plotR, tickPaint)
+
+        val n = trail.size
+        trail.forEachIndexed { i, s ->
+            val frac = (i + 1f) / n
+            val f = sqrt(frac)
+            val m = s.horizontalMagnitudeG
+            val rr = plotR * gmLogFrac(m)
+            val ux = if (m > 1e-4f) s.lateralG / m else 0f
+            val uy = if (m > 1e-4f) s.longitudinalG / m else 0f
+            val px = g.cx + ux * rr
+            val py = g.cy - uy * rr
+            if (i == n - 1) {
+                fillPaint.color = Color.WHITE
+                canvas.drawCircle(px, py, g.r * 0.06f, fillPaint)
+                fillPaint.color = ACCENT
+                canvas.drawCircle(px, py, g.r * 0.042f, fillPaint)
+            } else {
+                fillPaint.color = fade(ACCENT, 0.16f + 0.55f * f)
+                canvas.drawCircle(px, py, g.r * (0.018f + 0.022f * f), fillPaint)
+            }
+        }
+
+        // Heading readout above the plot (untilted, always legible),
+        // sitting between the plot rim (0.42·r) and the N letter (0.74·r).
         centerPaint.color = LCD_BRIGHT
-        centerPaint.textSize = g.r * 0.28f
+        centerPaint.textSize = g.r * 0.18f
         centerPaint.isFakeBoldText = true
         canvas.drawText(
             if (hasHeading) "%03d°".format(Locale.ROOT, (headingDeg.toInt() % 360 + 360) % 360)
             else "———°",
-            g.cx,
-            g.cy + g.r * 0.10f,
-            centerPaint,
+            g.cx, g.cy - g.r * 0.50f, centerPaint,
         )
+        // Live G magnitude below the plot, clear of the S letter.
+        val mag = trail.lastOrNull()?.horizontalMagnitudeG ?: 0f
+        centerPaint.color = if (mag > GM_MAX_G) NORTH_RED else LCD_UNIT
+        centerPaint.textSize = g.r * 0.16f
+        canvas.drawText("%.2f G".format(Locale.ROOT, mag), g.cx, g.cy + g.r * 0.58f, centerPaint)
         centerPaint.isFakeBoldText = false
-        if (loc != null && loc.hasAltitude()) {
-            centerPaint.textSize = g.r * 0.14f
-            centerPaint.color = LCD_UNIT
-            canvas.drawText("▲ ${loc.altitude.toInt()} m", g.cx, g.cy + g.r * 0.32f, centerPaint)
-        }
     }
 
     // ── Energy meter (id.dash power dial) ──────────────────────────
@@ -370,69 +422,6 @@ class CarInstruments {
 
     private fun powerFraction(kw: Double): Float =
         ((kw.coerceIn(KW_MIN, KW_MAX) - KW_MIN) / (KW_MAX - KW_MIN)).toFloat()
-
-    // ── G-meter ────────────────────────────────────────────────────
-
-    /**
-     * G-meter dial: the phone dashboard card ported to the car surface.
-     * A circular gauge — horizontal axis = lateral G (cornering),
-     * vertical axis = longitudinal G (braking/acceleration) — with a
-     * short fading trail of recent [trail] samples (newest last) and the
-     * horizontal-G magnitude in the centre. The radius is on the same
-     * logarithmic scale as the phone card so a gentle lean is clearly
-     * visible while a hard stop compresses toward the rim.
-     */
-    fun drawGMeter(canvas: Canvas, cell: RectF, trail: List<GForceSample>) {
-        val g = housing(canvas, cell)
-        val plotR = g.r * 0.86f
-
-        // Concentric rings on the log scale; outer ring heavier.
-        for (ring in 1..GM_RINGS) {
-            val gv = GM_MAX_G * ring / GM_RINGS
-            ringPaint.color = if (ring == GM_RINGS) TICK_MAJOR else TICK_MINOR
-            ringPaint.strokeWidth = g.side * if (ring == GM_RINGS) 0.012f else 0.006f
-            canvas.drawCircle(g.cx, g.cy, plotR * gmLogFrac(gv), ringPaint)
-        }
-        // Crosshair.
-        tickPaint.color = TICK_MINOR
-        tickPaint.strokeWidth = g.side * 0.006f
-        canvas.drawLine(g.cx - plotR, g.cy, g.cx + plotR, g.cy, tickPaint)
-        canvas.drawLine(g.cx, g.cy - plotR, g.cx, g.cy + plotR, tickPaint)
-
-        // Fading trail + live dot. Radius is log-scaled; direction kept.
-        val n = trail.size
-        trail.forEachIndexed { i, s ->
-            val frac = (i + 1f) / n
-            val f = sqrt(frac)
-            val m = s.horizontalMagnitudeG
-            val rr = plotR * gmLogFrac(m)
-            val ux = if (m > 1e-4f) s.lateralG / m else 0f
-            val uy = if (m > 1e-4f) s.longitudinalG / m else 0f
-            val px = g.cx + ux * rr
-            // Screen Y grows downward; +longitudinal (accel) plots up.
-            val py = g.cy - uy * rr
-            if (i == n - 1) {
-                fillPaint.color = Color.WHITE
-                canvas.drawCircle(px, py, g.r * 0.075f, fillPaint)
-                fillPaint.color = ACCENT
-                canvas.drawCircle(px, py, g.r * 0.055f, fillPaint)
-            } else {
-                fillPaint.color = fade(ACCENT, 0.18f + 0.62f * f)
-                canvas.drawCircle(px, py, g.r * (0.02f + 0.03f * f), fillPaint)
-            }
-        }
-
-        // Centre magnitude readout (the truthful G value, not log-scaled).
-        val mag = trail.lastOrNull()?.horizontalMagnitudeG ?: 0f
-        centerPaint.color = if (mag > GM_MAX_G) NORTH_RED else LCD_BRIGHT
-        centerPaint.textSize = g.r * 0.30f
-        centerPaint.isFakeBoldText = true
-        canvas.drawText("%.2f".format(Locale.ROOT, mag), g.cx, g.cy + g.r * 0.50f, centerPaint)
-        centerPaint.isFakeBoldText = false
-        centerPaint.color = LCD_UNIT
-        centerPaint.textSize = g.r * 0.13f
-        canvas.drawText("G", g.cx, g.cy + g.r * 0.67f, centerPaint)
-    }
 
     /** Log radius fraction for the G-meter: small forces exaggerated,
      *  large ones compressed. f(0)=0, f([GM_MAX_G])=1. */
@@ -645,13 +634,11 @@ class CarInstruments {
         // G-meter: ±1 g full-scale (road cars rarely exceed it), log
         // exaggeration matched to the phone dashboard card.
         const val GM_MAX_G = 1.0f
-        const val GM_RINGS = 3
         const val GM_LOG_K = 12f
 
         const val COMPASS_TILT_DEG = 16f
 
         // Palette — RetroDial / id.dash hexes.
-        const val COLUMN_BLACK = 0xFF000000.toInt()
         const val HOUSING = 0xFF0B0B0B.toInt()
         const val NEEDLE = 0xDDFFFFFF.toInt()
         const val PIVOT = 0xFF1A1A1A.toInt()

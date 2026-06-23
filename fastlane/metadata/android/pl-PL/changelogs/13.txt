@@ -1,0 +1,1 @@
+• Android Auto: navigation now responds reliably to "navigate to" requests (waits for a GPS fix instead of failing), with a refined in-car instrument layout.

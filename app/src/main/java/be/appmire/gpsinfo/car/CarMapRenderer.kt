@@ -130,6 +130,24 @@ class CarMapRenderer(
         scheduleRender()
     }
 
+    /** Whether a live OBD2 adapter is currently connected. The power /
+     *  energy dial is the EV-dashboard half of the cluster, so it only
+     *  earns its top-left slot when there's a real feed behind it;
+     *  otherwise that corner is left to the map. */
+    private var obdConnected = false
+
+    fun updateObdConnected(connected: Boolean) {
+        if (connected == obdConnected) return
+        obdConnected = connected
+        scheduleRender()
+    }
+
+    /** Distance driven this projection session (metres), accumulated
+     *  from successive fixes — the trip odometer shown on the speed
+     *  dial. Jitter (<1 m) and teleports (>200 m between fixes) are
+     *  excluded so it tracks real travel. */
+    private var odometerM = 0.0
+
     /** Battery state of charge (0..100) and range remaining (km) for the
      *  energy meter, or null when no source (Car API / OBD2) provides
      *  them — the readouts then show a dash. */
@@ -229,8 +247,16 @@ class CarMapRenderer(
         }
         wasRecording = isRecording
 
-        val loc = gnss.location?.let { withDerivedMotion(it, lastDrawnLocation) }
+        val prev = lastDrawnLocation
+        val loc = gnss.location?.let { withDerivedMotion(it, prev) }
         if (loc != null) {
+            // Trip odometer: real travel only — ignore sub-metre jitter
+            // and provider/mock teleports (no road car jumps >200 m
+            // between ~1 Hz fixes).
+            if (prev != null && loc !== prev) {
+                val moved = prev.distanceTo(loc)
+                if (moved in 1f..200f) odometerM += moved
+            }
             lastDrawnLocation = loc
             // Course-over-ground low-pass: 35% of the shortest angular
             // delta per fix — smooths jitter without lagging real turns.
@@ -442,40 +468,70 @@ class CarMapRenderer(
         // (see withDerivedMotion) — prefer it over the raw snapshot.
         val loc = lastDrawnLocation ?: snapshot.location
 
-        // Layout: a 2×2 block of gauges on the LEFT (speed / energy on
-        // top, compass / G-meter below), the live map on the RIGHT. The
-        // map is full-bleed to the right surface edge, so the host's map
-        // action strip (zoom / tilt / pan) and other edge chrome overlay
-        // the MAP rather than the gauges. The gauge block sits inside the
-        // host's safe area vertically so the top strip / bottom dock
-        // don't clip the dials.
+        // The map IS the surface — full-bleed across the whole video
+        // surface so it reads as a navigation map, not a gauge panel with
+        // a map beside it. The instrument dials are small corner widgets
+        // layered on top, anchored to the host's safe area so they never
+        // cover the host's turn card, ETA or action strips — the
+        // navigation instructions stay fully visible by construction.
+        if (loc != null) {
+            drawVectorMap(canvas, 0f, w, h, loc, dark)
+        } else {
+            drawWaitingForFix(canvas, 0f, w.toFloat(), h, dark)
+        }
+
+        val layout = gaugeLayout(w, h)
+        drawGaugePanel(canvas, layout, loc)
+        drawHud(canvas, layout, h, dark)
+        drawRallyPanel(canvas, 0f, w.toFloat(), h, dark)
+        drawNavStatus(canvas, 0f, w.toFloat(), h, dark)
+    }
+
+    /** Corner-anchored gauge geometry within the host safe area: the
+     *  speed/odometer dial bottom-left, the optional power dial top-left,
+     *  the merged compass/G-meter (smaller) bottom-right. */
+    private class GaugeLayout(
+        val speedCell: RectF,
+        val powerCell: RectF?,
+        val compassCell: RectF,
+        val safe: Rect,
+        val pad: Float,
+    )
+
+    private fun gaugeLayout(w: Int, h: Int): GaugeLayout {
         val safe = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
-        val safeLeft = safe.left.toFloat().coerceIn(0f, w.toFloat())
+        val left = safe.left.toFloat().coerceIn(0f, w.toFloat())
+        val right = safe.right.toFloat().coerceIn(left, w.toFloat())
         val top = safe.top.toFloat().coerceAtLeast(0f)
         val bottom = safe.bottom.toFloat().coerceAtMost(h.toFloat())
-        val cellH = (bottom - top) / 2f
-        // Two square-ish cells wide, capped so the map keeps ≥ half.
-        val cellW = min(cellH, w * GAUGE_BLOCK_FRACTION / 2f)
-        val blockRight = safeLeft + cellW * 2f
-        drawGaugePanel(canvas, safeLeft, top, cellW, cellH, blockRight, h, loc)
+        val margin = h * 0.02f
 
-        val mapLeft = blockRight
-        // Map renders to the true right edge (full bleed under the host
-        // controls); HUD/panels centre on the *visible* map and the OSM
-        // credit pins to the visible right edge, both left of the strip.
-        val visibleRight = safe.right.toFloat().coerceIn(mapLeft, w.toFloat())
-        val mapW = (w - mapLeft).toInt()
-        canvas.save()
-        canvas.clipRect(mapLeft, 0f, w.toFloat(), h.toFloat())
-        if (loc != null) {
-            drawVectorMap(canvas, mapLeft, mapW, h, loc, dark)
-        } else {
-            drawWaitingForFix(canvas, mapLeft, visibleRight, h, dark)
-        }
-        drawHud(canvas, mapLeft, visibleRight, h, dark)
-        drawRallyPanel(canvas, mapLeft, visibleRight, h, dark)
-        drawNavStatus(canvas, mapLeft, visibleRight, h, dark)
-        canvas.restore()
+        // Headline dials (speed, power): square, sized off the safe
+        // height but capped so two of them never crowd a wide screen.
+        val mainSide = min((bottom - top) * 0.38f, (right - left) * 0.30f)
+        // The dynamics dial is the supporting instrument — a touch smaller.
+        val miniSide = mainSide * 0.82f
+
+        // Speed + odometer: CENTRE-LEFT, hugging the physical screen edge
+        // and vertically centred on the full surface — so during
+        // navigation it nestles in the gap between the host's turn card
+        // (top-left) and ETA card (bottom-left), which are flush to the
+        // screen edge (outside the safe area). Sized off screen height so
+        // it stays put as the safe area shrinks under those cards.
+        val speedSide = min(h * 0.34f, w * 0.22f)
+        val speedCell = RectF(
+            margin, (h - speedSide) / 2f,
+            margin + speedSide, (h + speedSide) / 2f,
+        )
+        val powerCell = if (obdConnected) RectF(
+            left + margin, top + margin,
+            left + margin + mainSide, top + margin + mainSide,
+        ) else null
+        val compassCell = RectF(
+            right - margin - miniSide, bottom - margin - miniSide,
+            right - margin, bottom - margin,
+        )
+        return GaugeLayout(speedCell, powerCell, compassCell, safe, margin)
     }
 
     /** Pill banner, top-centre of the map, for navigation phases that
@@ -502,57 +558,44 @@ class CarMapRenderer(
         canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
     }
 
-    /** The left-hand 2×2 gauge block: speed (top-left), energy
-     *  (top-right), compass (bottom-left), G-meter (bottom-right), each a
-     *  square RetroDial housing on a solid-black panel that runs the full
-     *  surface height. Compass rotates by GPS course (never the
-     *  magnetometer in a car); energy parks at 0 until OBD2 power arrives;
-     *  the G-meter reads the phone's fused accelerometer. */
-    private fun drawGaugePanel(
-        canvas: Canvas,
-        panelLeft: Float,
-        top: Float,
-        cellW: Float,
-        cellH: Float,
-        blockRight: Float,
-        h: Int,
-        loc: Location?,
-    ) {
-        // Solid-black backing behind the whole grid, edge-to-edge in
-        // height (covers the small left host-inset too).
-        instruments.drawColumnBackground(canvas, 0f, blockRight, h.toFloat())
-        val col0 = panelLeft
-        val col1 = panelLeft + cellW
-        val row1 = top + cellH
-        val row2 = top + cellH * 2f
-        // Left column: speed (top), compass (bottom).
-        instruments.drawSpeedDial(canvas, RectF(col0, top, col0 + cellW, row1), loc, speedLimitKmh)
-        instruments.drawCompass(
-            canvas, RectF(col0, row1, col0 + cellW, row2),
-            smoothedBearingDeg, hasBearing, loc,
-        )
-        // On-arrival estimates: what's left of the range after the
-        // remaining drive, and SOC scaled by the same ratio. Only when
-        // navigating AND a range is known.
-        val range = rangeRemainingKm
-        val drive = navRemainingKm
-        val arrivalRangeKm: Float?
-        val arrivalSocPct: Float?
-        if (range != null && range > 0f && drive != null) {
-            val left = range - drive.toFloat()
-            arrivalRangeKm = left
-            arrivalSocPct = batterySocPct?.let { (it * (left / range)).coerceIn(0f, it) }
-        } else {
-            arrivalRangeKm = null
-            arrivalSocPct = null
+    /** Corner instrument dials over the full-bleed map: speed + trip
+     *  odometer bottom-left, the EV power/energy dial top-left (only with
+     *  a live OBD2 feed), and the merged compass/G-meter dynamics dial
+     *  bottom-right. Each is a self-contained RetroDial housing, so they
+     *  sit on the map without a backing panel. Compass rotates by GPS
+     *  course (never the magnetometer in a car); the G-plot reads the
+     *  phone's fused accelerometer. */
+    private fun drawGaugePanel(canvas: Canvas, layout: GaugeLayout, loc: Location?) {
+        // Centre-left: speed + trip odometer dial.
+        instruments.drawSpeedDial(canvas, layout.speedCell, loc, speedLimitKmh, odometerM / 1000.0)
+
+        // Top-left: power / energy — only with a live OBD2 feed behind it.
+        layout.powerCell?.let { cell ->
+            // On-arrival estimates: range left after the remaining drive,
+            // SOC scaled by the same ratio. Only when navigating AND a
+            // range is known.
+            val range = rangeRemainingKm
+            val drive = navRemainingKm
+            val arrivalRangeKm: Float?
+            val arrivalSocPct: Float?
+            if (range != null && range > 0f && drive != null) {
+                val leftKm = range - drive.toFloat()
+                arrivalRangeKm = leftKm
+                arrivalSocPct = batterySocPct?.let { (it * (leftKm / range)).coerceIn(0f, it) }
+            } else {
+                arrivalRangeKm = null
+                arrivalSocPct = null
+            }
+            instruments.drawEnergyDial(
+                canvas, cell, powerKw,
+                batterySocPct, rangeRemainingKm, arrivalRangeKm, arrivalSocPct,
+            )
         }
-        // Right column: energy (top), G-meter (bottom).
-        instruments.drawEnergyDial(
-            canvas, RectF(col1, top, col1 + cellW, row1), powerKw,
-            batterySocPct, rangeRemainingKm, arrivalRangeKm, arrivalSocPct,
-        )
-        instruments.drawGMeter(
-            canvas, RectF(col1, row1, col1 + cellW, row2), gForceTrail.toList(),
+
+        // Bottom-right: merged compass / G-meter (supporting dial).
+        instruments.drawCompassGMeter(
+            canvas, layout.compassCell,
+            smoothedBearingDeg, hasBearing, loc, gForceTrail.toList(),
         )
     }
 
@@ -707,20 +750,21 @@ class CarMapRenderer(
         )
     }
 
-    /** Map-area HUD. Speed/heading/altitude moved to the instrument
-     *  column — what remains here is the trip strip (distance,
-     *  duration, REC dot) and the OSM attribution. */
-    private fun drawHud(canvas: Canvas, mapLeft: Float, mapRight: Float, h: Int, dark: Boolean) {
-        val inset = stableArea ?: visibleArea ?: Rect(0, 0, mapRight.toInt(), h)
+    /** Map-area HUD over the full-bleed map: the OBD ambient-temp badge,
+     *  the recording trip strip, and the OSM attribution — each placed
+     *  clear of the corner instrument dials in [layout]. */
+    private fun drawHud(canvas: Canvas, layout: GaugeLayout, h: Int, dark: Boolean) {
+        val inset = layout.safe
         val pad = h * 0.03f
-        val unit = min((mapRight - mapLeft).toInt(), h) * 0.13f
+        val unit = h * 0.13f
 
-        // ── Outside-temp badge, top-left of the map (OBD ambient temp) ──
+        // ── Outside-temp badge (OBD ambient), top-left — beside the power
+        // dial when it's shown, otherwise at the safe edge ──
         ambientTempC?.let { c ->
             val txt = "%.0f°C".format(Locale.ROOT, c)
             hudTextPaint.textAlign = Paint.Align.LEFT
             hudTextPaint.textSize = unit * 0.36f
-            val tx = mapLeft + pad * 1.5f
+            val tx = layout.powerCell?.let { it.right + pad } ?: (inset.left + pad * 1.5f)
             val ty = inset.top + pad * 1.5f + hudTextPaint.textSize
             val tw = hudTextPaint.measureText(txt)
             bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
@@ -731,7 +775,8 @@ class CarMapRenderer(
             canvas.drawText(txt, tx, ty - hudTextPaint.textSize * 0.18f, hudTextPaint)
         }
 
-        // ── Trip strip, bottom-left of the map ──
+        // ── Trip strip (recording distance · duration + REC dot), bottom,
+        // to the right of the speed dial so the two never overlap ──
         val rec = recording as? RecordingState.Recording
         if (rec != null) {
             val stripText = "%.1f km   %s".format(
@@ -741,7 +786,7 @@ class CarMapRenderer(
             )
             hudTextPaint.textAlign = Paint.Align.LEFT
             hudTextPaint.textSize = unit * 0.34f
-            val sx = mapLeft + pad * 1.5f
+            val sx = layout.speedCell.right + pad
             val sy = inset.bottom - pad * 1.5f
             val tw = hudTextPaint.measureText(stripText)
             val recDotSpace = unit * 0.55f
@@ -762,18 +807,16 @@ class CarMapRenderer(
             canvas.drawCircle(sx + tw + recDotSpace / 2, sy - unit * 0.10f, unit * 0.13f, recDotPaint)
         }
 
-        // ── OSM attribution, bottom-right of the map (tile-policy
-        // requirement). Tiny, pinned 2px off the map's right edge and
-        // the visible bottom (inset.bottom — the surface extends under
-        // the host's dock, so h would hide it). Present and legible,
-        // but out of the way. ──
+        // ── OSM attribution (tile-policy requirement). Tiny, pinned just
+        // above the bottom-right dynamics dial so the dial doesn't hide
+        // it, and off the visible right edge. ──
         hudTextPaint.textAlign = Paint.Align.RIGHT
         hudTextPaint.textSize = h * 0.013f
         hudTextPaint.color = if (dark) HUD_MUTED_DARK else HUD_MUTED_LIGHT
         canvas.drawText(
             "© OpenStreetMap",
-            mapRight - 2f,
-            inset.bottom - 2f,
+            inset.right.toFloat() - 2f,
+            layout.compassCell.top - 4f,
             hudTextPaint,
         )
     }
@@ -918,10 +961,6 @@ class CarMapRenderer(
          *  it lies on the ground plane instead of facing the camera —
          *  cos of the camera pitch. */
         val PITCH_FORESHORTEN = cos(Math.toRadians(CAR_PITCH_DEG)).toFloat()
-        /** Cap on the left gauge block (2 columns) as a fraction of the
-         *  surface width — keeps the map at least half the screen. On
-         *  wide car screens the square cells are narrower than this. */
-        const val GAUGE_BLOCK_FRACTION = 0.5f
         /** Recent G-force samples kept for the corner G-meter trail. At
          *  the car sample rate (~5 Hz) this is a few seconds of history. */
         const val GFORCE_TRAIL = 24

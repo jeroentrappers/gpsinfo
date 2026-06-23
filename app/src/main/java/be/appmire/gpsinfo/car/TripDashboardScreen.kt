@@ -127,6 +127,7 @@ class TripDashboardScreen(
         if (obdJob != null) return
         obdJob = be.appmire.gpsinfo.obd.ObdLiveController.state
             .onEach { d ->
+                renderer.updateObdConnected(d.connected)
                 if (d.connected) {
                     renderer.updatePower(d.powerKw)
                     renderer.updateAmbientTemp(d.ambientTempC)

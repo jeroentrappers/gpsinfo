@@ -8,10 +8,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Process-wide owner of an active offline navigation — the
@@ -107,60 +109,106 @@ object NavigationController {
             PlacesRepository(appContext)
                 .recordVisit(destLat, destLon, destName, destDetail, System.currentTimeMillis())
         }
-        val from = lastLocation
-        if (from == null) {
-            failTransient("No GPS fix yet")
-            return
-        }
         routeJob?.cancel()
         routeJob = scope.launch {
-            val theRouter = router ?: OfflineRouter(appContext).also { router = it }
-            if (voice == null) voice = VoiceGuide(appContext)
-
-            // Fetch any missing road-network tiles for the route bbox.
-            val missing = theRouter.missingTiles(from.latitude, from.longitude, destLat, destLon)
-            if (missing.isNotEmpty()) {
-                val repo = RoutingDataRepository(theRouter.segmentsDir)
-                for (tile in missing) {
-                    repo.download(tile).collect { dl ->
-                        when (dl) {
-                            is RoutingDataRepository.DownloadState.Progress -> {
-                                val pct = if (dl.totalBytes > 0)
-                                    (dl.bytesRead * 100 / dl.totalBytes).toInt() else 0
-                                _state.value = NavState.Preparing("$tile $pct%")
-                            }
-                            is RoutingDataRepository.DownloadState.Failed -> {
-                                android.util.Log.w(TAG, "tile download failed: ${dl.tile} ${dl.message}")
-                                failTransient("Tile ${dl.tile}: ${dl.message}")
-                            }
-                            is RoutingDataRepository.DownloadState.Done -> Unit
-                        }
-                    }
-                    if (_state.value is NavState.Failed) return@launch
-                }
-            }
-
-            _state.value = NavState.Preparing("Computing route…")
-            val route = try {
-                theRouter.route(from.latitude, from.longitude, destLat, destLon)
-            } catch (e: Exception) {
-                android.util.Log.w(TAG, "routing failed", e)
-                null
-            }
-            if (route == null || route.points.size < 2) {
-                failTransient("No route found")
+            // A navigate intent (Assistant "navigate to X", a geo: deep
+            // link) routinely arrives at cold start — before the first
+            // GNSS lock. Waiting briefly for an origin fix, rather than
+            // failing outright, is what makes the intent actually produce
+            // a route in that window (the exact case a Play reviewer
+            // hits when they ask the car to navigate somewhere).
+            val from = awaitOrigin()
+            if (from == null) {
+                failTransient("No GPS fix yet")
                 return@launch
             }
-            installRoute(route, destLat, destLon)
-            voice?.announceStart(route)
-            // Cache the map imagery along the route corridor for
-            // offline rendering — the visual counterpart to the rd5
-            // road network we just ensured. Background, best-effort;
-            // navigation doesn't wait on it. Only on the initial
-            // route, not on silent re-routes (which reuse the cache).
-            startCorridorDownload(appContext, route)
+            runRoute(appContext, from, destLat, destLon)
         }
     }
+
+    /** Current origin fix, or wait up to [ORIGIN_WAIT_MS] for the first
+     *  one — surfacing an "acquiring GPS" banner meanwhile so the surface
+     *  visibly responds to the intent. Null only if no fix ever arrives. */
+    private suspend fun awaitOrigin(): Location? {
+        currentOrigin()?.let { return it }
+        _state.value = NavState.Preparing("Acquiring GPS…")
+        return withTimeoutOrNull(ORIGIN_WAIT_MS) {
+            var loc = currentOrigin()
+            while (loc == null) {
+                delay(ORIGIN_POLL_MS)
+                loc = currentOrigin()
+            }
+            loc
+        }
+    }
+
+    @Synchronized
+    private fun currentOrigin(): Location? = lastLocation
+
+    /** Download any missing tiles, compute the route, install it. Assumes
+     *  a known [from] origin. */
+    private suspend fun runRoute(appContext: Context, from: Location, destLat: Double, destLon: Double) {
+        val theRouter = router ?: OfflineRouter(appContext).also { router = it }
+        if (voice == null) voice = VoiceGuide(appContext)
+
+        // Fetch any missing road-network tiles for the route bbox.
+        val missing = theRouter.missingTiles(from.latitude, from.longitude, destLat, destLon)
+        if (missing.isNotEmpty()) {
+            val repo = RoutingDataRepository(theRouter.segmentsDir)
+            for (tile in missing) {
+                repo.download(tile).collect { dl ->
+                    when (dl) {
+                        is RoutingDataRepository.DownloadState.Progress -> {
+                            val pct = if (dl.totalBytes > 0)
+                                (dl.bytesRead * 100 / dl.totalBytes).toInt() else 0
+                            _state.value = NavState.Preparing("Downloading map $pct%")
+                        }
+                        is RoutingDataRepository.DownloadState.Failed -> {
+                            android.util.Log.w(TAG, "tile download failed: ${dl.tile} ${dl.message}")
+                            failTransient("Map download failed")
+                        }
+                        is RoutingDataRepository.DownloadState.Done -> Unit
+                    }
+                }
+                if (_state.value is NavState.Failed) return
+            }
+        }
+
+        _state.value = NavState.Preparing("Computing route…")
+        val route = try {
+            theRouter.route(from.latitude, from.longitude, destLat, destLon)
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "routing failed", e)
+            null
+        }
+        if (route == null || route.points.size < 2) {
+            failTransient("No route found")
+            return
+        }
+        installRoute(route, destLat, destLon)
+        voice?.announceStart(route)
+        // Cache the map imagery along the route corridor for
+        // offline rendering — the visual counterpart to the rd5
+        // road network we just ensured. Background, best-effort;
+        // navigation doesn't wait on it. Only on the initial
+        // route, not on silent re-routes (which reuse the cache).
+        startCorridorDownload(appContext, route)
+    }
+
+    /** Show an immediate "finding…" banner the instant a navigate intent
+     *  is accepted — before geocoding/origin resolve — so the surface
+     *  visibly responds to "navigate to X" right away. */
+    fun indicateSearching(label: String?) {
+        routeJob?.cancel()
+        _state.value = NavState.Preparing(
+            if (label.isNullOrBlank()) "Finding destination…" else "Finding $label…"
+        )
+    }
+
+    /** A navigate intent we accepted couldn't be resolved to a place
+     *  (bad geo URI, offline geocode). Clear the searching banner with a
+     *  transient failure instead of leaving it spinning forever. */
+    fun reportUnresolved(message: String) = failTransient(message)
 
     /**
      * Best-effort offline-cache of the OpenFreeMap vector tiles over
@@ -419,4 +467,8 @@ object NavigationController {
     private const val OFF_ROUTE_CONSECUTIVE = 3
     private const val ARRIVAL_M = 40.0
     private const val FAILED_BANNER_MS = 6_000L
+    /** How long a navigate intent waits for the first GNSS fix before
+     *  giving up — long enough to cover a cold-start acquisition. */
+    private const val ORIGIN_WAIT_MS = 30_000L
+    private const val ORIGIN_POLL_MS = 250L
 }
