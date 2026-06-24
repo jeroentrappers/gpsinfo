@@ -6,6 +6,9 @@ import be.appmire.gpsinfo.data.model.GnssSnapshot
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -234,6 +237,33 @@ object NavigationController {
      *  (bad geo URI, offline geocode). Clear the searching banner with a
      *  transient failure instead of leaving it spinning forever. */
     fun reportUnresolved(message: String) = failTransient(message)
+
+    /**
+     * Compute route alternatives (one per [RouteProfile]) for the chooser —
+     * ONLINE only (Valhalla), in parallel, no tile download. Returns empty
+     * when offline or before the first fix, so the caller falls straight
+     * through to [navigateTo] (BRouter handles the offline case). Profiles
+     * that collapse to the same route are deduped, so identical options
+     * don't clutter the list.
+     */
+    suspend fun previewOptions(destLat: Double, destLon: Double): List<RouteOption> {
+        val from = currentOrigin() ?: return emptyList()
+        val computed = coroutineScope {
+            listOf(RouteProfile.FASTEST, RouteProfile.SHORTEST, RouteProfile.ECONOMIC).map { p ->
+                async {
+                    runCatching {
+                        onlineRouter.route(from.latitude, from.longitude, destLat, destLon, p)
+                    }.getOrNull()?.takeIf { it.points.size >= 2 }?.let { RouteOption(p, it) }
+                }
+            }.awaitAll().filterNotNull()
+        }
+        // Dedup near-identical routes (rounded distance + duration), keeping
+        // the first profile that produced each — FASTEST/SHORTEST/ECONOMIC.
+        val seen = HashSet<Pair<Int, Int>>()
+        return computed.filter { o ->
+            seen.add(o.route.distanceMeters / 100 to o.route.durationSeconds / 30)
+        }
+    }
 
     /**
      * Best-effort offline-cache of the OpenFreeMap vector tiles over

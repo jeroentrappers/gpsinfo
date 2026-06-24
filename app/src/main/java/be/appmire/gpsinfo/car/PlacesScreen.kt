@@ -144,11 +144,11 @@ class PlacesScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
     }
 
     private fun drive(place: SavedPlace) {
-        NavigationController.navigateTo(
-            carContext, place.lat, place.lon, destName = place.displayTitle, destDetail = place.detail,
+        // Show the route chooser (fastest/shortest/economic); it navigates
+        // directly when offline / no alternatives.
+        screenManager.push(
+            RouteChoiceScreen(carContext, place.lat, place.lon, place.displayTitle, place.detail),
         )
-        // Back to the map to watch guidance.
-        screenManager.popToRoot()
     }
 
     private fun carIcon(resId: Int): CarIcon =
