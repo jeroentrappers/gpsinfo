@@ -571,40 +571,38 @@ class CarMapRenderer(
 
     private fun gaugeLayout(w: Int, h: Int): GaugeLayout {
         val safe = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
-        val left = safe.left.toFloat().coerceIn(0f, w.toFloat())
-        val right = safe.right.toFloat().coerceIn(left, w.toFloat())
-        val top = safe.top.toFloat().coerceAtLeast(0f)
-        val bottom = safe.bottom.toFloat().coerceAtMost(h.toFloat())
         val margin = h * 0.02f
+        // Dials hug the PHYSICAL screen edges. The safe area is reserved
+        // for the host's own cards (turn card, ETA, strips) and during
+        // navigation it collapses to the screen CENTRE — anchoring the
+        // dials to it pushed them into the middle. The host cards are
+        // translucent overlays the map shows through, and the puck lives
+        // low-centre (look-ahead camera), so the corners are ours.
+        val left = margin
+        val right = w - margin
+        val top = margin
+        val bottom = h - margin
 
-        // Headline dials (speed, power): square, sized off the safe
-        // height but capped so two of them never crowd a wide screen.
+        // Headline dials (speed, power): square, capped so two never crowd.
         val mainSide = min((bottom - top) * 0.38f, (right - left) * 0.30f)
         // The dynamics dial is the supporting instrument — a touch smaller.
         val miniSide = mainSide * 0.82f
 
-        // Everything anchors to the host-reported safe area (stable/visible),
-        // never to fixed screen edges — the host's turn card, ETA and action
-        // strips are positioned differently per head unit, and the safe area
-        // already excludes wherever they land. So the dials track those
-        // positions automatically: they hug the screen edge when it's free
-        // and pull inward when the host occupies it.
+        // Top-left corner: power/energy (OBD only).
         val powerCell = if (obdConnected) RectF(
-            left + margin, top + margin,
-            left + margin + mainSide, top + margin + mainSide,
+            left, top, left + mainSide, top + mainSide,
         ) else null
-        // Speed + odometer: left edge of the safe area, vertically centred
-        // in the space below the power dial (or the safe top) — i.e. in
-        // whatever the host leaves free on the leading side.
+        // Left edge, vertically centred below the power dial: speed + odo.
         val speedTop = (powerCell?.bottom?.plus(margin)) ?: top
         val speedCy = (speedTop + bottom) / 2f
         val speedCell = RectF(
-            left + margin, speedCy - mainSide / 2f,
-            left + margin + mainSide, speedCy + mainSide / 2f,
+            left, speedCy - mainSide / 2f,
+            left + mainSide, speedCy + mainSide / 2f,
         )
+        // Bottom-right corner: compass / G-meter.
         val compassCell = RectF(
-            right - margin - miniSide, bottom - margin - miniSide,
-            right - margin, bottom - margin,
+            right - miniSide, bottom - miniSide,
+            right, bottom,
         )
         return GaugeLayout(speedCell, powerCell, compassCell, safe, margin)
     }
@@ -733,23 +731,74 @@ class CarMapRenderer(
         canvas.drawBitmap(bmp, mapLeft, 0f, layerPaint)
         if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
 
-        // Overlays projected through the snapshot. pixelForLatLng gives
-        // bitmap-space pixels; offset x by the instrument column.
-        drawProjectedRoute(canvas, snap, mapLeft)
+        // Overlays projected through the snapshot. While following, the
+        // puck is pinned to a fixed on-screen anchor (the map scrolls
+        // under it) so it never jitters against a snapshot that lags the
+        // moving camera.
+        val following = hasBearing && !panMode
+        drawProjectedRoute(canvas, snap, mapLeft, loc)
         drawProjectedBreadcrumb(canvas, snap, mapLeft)
-        drawProjectedMarker(canvas, snap, mapLeft, loc)
+        drawProjectedMarker(canvas, snap, mapLeft, loc, following)
     }
 
     private fun drawProjectedRoute(
         canvas: Canvas,
         snap: org.maplibre.android.snapshotter.MapSnapshot,
         mapLeft: Float,
+        loc: Location,
     ) {
-        val path = projectedPath(navRoute, snap, mapLeft) ?: return
+        val path = routeAheadPath(navRoute, snap, mapLeft, loc) ?: return
         navCasingPaint.strokeWidth = 16f
         navRoutePaint.strokeWidth = 10f
         canvas.drawPath(path, navCasingPaint)
         canvas.drawPath(path, navRoutePaint)
+    }
+
+    /** The route line to draw: start at the point nearest the vehicle
+     *  (so the part already driven vanishes *live*, at frame rate, not at
+     *  the ~1 Hz segment cadence) and walk CONSECUTIVE points forward —
+     *  full fidelity, no decimation — up to [ROUTE_DRAW_POINTS]. The
+     *  visible nav view only spans the next ~km anyway, so this is cheap
+     *  and the line actually follows the streets (decimating the whole
+     *  route to 120 points was what made it cut corners). */
+    private fun routeAheadPath(
+        pts: List<DoubleArray>?,
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+        loc: Location,
+    ): Path? {
+        if (pts == null || pts.size < 2) return null
+        // Nearest point to the vehicle — cheap squared-degree scan.
+        var startIdx = 0
+        var best = Double.MAX_VALUE
+        for (i in pts.indices) {
+            val dLat = pts[i][0] - loc.latitude
+            val dLon = pts[i][1] - loc.longitude
+            val d = dLat * dLat + dLon * dLon
+            if (d < best) { best = d; startIdx = i }
+        }
+        val end = (startIdx + ROUTE_DRAW_POINTS).coerceAtMost(pts.size)
+        if (end - startIdx < 2) return null
+        val maxJump = snap.bitmap.height * 4f
+        val path = Path()
+        var started = false
+        var lastX = 0f
+        var lastY = 0f
+        for (i in startIdx until end) {
+            val p = pts[i]
+            val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(p[0], p[1]))
+            val x = mapLeft + pf.x
+            val y = pf.y
+            if (!started) {
+                path.moveTo(x, y); started = true
+            } else if (kotlin.math.hypot((x - lastX).toDouble(), (y - lastY).toDouble()) > maxJump) {
+                path.moveTo(x, y)
+            } else {
+                path.lineTo(x, y)
+            }
+            lastX = x; lastY = y
+        }
+        return path
     }
 
     private fun drawProjectedBreadcrumb(
@@ -823,10 +872,24 @@ class CarMapRenderer(
         snap: org.maplibre.android.snapshotter.MapSnapshot,
         mapLeft: Float,
         loc: Location,
+        following: Boolean,
     ) {
-        val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude))
-        val x = mapLeft + pf.x
-        val y = pf.y
+        // While following: pin the puck to a fixed screen anchor (centre-X,
+        // low — matching the look-ahead camera) so it stays rock-steady as
+        // the map scrolls beneath it, even when the snapshot lags the
+        // camera. When panning (free camera): project the real position.
+        val x: Float
+        val y: Float
+        if (following) {
+            x = mapLeft + snap.bitmap.width / 2f
+            y = snap.bitmap.height * PUCK_SCREEN_FRACTION
+        } else {
+            val pf = snap.pixelForLatLng(
+                org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude),
+            )
+            x = mapLeft + pf.x
+            y = pf.y
+        }
         val r = MARKER_RADIUS
         canvas.save()
         if (tilted) canvas.scale(1f, PITCH_FORESHORTEN, x, y)
@@ -1081,6 +1144,14 @@ class CarMapRenderer(
          *  of ground), pushing the puck low on the screen. Tune to taste —
          *  higher = puck lower / more road ahead. */
         const val LOOK_AHEAD_FRACTION = 0.22
+        /** Fixed on-screen anchor for the puck while following — fraction
+         *  of surface height from the top (~78% down). Keep roughly in
+         *  step with LOOK_AHEAD_FRACTION so puck and map agree. */
+        const val PUCK_SCREEN_FRACTION = 0.78f
+        /** Consecutive route points drawn ahead of the vehicle, full
+         *  fidelity (no decimation). ~90 ≈ the next several km at BRouter's
+         *  ~100 m node spacing — more than the zoomed nav view shows. */
+        const val ROUTE_DRAW_POINTS = 90
         /** Vertical squash applied to the vehicle marker when tilted, so
          *  it lies on the ground plane instead of facing the camera —
          *  cos of the camera pitch. */
