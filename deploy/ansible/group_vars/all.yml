@@ -73,12 +73,13 @@ valhalla_domain: valhalla.appmire.be
 valhalla_app_dir: /opt/gpsinfo-valhalla
 valhalla_image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
 valhalla_port: 8002            # loopback only; nginx fronts it
-# OSM extracts Valhalla builds routing tiles from. Benelux first (small, fast);
-# add europe-latest later for wider coverage (much larger build).
+# OSM extracts Valhalla builds routing tiles from. Belgium only for the first
+# stand-up (smallest, fastest to serve); add netherlands/luxembourg (Benelux)
+# and later europe by uncommenting and re-running --tags valhalla.
 valhalla_pbf_urls:
   - https://download.geofabrik.de/europe/belgium-latest.osm.pbf
-  - https://download.geofabrik.de/europe/netherlands-latest.osm.pbf
-  - https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/netherlands-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf
 valhalla_threads: 6
 # Reuse the tile server's API key gate (override in secrets.yml for a
 # dedicated routing key).
