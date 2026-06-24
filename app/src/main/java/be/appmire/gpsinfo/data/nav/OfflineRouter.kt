@@ -86,6 +86,14 @@ class OfflineRouter(context: Context) {
             )
         } ?: emptyList()
 
+        android.util.Log.d(
+            "NavDiag",
+            "route pts=${points.size} dist=${track.distance}m turns=${turns.size} " +
+                turns.take(8).joinToString(" ") {
+                    "[i=${it.trackIndex} ${it.command} d2n=${it.distanceToNextMeters.toInt()}]"
+                } + " lastTurnIdx=${turns.lastOrNull()?.trackIndex}",
+        )
+
         OfflineRoute(
             points = points,
             distanceMeters = track.distance,

@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.car.app.AppManager
 import androidx.car.app.CarContext
 import androidx.car.app.SurfaceCallback
@@ -229,7 +230,73 @@ class CarMapRenderer(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
+        mainHandler.removeCallbacks(frameRunnable)
         snapshotter.destroy()
+    }
+
+    // ── Smooth animation loop ──────────────────────────────────────
+    // GNSS arrives ~1 Hz; a modest frame loop dead-reckons the vehicle
+    // forward between fixes and eases the gauge needles so the surface
+    // glides instead of stepping once a second. It runs ONLY while the
+    // car is moving (or a value is still easing) and idles otherwise —
+    // a free-running loop re-snapshots MapLibre every frame and the host
+    // kills slow apps. [FRAME_MS] is the tunable cadence.
+    private var animating = false
+    private val frameRunnable = Runnable { onAnimationFrame() }
+    private var targetBearingDeg = 0f
+    /** Eased gauge scalars, toward the latest fix / OBD values. */
+    private var dispSpeedMps = 0f
+    private var dispPowerKw = 0.0
+
+    private fun ensureAnimating() {
+        if (animating) return
+        animating = true
+        mainHandler.postDelayed(frameRunnable, FRAME_MS)
+    }
+
+    private fun onAnimationFrame() {
+        val more = stepAnimation()
+        renderFrame()
+        if (more) mainHandler.postDelayed(frameRunnable, FRAME_MS) else animating = false
+    }
+
+    /** Advance the eased values one frame; return whether more animation
+     *  is pending (still moving, or a needle hasn't settled). */
+    private fun stepAnimation(): Boolean {
+        val loc = lastDrawnLocation
+        val targetMps = if (loc != null && loc.hasSpeed()) loc.speed else 0f
+        dispSpeedMps += (targetMps - dispSpeedMps) * EASE
+        val targetKw = powerKw ?: 0.0
+        dispPowerKw += (targetKw - dispPowerKw) * EASE
+        if (hasBearing) {
+            var d = targetBearingDeg - smoothedBearingDeg
+            while (d > 180f) d -= 360f
+            while (d < -180f) d += 360f
+            smoothedBearingDeg = (smoothedBearingDeg + d * EASE + 360f) % 360f
+        }
+        val moving = targetMps > MIN_MOVE_MPS
+        val settling = abs(targetMps - dispSpeedMps) > 0.05f || abs(targetKw - dispPowerKw) > 0.5
+        return moving || settling
+    }
+
+    /** The vehicle position to draw THIS frame: the last fix dead-reckoned
+     *  forward along its course by the time elapsed since the fix, so the
+     *  map glides between ~1 Hz fixes. Carries the eased speed for the
+     *  needle. Extrapolation is capped so a dropped fix can't fling the
+     *  marker down the road. */
+    private fun displayedLocation(): Location? {
+        val fix = lastDrawnLocation ?: return null
+        val out = Location(fix)
+        out.speed = dispSpeedMps
+        if (!fix.hasSpeed() || fix.speed < MIN_MOVE_MPS || !fix.hasBearing()) return out
+        val dt = ((SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos) / 1e9)
+            .coerceIn(0.0, MAX_EXTRAPOLATE_SEC)
+        val dist = fix.speed * dt
+        val br = Math.toRadians(fix.bearing.toDouble())
+        out.latitude = fix.latitude + dist * cos(br) / 111_320.0
+        out.longitude = fix.longitude +
+            dist * Math.sin(br) / (111_320.0 * cos(Math.toRadians(fix.latitude)))
+        return out
     }
 
     // ── Data in ────────────────────────────────────────────────────
@@ -258,18 +325,17 @@ class CarMapRenderer(
                 if (moved in 1f..200f) odometerM += moved
             }
             lastDrawnLocation = loc
-            // Course-over-ground low-pass: 35% of the shortest angular
-            // delta per fix — smooths jitter without lagging real turns.
+            // Course-over-ground target for the heading-up rotation; the
+            // frame loop eases [smoothedBearingDeg] toward it between fixes.
             if (loc.hasBearing() && loc.hasSpeed() && loc.speed > MIN_HEADING_UP_SPEED_MPS) {
-                var delta = loc.bearing - smoothedBearingDeg
-                while (delta > 180f) delta -= 360f
-                while (delta < -180f) delta += 360f
-                smoothedBearingDeg = (smoothedBearingDeg + delta * 0.35f + 360f) % 360f
+                targetBearingDeg = loc.bearing
                 hasBearing = true
             }
             if (isRecording) appendBreadcrumb(loc)
         }
         stepAutoZoom(loc)
+        // Glide the map/needles between this fix and the next.
+        ensureAnimating()
         scheduleRender()
     }
 
@@ -464,9 +530,10 @@ class CarMapRenderer(
         val bg = if (dark) BG_DARK else BG_LIGHT
         canvas.drawColor(bg)
 
-        // lastDrawnLocation carries the latest fix with derived motion
-        // (see withDerivedMotion) — prefer it over the raw snapshot.
-        val loc = lastDrawnLocation ?: snapshot.location
+        // The last fix dead-reckoned forward to this frame (see
+        // displayedLocation), so the map + needles glide between the
+        // ~1 Hz GNSS fixes; falls back to the raw snapshot pre-first-fix.
+        val loc = displayedLocation() ?: snapshot.location
 
         // The map IS the surface — full-bleed across the whole video
         // surface so it reads as a navigation map, not a gauge panel with
@@ -595,7 +662,7 @@ class CarMapRenderer(
                 arrivalSocPct = null
             }
             instruments.drawEnergyDial(
-                canvas, cell, powerKw,
+                canvas, cell, dispPowerKw,
                 batterySocPct, rangeRemainingKm, arrivalRangeKm, arrivalSocPct,
             )
         }
@@ -623,12 +690,25 @@ class CarMapRenderer(
         loc: Location,
         dark: Boolean,
     ) {
-        // Camera follows the vehicle (+ any pan offset). Heading-up
-        // bakes the course into the map bearing; tilt becomes MapLibre's
-        // native pitch so labels stay upright and the road recedes.
-        val camLat = loc.latitude + panLatOffset
-        val camLon = loc.longitude + panLonOffset
+        // Camera follows the vehicle (+ any pan offset). Heading-up bakes
+        // the course into the map bearing; tilt becomes MapLibre's native
+        // pitch so labels stay upright and the road recedes.
+        //
+        // Look-ahead: while moving (not panning) push the camera TARGET
+        // ahead of the vehicle along the course, so the puck sits low on
+        // the surface (~80% down) with the road ahead filling the view —
+        // a nav-style camera instead of the puck dead-centre.
         val bearing = if (hasBearing) smoothedBearingDeg.toDouble() else 0.0
+        val lookAheadM = if (hasBearing && !panMode) {
+            val mpp = 156_543.03392 * cos(Math.toRadians(loc.latitude)) /
+                Math.pow(2.0, currentZoom)
+            LOOK_AHEAD_FRACTION * mpp * h
+        } else 0.0
+        val brRad = Math.toRadians(bearing)
+        val camLat = loc.latitude + panLatOffset +
+            lookAheadM * cos(brRad) / 111_320.0
+        val camLon = loc.longitude + panLonOffset +
+            lookAheadM * Math.sin(brRad) / (111_320.0 * cos(Math.toRadians(loc.latitude)))
         val pitch = if (tilted) CAR_PITCH_DEG else 0.0
         // 3D building extrusions only in the dedicated 3D mode; the other
         // two show flat footprints (the snapshotter hides the
@@ -698,13 +778,30 @@ class CarMapRenderer(
         if (pts == null || pts.size < 2) return null
         val step = (pts.size + MAX_PROJECTED_POINTS - 1) / MAX_PROJECTED_POINTS
         val path = Path()
+        // A point far outside the view (or a tilted-horizon point) can
+        // project to a wild pixel; a lineTo to it streaks a nonsensical
+        // line across the surface. Break the path on any jump larger than
+        // this many surface-heights and resume with a moveTo.
+        val maxJump = snap.bitmap.height * 4f
         var started = false
+        var lastX = 0f
+        var lastY = 0f
         var i = 0
         while (i < pts.size) {
             val p = pts[i]
             val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(p[0], p[1]))
             val x = mapLeft + pf.x
-            if (!started) { path.moveTo(x, pf.y); started = true } else path.lineTo(x, pf.y)
+            val y = pf.y
+            if (!started) {
+                path.moveTo(x, y)
+                started = true
+            } else if (kotlin.math.hypot((x - lastX).toDouble(), (y - lastY).toDouble()) > maxJump) {
+                path.moveTo(x, y) // discontinuity — don't streak a line to it
+            } else {
+                path.lineTo(x, y)
+            }
+            lastX = x
+            lastY = y
             if (i == pts.size - 1) break
             i = (i + step).coerceAtMost(pts.size - 1)
         }
@@ -962,9 +1059,28 @@ class CarMapRenderer(
 
         /** MapLibre camera pitch when tilt is on — the native 2.5D
          *  perspective (labels stay upright, road recedes). The host's
-         *  driving-mode tilt cap is 60°; 50 reads well without
-         *  over-flattening the foreground. */
-        const val CAR_PITCH_DEG = 50.0
+         *  driving-mode tilt cap is 60°; 57 leans into the road ahead for
+         *  the nav look-ahead camera without hitting the cap. */
+        const val CAR_PITCH_DEG = 57.0
+
+        // ── Smooth-animation loop tunables (see ensureAnimating) ──
+        /** Frame cadence of the dead-reckoning loop. ~15 fps: smooth
+         *  enough, conservative on the MapLibre re-snapshot cost (the host
+         *  kills slow apps). Lower toward ~33 ms only if a real head unit
+         *  tolerates it. */
+        const val FRAME_MS = 66L
+        /** Per-frame easing factor for needles + heading (0..1). */
+        const val EASE = 0.25f
+        /** Below this ground speed the vehicle is treated as stopped (no
+         *  dead-reckoning, loop idles). */
+        const val MIN_MOVE_MPS = 0.8f
+        /** Never extrapolate position more than this past the last fix —
+         *  a dropped fix shouldn't fling the marker down the road. */
+        const val MAX_EXTRAPOLATE_SEC = 2.0
+        /** Camera look-ahead as a fraction of the surface height (in metres
+         *  of ground), pushing the puck low on the screen. Tune to taste —
+         *  higher = puck lower / more road ahead. */
+        const val LOOK_AHEAD_FRACTION = 0.22
         /** Vertical squash applied to the vehicle marker when tilted, so
          *  it lies on the ground plane instead of facing the camera —
          *  cos of the camera pitch. */

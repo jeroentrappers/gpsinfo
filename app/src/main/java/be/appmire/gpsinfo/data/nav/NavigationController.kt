@@ -335,13 +335,22 @@ object NavigationController {
         }
 
         val nextTurn = s.route.turns.firstOrNull { it.trackIndex > snap.segmentIndex }
-        val distToTurn = nextTurn?.let {
+        // Clamp to the distance that's actually left: a turn can never be
+        // farther away than the destination. Guards against a stray
+        // voice-hint index or a bad snap producing a nonsensical value.
+        val distToTurn = (nextTurn?.let {
             max(0.0, cumDist[it.trackIndex.coerceIn(cumDist.indices)] - snap.alongM)
-        } ?: remaining
+        } ?: remaining).coerceAtMost(remaining)
         // ETA scales the route's own pace over what's left.
         val pace = if (s.route.distanceMeters > 0)
             s.route.durationSeconds.toDouble() / s.route.distanceMeters else 0.0
 
+        android.util.Log.d(
+            "NavDiag",
+            "offer seg=${snap.segmentIndex} along=${snap.alongM.toInt()}m cross=${snap.crossTrackM.toInt()}m " +
+                "nextIdx=${nextTurn?.trackIndex} cmd=${nextTurn?.command} " +
+                "distToTurn=${distToTurn.toInt()}m remain=${remaining.toInt()}m",
+        )
         _state.value = s.copy(
             segmentIndex = snap.segmentIndex,
             distanceAlongM = snap.alongM,
@@ -363,6 +372,13 @@ object NavigationController {
             acc += haversineM(route.points[i - 1], route.points[i])
             cumDist[i] = acc
         }
+        android.util.Log.d(
+            "NavDiag",
+            "install cumLast=${cumDist.lastOrNull()?.toInt()}m pts=${route.points.size} " +
+                "turns=${route.turns.size} firstTurnIdx=${route.turns.firstOrNull()?.trackIndex} " +
+                "p0=(${"%.5f".format(route.points.first().lat)},${"%.5f".format(route.points.first().lon)}) " +
+                "pN=(${"%.5f".format(route.points.last().lat)},${"%.5f".format(route.points.last().lon)})",
+        )
         voice?.resetAnnouncements()
         _state.value = NavState.Navigating(
             route = route,

@@ -219,7 +219,12 @@ class TripDashboardScreen(
                 nav = navState
                 renderer.update(gnss, rec, rallyState)
                 renderer.updateNavigationRoute(
-                    (navState as? NavigationController.NavState.Navigating)?.route?.points
+                    // Only the road ahead — drop the points already driven
+                    // so the route line starts at the vehicle, not the origin.
+                    (navState as? NavigationController.NavState.Navigating)?.let { n ->
+                        val from = n.segmentIndex.coerceIn(0, (n.route.points.size - 1).coerceAtLeast(0))
+                        n.route.points.subList(from, n.route.points.size)
+                    }
                 )
                 renderer.updateNavigationStatus(
                     when (navState) {

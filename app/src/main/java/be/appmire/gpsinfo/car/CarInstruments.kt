@@ -71,6 +71,30 @@ class CarInstruments {
         unitLabel(canvas, g, "km/h")
 
         val kmh = if (loc != null && loc.hasSpeed()) loc.speed * 3.6 else 0.0
+
+        // Confidence band: ± the GNSS speed accuracy, a faint arc on the
+        // dial face spanning [kmh−acc, kmh+acc]. Wide band = noisy fix, so
+        // the reading is glanceably "trust me less". API 26+ only.
+        if (loc != null && loc.hasSpeed() &&
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
+            loc.hasSpeedAccuracy()
+        ) {
+            val accKmh = loc.speedAccuracyMetersPerSecond * 3.6f
+            if (accKmh > 0.5f) {
+                val lo = speedFraction((kmh - accKmh).coerceAtLeast(0.0))
+                val hi = speedFraction((kmh + accKmh).toDouble())
+                val arcR = g.r * 0.90f
+                val arcRect = RectF(g.cx - arcR, g.cy - arcR, g.cx + arcR, g.cy + arcR)
+                zonePaint.color = fade(LCD_UNIT, 0.40f)
+                zonePaint.strokeWidth = g.r * 0.05f
+                canvas.drawArc(
+                    arcRect,
+                    START_DEG + SWEEP_DEG * lo, SWEEP_DEG * (hi - lo),
+                    false, zonePaint,
+                )
+            }
+        }
+
         drawNeedle(canvas, g, START_DEG + SWEEP_DEG * speedFraction(kmh))
 
         val over = speedLimitKmh != null && kmh > speedLimitKmh + SPEED_OVER_TOL
