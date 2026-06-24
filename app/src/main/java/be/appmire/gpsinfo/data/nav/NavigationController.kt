@@ -96,14 +96,19 @@ object NavigationController {
      *  [destLon]). Downloads missing segment tiles first. [destName]
      *  (+ optional [destDetail]) is recorded into recent places so it
      *  can be re-picked without typing — including from the car. */
+    /** Profile of the active route, reused across silent re-routes. */
+    private var lastProfile = RouteProfile.FASTEST
+
     fun navigateTo(
         context: Context,
         destLat: Double,
         destLon: Double,
         destName: String? = null,
         destDetail: String = "",
+        profile: RouteProfile = RouteProfile.FASTEST,
     ) {
         val appContext = context.applicationContext
+        lastProfile = profile
         lastDestName = destName?.takeIf { it.isNotBlank() }
         if (!destName.isNullOrBlank()) {
             PlacesRepository(appContext)
@@ -176,7 +181,7 @@ object NavigationController {
 
         _state.value = NavState.Preparing("Computing route…")
         val route = try {
-            theRouter.route(from.latitude, from.longitude, destLat, destLon)
+            theRouter.route(from.latitude, from.longitude, destLat, destLon, lastProfile)
         } catch (e: Exception) {
             android.util.Log.w(TAG, "routing failed", e)
             null
@@ -315,7 +320,7 @@ object NavigationController {
                 if (ctxRouter != null) {
                     scope.launch {
                         val fresh = ctxRouter.route(
-                            loc.latitude, loc.longitude, s.destLat, s.destLon,
+                            loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
                         )
                         synchronized(this@NavigationController) {
                             reRouting = false
