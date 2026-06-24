@@ -61,3 +61,25 @@ storagebox_build_dir: /mnt/storagebox                 # PBF + output (network, C
 build_tmp_local: "{{ app_dir }}/buildtmp"             # random-IO temp (local NVMe)
 build_min_free_gb: 450         # local headroom for the planet's ~420 GB temp
 watchdog_min_free_gb: 25       # abort the build if local free drops below this
+
+# ── Valhalla routing service (valhalla.appmire.be) ──────────────────────────
+# Server-side Valhalla on the same box as the tiles (see
+# docs/design/nav-engine-v2.md). The app calls it ONLINE for profile choice
+# (fastest/shortest/economic) + alternatives + lane guidance + fast reroute;
+# BRouter stays the offline fallback. Official gis-ops/docker-valhalla image —
+# no native build; it builds its routing tiles from the OSM extracts below on
+# first run and serves the HTTP API on loopback, fronted by nginx (TLS + ?key=).
+valhalla_domain: valhalla.appmire.be
+valhalla_app_dir: /opt/gpsinfo-valhalla
+valhalla_image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+valhalla_port: 8002            # loopback only; nginx fronts it
+# OSM extracts Valhalla builds routing tiles from. Benelux first (small, fast);
+# add europe-latest later for wider coverage (much larger build).
+valhalla_pbf_urls:
+  - https://download.geofabrik.de/europe/belgium-latest.osm.pbf
+  - https://download.geofabrik.de/europe/netherlands-latest.osm.pbf
+  - https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf
+valhalla_threads: 6
+# Reuse the tile server's API key gate (override in secrets.yml for a
+# dedicated routing key).
+valhalla_api_key: "{{ tiles_api_key }}"

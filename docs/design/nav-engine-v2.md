@@ -12,9 +12,25 @@ Replace the BRouter offline router with **Valhalla**, to get:
 - **Faster (re)routing** (C++ engine; native alternates).
 - Foundation for richer guidance later.
 
-## Why this is phased (the hard parts)
+## Architecture decision (2026-06-25): server-side Valhalla
 
-Two pieces are **infrastructure, not app code**, and gate everything:
+Valhalla runs as an **HTTP routing service on appmire-hetz1**, deployed
+exactly like the tiles server (Ansible role + Docker + nginx vhost + certbot
++ `?key=` gate), at **`routing.appmire.be`**. The app calls it online for
+**profiles (fastest/shortest/economic) + alternatives + lane guidance +
+fast (re)routing**; **BRouter stays the offline fallback** so dead-zone
+routing still works.
+
+This **eliminates the native NDK build and on-device Valhalla tiles** — the
+two hard parts below are replaced by a Docker container (official
+`gis-ops/docker-valhalla` image) that builds its routing tiles from OSM
+extracts on the box. Trade-off: the rich routing needs connectivity (most
+driving has it); offline degrades to BRouter, same as today.
+
+### Superseded (the on-device path we are NOT taking)
+
+The two pieces below were the blockers for an *embedded* Valhalla; the
+server-side decision retires them. Kept for context.
 
 1. **Valhalla native lib for Android.** Valhalla is C++; there is no
    official Android AAR. We must cross-compile `libvalhalla` (+ protobuf;

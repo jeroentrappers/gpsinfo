@@ -3,6 +3,9 @@
 # /extract is CPU-heavy, so its zone is tight.
 limit_req_zone $binary_remote_addr zone=gpsinfo_tiles:10m rate=20r/s;
 limit_req_zone $binary_remote_addr zone=gpsinfo_extract:10m rate=1r/s;
+# Routing API: a few requests per route request (alternatives), bursty at
+# trip start / reroute, but not a flood.
+limit_req_zone $binary_remote_addr zone=gpsinfo_routing:10m rate=5r/s;
 
 # CORS allowlist: echo the Origin back only for our own web apps (see
 # tiles_cors_origin_regex). A non-match yields "" → add_header omits the header

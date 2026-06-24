@@ -1,0 +1,28 @@
+# Managed by Ansible. Server-side Valhalla routing for GPSinfo
+# (valhalla.appmire.be). The official gis-ops image builds routing tiles from
+# the configured OSM extracts on first run, caches them under ./custom_files,
+# then serves the HTTP API on loopback. The host nginx fronts it with TLS and
+# the ?key= gate. The app uses this online for fastest/shortest/economic +
+# alternatives + lane guidance; BRouter is the offline fallback.
+services:
+  valhalla:
+    image: {{ valhalla_image }}
+    container_name: gpsinfo-valhalla
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:{{ valhalla_port }}:8002"
+    environment:
+      # Space-separated OSM extracts → routing tiles (built once, cached).
+      tile_urls: "{{ valhalla_pbf_urls | join(' ') }}"
+      serve_tiles: "True"
+      # Reuse cached tiles and skip a rebuild when the PBFs haven't changed.
+      use_tiles_ignore_pbf: "True"
+      force_rebuild: "False"
+      # Admin + timezone areas enable country-aware costing + local times;
+      # elevation is large and not needed for car routing.
+      build_admins: "True"
+      build_time_zones: "True"
+      build_elevation: "False"
+      server_threads: "{{ valhalla_threads }}"
+    volumes:
+      - ./custom_files:/custom_files

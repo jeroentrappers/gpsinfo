@@ -5,10 +5,12 @@
 #   ansible-playbook site.yml --tags nginx       # vhost + certbot TLS (once DNS points at hetz1)
 #   ansible-playbook site.yml --tags storagebox  # CIFS mount of the Storage Box (build staging)
 #   ansible-playbook site.yml --tags build       # kick off the throttled planet build (background)
+#   ansible-playbook site.yml --tags valhalla     # Valhalla routing service (valhalla.appmire.be)
 #
 # The planet tiles take hours; everything else (styles/fonts/sprites/extract)
 # comes up immediately, so tiles.appmire.be is live except map data until the
-# build finishes.
+# build finishes. Valhalla likewise builds its routing tiles on first run
+# (Benelux: minutes; europe: long) and serves once they're ready.
 ---
 - name: GPSinfo vector tiles
   hosts: tiles
@@ -17,6 +19,8 @@
   roles:
     - role: app
       tags: [app]
+    - role: valhalla        # server-side routing (valhalla.appmire.be)
+      tags: [valhalla]
     - role: nginx
       become: true
       tags: [nginx]

@@ -1,0 +1,47 @@
+# Managed by Ansible — GPSinfo Valhalla routing API ({{ valhalla_domain }}).
+# Reverse-proxies the loopback Valhalla container behind the same ?key= gate +
+# rate limit as the tiles. The key check lives inside the location so it never
+# blocks ACME challenges. CORS reuses the tiles map ($cors_allow_origin) for
+# the web apps; the native app ignores CORS.
+{% if have_cert | default(false) %}
+server {
+    server_name {{ valhalla_domain }};
+    listen [::]:443 ssl;
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/{{ valhalla_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ valhalla_domain }}/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # POST /route bodies are small JSON; keep the limit modest.
+    client_max_body_size 256k;
+
+    location / {
+        if ($arg_key != "{{ valhalla_api_key }}") { return 403; }
+        limit_req zone=gpsinfo_routing burst=10 nodelay;
+        proxy_pass http://127.0.0.1:{{ valhalla_port }};
+        proxy_read_timeout 60s;
+        add_header Access-Control-Allow-Origin $cors_allow_origin always;
+        add_header Vary Origin always;
+    }
+}
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ valhalla_domain }};
+    location / { return 301 https://$host$request_uri; }
+}
+{% else %}
+# Pre-TLS: plain HTTP so certbot --nginx can find the vhost; key still gates.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ valhalla_domain }};
+    location / {
+        if ($arg_key != "{{ valhalla_api_key }}") { return 403; }
+        limit_req zone=gpsinfo_routing burst=10 nodelay;
+        proxy_pass http://127.0.0.1:{{ valhalla_port }};
+        proxy_read_timeout 60s;
+    }
+}
+{% endif %}
