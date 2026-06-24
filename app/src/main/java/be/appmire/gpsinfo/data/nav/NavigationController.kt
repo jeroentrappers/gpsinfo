@@ -77,6 +77,10 @@ object NavigationController {
     private var routeJob: Job? = null
     private var corridorJob: Job? = null
     private var router: OfflineRouter? = null
+
+    /** Online engine (server-side Valhalla): tried first for profile-aware,
+     *  fast routing; [router] (BRouter) is the offline fallback. */
+    private val onlineRouter: Router = ValhallaRouter()
     private var voice: VoiceGuide? = null
     private var offlineMap: OfflineMapRepository? = null
 
@@ -153,8 +157,24 @@ object NavigationController {
     /** Download any missing tiles, compute the route, install it. Assumes
      *  a known [from] origin. */
     private suspend fun runRoute(appContext: Context, from: Location, destLat: Double, destLon: Double) {
-        val theRouter = router ?: OfflineRouter(appContext).also { router = it }
         if (voice == null) voice = VoiceGuide(appContext)
+        _state.value = NavState.Preparing("Computing route…")
+
+        // 1) Online engine first (Valhalla): fast, profile-aware, no tiles.
+        val online = try {
+            onlineRouter.route(from.latitude, from.longitude, destLat, destLon, lastProfile)
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "online routing failed", e); null
+        }
+        if (online != null && online.points.size >= 2) {
+            installRoute(online, destLat, destLon)
+            voice?.announceStart(online)
+            startCorridorDownload(appContext, online)
+            return
+        }
+
+        // 2) Offline fallback: BRouter — download missing rd5 tiles, then route.
+        val theRouter = router ?: OfflineRouter(appContext).also { router = it }
 
         // Fetch any missing road-network tiles for the route bbox.
         val missing = theRouter.missingTiles(from.latitude, from.longitude, destLat, destLon)
@@ -319,7 +339,10 @@ object NavigationController {
                 val ctxRouter = router
                 if (ctxRouter != null) {
                     scope.launch {
-                        val fresh = ctxRouter.route(
+                        // Online reroute first (fast); BRouter if offline.
+                        val fresh = onlineRouter.route(
+                            loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
+                        ) ?: ctxRouter.route(
                             loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
                         )
                         synchronized(this@NavigationController) {
