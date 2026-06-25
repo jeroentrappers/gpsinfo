@@ -1,8 +1,13 @@
 package be.appmire.gpsinfo.car
 
+import android.text.SpannableString
+import android.text.Spanned
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
+import androidx.car.app.model.Distance
+import androidx.car.app.model.DistanceSpan
+import androidx.car.app.model.DurationSpan
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
@@ -13,7 +18,6 @@ import be.appmire.gpsinfo.data.nav.NavigationController
 import be.appmire.gpsinfo.data.nav.OfflineRoute
 import be.appmire.gpsinfo.data.nav.RouteOption
 import be.appmire.gpsinfo.data.nav.RouteProfile
-import java.util.Locale
 import kotlinx.coroutines.launch
 
 /**
@@ -98,11 +102,19 @@ class RouteChoiceScreen(
         },
     )
 
-    private fun summary(route: OfflineRoute): String {
-        val dist = if (route.distanceMeters >= 1000)
-            "%.1f km".format(Locale.getDefault(), route.distanceMeters / 1000.0)
-        else "${route.distanceMeters} m"
-        val min = (route.durationSeconds + 59) / 60
-        return "$dist · $min min"
+    /** Row text with the required distance + duration spans. The template host
+     *  renders each span over its placeholder char, so the string reads
+     *  "<distance> · <duration>". A [RoutePreviewNavigationTemplate] rejects any
+     *  row lacking one of these spans, so this is mandatory, not cosmetic. */
+    private fun summary(route: OfflineRoute): CharSequence {
+        val distance = if (route.distanceMeters >= 1000) {
+            Distance.create(route.distanceMeters / 1000.0, Distance.UNIT_KILOMETERS)
+        } else {
+            Distance.create(route.distanceMeters.toDouble(), Distance.UNIT_METERS)
+        }
+        val s = SpannableString("d · t")
+        s.setSpan(DistanceSpan.create(distance), 0, 1, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+        s.setSpan(DurationSpan.create(route.durationSeconds.toLong()), 4, 5, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+        return s
     }
 }
