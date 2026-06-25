@@ -73,13 +73,23 @@ valhalla_domain: valhalla.appmire.be
 valhalla_app_dir: /opt/gpsinfo-valhalla
 valhalla_image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
 valhalla_port: 8002            # loopback only; nginx fronts it
-# OSM extracts Valhalla builds routing tiles from. Belgium only for the first
-# stand-up (smallest, fastest to serve); add netherlands/luxembourg (Benelux)
-# and later europe by uncommenting and re-running --tags valhalla.
+# OSM extracts Valhalla builds routing tiles from. Coverage is STAGED like the
+# tile pipeline: Benelux now → western Europe → (optionally) planet. Widening
+# rebuilds the routing tiles (clear custom_files first, then --tags valhalla)
+# and needs progressively more RAM/disk + build time — widen deliberately.
 valhalla_pbf_urls:
+  # Stage 1 — Benelux (current)
   - https://download.geofabrik.de/europe/belgium-latest.osm.pbf
-  # - https://download.geofabrik.de/europe/netherlands-latest.osm.pbf
-  # - https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf
+  - https://download.geofabrik.de/europe/netherlands-latest.osm.pbf
+  - https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf
+  # Stage 2 — western Europe (uncomment; large build, hours)
+  # - https://download.geofabrik.de/europe/france-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/germany-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/great-britain-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/switzerland-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/austria-latest.osm.pbf
+  # Stage 3 — planet (very heavy: needs big RAM/disk; deliberate)
+  # - https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
 valhalla_threads: 6
 # Reuse the tile server's API key gate (override in secrets.yml for a
 # dedicated routing key).
