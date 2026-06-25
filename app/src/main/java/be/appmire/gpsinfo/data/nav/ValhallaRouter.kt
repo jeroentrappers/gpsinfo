@@ -10,16 +10,17 @@ import kotlinx.coroutines.withContext
 
 /**
  * Online routing via the server-side Valhalla service (valhalla.appmire.be,
- * see docs/design/nav-engine-v2.md and deploy/ansible/roles/valhalla). Gives
- * profile-aware routing (fastest/shortest/economic), fast (re)routing, and —
- * where the data supports it — lane guidance.
+ * see docs/design/nav-engine-v2.md). Profile-aware (fastest/shortest/
+ * economic), fast (re)routing, and **lane guidance**.
  *
- * Needs connectivity; [CompositeRouter] falls back to BRouter offline. Plain
- * HttpURLConnection + org.json to match the rest of data.nav (no new deps).
+ * We request Valhalla's **OSRM-compatible output** (`format=osrm` +
+ * `turn_lanes=true`): confirmed empirically that lane data only appears there
+ * (`steps[].intersections[].lanes`), NOT in Valhalla's native `maneuvers`
+ * array. Bonus: this is the exact OSRM response shape, so the same parser
+ * also fits the charging project's OSRM (a future offline/fallback engine).
  *
- * NOTE (verify-vs-live): the maneuver→[TurnCommand] mapping follows Valhalla's
- * documented `type` ids and the lane parsing is best-effort; confirm both
- * against the live `/route` response once the tile build finishes.
+ * Needs connectivity; [CompositeRouter]/NavigationController fall back to
+ * BRouter offline. Plain HttpURLConnection + org.json to match data.nav.
  */
 class ValhallaRouter : Router {
 
@@ -49,8 +50,7 @@ class ValhallaRouter : Router {
         try {
             conn.outputStream.use { it.write(body.toByteArray()) }
             if (conn.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
-            val json = JSONObject(conn.inputStream.bufferedReader().readText())
-            parseTrip(json.optJSONObject("trip") ?: return@withContext null)
+            parseOsrm(JSONObject(conn.inputStream.bufferedReader().readText()))
         } catch (e: Exception) {
             android.util.Log.w(TAG, "valhalla route failed", e)
             null
@@ -67,106 +67,138 @@ class ValhallaRouter : Router {
         val locations = JSONArray()
             .put(JSONObject().put("lat", fromLat).put("lon", fromLon))
             .put(JSONObject().put("lat", toLat).put("lon", toLon))
-        // All profiles use the `auto` cost model; options shape the cost.
         val autoOpts = JSONObject()
         when (profile) {
             RouteProfile.FASTEST -> {}
             RouteProfile.SHORTEST -> autoOpts.put("shortest", true)
-            // Economic ≈ lean off motorways + tolls (steadier, cheaper run).
             RouteProfile.ECONOMIC -> autoOpts.put("use_highways", 0.3).put("use_tolls", 0.2)
         }
         return JSONObject()
             .put("locations", locations)
             .put("costing", "auto")
             .put("costing_options", JSONObject().put("auto", autoOpts))
-            .put("directions_options", JSONObject().put("units", "kilometers"))
+            // OSRM-compatible output is the only one that carries lane data;
+            // polyline6 keeps the 1e6 precision our decoder expects.
+            .put("format", "osrm")
+            .put("turn_lanes", true)
+            .put("geometries", "polyline6")
     }
 
-    // ── Response ───────────────────────────────────────────────────
+    // ── Response (OSRM format) ─────────────────────────────────────
 
-    private fun parseTrip(trip: JSONObject): OfflineRoute? {
-        val legs = trip.optJSONArray("legs") ?: return null
-        if (legs.length() == 0) return null
+    private fun parseOsrm(d: JSONObject): OfflineRoute? {
+        if (d.optString("code") != "Ok") return null
+        val routes = d.optJSONArray("routes") ?: return null
+        if (routes.length() == 0) return null
+        val route = routes.getJSONObject(0)
+
+        // Build the point list from the per-step geometries (deduping the
+        // shared boundary point) so each maneuver's track index lines up
+        // with the polyline — equivalent to route.geometry, but indexable.
         val points = ArrayList<RoutePoint>()
         val turns = ArrayList<TurnHint>()
+        val legs = route.optJSONArray("legs") ?: JSONArray()
         for (li in 0 until legs.length()) {
-            val leg = legs.getJSONObject(li)
-            val base = points.size // shape indices are per-leg; offset by what we have
-            decodePolyline(leg.optString("shape")).forEach { points.add(RoutePoint(it[0], it[1])) }
-            val maneuvers = leg.optJSONArray("maneuvers") ?: JSONArray()
-            for (mi in 0 until maneuvers.length()) {
-                val m = maneuvers.getJSONObject(mi)
-                val cmd = maneuverType(m.optInt("type", 0))
-                // Skip the synthetic start/destination markers as "turns".
-                if (cmd == TurnCommand.UNKNOWN && mi == 0) continue
+            val steps = legs.getJSONObject(li).optJSONArray("steps") ?: continue
+            for (si in 0 until steps.length()) {
+                val step = steps.getJSONObject(si)
+                val stepPts = decodePolyline(step.optString("geometry"))
+                val startIdx = points.size
+                var from = 0
+                if (points.isNotEmpty() && stepPts.isNotEmpty()) {
+                    val last = points.last()
+                    if (kotlin.math.abs(last.lat - stepPts[0][0]) < 1e-7 &&
+                        kotlin.math.abs(last.lon - stepPts[0][1]) < 1e-7
+                    ) from = 1
+                }
+                for (i in from until stepPts.size) points.add(RoutePoint(stepPts[i][0], stepPts[i][1]))
+
+                val man = step.optJSONObject("maneuver") ?: continue
+                if (man.optString("type") == "depart") continue // route start, not a turn
                 turns.add(
                     TurnHint(
-                        lat = points.getOrNull(base + m.optInt("begin_shape_index"))?.lat ?: 0.0,
-                        lon = points.getOrNull(base + m.optInt("begin_shape_index"))?.lon ?: 0.0,
-                        command = cmd,
-                        exitNumber = m.optInt("roundabout_exit_count", 0),
-                        distanceToNextMeters = m.optDouble("length", 0.0) * 1000.0,
-                        trackIndex = base + m.optInt("begin_shape_index"),
-                        lanes = parseLanes(m.optJSONArray("lanes")),
+                        lat = stepPts.firstOrNull()?.get(0) ?: 0.0,
+                        lon = stepPts.firstOrNull()?.get(1) ?: 0.0,
+                        command = osrmManeuver(man.optString("type"), man.optString("modifier")),
+                        exitNumber = man.optInt("exit", 0),
+                        distanceToNextMeters = step.optDouble("distance", 0.0),
+                        trackIndex = startIdx,
+                        lanes = lanesForStep(step),
                     ),
                 )
             }
         }
         if (points.size < 2) return null
-        val summary = trip.optJSONObject("summary") ?: JSONObject()
         return OfflineRoute(
             points = points,
-            distanceMeters = (summary.optDouble("length", 0.0) * 1000.0).toInt(),
-            durationSeconds = summary.optDouble("time", 0.0).toInt(),
+            distanceMeters = route.optDouble("distance", 0.0).toInt(),
+            durationSeconds = route.optDouble("duration", 0.0).toInt(),
             turns = turns,
         )
     }
 
-    /** Best-effort lane parse — Valhalla encodes lane directions as a bitmask.
-     *  Verify the exact shape against the live response. */
-    private fun parseLanes(arr: JSONArray?): List<Lane>? {
-        if (arr == null || arr.length() == 0) return null
-        val lanes = ArrayList<Lane>(arr.length())
-        for (i in 0 until arr.length()) {
-            val l = arr.optJSONObject(i) ?: continue
-            val dirs = laneDirections(l.optInt("directions", l.optInt("valid", 0)))
-            val active = l.optInt("active", 0) != 0 || l.optBoolean("active", false)
-            lanes.add(Lane(dirs, active))
+    /** Lane set to show for a step's maneuver: OSRM puts the turn lanes on
+     *  the step's intersections; intersections[0] is the maneuver location.
+     *  Take the first intersection that carries a lanes array. (Exact
+     *  maneuver↔lane association may want live tuning.) */
+    private fun lanesForStep(step: JSONObject): List<Lane>? {
+        val ints = step.optJSONArray("intersections") ?: return null
+        for (k in 0 until ints.length()) {
+            val arr = ints.getJSONObject(k).optJSONArray("lanes") ?: continue
+            val lanes = ArrayList<Lane>(arr.length())
+            for (i in 0 until arr.length()) {
+                val l = arr.optJSONObject(i) ?: continue
+                val inds = l.optJSONArray("indications")
+                val dirs = ArrayList<TurnCommand>()
+                if (inds != null) for (j in 0 until inds.length()) {
+                    osrmIndication(inds.optString(j))?.let { dirs.add(it) }
+                }
+                // Valhalla's osrm output adds "active"; plain OSRM has "valid".
+                val active = if (l.has("active")) l.optBoolean("active") else l.optBoolean("valid", false)
+                lanes.add(Lane(dirs, active))
+            }
+            return lanes.ifEmpty { null }
         }
-        return lanes.ifEmpty { null }
+        return null
     }
 
-    /** Valhalla lane direction bitmask → our [TurnCommand]s. */
-    private fun laneDirections(mask: Int): List<TurnCommand> {
-        val out = ArrayList<TurnCommand>()
-        // kTurnLaneNone=1, Through=2, SharpLeft=4, Left=8, SlightLeft=16,
-        // SlightRight=32, Right=64, SharpRight=128, Reverse=256.
-        if (mask and 2 != 0) out += TurnCommand.STRAIGHT
-        if (mask and 4 != 0) out += TurnCommand.TURN_SHARP_LEFT
-        if (mask and 8 != 0) out += TurnCommand.TURN_LEFT
-        if (mask and 16 != 0) out += TurnCommand.TURN_SLIGHT_LEFT
-        if (mask and 32 != 0) out += TurnCommand.TURN_SLIGHT_RIGHT
-        if (mask and 64 != 0) out += TurnCommand.TURN_RIGHT
-        if (mask and 128 != 0) out += TurnCommand.TURN_SHARP_RIGHT
-        if (mask and 256 != 0) out += TurnCommand.U_TURN
-        return out
+    /** OSRM lane indication string → [TurnCommand]. */
+    private fun osrmIndication(s: String): TurnCommand? = when (s) {
+        "straight" -> TurnCommand.STRAIGHT
+        "left" -> TurnCommand.TURN_LEFT
+        "slight left" -> TurnCommand.TURN_SLIGHT_LEFT
+        "sharp left" -> TurnCommand.TURN_SHARP_LEFT
+        "right" -> TurnCommand.TURN_RIGHT
+        "slight right" -> TurnCommand.TURN_SLIGHT_RIGHT
+        "sharp right" -> TurnCommand.TURN_SHARP_RIGHT
+        "uturn" -> TurnCommand.U_TURN
+        else -> null // "none" / empty
     }
 
-    /** Valhalla maneuver `type` id → app [TurnCommand]. */
-    private fun maneuverType(t: Int): TurnCommand = when (t) {
-        9, 23 -> TurnCommand.TURN_SLIGHT_RIGHT
-        10, 18, 20 -> TurnCommand.TURN_RIGHT
-        11 -> TurnCommand.TURN_SHARP_RIGHT
-        16, 24 -> TurnCommand.TURN_SLIGHT_LEFT
-        15, 19, 21 -> TurnCommand.TURN_LEFT
-        14 -> TurnCommand.TURN_SHARP_LEFT
-        12, 13 -> TurnCommand.U_TURN
-        26, 27 -> TurnCommand.ROUNDABOUT
-        8, 17, 22, 25, 1, 7 -> TurnCommand.STRAIGHT // continue / ramp-straight / merge / start
-        else -> TurnCommand.UNKNOWN
+    /** OSRM maneuver type + modifier → [TurnCommand]. */
+    private fun osrmManeuver(type: String, modifier: String): TurnCommand {
+        if (type == "roundabout" || type == "rotary" || type == "roundabout turn") {
+            return TurnCommand.ROUNDABOUT
+        }
+        return when (modifier) {
+            "left" -> TurnCommand.TURN_LEFT
+            "right" -> TurnCommand.TURN_RIGHT
+            "slight left" -> TurnCommand.TURN_SLIGHT_LEFT
+            "slight right" -> TurnCommand.TURN_SLIGHT_RIGHT
+            "sharp left" -> TurnCommand.TURN_SHARP_LEFT
+            "sharp right" -> TurnCommand.TURN_SHARP_RIGHT
+            "uturn" -> TurnCommand.U_TURN
+            "straight" -> TurnCommand.STRAIGHT
+            else -> when (type) {
+                "continue", "merge", "new name", "on ramp", "off ramp", "fork",
+                "end of road", "arrive", "notification",
+                -> TurnCommand.STRAIGHT
+                else -> TurnCommand.UNKNOWN
+            }
+        }
     }
 
-    /** Decode a Valhalla/Google encoded polyline (precision 1e6) to lat/lon. */
+    /** Decode an encoded polyline (precision 1e6 = polyline6) to lat/lon. */
     private fun decodePolyline(encoded: String, precision: Double = 1e6): List<DoubleArray> {
         if (encoded.isEmpty()) return emptyList()
         val poly = ArrayList<DoubleArray>()
