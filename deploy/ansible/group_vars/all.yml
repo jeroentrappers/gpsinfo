@@ -91,6 +91,18 @@ valhalla_pbf_urls:
   # Stage 3 — planet (very heavy: needs big RAM/disk; deliberate)
   # - https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
 valhalla_threads: 6
+# Resource caps (Docker) so the build + serving never starve the box's
+# production workloads (live sites, charging OSRM, the planet tile build).
+# 6 of 16 cores, 32 of 125 GB, low CPU priority so it yields under contention.
+valhalla_cpus: "6"
+valhalla_mem_limit: "48g"
+valhalla_cpu_shares: 256
+# Build from a LOCAL pbf already on the box instead of downloading from
+# geofabrik — currently the charging project's western-Europe extract
+# (~11 GB, covers Benelux + FR/DE/UK/…). When set, the container builds from
+# this file (bind-mounted read-only into /custom_files) and valhalla_pbf_urls
+# is ignored. Clear it to fall back to the staged geofabrik download above.
+valhalla_local_pbf: /opt/charging/osrm-data/eu-west.osm.pbf
 # Reuse the tile server's API key gate (override in secrets.yml for a
 # dedicated routing key).
 valhalla_api_key: "{{ tiles_api_key }}"

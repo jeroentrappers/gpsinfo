@@ -1,28 +1,39 @@
 # Managed by Ansible. Server-side Valhalla routing for GPSinfo
-# (valhalla.appmire.be). The official gis-ops image builds routing tiles from
-# the configured OSM extracts on first run, caches them under ./custom_files,
-# then serves the HTTP API on loopback. The host nginx fronts it with TLS and
-# the ?key= gate. The app uses this online for fastest/shortest/economic +
+# (valhalla.appmire.be). Builds routing tiles on first run from a local PBF
+# (or the configured geofabrik URLs), caches them under ./custom_files, then
+# serves the HTTP API on loopback. The host nginx fronts it with TLS + the
+# ?key= gate. The app uses this online for fastest/shortest/economic +
 # alternatives + lane guidance; BRouter is the offline fallback.
+#
+# Resource-capped so the (heavy) tile build and serving never starve the
+# box's production workloads — see valhalla_cpus / valhalla_mem_limit.
 services:
   valhalla:
     image: {{ valhalla_image }}
     container_name: gpsinfo-valhalla
     restart: unless-stopped
+    cpus: {{ valhalla_cpus }}
+    mem_limit: {{ valhalla_mem_limit }}
+    cpu_shares: {{ valhalla_cpu_shares }}
     ports:
       - "127.0.0.1:{{ valhalla_port }}:8002"
     environment:
-      # Space-separated OSM extracts → routing tiles (built once, cached).
-      tile_urls: "{{ valhalla_pbf_urls | join(' ') }}"
       serve_tiles: "True"
-      # Reuse cached tiles and skip a rebuild when the PBFs haven't changed.
+      # Reuse cached tiles and skip a rebuild when the source hasn't changed.
       use_tiles_ignore_pbf: "True"
       force_rebuild: "False"
-      # Admin + timezone areas enable country-aware costing + local times;
-      # elevation is large and not needed for car routing.
       build_admins: "True"
       build_time_zones: "True"
       build_elevation: "False"
       server_threads: "{{ valhalla_threads }}"
+{% if not (valhalla_local_pbf | default('')) %}
+      # Geofabrik download → routing tiles (built once, cached).
+      tile_urls: "{{ valhalla_pbf_urls | join(' ') }}"
+{% endif %}
     volumes:
       - ./custom_files:/custom_files
+{% if valhalla_local_pbf | default('') %}
+      # Build from a local PBF already on the box (no download). The image
+      # picks up any .pbf in /custom_files when no tile_urls is set.
+      - {{ valhalla_local_pbf }}:/custom_files/{{ valhalla_local_pbf | basename }}:ro
+{% endif %}
