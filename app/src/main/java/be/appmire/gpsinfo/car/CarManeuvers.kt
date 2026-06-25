@@ -2,6 +2,8 @@ package be.appmire.gpsinfo.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.model.Distance
+import androidx.car.app.navigation.model.Lane
+import androidx.car.app.navigation.model.LaneDirection
 import androidx.car.app.navigation.model.Maneuver
 import androidx.car.app.navigation.model.Step
 import be.appmire.gpsinfo.R
@@ -42,12 +44,48 @@ internal object CarManeuvers {
         }.build()
     }
 
-    /** A [Step] (maneuver + spoken/written cue) for the upcoming [turn]. */
-    fun step(context: CarContext, turn: TurnHint): Step =
-        Step.Builder()
+    /** A [Step] (maneuver + cue, plus lane guidance when the route carries
+     *  it). The host draws the lanes image; the Lane metadata is also added
+     *  for the cluster/HUD. Wrapped defensively — if the host rejects the
+     *  lane data we fall back to a plain step rather than crash the template. */
+    fun step(context: CarContext, turn: TurnHint): Step {
+        val lanes = turn.lanes
+        if (!lanes.isNullOrEmpty()) {
+            runCatching {
+                val b = Step.Builder()
+                    .setManeuver(maneuver(turn))
+                    .setCue(cueFor(context, turn))
+                lanes.take(MAX_LANES).forEach { lane ->
+                    val lb = Lane.Builder()
+                    val dirs = lane.directions.ifEmpty { listOf(TurnCommand.STRAIGHT) }
+                    dirs.forEach { lb.addDirection(LaneDirection.create(laneShape(it), lane.active)) }
+                    b.addLane(lb.build())
+                }
+                CarLaneImage.render(context, lanes)?.let { b.setLanesImage(it) }
+                return b.build()
+            }
+        }
+        return Step.Builder()
             .setManeuver(maneuver(turn))
             .setCue(cueFor(context, turn))
             .build()
+    }
+
+    /** Cap on lanes drawn — the host bounds the count and image width. */
+    private const val MAX_LANES = 8
+
+    /** App [TurnCommand] → Car App Library [LaneDirection] shape. */
+    private fun laneShape(c: TurnCommand): Int = when (c) {
+        TurnCommand.STRAIGHT -> LaneDirection.SHAPE_STRAIGHT
+        TurnCommand.TURN_LEFT -> LaneDirection.SHAPE_NORMAL_LEFT
+        TurnCommand.TURN_SLIGHT_LEFT, TurnCommand.KEEP_LEFT -> LaneDirection.SHAPE_SLIGHT_LEFT
+        TurnCommand.TURN_SHARP_LEFT -> LaneDirection.SHAPE_SHARP_LEFT
+        TurnCommand.TURN_RIGHT -> LaneDirection.SHAPE_NORMAL_RIGHT
+        TurnCommand.TURN_SLIGHT_RIGHT, TurnCommand.KEEP_RIGHT -> LaneDirection.SHAPE_SLIGHT_RIGHT
+        TurnCommand.TURN_SHARP_RIGHT -> LaneDirection.SHAPE_SHARP_RIGHT
+        TurnCommand.U_TURN -> LaneDirection.SHAPE_U_TURN_LEFT
+        else -> LaneDirection.SHAPE_UNKNOWN
+    }
 
     fun cueFor(context: CarContext, turn: TurnHint): String = when (turn.command) {
         TurnCommand.TURN_LEFT -> context.getString(R.string.car_nav_turn_left)
