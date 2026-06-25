@@ -21,6 +21,8 @@ import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.model.GForceSample
 import be.appmire.gpsinfo.data.model.GnssSnapshot
 import be.appmire.gpsinfo.data.rally.RallyState
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
@@ -128,7 +130,36 @@ class CarMapRenderer(
 
     fun updatePower(kw: Double?) {
         powerKw = kw
+        if (kw != null) {
+            val now = SystemClock.elapsedRealtime()
+            peakBuf.addLast(doubleArrayOf(now.toDouble(), kw))
+            while (peakBuf.isNotEmpty() && peakBuf.first()[0] < now - PEAK_WINDOW_MS) peakBuf.removeFirst()
+        }
         scheduleRender()
+    }
+
+    /** 30 s rolling power-peak window [elapsedMs, kw] (peak-hold telltale) and a
+     *  2 s efficiency window [elapsedMs, kw, mps] for the kWh/100km readout. */
+    private val peakBuf = ArrayDeque<DoubleArray>()
+    private val effBuf = ArrayDeque<DoubleArray>()
+    private val clockFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+    /** Highest power in the last 30 s, or the live value if the window is empty. */
+    private fun currentPeakKw(): Double {
+        val now = SystemClock.elapsedRealtime()
+        while (peakBuf.isNotEmpty() && peakBuf.first()[0] < now - PEAK_WINDOW_MS) peakBuf.removeFirst()
+        return peakBuf.maxOfOrNull { it[1] } ?: dispPowerKw
+    }
+
+    /** Instant efficiency (kWh/100km) from the 2 s mean of power & speed — energy
+     *  over distance. Null below walking pace, where it would blow up. */
+    private fun currentConsumption(): Double? {
+        val now = SystemClock.elapsedRealtime()
+        while (effBuf.isNotEmpty() && effBuf.first()[0] < now - EFF_WINDOW_MS) effBuf.removeFirst()
+        if (effBuf.isEmpty()) return null
+        val ak = effBuf.sumOf { it[1] } / effBuf.size
+        val kmh = (effBuf.sumOf { it[2] } / effBuf.size) * 3.6
+        return if (kmh > 3.0) ak / kmh * 100.0 else null
     }
 
     /** Whether a live OBD2 adapter is currently connected. The power /
@@ -274,6 +305,10 @@ class CarMapRenderer(
             while (d < -180f) d += 360f
             smoothedBearingDeg = (smoothedBearingDeg + d * EASE + 360f) % 360f
         }
+        // Feed the 2 s efficiency window from the eased (displayed) values.
+        val now = SystemClock.elapsedRealtime()
+        effBuf.addLast(doubleArrayOf(now.toDouble(), dispPowerKw, dispSpeedMps.toDouble()))
+        while (effBuf.isNotEmpty() && effBuf.first()[0] < now - EFF_WINDOW_MS) effBuf.removeFirst()
         val moving = targetMps > MIN_MOVE_MPS
         val settling = abs(targetMps - dispSpeedMps) > 0.05f || abs(targetKw - dispPowerKw) > 0.5
         return moving || settling
@@ -547,64 +582,62 @@ class CarMapRenderer(
             drawWaitingForFix(canvas, 0f, w.toFloat(), h, dark)
         }
 
-        val layout = gaugeLayout(w, h)
-        drawGaugePanel(canvas, layout, loc)
-        drawHud(canvas, layout, h, dark)
+        drawCluster(canvas, w, h, loc)
+        drawHud(canvas, w, h, dark)
         // Centre the banners on the safe area, not the raw screen, so they
         // track the host's chrome layout instead of hiding under it.
-        val bannerLeft = layout.safe.left.toFloat().coerceIn(0f, w.toFloat())
-        val bannerRight = layout.safe.right.toFloat().coerceIn(bannerLeft, w.toFloat())
+        val safe = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+        val bannerLeft = safe.left.toFloat().coerceIn(0f, w.toFloat())
+        val bannerRight = safe.right.toFloat().coerceIn(bannerLeft, w.toFloat())
         drawRallyPanel(canvas, bannerLeft, bannerRight, h, dark)
         drawNavStatus(canvas, bannerLeft, bannerRight, h, dark)
     }
 
-    /** Gauge geometry within the host safe area (so it tracks the host's
-     *  chrome positions): the speed/odometer dial centre-left, the optional
-     *  power dial top-left, the merged compass/G-meter (smaller) bottom-right. */
-    private class GaugeLayout(
-        val speedCell: RectF,
-        val powerCell: RectF?,
-        val compassCell: RectF,
-        val safe: Rect,
-        val pad: Float,
-    )
+    /** The instrument cluster, overlaid on the full-bleed map. The host surface
+     *  shape decides the layout: a wide surface gets the split cockpit (edge-HUD
+     *  gauges flanking the map), a narrow one falls back to the single integrated
+     *  gauge. The map is always full-bleed beneath — navigation stays the
+     *  surface, the gauges are overlays. */
+    private fun drawCluster(canvas: Canvas, w: Int, h: Int, loc: Location?) {
+        val d = buildClusterData(loc)
+        if (w >= h * COCKPIT_MIN_ASPECT) {
+            instruments.drawCockpit(canvas, w, h, d)
+        } else {
+            // Centred square housing; the map shows above and below it.
+            val s = min(w.toFloat(), h.toFloat()) * 0.98f
+            val cx = w / 2f
+            val cy = h / 2f
+            instruments.drawIntegrated(canvas, RectF(cx - s / 2f, cy - s / 2f, cx + s / 2f, cy + s / 2f), d)
+        }
+    }
 
-    private fun gaugeLayout(w: Int, h: Int): GaugeLayout {
-        val safe = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
-        val margin = h * 0.02f
-        // Dials hug the PHYSICAL screen edges. The safe area is reserved
-        // for the host's own cards (turn card, ETA, strips) and during
-        // navigation it collapses to the screen CENTRE — anchoring the
-        // dials to it pushed them into the middle. The host cards are
-        // translucent overlays the map shows through, and the puck lives
-        // low-centre (look-ahead camera), so the corners are ours.
-        val left = margin
-        val right = w - margin
-        val top = margin
-        val bottom = h - margin
-
-        // Headline dials (speed, power): square, capped so two never crowd.
-        val mainSide = min((bottom - top) * 0.38f, (right - left) * 0.30f)
-        // The dynamics dial is the supporting instrument — a touch smaller.
-        val miniSide = mainSide * 0.82f
-
-        // Top-left corner: power/energy (OBD only).
-        val powerCell = if (obdConnected) RectF(
-            left, top, left + mainSide, top + mainSide,
-        ) else null
-        // Left edge, vertically centred below the power dial: speed + odo.
-        val speedTop = (powerCell?.bottom?.plus(margin)) ?: top
-        val speedCy = (speedTop + bottom) / 2f
-        val speedCell = RectF(
-            left, speedCy - mainSide / 2f,
-            left + mainSide, speedCy + mainSide / 2f,
+    /** Assemble the per-frame cluster snapshot from the renderer's live state.
+     *  Speed/power use the eased (displayed) values so the gauges glide; unknown
+     *  inputs (no OBD/Car API) stay null and render as a dash. */
+    private fun buildClusterData(loc: Location?): ClusterData {
+        val accKmh = if (loc != null && loc.hasSpeed() &&
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
+            loc.hasSpeedAccuracy()
+        ) loc.speedAccuracyMetersPerSecond * 3.6f else null
+        return ClusterData(
+            kmh = dispSpeedMps * 3.6,
+            hasSpeed = loc != null && loc.hasSpeed(),
+            speedAccKmh = accKmh,
+            kw = if (obdConnected) dispPowerKw else null,
+            peakKw = if (obdConnected) currentPeakKw() else null,
+            consKwh100 = if (obdConnected) currentConsumption() else null,
+            socPct = batterySocPct,
+            rangeKm = rangeRemainingKm,
+            headingDeg = smoothedBearingDeg,
+            hasHeading = hasBearing,
+            latG = gForce.lateralG,
+            lonG = gForce.longitudinalG,
+            speedLimitKmh = speedLimitKmh,
+            odometerKm = odometerM / 1000.0,
+            ambientTempC = ambientTempC,
+            clock = clockFmt.format(Date()),
+            obd = obdConnected,
         )
-        // Bottom-right corner: compass / G-meter.
-        val compassCell = RectF(
-            right - miniSide, bottom - miniSide,
-            right, bottom,
-        )
-        return GaugeLayout(speedCell, powerCell, compassCell, safe, margin)
     }
 
     /** Pill banner, top-centre of the map, for navigation phases that
@@ -629,47 +662,6 @@ class CarMapRenderer(
         canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubbleStrokePaint)
         hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
         canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
-    }
-
-    /** Corner instrument dials over the full-bleed map: speed + trip
-     *  odometer bottom-left, the EV power/energy dial top-left (only with
-     *  a live OBD2 feed), and the merged compass/G-meter dynamics dial
-     *  bottom-right. Each is a self-contained RetroDial housing, so they
-     *  sit on the map without a backing panel. Compass rotates by GPS
-     *  course (never the magnetometer in a car); the G-plot reads the
-     *  phone's fused accelerometer. */
-    private fun drawGaugePanel(canvas: Canvas, layout: GaugeLayout, loc: Location?) {
-        // Centre-left: speed + trip odometer dial.
-        instruments.drawSpeedDial(canvas, layout.speedCell, loc, speedLimitKmh, odometerM / 1000.0)
-
-        // Top-left: power / energy — only with a live OBD2 feed behind it.
-        layout.powerCell?.let { cell ->
-            // On-arrival estimates: range left after the remaining drive,
-            // SOC scaled by the same ratio. Only when navigating AND a
-            // range is known.
-            val range = rangeRemainingKm
-            val drive = navRemainingKm
-            val arrivalRangeKm: Float?
-            val arrivalSocPct: Float?
-            if (range != null && range > 0f && drive != null) {
-                val leftKm = range - drive.toFloat()
-                arrivalRangeKm = leftKm
-                arrivalSocPct = batterySocPct?.let { (it * (leftKm / range)).coerceIn(0f, it) }
-            } else {
-                arrivalRangeKm = null
-                arrivalSocPct = null
-            }
-            instruments.drawEnergyDial(
-                canvas, cell, dispPowerKw,
-                batterySocPct, rangeRemainingKm, arrivalRangeKm, arrivalSocPct,
-            )
-        }
-
-        // Bottom-right: merged compass / G-meter (supporting dial).
-        instruments.drawCompassGMeter(
-            canvas, layout.compassCell,
-            smoothedBearingDeg, hasBearing, loc, gForceTrail.toList(),
-        )
     }
 
     /**
@@ -921,30 +913,15 @@ class CarMapRenderer(
     /** Map-area HUD over the full-bleed map: the OBD ambient-temp badge,
      *  the recording trip strip, and the OSM attribution — each placed
      *  clear of the corner instrument dials in [layout]. */
-    private fun drawHud(canvas: Canvas, layout: GaugeLayout, h: Int, dark: Boolean) {
-        val inset = layout.safe
+    /** Map-area HUD over the full-bleed map: the recording trip strip and the
+     *  required OSM attribution, both bottom-centre over the map (clear of the
+     *  edge-HUD gauges). The ambient temperature now lives in the cluster. */
+    private fun drawHud(canvas: Canvas, w: Int, h: Int, dark: Boolean) {
         val pad = h * 0.03f
         val unit = h * 0.13f
+        val cx = w / 2f
 
-        // ── Outside-temp badge (OBD ambient), top-left — beside the power
-        // dial when it's shown, otherwise at the safe edge ──
-        ambientTempC?.let { c ->
-            val txt = "%.0f°C".format(Locale.ROOT, c)
-            hudTextPaint.textAlign = Paint.Align.LEFT
-            hudTextPaint.textSize = unit * 0.36f
-            val tx = layout.powerCell?.let { it.right + pad } ?: (inset.left + pad * 1.5f)
-            val ty = inset.top + pad * 1.5f + hudTextPaint.textSize
-            val tw = hudTextPaint.measureText(txt)
-            bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
-            val rect = RectF(tx - pad / 2, ty - hudTextPaint.textSize, tx + tw + pad / 2, ty + pad / 2)
-            canvas.drawRoundRect(rect, rect.height() / 2, rect.height() / 2, bubblePaint)
-            canvas.drawRoundRect(rect, rect.height() / 2, rect.height() / 2, bubbleStrokePaint)
-            hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
-            canvas.drawText(txt, tx, ty - hudTextPaint.textSize * 0.18f, hudTextPaint)
-        }
-
-        // ── Trip strip (recording distance · duration + REC dot), bottom,
-        // to the right of the speed dial so the two never overlap ──
+        // Recording trip strip (distance · duration + REC dot), bottom-centre.
         val rec = recording as? RecordingState.Recording
         if (rec != null) {
             val stripText = "%.1f km   %s".format(
@@ -954,39 +931,26 @@ class CarMapRenderer(
             )
             hudTextPaint.textAlign = Paint.Align.LEFT
             hudTextPaint.textSize = unit * 0.34f
-            val sx = layout.speedCell.right + pad
-            val sy = inset.bottom - pad * 1.5f
             val tw = hudTextPaint.measureText(stripText)
             val recDotSpace = unit * 0.55f
+            val totalW = tw + recDotSpace
+            val sx = cx - totalW / 2f
+            val sy = h - pad * 2.6f
             bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
-            val strip = RectF(
-                sx - pad / 2,
-                sy - unit * 0.42f,
-                sx + tw + recDotSpace + pad / 2,
-                sy + unit * 0.22f,
-            )
+            val strip = RectF(sx - pad / 2, sy - unit * 0.42f, sx + totalW + pad / 2, sy + unit * 0.22f)
             canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubblePaint)
             canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubbleStrokePaint)
             hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
             canvas.drawText(stripText, sx, sy, hudTextPaint)
-            // Pulse-free REC dot — a steady red dot reads "recording"
-            // without needing an animation loop.
             recDotPaint.color = if (rec.paused) REC_PAUSED else REC_ACTIVE
             canvas.drawCircle(sx + tw + recDotSpace / 2, sy - unit * 0.10f, unit * 0.13f, recDotPaint)
         }
 
-        // ── OSM attribution (tile-policy requirement). Tiny, pinned just
-        // above the bottom-right dynamics dial so the dial doesn't hide
-        // it, and off the visible right edge. ──
-        hudTextPaint.textAlign = Paint.Align.RIGHT
+        // OSM attribution (tile-policy requirement). Tiny, bottom-centre.
+        hudTextPaint.textAlign = Paint.Align.CENTER
         hudTextPaint.textSize = h * 0.013f
         hudTextPaint.color = if (dark) HUD_MUTED_DARK else HUD_MUTED_LIGHT
-        canvas.drawText(
-            "© OpenStreetMap",
-            inset.right.toFloat() - 2f,
-            layout.compassCell.top - 4f,
-            hudTextPaint,
-        )
+        canvas.drawText("© OpenStreetMap", cx, h - 4f, hudTextPaint)
     }
 
     /** Regularity-test panel, top-centre: the early/late delta is THE
@@ -1159,6 +1123,13 @@ class CarMapRenderer(
         /** Recent G-force samples kept for the corner G-meter trail. At
          *  the car sample rate (~5 Hz) this is a few seconds of history. */
         const val GFORCE_TRAIL = 24
+
+        /** Power peak-hold window and instant-efficiency averaging window. */
+        const val PEAK_WINDOW_MS = 30_000L
+        const val EFF_WINDOW_MS = 2_000L
+        /** Cockpit needs a wide surface; below this aspect ratio (w/h) the
+         *  cluster falls back to the single integrated gauge. */
+        const val COCKPIT_MIN_ASPECT = 1.1f
 
         /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
          *  far off the route. */
