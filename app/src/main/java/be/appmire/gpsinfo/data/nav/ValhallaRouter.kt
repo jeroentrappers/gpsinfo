@@ -59,6 +59,54 @@ class ValhallaRouter : Router {
         }
     }
 
+    /**
+     * Map-match a short GPS [trace] ([lat, lon] points, oldest→newest) and
+     * return the posted speed limit (km/h) of the road at the most recent point,
+     * or null. Uses Valhalla `/trace_attributes` with `map_snap`; the last
+     * matched edge is the road we're currently on. Online only — the caller
+     * ([SpeedLimitProvider]) keeps the offline value when this is unreachable.
+     */
+    suspend fun speedLimit(trace: List<DoubleArray>): Int? = withContext(Dispatchers.IO) {
+        val base = BuildConfig.ROUTING_BASE_URL.trimEnd('/')
+        if (base.isEmpty() || trace.size < 2) return@withContext null
+        val key = BuildConfig.TILES_API_KEY
+        val url = URL(base + "/trace_attributes" + if (key.isNotEmpty()) "?key=$key" else "")
+        val shape = JSONArray()
+        trace.forEach { shape.put(JSONObject().put("lat", it[0]).put("lon", it[1])) }
+        val body = JSONObject()
+            .put("shape", shape)
+            .put("costing", "auto")
+            .put("shape_match", "map_snap")
+            .put(
+                "filters",
+                JSONObject()
+                    .put("attributes", JSONArray().put("edge.speed_limit"))
+                    .put("action", "include"),
+            )
+            .toString()
+        val conn = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 6_000
+            readTimeout = 8_000
+            setRequestProperty("Content-Type", "application/json")
+        }
+        try {
+            conn.outputStream.use { it.write(body.toByteArray()) }
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+            val edges = JSONObject(conn.inputStream.bufferedReader().readText()).optJSONArray("edges")
+            val n = edges?.length() ?: 0
+            if (n == 0) return@withContext null
+            val sl = edges!!.getJSONObject(n - 1).optInt("speed_limit", 0)
+            if (sl in 1..200) sl else null
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "valhalla speedLimit failed", e)
+            null
+        } finally {
+            conn.disconnect()
+        }
+    }
+
     // ── Request ────────────────────────────────────────────────────
 
     private fun requestJson(
