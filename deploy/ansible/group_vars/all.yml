@@ -61,3 +61,48 @@ storagebox_build_dir: /mnt/storagebox                 # PBF + output (network, C
 build_tmp_local: "{{ app_dir }}/buildtmp"             # random-IO temp (local NVMe)
 build_min_free_gb: 450         # local headroom for the planet's ~420 GB temp
 watchdog_min_free_gb: 25       # abort the build if local free drops below this
+
+# ── Valhalla routing service (valhalla.appmire.be) ──────────────────────────
+# Server-side Valhalla on the same box as the tiles (see
+# docs/design/nav-engine-v2.md). The app calls it ONLINE for profile choice
+# (fastest/shortest/economic) + alternatives + lane guidance + fast reroute;
+# BRouter stays the offline fallback. Official gis-ops/docker-valhalla image —
+# no native build; it builds its routing tiles from the OSM extracts below on
+# first run and serves the HTTP API on loopback, fronted by nginx (TLS + ?key=).
+valhalla_domain: valhalla.appmire.be
+valhalla_app_dir: /opt/gpsinfo-valhalla
+valhalla_image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+valhalla_port: 8002            # loopback only; nginx fronts it
+# OSM extracts Valhalla builds routing tiles from. Coverage is STAGED like the
+# tile pipeline: Benelux now → western Europe → (optionally) planet. Widening
+# rebuilds the routing tiles (clear custom_files first, then --tags valhalla)
+# and needs progressively more RAM/disk + build time — widen deliberately.
+valhalla_pbf_urls:
+  # Stage 1 — Benelux (current)
+  - https://download.geofabrik.de/europe/belgium-latest.osm.pbf
+  - https://download.geofabrik.de/europe/netherlands-latest.osm.pbf
+  - https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf
+  # Stage 2 — western Europe (uncomment; large build, hours)
+  # - https://download.geofabrik.de/europe/france-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/germany-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/great-britain-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/switzerland-latest.osm.pbf
+  # - https://download.geofabrik.de/europe/austria-latest.osm.pbf
+  # Stage 3 — planet (very heavy: needs big RAM/disk; deliberate)
+  # - https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
+valhalla_threads: 6
+# Resource caps (Docker) so the build + serving never starve the box's
+# production workloads (live sites, charging OSRM, the planet tile build).
+# 6 of 16 cores, 32 of 125 GB, low CPU priority so it yields under contention.
+valhalla_cpus: "6"
+valhalla_mem_limit: "48g"
+valhalla_cpu_shares: 256
+# Build from a LOCAL pbf already on the box instead of downloading from
+# geofabrik — currently the charging project's western-Europe extract
+# (~11 GB, covers Benelux + FR/DE/UK/…). When set, the container builds from
+# this file (bind-mounted read-only into /custom_files) and valhalla_pbf_urls
+# is ignored. Clear it to fall back to the staged geofabrik download above.
+valhalla_local_pbf: /opt/charging/osrm-data/eu-west.osm.pbf
+# Reuse the tile server's API key gate (override in secrets.yml for a
+# dedicated routing key).
+valhalla_api_key: "{{ tiles_api_key }}"

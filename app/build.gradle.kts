@@ -42,6 +42,11 @@ val tilesBaseUrl = keystoreProps.getProperty("tilesBaseUrl")
     ?: System.getenv("GPSINFO_TILES_BASE_URL") ?: ""
 val tilesApiKey = keystoreProps.getProperty("tilesApiKey")
     ?: System.getenv("GPSINFO_TILES_API_KEY") ?: ""
+// Server-side Valhalla routing (nav-engine-v2). Empty → the app routes with
+// BRouter only (offline). Gated by the same key as the tiles.
+//   routingBaseUrl / GPSINFO_ROUTING_BASE_URL   e.g. https://valhalla.appmire.be
+val routingBaseUrl = keystoreProps.getProperty("routingBaseUrl")
+    ?: System.getenv("GPSINFO_ROUTING_BASE_URL") ?: "https://valhalla.appmire.be"
 
 android {
     namespace = "be.appmire.gpsinfo"
@@ -51,13 +56,14 @@ android {
         applicationId = "be.appmire.gpsinfo"
         minSdk = 24
         targetSdk = 37
-        versionCode = 12
-        versionName = "2.3.2"
+        versionCode = 17
+        versionName = "2.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // minSdk 24 has reliable native VectorDrawable support — no support library needed.
 
         buildConfigField("String", "TILES_BASE_URL", "\"$tilesBaseUrl\"")
         buildConfigField("String", "TILES_API_KEY", "\"$tilesApiKey\"")
+        buildConfigField("String", "ROUTING_BASE_URL", "\"$routingBaseUrl\"")
     }
 
     // Strip everything except the languages we actually ship resources for.

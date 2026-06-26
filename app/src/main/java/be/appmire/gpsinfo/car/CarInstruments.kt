@@ -1,14 +1,13 @@
 package be.appmire.gpsinfo.car
 
-import android.graphics.Camera
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
-import android.location.Location
-import be.appmire.gpsinfo.data.model.GForceSample
+import android.graphics.Shader
+import android.graphics.Typeface
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
@@ -19,655 +18,613 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * The car screen's left-hand instrument column: speed dial, gimballed
- * compass, energy meter — drawn straight onto the surface canvas.
+ * Everything the driver's instrument cluster shows, drawn straight onto the
+ * Android Auto video surface as an overlay on the full-bleed map.
  *
- * This is a Canvas port of the shared RetroDial component (the phone
- * app's ui/components/RetroDial.kt, itself ported from id.dash): 240°
- * sweep from 150°, tick marks whose inner ends share one ring at
- * 0.94·r while their outer ends follow the rounded-square bezel (so
- * corner ticks run visibly longer), labels at 0.78·r, the tapered
- * needle with counterweight tail, and the cyan unit label above the
- * hub. Same hex palette throughout.
+ * Two layouts, picked by the host surface's aspect ratio (see [CarMapRenderer]):
  *
- * The speed dial adds the phone gauge's centre stack: big digit plus
- * the ± error band from [Location.speedAccuracyMetersPerSecond], and
- * keeps the piecewise scale (60% of sweep to 100 km/h).
+ *  - **Cockpit** ([drawCockpit]) — for wide/landscape surfaces. The gauges are
+ *    HUD overlays hugging the screen sides as tall curved scales that fade into
+ *    the map through a black→transparent scrim. Speed on the left, power on the
+ *    right; the current value is a slim needle tip riding the scale (no pivot),
+ *    with a glowing level fill. The merged compass/G-meter floats lower-right,
+ *    and the bottom-left is held clear for the host's ETA card.
  *
- * The compass is the dashboard card's "slightly gimballed" rose —
- * perspective rotateX tilt, rose rotated by GPS course (never the
- * magnetometer in a car), red North, fixed lubber line, heading +
- * altitude in the centre.
+ *  - **Integrated** ([drawIntegrated]) — for narrow/portrait surfaces. The
+ *    single combined gauge: one arc (speed left, power right), the merged
+ *    compass/G-meter in the centre, readouts and units on the dial face.
  *
- * The energy meter is the id.dash power dial: −100…240 kW, blue regen
- * band below zero, green efficiency band to 60 kW. Until an OBD2
- * source feeds it, the needle parks at 0 with a dimmed readout.
+ * Both share one non-linear, equal-spaced "stop list" scale: fine resolution
+ * where you actually drive, coarse up top (speed 0·5·10·20·30·50·70·90·120·…;
+ * power a fine ±band around zero, coarse tails). Colours, fonts and geometry are
+ * the values locked in the design mockup.
  */
 class CarInstruments {
 
-    private val camera = Camera()
-    private val tiltMatrix = Matrix()
+    // ── Public entry points ─────────────────────────────────────────
 
-    /** Solid-black column backdrop behind a stacked pair of housings —
-     *  [left] is the column's left edge, [width] its width. */
-    fun drawColumnBackground(canvas: Canvas, left: Float, width: Float, h: Float) {
-        fillPaint.color = COLUMN_BLACK
-        canvas.drawRect(left, 0f, left + width, h, fillPaint)
-    }
+    /** Cockpit edge-HUD over the full-bleed map. Everything is laid out inside
+     *  [area] — the host's safe rectangle in surface pixels — so when the host
+     *  claims a region for its nav rail (turn card + ETA, which it stacks on the
+     *  left during turn-by-turn) the whole cluster shifts to the space that's
+     *  left and never sits under the host chrome. */
+    fun drawCockpit(canvas: Canvas, w: Int, h: Int, d: ClusterData, area: RectF) {
+        val W = w.toFloat()
+        val H = h.toFloat()
+        // Gauges hug the physical left/right edges. The host stacks its turn card
+        // and destination card in a left rail during turn-by-turn — detected by a
+        // large left inset on the safe area — so the SPEED scale tucks into the
+        // vertical gap between those two cards then, and uses the full safe height
+        // otherwise. The power scale (right, no cards there) always uses the full
+        // safe height.
+        val edge = W * CK_EDGE
+        val aL = edge
+        val aR = W - edge
+        val aW = aR - aL
+        // Vertical band = the host's safe area top/bottom. A top inset is a top
+        // (turn) card, a bottom inset is a bottom (destination) card — so the
+        // scales tuck between exactly what THIS host draws, whether that's both
+        // cards or just the bottom one. (On hosts that stack both cards in a left
+        // rail instead, the rail shows as a left inset, handled below.)
+        val aT = area.top.coerceIn(0f, H * 0.42f)
+        val aB = area.bottom.coerceIn(H * 0.58f, H)
 
-    // ── Speed dial ─────────────────────────────────────────────────
+        // Scrims blend the edge gauges into the map.
+        val scrimW = aW * CK_SCRIM
+        scrim.shader = LinearGradient(aL, 0f, aL + scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, 0f, aL + scrimW, H, scrim)
+        scrim.shader = LinearGradient(aR, 0f, aR - scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+        canvas.drawRect(aR - scrimW, 0f, W, H, scrim)
+        scrim.shader = null
 
-    fun drawSpeedDial(canvas: Canvas, cell: RectF, loc: Location?, speedLimitKmh: Int?) {
-        val g = housing(canvas, cell)
+        val gr = H * 0.42f * SHARED_R
+        val f = Fonts(gr)
+        val sweep = CK_CURVE
+        val sinSweep = sin(Math.toRadians(sweep.toDouble())).toFloat()
+        // When the host stacks its cards in a LEFT rail (large left inset), tuck
+        // the speed scale into the rail's vertical middle — the gap between the
+        // turn card (top) and the destination card (bottom). Hosts that lay the
+        // cards out as top/bottom bands already express that gap through the
+        // aT/aB insets, so there the left band is simply the full safe height.
+        val leftRail = area.left > W * 0.12f
+        val railH = aB - aT
+        val lTop = if (leftRail) aT + railH * CK_RAIL_GAP else aT
+        val lBot = if (leftRail) aB - railH * CK_RAIL_GAP else aB
+        val yL = (lTop + lBot) / 2f
+        val rLL = ((lBot - lTop) / 2f).coerceAtLeast(H * 0.07f) / sinSweep
+        val yMid = (aT + aB) / 2f
+        val rL = ((aB - aT) / 2f).coerceAtLeast(H * 0.10f) / sinSweep
+        // When the speed scale is tucked smaller than the full (power) scale,
+        // shrink its tick labels / marks / insets by the same ratio so they don't
+        // look oversized on the compact dial.
+        val sL = (rLL / rL).coerceIn(0.5f, 1f)
+        val cxL = aL + rLL          // arc's near edge hugs the left screen edge
+        val cxR = aR - rL           // …and the right screen edge
+        val spA = { t: Float -> 180f - sweep + 2f * sweep * t }   // left: bottom → top
+        val pwA = { t: Float -> sweep - 2f * sweep * t }          // right: bottom → top
+        val tickLen = gr * 0.16f
+        val tipLen = (gr * 0.14f).coerceAtMost((edge * 0.9f).coerceAtLeast(8f))
+        val fillW = gr * 0.05f
+        val lx = aL + aW * CK_NUMINSET
+        val rx = aR - aW * CK_NUMINSET
 
-        drawDialScale(
-            canvas, g,
-            minValue = 0f, maxValue = SPEED_MAX.toFloat(),
-            tickStep = 10f, labelStep = 30f,
-            fraction = { v -> speedFraction(v.toDouble()) },
-            accents = SPEED_ACCENTS,
-        )
+        // Clock + temp top-centre (between the host's top-left turn card and the
+        // top-right action strip).
+        clockTemp(canvas, (aL + aR) / 2f, aT + f.clock * 0.2f, f, d)
 
-        // Unit label above the hub — RetroDial's centre label slot.
-        unitLabel(canvas, g, "km/h")
+        val sStops = speedStops()
+        val pStops = powerStops()
 
-        val kmh = if (loc != null && loc.hasSpeed()) loc.speed * 3.6 else 0.0
-        drawNeedle(canvas, g, START_DEG + SWEEP_DEG * speedFraction(kmh))
+        // ── LEFT — speed scale + level fill + limit dot + value tip ──
+        scaleTicks(canvas, cxL, yL, rLL, tickLen * sL, rLL - gr * 0.36f * sL, gr * sL, f.tick * sL, sStops, SPEED_KNEES, false, spA)
+        fillArc(canvas, cxL, yL, rLL, spA(0f), spA(speedFrac(d.kmh)), LCD, fillW * sL)
+        if (d.speedLimitKmh != null) {
+            limitDot(canvas, cxL, yL, rLL - gr * CK_LIMINSET * sL, spA(speedFrac(d.speedLimitKmh.toDouble())), gr * CK_LIMDOT * sL)
+        }
+        outsideTip(canvas, cxL, yL, rLL, spA(speedFrac(d.kmh)), LCD, tipLen * sL)
+        // Readout (number · km/h · ±acc/odo), centred at the inner column.
+        mono.textAlign = Paint.Align.CENTER
+        mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
+        canvas.drawText(if (d.hasSpeed) "${d.kmh.toInt()}" else "––", lx, yL, mono)
+        mono.color = MUTED; mono.textSize = f.unit
+        canvas.drawText("km/h", lx, yL + f.unit * 1.6f, mono)
+        mono.color = LCD_DIM; mono.textSize = f.sub; mono.isFakeBoldText = false
+        canvas.drawText(subLine(d), lx, yL + f.unit * 1.6f + f.sub * 1.6f, mono)
 
-        val over = speedLimitKmh != null && kmh > speedLimitKmh + SPEED_OVER_TOL
-
-        // Posted-limit marker on the scale, just inside the ticks. Amber
-        // normally; the dot and its glow flare red once the limit is
-        // exceeded — a glanceable "you're speeding" cue on the dial.
-        if (speedLimitKmh != null) {
-            val frac = speedFraction(speedLimitKmh.toDouble())
-            val ang = Math.toRadians((START_DEG + SWEEP_DEG * frac).toDouble())
-            val dx = cos(ang).toFloat()
-            val dy = sin(ang).toFloat()
-            val rr = g.r * 0.90f
-            val dotX = g.cx + rr * dx
-            val dotY = g.cy + rr * dy
-            val dotColor = if (over) NORTH_RED else LIMIT_DOT
-            fillPaint.color = fade(dotColor, if (over) 0.55f else 0.28f)
-            canvas.drawCircle(dotX, dotY, g.r * 0.12f, fillPaint)
-            fillPaint.color = dotColor
-            canvas.drawCircle(dotX, dotY, g.r * 0.055f, fillPaint)
+        // ── RIGHT — power scale + level fill + peak + value tip ──
+        scaleTicks(canvas, cxR, yMid, rL, tickLen, rL - gr * 0.36f, gr, f.tick, pStops, POWER_KNEES, !d.obd, pwA)
+        if (d.obd) {
+            val kw = d.kw ?: 0.0
+            fillArc(canvas, cxR, yMid, rL, pwA(powerFrac(0.0)), pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, fillW)
+            d.peakKw?.let { peakMark(canvas, cxR, yMid, rL, pwA(powerFrac(it)), gr) }
+            outsideTip(canvas, cxR, yMid, rL, pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, tipLen)
+            powerReadout(canvas, rx, yMid, f, d, inlineUnit = true)
         }
 
-        // Big speed digit — fixed 3-digit width with leading zeros so the
-        // readout never shifts as the speed crosses 9→10→100. Turns red
-        // when over the posted limit.
-        centerPaint.color = if (over) NORTH_RED else LCD_BRIGHT
-        centerPaint.textSize = g.r * 0.38f
-        centerPaint.isFakeBoldText = true
-        val digit = if (loc != null && loc.hasSpeed())
-            "%03d".format(Locale.ROOT, kmh.toInt().coerceIn(0, 999)) else "———"
-        canvas.drawText(digit, g.cx, g.cy + g.r * 0.40f, centerPaint)
-        centerPaint.isFakeBoldText = false
-
-        // Posted-limit roundel at the dial's bottom centre (EU sign),
-        // always present — a muted dash when no limit is known.
-        drawLimitSign(canvas, g.cx, g.cy + g.r * 0.74f, g.r * 0.18f, speedLimitKmh)
+        // ── Merged compass + G-meter, anchored a fixed margin above the safe
+        // bottom (no longer sunk to a fixed Y). ──
+        val dialR = H * CK_DIALSCALE
+        val dialCy = (aB - dialR - (aB - aT) * 0.04f).coerceAtLeast(yMid)
+        combinedCentre(canvas, aL + aW * CK_DIALX, dialCy, dialR, d)
     }
 
-    /** EU-style posted-limit roundel — white disc, red ring, black
-     *  number. Grey dash when the limit is unknown. */
-    private fun drawLimitSign(canvas: Canvas, cx: Float, cy: Float, radius: Float, limitKmh: Int?) {
-        val known = limitKmh != null
-        fillPaint.color = Color.WHITE
-        canvas.drawCircle(cx, cy, radius, fillPaint)
-        ringPaint.color = if (known) SIGN_RED else ACCURACY_GREY
-        ringPaint.strokeWidth = radius * 0.22f
-        canvas.drawCircle(cx, cy, radius * 0.86f, ringPaint)
-        val txt = limitKmh?.toString() ?: "–"
-        centerPaint.color = if (known) Color.BLACK else ACCURACY_GREY
-        centerPaint.isFakeBoldText = true
-        centerPaint.textSize = if (txt.length >= 3) radius * 0.78f else radius * 1.0f
-        canvas.drawText(txt, cx, cy + centerPaint.textSize * 0.36f, centerPaint)
-        centerPaint.isFakeBoldText = false
+    /** Integrated single gauge filling [cell] (narrow/portrait surfaces). */
+    fun drawIntegrated(canvas: Canvas, cell: RectF, d: ClusterData) {
+        val W = cell.width()
+        val H = cell.height()
+        val cx = cell.left + W / 2f
+        val cy = cell.top + H * CY
+        val R = min(W * 0.30f, H * 0.44f) * SHARED_R
+        val rc = R * 0.46f * SHARED_RC
+        val f = Fonts(R)
+
+        fill.color = HOUSING
+        val cr = min(W, H) * 0.05f
+        canvas.drawRoundRect(RectF(cell.left + 4f, cell.top + 4f, cell.right - 4f, cell.bottom - 4f), cr, cr, fill)
+
+        val span = 180f - IN_GAP_TOP - IN_GAP_BOTTOM
+        val spA = { t: Float -> 90f + IN_GAP_BOTTOM + t * span }
+        val pwA = { t: Float -> 90f - IN_GAP_BOTTOM - t * span }
+        val sStops = speedStops()
+        val pStops = powerStops()
+
+        scaleTicks(canvas, cx, cy, R * 0.95f, R * 0.09f, R * 0.72f, R, f.tick, sStops, SPEED_KNEES, false, spA)
+        powerBands(canvas, cx, cy, R * 0.95f, pwA, !d.obd)
+        scaleTicks(canvas, cx, cy, R * 0.95f, R * 0.09f, R * 0.72f, R, f.tick, pStops, POWER_KNEES, !d.obd, pwA)
+
+        needle(canvas, cx, cy, R * 0.93f, spA(speedFrac(d.kmh)))
+        if (d.obd) {
+            val kw = d.kw ?: 0.0
+            d.peakKw?.let { peakNeedle(canvas, cx, cy, R * 0.93f, pwA(powerFrac(it))) }
+            needle(canvas, cx, cy, R * 0.93f, pwA(powerFrac(kw)))
+        }
+
+        clockTemp(canvas, cx + IN_TOP_X * R, cy + IN_TOP_Y * R, f, d)
+        combinedCentre(canvas, cx, cy, rc, d)
+
+        // Speed readout (number · ±acc/odo) + EU limit roundel; units on the face.
+        mono.textAlign = Paint.Align.CENTER
+        val sx = cx + IN_SP_X * R
+        val sy = cy + IN_SP_Y * R
+        mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
+        canvas.drawText(if (d.hasSpeed) "${d.kmh.toInt()}" else "––", sx, sy, mono)
+        mono.color = LCD_DIM; mono.isFakeBoldText = false; mono.textSize = f.sub
+        canvas.drawText(subLine(d), sx, sy + f.sub * 1.4f, mono)
+        if (d.speedLimitKmh != null) limitSign(canvas, sx, sy - f.digit * 1.5f, f.digit * 0.62f, d.speedLimitKmh)
+
+        if (d.obd) powerReadout(canvas, cx + IN_PW_X * R, cy + IN_PW_Y * R, f, d, inlineUnit = false)
+
+        unit(canvas, cx + IN_SPU_X * R, cy + IN_SPU_Y * R, "km/h", f)
+        if (d.obd) unit(canvas, cx + IN_PWU_X * R, cy + IN_PWU_Y * R, "kW", f)
     }
 
-    /** Phone gauge's piecewise scale: 60% of sweep to the pivot. */
-    private fun speedFraction(kmh: Double): Float {
-        val v = kmh.coerceIn(0.0, SPEED_MAX.toDouble())
-        return if (v <= SPEED_PIVOT) (v / SPEED_PIVOT * 0.6).toFloat()
-        else (0.6 + (v - SPEED_PIVOT) / (SPEED_MAX - SPEED_PIVOT) * 0.4).toFloat()
+    // ── Piecewise, equal-spaced "stop list" scales ──────────────────
+
+    private class Band(val to: Double, val step: Double)
+
+    private fun speedStops(): DoubleArray {
+        val s = arrayListOf(0.0)
+        var cur = 0.0
+        for (b in SPEED_BANDS) {
+            val top = min(b.to, SPEED_MAX)
+            var v = cur + b.step
+            while (v <= top + 1e-6) { s.add(v); v += b.step }
+            cur = top
+            if (cur >= SPEED_MAX - 1e-6) break
+        }
+        if (s.last() < SPEED_MAX - 1e-6) s.add(SPEED_MAX)
+        return s.toDoubleArray()
     }
 
-    // ── Gimballed compass ──────────────────────────────────────────
+    private fun powerStops(): DoubleArray {
+        val s = ArrayList<Double>()
+        var v = -P_BAND
+        while (v <= P_BAND + 1e-6) { s.add(v); v += P_FINE }
+        v = -P_BAND - P_COARSE
+        while (v >= KW_MIN - 1e-6) { s.add(0, v); v -= P_COARSE }
+        v = P_BAND + P_COARSE
+        while (v <= POWER_MAX + 1e-6) { s.add(v); v += P_COARSE }
+        if (s.first() > KW_MIN + 1e-6) s.add(0, KW_MIN)
+        if (s.last() < POWER_MAX - 1e-6) s.add(POWER_MAX)
+        return s.toDoubleArray()
+    }
 
-    fun drawCompass(
-        canvas: Canvas,
-        cell: RectF,
-        headingDeg: Float,
-        hasHeading: Boolean,
-        loc: Location?,
+    /** Map a value to its arc fraction by interpolating between the two stops it
+     *  falls between — the stops are placed at equal angular spacing. */
+    private fun fracFromStops(value: Double, stops: DoubleArray): Float {
+        val n = stops.size
+        val v = value.coerceIn(stops[0], stops[n - 1])
+        for (k in 0 until n - 1) {
+            if (v <= stops[k + 1] + 1e-9) {
+                return ((k + (v - stops[k]) / (stops[k + 1] - stops[k])) / (n - 1)).toFloat()
+            }
+        }
+        return 1f
+    }
+
+    private fun speedFrac(kmh: Double) = fracFromStops(kmh, speedStops())
+    private fun powerFrac(kw: Double) = fracFromStops(kw, powerStops())
+
+    // ── Drawing primitives ──────────────────────────────────────────
+
+    private fun ray(c: Canvas, cx: Float, cy: Float, deg: Float, r0: Float, r1: Float, p: Paint) {
+        val a = Math.toRadians(deg.toDouble())
+        val cs = cos(a).toFloat()
+        val sn = sin(a).toFloat()
+        c.drawLine(cx + r0 * cs, cy + r0 * sn, cx + r1 * cs, cy + r1 * sn, p)
+    }
+
+    /** Equal-spaced ticks + labels along an arc. [angOf] maps fraction→degrees;
+     *  ticks run inward from [outerR] by [tickLen], labels sit at [labelR]. */
+    private fun scaleTicks(
+        c: Canvas, cx: Float, cy: Float, outerR: Float, tickLen: Float, labelR: Float,
+        strokeRef: Float, fTick: Float, stops: DoubleArray, knees: DoubleArray,
+        dimmed: Boolean, angOf: (Float) -> Float,
     ) {
-        val g = housing(canvas, cell)
+        val n = stops.size
+        labelPaint.isFakeBoldText = true
+        labelPaint.textSize = fTick
+        for (i in 0 until n) {
+            val v = stops[i]
+            val deg = angOf(i.toFloat() / (n - 1))
+            val a = Math.toRadians(deg.toDouble())
+            val cs = cos(a).toFloat()
+            val sn = sin(a).toFloat()
+            val knee = knees.any { abs(v - it) < 1e-6 }
+            val col = when { dimmed -> fade(MUTED, 0.4f); knee -> ACCENT; else -> TEXT }
+            tickPaint.color = col
+            tickPaint.strokeWidth = strokeRef * if (knee) 0.02f else 0.011f
+            c.drawLine(
+                cx + (outerR - tickLen) * cs, cy + (outerR - tickLen) * sn,
+                cx + outerR * cs, cy + outerR * sn, tickPaint,
+            )
+            labelPaint.color = col
+            c.drawText(abs(v.roundToInt()).toString(), cx + labelR * cs, cy + labelR * sn + fTick * 0.36f, labelPaint)
+        }
+        labelPaint.isFakeBoldText = false
+    }
 
-        // The "gimbal": a fixed forward tilt of the rose plane — the
-        // dashboard card uses 12°; a touch more reads better across
-        // the car cabin.
-        camera.save()
-        camera.setLocation(0f, 0f, -8f * 12f)
-        camera.rotateX(COMPASS_TILT_DEG)
-        camera.getMatrix(tiltMatrix)
-        camera.restore()
-        tiltMatrix.preTranslate(-g.cx, -g.cy)
-        tiltMatrix.postTranslate(g.cx, g.cy)
+    /** Coloured regen/eco zones (integrated only). */
+    private fun powerBands(c: Canvas, cx: Float, cy: Float, r: Float, pwA: (Float) -> Float, dimmed: Boolean) {
+        zone.strokeWidth = (r * 0.04f).coerceAtLeast(3f)
+        fun band(f0: Float, f1: Float, color: Int) {
+            val a0 = pwA(f0); val a1 = pwA(f1)
+            zone.color = if (dimmed) fade(color, 0.3f) else color
+            c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), min(a0, a1), abs(a1 - a0), false, zone)
+        }
+        band(powerFrac(KW_MIN), powerFrac(0.0), REGEN)
+        band(powerFrac(0.0), powerFrac(min(60.0, POWER_MAX)), ECO)
+    }
 
-        canvas.save()
-        canvas.concat(tiltMatrix)
-        canvas.rotate(if (hasHeading) -headingDeg else 0f, g.cx, g.cy)
+    /** Glowing level fill running along the scale (cockpit). */
+    private fun fillArc(c: Canvas, cx: Float, cy: Float, r: Float, a0: Float, a1: Float, color: Int, w: Float) {
+        arc.color = color
+        arc.strokeWidth = w
+        c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), min(a0, a1), abs(a1 - a0), false, arc)
+    }
 
-        // Rose ring + ticks: minors every 10°, majors every 30°,
-        // cardinals heavier; inner ends share a ring like RetroDial.
-        ringPaint.color = TICK_MINOR
-        canvas.drawCircle(g.cx, g.cy, g.r * 0.95f, ringPaint)
+    /** Slim needle tip poking just outside the scale (cockpit value indicator). */
+    private fun outsideTip(c: Canvas, cx: Float, cy: Float, r: Float, deg: Float, color: Int, len: Float) {
+        val a = Math.toRadians(deg.toDouble())
+        val cs = cos(a).toFloat(); val sn = sin(a).toFloat()
+        val tx = -sn; val ty = cs; val hw = len * 0.16f
+        val p = Path().apply {
+            moveTo(cx + (r + len) * cs, cy + (r + len) * sn)
+            lineTo(cx + r * cs + tx * hw, cy + r * sn + ty * hw)
+            lineTo(cx + r * cs - tx * hw, cy + r * sn - ty * hw)
+            close()
+        }
+        fill.color = color
+        c.drawPath(p, fill)
+    }
+
+    /** Subtle yellow speed-limit dot riding the scale (cockpit). */
+    private fun limitDot(c: Canvas, cx: Float, cy: Float, r: Float, deg: Float, size: Float) {
+        val a = Math.toRadians(deg.toDouble())
+        fill.color = AMBER
+        fill.alpha = 235
+        c.drawCircle(cx + r * cos(a).toFloat(), cy + r * sin(a).toFloat(), size, fill)
+        fill.alpha = 255
+    }
+
+    /** Hollow amber 30 s power-peak telltale on the scale (cockpit). */
+    private fun peakMark(c: Canvas, cx: Float, cy: Float, r: Float, deg: Float, strokeRef: Float) {
+        val a = Math.toRadians(deg.toDouble())
+        ring.color = AMBER
+        ring.strokeWidth = strokeRef * 0.03f
+        c.drawCircle(cx + r * cos(a).toFloat(), cy + r * sin(a).toFloat(), strokeRef * 0.06f, ring)
+    }
+
+    /** Tapered pivoting needle (integrated value indicator). */
+    private fun needle(c: Canvas, cx: Float, cy: Float, len: Float, deg: Float) {
+        c.save()
+        c.rotate(deg, cx, cy)
+        val p = Path().apply {
+            moveTo(cx, cy - len * 0.018f)
+            lineTo(cx + len * 0.985f, cy)
+            lineTo(cx, cy + len * 0.018f)
+            lineTo(cx - len * 0.16f, cy)
+            close()
+        }
+        fill.color = NEEDLE
+        c.drawPath(p, fill)
+        c.restore()
+    }
+
+    /** Slim amber peak needle (integrated). */
+    private fun peakNeedle(c: Canvas, cx: Float, cy: Float, len: Float, deg: Float) {
+        c.save()
+        c.rotate(deg, cx, cy)
+        ring.color = AMBER
+        ring.strokeWidth = (len * 0.011f).coerceAtLeast(2f)
+        ring.strokeCap = Paint.Cap.ROUND
+        c.drawLine(cx + len * 0.34f, cy, cx + len * 0.93f, cy, ring)
+        ring.strokeCap = Paint.Cap.BUTT
+        val p = Path().apply {
+            moveTo(cx + len * 0.985f, cy)
+            lineTo(cx + len * 0.88f, cy - len * 0.035f)
+            lineTo(cx + len * 0.88f, cy + len * 0.035f)
+            close()
+        }
+        fill.color = AMBER
+        c.drawPath(p, fill)
+        c.restore()
+    }
+
+    /** Merged compass rose (course-rotated) + inner G-meter, with heading and
+     *  live-G readouts. The dynamics dial — world frame outside, car frame in. */
+    private fun combinedCentre(c: Canvas, cx: Float, cy: Float, r: Float, d: ClusterData) {
+        fill.color = HOUSING
+        c.drawCircle(cx, cy, r, fill)
+        ring.color = fade(MUTED, 0.5f)
+        ring.strokeWidth = r * 0.02f
+        c.drawCircle(cx, cy, r * 0.99f, ring)
+
+        c.save()
+        c.rotate(if (d.hasHeading) -d.headingDeg else 0f, cx, cy)
         var deg = 0
         while (deg < 360) {
             val major = deg % 30 == 0
-            val cardinal = deg % 90 == 0
-            tickPaint.color = when {
-                deg == 0 -> NORTH_RED
-                cardinal || major -> TICK_MAJOR
-                else -> TICK_MINOR
-            }
-            tickPaint.strokeWidth = g.side * if (major) 0.014f else 0.006f
-            val rad = Math.toRadians((deg - 90).toDouble())
-            val c = cos(rad).toFloat()
-            val s = sin(rad).toFloat()
-            val inner = g.r * if (cardinal) 0.78f else if (major) 0.84f else 0.90f
-            canvas.drawLine(
-                g.cx + inner * c, g.cy + inner * s,
-                g.cx + g.r * 0.95f * c, g.cy + g.r * 0.95f * s,
-                tickPaint,
-            )
+            val card = deg % 90 == 0
+            tickPaint.color = if (deg == 0) NORTH_RED else if (card || major) TEXT else MUTED
+            tickPaint.strokeWidth = r * if (major) 0.028f else 0.013f
+            val ri = r * if (card) 0.74f else if (major) 0.80f else 0.86f
+            ray(c, cx, cy, (deg - 90).toFloat(), ri, r * 0.92f, tickPaint)
             deg += 10
         }
-        // Cardinal letters rotate with the card; N stays red.
-        val cards = arrayOf("N", "E", "S", "W")
-        cards.forEachIndexed { i, cName ->
+        sans.isFakeBoldText = true
+        sans.textSize = r * 0.17f
+        arrayOf("N", "E", "S", "W").forEachIndexed { i, name ->
             val a = Math.toRadians((i * 90 - 90).toDouble())
-            labelPaint.textSize = g.r * 0.22f
-            labelPaint.isFakeBoldText = true
-            labelPaint.color = if (i == 0) NORTH_RED else TICK_MAJOR
-            canvas.drawText(
-                cName,
-                g.cx + (g.r * 0.60f) * cos(a).toFloat(),
-                g.cy + (g.r * 0.60f) * sin(a).toFloat() + labelPaint.textSize * 0.35f,
-                labelPaint,
-            )
-            labelPaint.isFakeBoldText = false
+            sans.color = if (i == 0) NORTH_RED else TEXT
+            c.drawText(name, cx + r * 0.6f * cos(a).toFloat(), cy + r * 0.6f * sin(a).toFloat() + r * 0.17f * 0.35f, sans)
         }
-        canvas.restore()
+        sans.isFakeBoldText = false
+        c.restore()
 
-        // Fixed lubber line at the bowl top (vehicle axis).
-        val lubber = Path().apply {
-            moveTo(g.cx, g.cy - g.r * 0.80f)
-            lineTo(g.cx - g.r * 0.06f, g.cy - g.r * 0.94f)
-            lineTo(g.cx + g.r * 0.06f, g.cy - g.r * 0.94f)
-            close()
-        }
-        fillPaint.color = LCD_UNIT
-        canvas.drawPath(lubber, fillPaint)
+        // Fixed lubber line at the top.
+        fill.color = LCD_DIM
+        c.drawPath(Path().apply {
+            moveTo(cx, cy - r * 0.86f); lineTo(cx - r * 0.05f, cy - r * 0.97f); lineTo(cx + r * 0.05f, cy - r * 0.97f); close()
+        }, fill)
 
-        // Centre readout (untilted, always legible): heading + altitude.
-        centerPaint.color = LCD_BRIGHT
-        centerPaint.textSize = g.r * 0.28f
-        centerPaint.isFakeBoldText = true
-        canvas.drawText(
-            if (hasHeading) "%03d°".format(Locale.ROOT, (headingDeg.toInt() % 360 + 360) % 360)
-            else "———°",
-            g.cx,
-            g.cy + g.r * 0.10f,
-            centerPaint,
-        )
-        centerPaint.isFakeBoldText = false
-        if (loc != null && loc.hasAltitude()) {
-            centerPaint.textSize = g.r * 0.14f
-            centerPaint.color = LCD_UNIT
-            canvas.drawText("▲ ${loc.altitude.toInt()} m", g.cx, g.cy + g.r * 0.32f, centerPaint)
-        }
+        // Inner G-plot (car frame, un-rotated).
+        val pr = r * 0.4f
+        ring.color = fade(MUTED, 0.6f)
+        ring.strokeWidth = r * 0.01f
+        c.drawCircle(cx, cy, pr * gFrac(0.5f), ring)
+        c.drawCircle(cx, cy, pr * gFrac(1f), ring)
+        tickPaint.color = fade(MUTED, 0.6f)
+        tickPaint.strokeWidth = r * 0.01f
+        ray(c, cx, cy, 0f, -pr, pr, tickPaint)
+        ray(c, cx, cy, 90f, -pr, pr, tickPaint)
+        val m = sqrt(d.latG * d.latG + d.lonG * d.lonG)
+        val uf = pr * gFrac(min(1f, m))
+        val px = cx + (if (m > 1e-3f) d.latG / m else 0f) * uf
+        val py = cy - (if (m > 1e-3f) d.lonG / m else 0f) * uf
+        fill.color = Color.WHITE
+        c.drawCircle(px, py, r * 0.07f, fill)
+        fill.color = ACCENT
+        c.drawCircle(px, py, r * 0.05f, fill)
+
+        mono.textAlign = Paint.Align.CENTER
+        mono.color = LCD
+        mono.isFakeBoldText = true
+        mono.textSize = r * 0.19f
+        val hdg = if (d.hasHeading) "%03d°".format(Locale.ROOT, (d.headingDeg.toInt() % 360 + 360) % 360) else "———°"
+        c.drawText(hdg, cx, cy - r * 0.5f + r * 0.19f * 0.35f, mono)
+        mono.color = if (m > GM_MAX_G) NORTH_RED else LCD_DIM
+        mono.textSize = r * 0.15f
+        c.drawText("%.2f G".format(Locale.ROOT, m), cx, cy + r * 0.6f + r * 0.15f * 0.35f, mono)
+        mono.isFakeBoldText = false
     }
 
-    // ── Energy meter (id.dash power dial) ──────────────────────────
+    /** EU posted-limit roundel (integrated). */
+    private fun limitSign(c: Canvas, cx: Float, cy: Float, r: Float, limitKmh: Int) {
+        fill.color = Color.WHITE
+        c.drawCircle(cx, cy, r, fill)
+        ring.color = SIGN_RED
+        ring.strokeWidth = r * 0.22f
+        c.drawCircle(cx, cy, r * 0.84f, ring)
+        val s = limitKmh.toString()
+        sans.color = Color.BLACK
+        sans.isFakeBoldText = true
+        var fs = r * 1.0f
+        sans.textSize = fs
+        while (sans.measureText(s) > r * 1.4f && fs > 4f) { fs *= 0.9f; sans.textSize = fs }
+        c.drawText(s, cx, cy + fs * 0.36f, sans)
+        sans.isFakeBoldText = false
+    }
 
-    /**
-     * Energy meter. The kW power needle + readout stay the headline
-     * (fed by OBD2 when connected). Below it, a battery block: state of
-     * charge and range remaining, plus — while navigating — the
-     * estimated range and SOC *on arrival* (range minus the remaining
-     * drive, SOC scaled by the same ratio). Any value that's unknown
-     * (no Car API / OBD2 source) shows a dash. The lower-centre of the
-     * dial is the gauge's open gap (the 240° sweep leaves the bottom
-     * clear), so the stacked readouts never collide with the scale.
-     */
-    fun drawEnergyDial(
-        canvas: Canvas,
-        cell: RectF,
-        kw: Double?,
-        socPercent: Float?,
-        rangeKm: Float?,
-        arrivalRangeKm: Float?,
-        arrivalSocPercent: Float?,
-    ) {
-        val g = housing(canvas, cell)
-
-        // Coloured zones as thin arcs at the dial-face rim (0.96·r,
-        // stroke 0.02·r — RetroDial's exact placement): blue regen
-        // below zero, green efficiency band to 60 kW.
-        val arcRect = RectF(
-            g.cx - g.r * 0.96f, g.cy - g.r * 0.96f,
-            g.cx + g.r * 0.96f, g.cy + g.r * 0.96f,
-        )
-        zonePaint.strokeWidth = g.r * 0.02f
-        zonePaint.color = REGEN_BLUE
-        canvas.drawArc(
-            arcRect,
-            START_DEG + SWEEP_DEG * powerFraction(KW_MIN),
-            SWEEP_DEG * (powerFraction(0.0) - powerFraction(KW_MIN)),
-            false,
-            zonePaint,
-        )
-        zonePaint.color = ECO_GREEN
-        canvas.drawArc(
-            arcRect,
-            START_DEG + SWEEP_DEG * powerFraction(0.0),
-            SWEEP_DEG * (powerFraction(60.0) - powerFraction(0.0)),
-            false,
-            zonePaint,
-        )
-
-        drawDialScale(
-            canvas, g,
-            minValue = KW_MIN.toFloat(), maxValue = KW_MAX.toFloat(),
-            tickStep = 20f, labelStep = 40f,
-            fraction = { v -> powerFraction(v.toDouble()) },
-            accents = emptySet(),
-            labelAbs = true,
-        )
-
-        unitLabel(canvas, g, "kW")
-
-        drawNeedle(canvas, g, START_DEG + SWEEP_DEG * powerFraction(kw ?: 0.0))
-
-        // Headline kW readout (the dial's primary value). Sign + fixed
-        // 3-digit width so it stays put across −100…240 kW.
-        centerPaint.color = if (kw != null) LCD_BRIGHT else ACCURACY_GREY
-        centerPaint.textSize = g.r * 0.30f
-        centerPaint.isFakeBoldText = true
-        canvas.drawText(
-            kw?.let { "%+04d".format(Locale.ROOT, it.toInt().coerceIn(-999, 999)) } ?: "———",
-            g.cx,
-            g.cy + g.r * 0.44f,
-            centerPaint,
-        )
-        centerPaint.isFakeBoldText = false
-
-        // Battery block, in the open lower gap of the dial.
-        // Line 1: state of charge (coloured by level) · range remaining.
-        val socTxt = socPercent?.let { "${it.roundToInt()}%" } ?: "–%"
-        val rangeTxt = rangeKm?.let { "${it.roundToInt()} km" } ?: "– km"
-        drawTwoTone(
-            canvas, g.cx, g.cy + g.r * 0.66f, g.r * 0.155f,
-            left = socTxt,
-            leftColor = socPercent?.let { socColor(it) } ?: ACCURACY_GREY,
-            right = rangeTxt,
-            rightColor = if (rangeKm != null) LCD_UNIT else ACCURACY_GREY,
-        )
-        // Line 2 (only while navigating): estimated arrival range · SOC.
-        if (arrivalRangeKm != null || arrivalSocPercent != null) {
-            val aRange = arrivalRangeKm?.let { "${it.roundToInt()} km" } ?: "– km"
-            val aSoc = arrivalSocPercent?.let { "${it.roundToInt()}%" } ?: "–%"
-            // Won't-make-it: negative arrival range or near-empty SOC.
-            val short = (arrivalRangeKm != null && arrivalRangeKm < 0f) ||
-                (arrivalSocPercent != null && arrivalSocPercent < 5f)
-            val arrColor = if (short) NORTH_RED else LCD_UNIT
-            drawTwoTone(
-                canvas, g.cx, g.cy + g.r * 0.83f, g.r * 0.125f,
-                left = "→ $aRange",
-                leftColor = arrColor,
-                right = aSoc,
-                rightColor = arrColor,
-            )
+    private fun powerReadout(c: Canvas, x: Float, y: Float, f: Fonts, d: ClusterData, inlineUnit: Boolean) {
+        val kw = d.kw ?: return
+        mono.textAlign = Paint.Align.CENTER
+        mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit * 0.9f
+        c.drawText("${if (kw > 0) "+" else ""}${kw.toInt()}", x, y, mono)
+        mono.isFakeBoldText = false
+        var row = if (inlineUnit) {
+            mono.color = MUTED; mono.textSize = f.unit
+            c.drawText("kW", x, y + f.unit * 1.6f, mono)
+            y + f.unit * 1.6f + f.sub * 1.6f
+        } else {
+            y + f.sub * 1.4f
         }
+        mono.textSize = f.sub
+        mono.color = if (d.consKwh100 != null && d.consKwh100 < 0) ECO else LCD_DIM
+        c.drawText(
+            d.consKwh100?.let { "%.1f kWh/100km".format(Locale.ROOT, it) } ?: "—  kWh/100km",
+            x, row, mono,
+        )
+        row += f.sub * (if (inlineUnit) 1.5f else 1.4f)
+        mono.color = d.socPct?.let { socColor(it) } ?: ACCURACY_GREY
+        c.drawText(d.socPct?.let { "${it.roundToInt()}%" } ?: "–%", x - f.sub * 2.6f, row, mono)
+        mono.color = if (d.rangeKm != null) LCD_DIM else ACCURACY_GREY
+        c.drawText(d.rangeKm?.let { "${it.roundToInt()} km" } ?: "– km", x + f.sub * 2.8f, row, mono)
     }
 
-    /** Two-colour, single line, centred about [cx] at [baselineY]. */
-    private fun drawTwoTone(
-        canvas: Canvas,
-        cx: Float,
-        baselineY: Float,
-        textSize: Float,
-        left: String,
-        leftColor: Int,
-        right: String,
-        rightColor: Int,
-    ) {
-        centerPaint.textSize = textSize
-        centerPaint.isFakeBoldText = true
-        centerPaint.textAlign = Paint.Align.LEFT
-        val wl = centerPaint.measureText(left)
-        val gap = centerPaint.measureText("  ")
-        val wr = centerPaint.measureText(right)
-        var x = cx - (wl + gap + wr) / 2f
-        centerPaint.color = leftColor
-        canvas.drawText(left, x, baselineY, centerPaint)
-        x += wl + gap
-        centerPaint.color = rightColor
-        canvas.drawText(right, x, baselineY, centerPaint)
-        centerPaint.textAlign = Paint.Align.CENTER
-        centerPaint.isFakeBoldText = false
+    private fun unit(c: Canvas, x: Float, y: Float, t: String, f: Fonts) {
+        mono.textAlign = Paint.Align.CENTER
+        mono.color = MUTED
+        mono.textSize = f.unit
+        c.drawText(t, x, y + f.unit * 0.35f, mono)
     }
 
-    /** SOC colour ramp: green healthy, amber low, red critical. */
-    private fun socColor(pct: Float): Int = when {
-        pct >= 50f -> ECO_GREEN
-        pct >= 20f -> SOC_AMBER
-        else -> NORTH_RED
+    private fun clockTemp(c: Canvas, x: Float, y: Float, f: Fonts, d: ClusterData) {
+        mono.textAlign = Paint.Align.CENTER
+        mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.clock
+        c.drawText(d.clock, x, y + f.clock * 0.35f, mono)
+        mono.isFakeBoldText = false; mono.color = LCD_DIM; mono.textSize = f.sub
+        c.drawText(d.ambientTempC?.let { "%.0f°C".format(Locale.ROOT, it) } ?: "––°C", x, y + f.clock, mono)
     }
 
-    private fun powerFraction(kw: Double): Float =
-        ((kw.coerceIn(KW_MIN, KW_MAX) - KW_MIN) / (KW_MAX - KW_MIN)).toFloat()
+    private fun subLine(d: ClusterData): String =
+        "±${d.speedAccKmh?.roundToInt() ?: 0}   %.1f km".format(Locale.ROOT, d.odometerKm)
 
-    // ── G-meter ────────────────────────────────────────────────────
-
-    /**
-     * G-meter dial: the phone dashboard card ported to the car surface.
-     * A circular gauge — horizontal axis = lateral G (cornering),
-     * vertical axis = longitudinal G (braking/acceleration) — with a
-     * short fading trail of recent [trail] samples (newest last) and the
-     * horizontal-G magnitude in the centre. The radius is on the same
-     * logarithmic scale as the phone card so a gentle lean is clearly
-     * visible while a hard stop compresses toward the rim.
-     */
-    fun drawGMeter(canvas: Canvas, cell: RectF, trail: List<GForceSample>) {
-        val g = housing(canvas, cell)
-        val plotR = g.r * 0.86f
-
-        // Concentric rings on the log scale; outer ring heavier.
-        for (ring in 1..GM_RINGS) {
-            val gv = GM_MAX_G * ring / GM_RINGS
-            ringPaint.color = if (ring == GM_RINGS) TICK_MAJOR else TICK_MINOR
-            ringPaint.strokeWidth = g.side * if (ring == GM_RINGS) 0.012f else 0.006f
-            canvas.drawCircle(g.cx, g.cy, plotR * gmLogFrac(gv), ringPaint)
-        }
-        // Crosshair.
-        tickPaint.color = TICK_MINOR
-        tickPaint.strokeWidth = g.side * 0.006f
-        canvas.drawLine(g.cx - plotR, g.cy, g.cx + plotR, g.cy, tickPaint)
-        canvas.drawLine(g.cx, g.cy - plotR, g.cx, g.cy + plotR, tickPaint)
-
-        // Fading trail + live dot. Radius is log-scaled; direction kept.
-        val n = trail.size
-        trail.forEachIndexed { i, s ->
-            val frac = (i + 1f) / n
-            val f = sqrt(frac)
-            val m = s.horizontalMagnitudeG
-            val rr = plotR * gmLogFrac(m)
-            val ux = if (m > 1e-4f) s.lateralG / m else 0f
-            val uy = if (m > 1e-4f) s.longitudinalG / m else 0f
-            val px = g.cx + ux * rr
-            // Screen Y grows downward; +longitudinal (accel) plots up.
-            val py = g.cy - uy * rr
-            if (i == n - 1) {
-                fillPaint.color = Color.WHITE
-                canvas.drawCircle(px, py, g.r * 0.075f, fillPaint)
-                fillPaint.color = ACCENT
-                canvas.drawCircle(px, py, g.r * 0.055f, fillPaint)
-            } else {
-                fillPaint.color = fade(ACCENT, 0.18f + 0.62f * f)
-                canvas.drawCircle(px, py, g.r * (0.02f + 0.03f * f), fillPaint)
-            }
-        }
-
-        // Centre magnitude readout (the truthful G value, not log-scaled).
-        val mag = trail.lastOrNull()?.horizontalMagnitudeG ?: 0f
-        centerPaint.color = if (mag > GM_MAX_G) NORTH_RED else LCD_BRIGHT
-        centerPaint.textSize = g.r * 0.30f
-        centerPaint.isFakeBoldText = true
-        canvas.drawText("%.2f".format(Locale.ROOT, mag), g.cx, g.cy + g.r * 0.50f, centerPaint)
-        centerPaint.isFakeBoldText = false
-        centerPaint.color = LCD_UNIT
-        centerPaint.textSize = g.r * 0.13f
-        canvas.drawText("G", g.cx, g.cy + g.r * 0.67f, centerPaint)
+    private fun gFrac(x: Float): Float {
+        val xx = x.coerceIn(0f, 1f)
+        return (ln(1.0 + GM_LOG_K * xx) / ln(1.0 + GM_LOG_K)).toFloat()
     }
 
-    /** Log radius fraction for the G-meter: small forces exaggerated,
-     *  large ones compressed. f(0)=0, f([GM_MAX_G])=1. */
-    private fun gmLogFrac(magG: Float): Float {
-        val x = (magG / GM_MAX_G).coerceIn(0f, 1f)
-        return ln(1f + GM_LOG_K * x) / ln(1f + GM_LOG_K)
-    }
+    private fun socColor(pct: Float) = when { pct >= 50f -> ECO; pct >= 20f -> AMBER; else -> NORTH_RED }
 
-    /** Same RGB, replaced alpha (0..1). */
     private fun fade(color: Int, alpha: Float): Int =
         ((alpha.coerceIn(0f, 1f) * 255f).toInt() shl 24) or (color and 0x00FFFFFF)
 
-    // ── Shared RetroDial furniture ─────────────────────────────────
-
-    /** Dial geometry within a cell: centre, radius, housing box. */
-    private class DialGeometry(
-        val cx: Float,
-        val cy: Float,
-        val r: Float,
-        val side: Float,
-        val halfW: Float,
-        val halfH: Float,
-        val cornerR: Float,
-    )
-
-    /** Rounded-RECT housing filling the whole cell (tiny seam gap) —
-     *  #0B0B0B with a 10% corner radius, the RetroDial DialHousing.
-     *  The dial circle sizes from the short side; the bezel-following
-     *  ticks handle the wide box naturally (roundedRectRayDistance
-     *  takes halfW/halfH independently), so edge ticks just run
-     *  longer toward the wide sides — instrument-pod style. */
-    private fun housing(canvas: Canvas, cell: RectF): DialGeometry {
-        // A couple of pixels of seam between housings — the dials
-        // should otherwise own their full cell.
-        val gap = 2f
-        val box = RectF(cell.left + gap, cell.top + gap, cell.right - gap, cell.bottom - gap)
-        val shortest = min(box.width(), box.height())
-        fillPaint.color = HOUSING
-        canvas.drawRoundRect(box, shortest * 0.10f, shortest * 0.10f, fillPaint)
-        return DialGeometry(
-            cx = box.centerX(),
-            cy = box.centerY(),
-            r = shortest / 2f * 0.98f,
-            side = shortest,
-            halfW = box.width() / 2f,
-            halfH = box.height() / 2f,
-            cornerR = shortest * 0.10f,
-        )
+    /** Font sizes for a dial of base radius [r] (mockup's % of radius). */
+    private class Fonts(r: Float) {
+        val tick = r * F_TICK
+        val digit = r * F_DIGIT
+        val sub = r * F_SUB
+        val clock = r * F_CLOCK
+        val unit = r * F_UNIT
     }
 
-    /** RetroDial scale: tick inner ends share the 0.94·r ring, outer
-     *  ends follow the rounded-square bezel (corner ticks longer),
-     *  labels at 0.78·r in #EDEDED ExtraBold. */
-    private fun drawDialScale(
-        canvas: Canvas,
-        g: DialGeometry,
-        minValue: Float,
-        maxValue: Float,
-        tickStep: Float,
-        labelStep: Float,
-        fraction: (Float) -> Float,
-        accents: Set<Int>,
-        labelAbs: Boolean = false,
-    ) {
-        val sharedInnerT = g.r * 0.94f
-        val bezelInset = g.side * 0.012f
-        val labelT = g.r * 0.78f
-        var v = minValue
-        while (v <= maxValue + 0.0001f) {
-            val frac = fraction(v).coerceIn(0f, 1f)
-            val angle = Math.toRadians((START_DEG + SWEEP_DEG * frac).toDouble())
-            val cosA = cos(angle).toFloat()
-            val sinA = sin(angle).toFloat()
-            val rel = v - minValue
-            val isMajor = (rel % labelStep).let { it < 0.0001f || (labelStep - it) < 0.0001f }
-            val isAccent = accents.any { abs(v - it) < 0.001f }
-            val outerT = roundedRectRayDistance(
-                dx = cosA, dy = sinA,
-                halfW = g.halfW, halfH = g.halfH,
-                cornerR = g.cornerR,
-            ) - bezelInset
-            if (sharedInnerT < outerT) {
-                tickPaint.strokeWidth = g.side * if (isMajor) 0.014f else 0.006f
-                tickPaint.color = when {
-                    isAccent -> ACCENT
-                    isMajor -> TICK_MAJOR
-                    else -> TICK_MINOR
-                }
-                canvas.drawLine(
-                    g.cx + outerT * cosA, g.cy + outerT * sinA,
-                    g.cx + sharedInnerT * cosA, g.cy + sharedInnerT * sinA,
-                    tickPaint,
-                )
-                if (isMajor) {
-                    labelPaint.textSize = g.r * 0.155f
-                    labelPaint.isFakeBoldText = true
-                    labelPaint.color = TICK_MAJOR
-                    val shown = if (labelAbs) abs(v.toInt()) else v.toInt()
-                    canvas.drawText(
-                        shown.toString(),
-                        g.cx + labelT * cosA,
-                        g.cy + labelT * sinA + labelPaint.textSize * 0.35f,
-                        labelPaint,
-                    )
-                    labelPaint.isFakeBoldText = false
-                }
-            }
-            v += tickStep
-        }
-    }
+    // ── Paints (single-threaded reuse) ──────────────────────────────
 
-    /** Cyan unit label just above the hub — RetroDial's centre slot. */
-    private fun unitLabel(canvas: Canvas, g: DialGeometry, text: String) {
-        centerPaint.color = LCD_UNIT
-        centerPaint.textSize = g.r * 0.14f
-        centerPaint.isFakeBoldText = true
-        canvas.drawText(text, g.cx, g.cy - g.r * 0.30f, centerPaint)
-        centerPaint.isFakeBoldText = false
-    }
-
-    /** RetroDial needle: tapered pointer to 0.93·r with counterweight
-     *  tail to −0.26·r, tiny dark pivot screw. */
-    private fun drawNeedle(canvas: Canvas, g: DialGeometry, angleDeg: Float) {
-        canvas.save()
-        canvas.rotate(angleDeg, g.cx, g.cy)
-        val r = g.r
-        val needle = Path().apply {
-            moveTo(g.cx - r * 0.26f, g.cy - r * 0.026f)
-            lineTo(g.cx + r * 0.89f, g.cy - r * 0.012f)
-            lineTo(g.cx + r * 0.93f, g.cy)
-            lineTo(g.cx + r * 0.89f, g.cy + r * 0.012f)
-            lineTo(g.cx - r * 0.26f, g.cy + r * 0.026f)
-            close()
-        }
-        fillPaint.color = NEEDLE
-        canvas.drawPath(needle, fillPaint)
-        fillPaint.color = PIVOT
-        canvas.drawCircle(g.cx, g.cy, r * 0.010f, fillPaint)
-        canvas.restore()
-    }
-
-    /**
-     * Distance from the dial centre along a unit ray at which it exits
-     * the rounded-square housing — RetroDial's trick for making corner
-     * ticks longer than edge ticks. Direct port of the Compose helper.
-     */
-    private fun roundedRectRayDistance(
-        dx: Float,
-        dy: Float,
-        halfW: Float,
-        halfH: Float,
-        cornerR: Float,
-    ): Float {
-        val adx = abs(dx)
-        val ady = abs(dy)
-        if (adx < 1e-6f && ady < 1e-6f) return 0f
-
-        val tx = if (adx > 1e-6f) halfW / adx else Float.POSITIVE_INFINITY
-        val ty = if (ady > 1e-6f) halfH / ady else Float.POSITIVE_INFINITY
-        val tStraight = min(tx, ty)
-
-        val px = tStraight * adx
-        val py = tStraight * ady
-        if (cornerR > 0f && px > halfW - cornerR && py > halfH - cornerR) {
-            val p = halfW - cornerR
-            val q = halfH - cornerR
-            val qa = adx * adx + ady * ady
-            val qb = -2f * (adx * p + ady * q)
-            val qc = p * p + q * q - cornerR * cornerR
-            val disc = qb * qb - 4f * qa * qc
-            if (disc >= 0f) {
-                return (-qb + sqrt(disc)) / (2f * qa)
-            }
-        }
-        return tStraight
-    }
-
-    // ── Paints (single-threaded reuse) ─────────────────────────────
-
-    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.BUTT }
-    private val zonePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 2f
+    private val zone = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
+    private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f }
+    private val scrim = Paint()
+    private val mono = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER; typeface = Typeface.MONOSPACE
     }
-    private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
-    // Monospace so every digit occupies the same width — the readouts
-    // stay rock-steady as values change (paired with zero-padding).
-    private val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textAlign = Paint.Align.CENTER
-        typeface = android.graphics.Typeface.MONOSPACE
+    private val sans = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER; typeface = Typeface.MONOSPACE
     }
 
     private companion object {
-        // RetroDial geometry — shared with the phone gauge + id.dash.
-        const val START_DEG = 150f
-        const val SWEEP_DEG = 240f
-
-        const val SPEED_MAX = 180
-        const val SPEED_PIVOT = 100.0
-        val SPEED_ACCENTS = setOf(30, 50, 70, 90, 120)
-        /** Small tolerance (km/h) before flagging over-limit, to absorb
-         *  GNSS speed jitter. */
-        const val SPEED_OVER_TOL = 1.0
-
+        // Scale shape (shared).
+        const val SPEED_MAX = 180.0
+        const val POWER_MAX = 280.0
         const val KW_MIN = -100.0
-        const val KW_MAX = 240.0
+        const val P_BAND = 20.0
+        const val P_FINE = 10.0
+        const val P_COARSE = 60.0
+        val SPEED_BANDS = listOf(Band(10.0, 5.0), Band(30.0, 10.0), Band(90.0, 20.0), Band(Double.POSITIVE_INFINITY, 30.0))
+        val SPEED_KNEES = doubleArrayOf(10.0, 30.0, 90.0)
+        val POWER_KNEES = doubleArrayOf(-P_BAND, P_BAND)
 
-        // G-meter: ±1 g full-scale (road cars rarely exceed it), log
-        // exaggeration matched to the phone dashboard card.
+        // Shared geometry / fonts (mockup % values).
+        const val SHARED_R = 0.71f
+        const val SHARED_RC = 1.33f
+        const val CY = 0.50f
+        const val F_TICK = 0.11f
+        const val F_DIGIT = 0.28f
+        const val F_SUB = 0.10f
+        const val F_CLOCK = 0.14f
+        const val F_UNIT = 0.09f
+
+        // Cockpit.
+        const val CK_CURVE = 15f
+        const val CK_EDGE = 0.04f
+        const val CK_SCRIM = 0.33f
+        /** On a left-rail host, the speed scale tucks into the rail's middle: this
+         *  is the fraction of the rail height reserved at top (turn card) and at
+         *  bottom (destination card). */
+        const val CK_RAIL_GAP = 0.30f
+        const val CK_NUMINSET = 0.14f
+        const val CK_DIALX = 0.80f
+        const val CK_DIALSCALE = 0.12f
+        const val CK_LIMDOT = 0.06f
+        const val CK_LIMINSET = 0.0f
+
+        // Integrated.
+        const val IN_GAP_TOP = 23f
+        const val IN_GAP_BOTTOM = 53f
+        const val IN_SP_X = -0.32f
+        const val IN_SP_Y = 0.60f
+        const val IN_PW_X = 0.31f
+        const val IN_PW_Y = 0.52f
+        const val IN_TOP_X = 0f
+        const val IN_TOP_Y = -0.86f
+        const val IN_SPU_X = -0.50f
+        const val IN_SPU_Y = 0f
+        const val IN_PWU_X = 0.50f
+        const val IN_PWU_Y = 0f
+
         const val GM_MAX_G = 1.0f
-        const val GM_RINGS = 3
-        const val GM_LOG_K = 12f
+        const val GM_LOG_K = 12.0
 
-        const val COMPASS_TILT_DEG = 16f
-
-        // Palette — RetroDial / id.dash hexes.
-        const val COLUMN_BLACK = 0xFF000000.toInt()
+        // Palette (mockup dark / HUD).
         const val HOUSING = 0xFF0B0B0B.toInt()
-        const val NEEDLE = 0xDDFFFFFF.toInt()
-        const val PIVOT = 0xFF1A1A1A.toInt()
-        const val TICK_MAJOR = 0xFFEDEDED.toInt()
-        const val TICK_MINOR = 0xFF9A9A9A.toInt()
+        const val TEXT = 0xFFEDEDED.toInt()
+        const val MUTED = 0xFF9A9A9A.toInt()
         const val ACCENT = 0xFFE67635.toInt()
-        const val LCD_BRIGHT = 0xFF7FE3FF.toInt()
-        const val LCD_UNIT = 0xFF7FCCFF.toInt()
-        const val ACCURACY_GREY = 0xFF8AA0AA.toInt()
+        const val LCD = 0xFF7FE3FF.toInt()
+        const val LCD_DIM = 0xFF7FCCFF.toInt()
         const val NORTH_RED = 0xFFEF5350.toInt()
-        /** Posted-limit marker dot (amber until the limit is exceeded). */
-        const val LIMIT_DOT = 0xFFFFC107.toInt()
-        /** EU speed-limit sign ring. */
+        const val REGEN = 0xFF35B0E6.toInt()
+        const val ECO = 0xFF35B047.toInt()
+        const val AMBER = 0xFFF9A825.toInt()
         const val SIGN_RED = 0xFFD32F2F.toInt()
-        const val REGEN_BLUE = 0xFF35B0E6.toInt()
-        const val ECO_GREEN = 0xFF35B047.toInt()
-        const val SOC_AMBER = 0xFFF9A825.toInt()
+        const val NEEDLE = 0xEBFFFFFF.toInt()
+        const val ACCURACY_GREY = 0xFF8AA0AA.toInt()
+        const val SCRIM_ON = 0xEB000000.toInt()
+        const val SCRIM_OFF = 0x00000000
     }
 }
+
+/** Snapshot of everything the cluster renders, assembled per frame by
+ *  [CarMapRenderer]. Unknown values are null and show a dash. */
+data class ClusterData(
+    val kmh: Double,
+    val hasSpeed: Boolean,
+    val speedAccKmh: Float?,
+    val kw: Double?,
+    val peakKw: Double?,
+    val consKwh100: Double?,
+    val socPct: Float?,
+    val rangeKm: Float?,
+    val headingDeg: Float,
+    val hasHeading: Boolean,
+    val latG: Float,
+    val lonG: Float,
+    val speedLimitKmh: Int?,
+    val odometerKm: Double,
+    val ambientTempC: Double?,
+    val clock: String,
+    val obd: Boolean,
+)

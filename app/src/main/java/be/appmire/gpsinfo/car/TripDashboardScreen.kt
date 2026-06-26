@@ -29,6 +29,7 @@ import be.appmire.gpsinfo.data.SensorRepository
 import be.appmire.gpsinfo.data.TrailRecordingController
 import be.appmire.gpsinfo.data.TrailRepository
 import be.appmire.gpsinfo.data.nav.NavigationController
+import be.appmire.gpsinfo.data.nav.SpeedLimitProvider
 import be.appmire.gpsinfo.data.rally.RallyController
 import be.appmire.gpsinfo.data.rally.RallyState
 import be.appmire.gpsinfo.util.TrailNaming
@@ -127,6 +128,7 @@ class TripDashboardScreen(
         if (obdJob != null) return
         obdJob = be.appmire.gpsinfo.obd.ObdLiveController.state
             .onEach { d ->
+                renderer.updateObdConnected(d.connected)
                 if (d.connected) {
                     renderer.updatePower(d.powerKw)
                     renderer.updateAmbientTemp(d.ambientTempC)
@@ -218,7 +220,12 @@ class TripDashboardScreen(
                 nav = navState
                 renderer.update(gnss, rec, rallyState)
                 renderer.updateNavigationRoute(
-                    (navState as? NavigationController.NavState.Navigating)?.route?.points
+                    // Only the road ahead — drop the points already driven
+                    // so the route line starts at the vehicle, not the origin.
+                    (navState as? NavigationController.NavState.Navigating)?.let { n ->
+                        val from = n.segmentIndex.coerceIn(0, (n.route.points.size - 1).coerceAtLeast(0))
+                        n.route.points.subList(from, n.route.points.size)
+                    }
                 )
                 renderer.updateNavigationStatus(
                     when (navState) {
@@ -230,11 +237,23 @@ class TripDashboardScreen(
                 renderer.updateNavProgress(
                     (navState as? NavigationController.NavState.Navigating)?.distanceRemainingM
                 )
-                renderer.updateSpeedLimit(
-                    (navState as? NavigationController.NavState.Navigating)?.speedLimitKmh
-                )
+                // Always-on speed limit: while navigating the route's own
+                // (offline, segment-accurate) limit wins; otherwise resolve the
+                // current road offline-first (BRouter) + online refine (Valhalla).
+                gnss.location?.let { loc ->
+                    SpeedLimitProvider.offer(
+                        carContext, loc,
+                        navigating = navState is NavigationController.NavState.Navigating,
+                        navLimitKmh = (navState as? NavigationController.NavState.Navigating)?.speedLimitKmh,
+                    )
+                }
                 if (recordingToggled || rallyPhaseChanged || navChanged) invalidate()
             }
+            .launchIn(lifecycleScope)
+
+        // Push the resolved speed limit to the cluster as it settles.
+        SpeedLimitProvider.limit
+            .onEach { renderer.updateSpeedLimit(it) }
             .launchIn(lifecycleScope)
 
         // G-meter feed, on its own job. The fused accelerometer stream

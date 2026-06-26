@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.car.app.AppManager
 import androidx.car.app.CarContext
 import androidx.car.app.SurfaceCallback
@@ -20,6 +21,8 @@ import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.model.GForceSample
 import be.appmire.gpsinfo.data.model.GnssSnapshot
 import be.appmire.gpsinfo.data.rally.RallyState
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
@@ -127,8 +130,55 @@ class CarMapRenderer(
 
     fun updatePower(kw: Double?) {
         powerKw = kw
+        if (kw != null) {
+            val now = SystemClock.elapsedRealtime()
+            peakBuf.addLast(doubleArrayOf(now.toDouble(), kw))
+            while (peakBuf.isNotEmpty() && peakBuf.first()[0] < now - PEAK_WINDOW_MS) peakBuf.removeFirst()
+        }
         scheduleRender()
     }
+
+    /** 30 s rolling power-peak window [elapsedMs, kw] (peak-hold telltale) and a
+     *  2 s efficiency window [elapsedMs, kw, mps] for the kWh/100km readout. */
+    private val peakBuf = ArrayDeque<DoubleArray>()
+    private val effBuf = ArrayDeque<DoubleArray>()
+    private val clockFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+    /** Highest power in the last 30 s, or the live value if the window is empty. */
+    private fun currentPeakKw(): Double {
+        val now = SystemClock.elapsedRealtime()
+        while (peakBuf.isNotEmpty() && peakBuf.first()[0] < now - PEAK_WINDOW_MS) peakBuf.removeFirst()
+        return peakBuf.maxOfOrNull { it[1] } ?: dispPowerKw
+    }
+
+    /** Instant efficiency (kWh/100km) from the 2 s mean of power & speed — energy
+     *  over distance. Null below walking pace, where it would blow up. */
+    private fun currentConsumption(): Double? {
+        val now = SystemClock.elapsedRealtime()
+        while (effBuf.isNotEmpty() && effBuf.first()[0] < now - EFF_WINDOW_MS) effBuf.removeFirst()
+        if (effBuf.isEmpty()) return null
+        val ak = effBuf.sumOf { it[1] } / effBuf.size
+        val kmh = (effBuf.sumOf { it[2] } / effBuf.size) * 3.6
+        return if (kmh > 3.0) ak / kmh * 100.0 else null
+    }
+
+    /** Whether a live OBD2 adapter is currently connected. The power /
+     *  energy dial is the EV-dashboard half of the cluster, so it only
+     *  earns its top-left slot when there's a real feed behind it;
+     *  otherwise that corner is left to the map. */
+    private var obdConnected = false
+
+    fun updateObdConnected(connected: Boolean) {
+        if (connected == obdConnected) return
+        obdConnected = connected
+        scheduleRender()
+    }
+
+    /** Distance driven this projection session (metres), accumulated
+     *  from successive fixes — the trip odometer shown on the speed
+     *  dial. Jitter (<1 m) and teleports (>200 m between fixes) are
+     *  excluded so it tracks real travel. */
+    private var odometerM = 0.0
 
     /** Battery state of charge (0..100) and range remaining (km) for the
      *  energy meter, or null when no source (Car API / OBD2) provides
@@ -211,7 +261,77 @@ class CarMapRenderer(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
+        mainHandler.removeCallbacks(frameRunnable)
         snapshotter.destroy()
+    }
+
+    // ── Smooth animation loop ──────────────────────────────────────
+    // GNSS arrives ~1 Hz; a modest frame loop dead-reckons the vehicle
+    // forward between fixes and eases the gauge needles so the surface
+    // glides instead of stepping once a second. It runs ONLY while the
+    // car is moving (or a value is still easing) and idles otherwise —
+    // a free-running loop re-snapshots MapLibre every frame and the host
+    // kills slow apps. [FRAME_MS] is the tunable cadence.
+    private var animating = false
+    private val frameRunnable = Runnable { onAnimationFrame() }
+    private var targetBearingDeg = 0f
+    /** Eased gauge scalars, toward the latest fix / OBD values. */
+    private var dispSpeedMps = 0f
+    private var dispPowerKw = 0.0
+
+    private fun ensureAnimating() {
+        if (animating) return
+        animating = true
+        mainHandler.postDelayed(frameRunnable, FRAME_MS)
+    }
+
+    private fun onAnimationFrame() {
+        val more = stepAnimation()
+        renderFrame()
+        if (more) mainHandler.postDelayed(frameRunnable, FRAME_MS) else animating = false
+    }
+
+    /** Advance the eased values one frame; return whether more animation
+     *  is pending (still moving, or a needle hasn't settled). */
+    private fun stepAnimation(): Boolean {
+        val loc = lastDrawnLocation
+        val targetMps = if (loc != null && loc.hasSpeed()) loc.speed else 0f
+        dispSpeedMps += (targetMps - dispSpeedMps) * EASE
+        val targetKw = powerKw ?: 0.0
+        dispPowerKw += (targetKw - dispPowerKw) * EASE
+        if (hasBearing) {
+            var d = targetBearingDeg - smoothedBearingDeg
+            while (d > 180f) d -= 360f
+            while (d < -180f) d += 360f
+            smoothedBearingDeg = (smoothedBearingDeg + d * EASE + 360f) % 360f
+        }
+        // Feed the 2 s efficiency window from the eased (displayed) values.
+        val now = SystemClock.elapsedRealtime()
+        effBuf.addLast(doubleArrayOf(now.toDouble(), dispPowerKw, dispSpeedMps.toDouble()))
+        while (effBuf.isNotEmpty() && effBuf.first()[0] < now - EFF_WINDOW_MS) effBuf.removeFirst()
+        val moving = targetMps > MIN_MOVE_MPS
+        val settling = abs(targetMps - dispSpeedMps) > 0.05f || abs(targetKw - dispPowerKw) > 0.5
+        return moving || settling
+    }
+
+    /** The vehicle position to draw THIS frame: the last fix dead-reckoned
+     *  forward along its course by the time elapsed since the fix, so the
+     *  map glides between ~1 Hz fixes. Carries the eased speed for the
+     *  needle. Extrapolation is capped so a dropped fix can't fling the
+     *  marker down the road. */
+    private fun displayedLocation(): Location? {
+        val fix = lastDrawnLocation ?: return null
+        val out = Location(fix)
+        out.speed = dispSpeedMps
+        if (!fix.hasSpeed() || fix.speed < MIN_MOVE_MPS || !fix.hasBearing()) return out
+        val dt = ((SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos) / 1e9)
+            .coerceIn(0.0, MAX_EXTRAPOLATE_SEC)
+        val dist = fix.speed * dt
+        val br = Math.toRadians(fix.bearing.toDouble())
+        out.latitude = fix.latitude + dist * cos(br) / 111_320.0
+        out.longitude = fix.longitude +
+            dist * Math.sin(br) / (111_320.0 * cos(Math.toRadians(fix.latitude)))
+        return out
     }
 
     // ── Data in ────────────────────────────────────────────────────
@@ -229,21 +349,28 @@ class CarMapRenderer(
         }
         wasRecording = isRecording
 
-        val loc = gnss.location?.let { withDerivedMotion(it, lastDrawnLocation) }
+        val prev = lastDrawnLocation
+        val loc = gnss.location?.let { withDerivedMotion(it, prev) }
         if (loc != null) {
+            // Trip odometer: real travel only — ignore sub-metre jitter
+            // and provider/mock teleports (no road car jumps >200 m
+            // between ~1 Hz fixes).
+            if (prev != null && loc !== prev) {
+                val moved = prev.distanceTo(loc)
+                if (moved in 1f..200f) odometerM += moved
+            }
             lastDrawnLocation = loc
-            // Course-over-ground low-pass: 35% of the shortest angular
-            // delta per fix — smooths jitter without lagging real turns.
+            // Course-over-ground target for the heading-up rotation; the
+            // frame loop eases [smoothedBearingDeg] toward it between fixes.
             if (loc.hasBearing() && loc.hasSpeed() && loc.speed > MIN_HEADING_UP_SPEED_MPS) {
-                var delta = loc.bearing - smoothedBearingDeg
-                while (delta > 180f) delta -= 360f
-                while (delta < -180f) delta += 360f
-                smoothedBearingDeg = (smoothedBearingDeg + delta * 0.35f + 360f) % 360f
+                targetBearingDeg = loc.bearing
                 hasBearing = true
             }
             if (isRecording) appendBreadcrumb(loc)
         }
         stepAutoZoom(loc)
+        // Glide the map/needles between this fix and the next.
+        ensureAnimating()
         scheduleRender()
     }
 
@@ -438,44 +565,84 @@ class CarMapRenderer(
         val bg = if (dark) BG_DARK else BG_LIGHT
         canvas.drawColor(bg)
 
-        // lastDrawnLocation carries the latest fix with derived motion
-        // (see withDerivedMotion) — prefer it over the raw snapshot.
-        val loc = lastDrawnLocation ?: snapshot.location
+        // The last fix dead-reckoned forward to this frame (see
+        // displayedLocation), so the map + needles glide between the
+        // ~1 Hz GNSS fixes; falls back to the raw snapshot pre-first-fix.
+        val loc = displayedLocation() ?: snapshot.location
 
-        // Layout: a 2×2 block of gauges on the LEFT (speed / energy on
-        // top, compass / G-meter below), the live map on the RIGHT. The
-        // map is full-bleed to the right surface edge, so the host's map
-        // action strip (zoom / tilt / pan) and other edge chrome overlay
-        // the MAP rather than the gauges. The gauge block sits inside the
-        // host's safe area vertically so the top strip / bottom dock
-        // don't clip the dials.
-        val safe = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
-        val safeLeft = safe.left.toFloat().coerceIn(0f, w.toFloat())
-        val top = safe.top.toFloat().coerceAtLeast(0f)
-        val bottom = safe.bottom.toFloat().coerceAtMost(h.toFloat())
-        val cellH = (bottom - top) / 2f
-        // Two square-ish cells wide, capped so the map keeps ≥ half.
-        val cellW = min(cellH, w * GAUGE_BLOCK_FRACTION / 2f)
-        val blockRight = safeLeft + cellW * 2f
-        drawGaugePanel(canvas, safeLeft, top, cellW, cellH, blockRight, h, loc)
-
-        val mapLeft = blockRight
-        // Map renders to the true right edge (full bleed under the host
-        // controls); HUD/panels centre on the *visible* map and the OSM
-        // credit pins to the visible right edge, both left of the strip.
-        val visibleRight = safe.right.toFloat().coerceIn(mapLeft, w.toFloat())
-        val mapW = (w - mapLeft).toInt()
-        canvas.save()
-        canvas.clipRect(mapLeft, 0f, w.toFloat(), h.toFloat())
+        // The map IS the surface — full-bleed across the whole video
+        // surface so it reads as a navigation map, not a gauge panel with
+        // a map beside it. The instrument dials are small corner widgets
+        // layered on top, anchored to the host's safe area so they never
+        // cover the host's turn card, ETA or action strips — the
+        // navigation instructions stay fully visible by construction.
         if (loc != null) {
-            drawVectorMap(canvas, mapLeft, mapW, h, loc, dark)
+            drawVectorMap(canvas, 0f, w, h, loc, dark)
         } else {
-            drawWaitingForFix(canvas, mapLeft, visibleRight, h, dark)
+            drawWaitingForFix(canvas, 0f, w.toFloat(), h, dark)
         }
-        drawHud(canvas, mapLeft, visibleRight, h, dark)
-        drawRallyPanel(canvas, mapLeft, visibleRight, h, dark)
-        drawNavStatus(canvas, mapLeft, visibleRight, h, dark)
-        canvas.restore()
+
+        drawCluster(canvas, w, h, loc)
+        drawHud(canvas, w, h, dark)
+        // Centre the banners on the safe area, not the raw screen, so they
+        // track the host's chrome layout instead of hiding under it.
+        val safe = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
+        val bannerLeft = safe.left.toFloat().coerceIn(0f, w.toFloat())
+        val bannerRight = safe.right.toFloat().coerceIn(bannerLeft, w.toFloat())
+        drawRallyPanel(canvas, bannerLeft, bannerRight, h, dark)
+        drawNavStatus(canvas, bannerLeft, bannerRight, h, dark)
+    }
+
+    /** The instrument cluster, overlaid on the full-bleed map. The host surface
+     *  shape decides the layout: a wide surface gets the split cockpit (edge-HUD
+     *  gauges flanking the map), a narrow one falls back to the single integrated
+     *  gauge. The map is always full-bleed beneath — navigation stays the
+     *  surface, the gauges are overlays. */
+    private fun drawCluster(canvas: Canvas, w: Int, h: Int, loc: Location?) {
+        val d = buildClusterData(loc)
+        if (w >= h * COCKPIT_MIN_ASPECT) {
+            // Lay the cluster out inside the host's safe rectangle. During
+            // turn-by-turn the host claims a left rail (turn card + ETA), which
+            // shrinks the safe area from the left — the gauges then shift right
+            // of it rather than hiding underneath. Falls back to the full surface.
+            val safe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
+            instruments.drawCockpit(canvas, w, h, d, RectF(safe))
+        } else {
+            // Centred square housing; the map shows above and below it.
+            val s = min(w.toFloat(), h.toFloat()) * 0.98f
+            val cx = w / 2f
+            val cy = h / 2f
+            instruments.drawIntegrated(canvas, RectF(cx - s / 2f, cy - s / 2f, cx + s / 2f, cy + s / 2f), d)
+        }
+    }
+
+    /** Assemble the per-frame cluster snapshot from the renderer's live state.
+     *  Speed/power use the eased (displayed) values so the gauges glide; unknown
+     *  inputs (no OBD/Car API) stay null and render as a dash. */
+    private fun buildClusterData(loc: Location?): ClusterData {
+        val accKmh = if (loc != null && loc.hasSpeed() &&
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
+            loc.hasSpeedAccuracy()
+        ) loc.speedAccuracyMetersPerSecond * 3.6f else null
+        return ClusterData(
+            kmh = dispSpeedMps * 3.6,
+            hasSpeed = loc != null && loc.hasSpeed(),
+            speedAccKmh = accKmh,
+            kw = if (obdConnected) dispPowerKw else null,
+            peakKw = if (obdConnected) currentPeakKw() else null,
+            consKwh100 = if (obdConnected) currentConsumption() else null,
+            socPct = batterySocPct,
+            rangeKm = rangeRemainingKm,
+            headingDeg = smoothedBearingDeg,
+            hasHeading = hasBearing,
+            latG = gForce.lateralG,
+            lonG = gForce.longitudinalG,
+            speedLimitKmh = speedLimitKmh,
+            odometerKm = odometerM / 1000.0,
+            ambientTempC = ambientTempC,
+            clock = clockFmt.format(Date()),
+            obd = obdConnected,
+        )
     }
 
     /** Pill banner, top-centre of the map, for navigation phases that
@@ -502,60 +669,6 @@ class CarMapRenderer(
         canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
     }
 
-    /** The left-hand 2×2 gauge block: speed (top-left), energy
-     *  (top-right), compass (bottom-left), G-meter (bottom-right), each a
-     *  square RetroDial housing on a solid-black panel that runs the full
-     *  surface height. Compass rotates by GPS course (never the
-     *  magnetometer in a car); energy parks at 0 until OBD2 power arrives;
-     *  the G-meter reads the phone's fused accelerometer. */
-    private fun drawGaugePanel(
-        canvas: Canvas,
-        panelLeft: Float,
-        top: Float,
-        cellW: Float,
-        cellH: Float,
-        blockRight: Float,
-        h: Int,
-        loc: Location?,
-    ) {
-        // Solid-black backing behind the whole grid, edge-to-edge in
-        // height (covers the small left host-inset too).
-        instruments.drawColumnBackground(canvas, 0f, blockRight, h.toFloat())
-        val col0 = panelLeft
-        val col1 = panelLeft + cellW
-        val row1 = top + cellH
-        val row2 = top + cellH * 2f
-        // Left column: speed (top), compass (bottom).
-        instruments.drawSpeedDial(canvas, RectF(col0, top, col0 + cellW, row1), loc, speedLimitKmh)
-        instruments.drawCompass(
-            canvas, RectF(col0, row1, col0 + cellW, row2),
-            smoothedBearingDeg, hasBearing, loc,
-        )
-        // On-arrival estimates: what's left of the range after the
-        // remaining drive, and SOC scaled by the same ratio. Only when
-        // navigating AND a range is known.
-        val range = rangeRemainingKm
-        val drive = navRemainingKm
-        val arrivalRangeKm: Float?
-        val arrivalSocPct: Float?
-        if (range != null && range > 0f && drive != null) {
-            val left = range - drive.toFloat()
-            arrivalRangeKm = left
-            arrivalSocPct = batterySocPct?.let { (it * (left / range)).coerceIn(0f, it) }
-        } else {
-            arrivalRangeKm = null
-            arrivalSocPct = null
-        }
-        // Right column: energy (top), G-meter (bottom).
-        instruments.drawEnergyDial(
-            canvas, RectF(col1, top, col1 + cellW, row1), powerKw,
-            batterySocPct, rangeRemainingKm, arrivalRangeKm, arrivalSocPct,
-        )
-        instruments.drawGMeter(
-            canvas, RectF(col1, row1, col1 + cellW, row2), gForceTrail.toList(),
-        )
-    }
-
     /**
      * Vector map for the car: blit the latest MapLibre snapshot (which
      * MapLibre renders with native bearing + pitch) into the map area,
@@ -572,12 +685,25 @@ class CarMapRenderer(
         loc: Location,
         dark: Boolean,
     ) {
-        // Camera follows the vehicle (+ any pan offset). Heading-up
-        // bakes the course into the map bearing; tilt becomes MapLibre's
-        // native pitch so labels stay upright and the road recedes.
-        val camLat = loc.latitude + panLatOffset
-        val camLon = loc.longitude + panLonOffset
+        // Camera follows the vehicle (+ any pan offset). Heading-up bakes
+        // the course into the map bearing; tilt becomes MapLibre's native
+        // pitch so labels stay upright and the road recedes.
+        //
+        // Look-ahead: while moving (not panning) push the camera TARGET
+        // ahead of the vehicle along the course, so the puck sits low on
+        // the surface (~80% down) with the road ahead filling the view —
+        // a nav-style camera instead of the puck dead-centre.
         val bearing = if (hasBearing) smoothedBearingDeg.toDouble() else 0.0
+        val lookAheadM = if (hasBearing && !panMode) {
+            val mpp = 156_543.03392 * cos(Math.toRadians(loc.latitude)) /
+                Math.pow(2.0, currentZoom)
+            LOOK_AHEAD_FRACTION * mpp * h
+        } else 0.0
+        val brRad = Math.toRadians(bearing)
+        val camLat = loc.latitude + panLatOffset +
+            lookAheadM * cos(brRad) / 111_320.0
+        val camLon = loc.longitude + panLonOffset +
+            lookAheadM * Math.sin(brRad) / (111_320.0 * cos(Math.toRadians(loc.latitude)))
         val pitch = if (tilted) CAR_PITCH_DEG else 0.0
         // 3D building extrusions only in the dedicated 3D mode; the other
         // two show flat footprints (the snapshotter hides the
@@ -602,23 +728,74 @@ class CarMapRenderer(
         canvas.drawBitmap(bmp, mapLeft, 0f, layerPaint)
         if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
 
-        // Overlays projected through the snapshot. pixelForLatLng gives
-        // bitmap-space pixels; offset x by the instrument column.
-        drawProjectedRoute(canvas, snap, mapLeft)
+        // Overlays projected through the snapshot. While following, the
+        // puck is pinned to a fixed on-screen anchor (the map scrolls
+        // under it) so it never jitters against a snapshot that lags the
+        // moving camera.
+        val following = hasBearing && !panMode
+        drawProjectedRoute(canvas, snap, mapLeft, loc)
         drawProjectedBreadcrumb(canvas, snap, mapLeft)
-        drawProjectedMarker(canvas, snap, mapLeft, loc)
+        drawProjectedMarker(canvas, snap, mapLeft, loc, following)
     }
 
     private fun drawProjectedRoute(
         canvas: Canvas,
         snap: org.maplibre.android.snapshotter.MapSnapshot,
         mapLeft: Float,
+        loc: Location,
     ) {
-        val path = projectedPath(navRoute, snap, mapLeft) ?: return
+        val path = routeAheadPath(navRoute, snap, mapLeft, loc) ?: return
         navCasingPaint.strokeWidth = 16f
         navRoutePaint.strokeWidth = 10f
         canvas.drawPath(path, navCasingPaint)
         canvas.drawPath(path, navRoutePaint)
+    }
+
+    /** The route line to draw: start at the point nearest the vehicle
+     *  (so the part already driven vanishes *live*, at frame rate, not at
+     *  the ~1 Hz segment cadence) and walk CONSECUTIVE points forward —
+     *  full fidelity, no decimation — up to [ROUTE_DRAW_POINTS]. The
+     *  visible nav view only spans the next ~km anyway, so this is cheap
+     *  and the line actually follows the streets (decimating the whole
+     *  route to 120 points was what made it cut corners). */
+    private fun routeAheadPath(
+        pts: List<DoubleArray>?,
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+        loc: Location,
+    ): Path? {
+        if (pts == null || pts.size < 2) return null
+        // Nearest point to the vehicle — cheap squared-degree scan.
+        var startIdx = 0
+        var best = Double.MAX_VALUE
+        for (i in pts.indices) {
+            val dLat = pts[i][0] - loc.latitude
+            val dLon = pts[i][1] - loc.longitude
+            val d = dLat * dLat + dLon * dLon
+            if (d < best) { best = d; startIdx = i }
+        }
+        val end = (startIdx + ROUTE_DRAW_POINTS).coerceAtMost(pts.size)
+        if (end - startIdx < 2) return null
+        val maxJump = snap.bitmap.height * 4f
+        val path = Path()
+        var started = false
+        var lastX = 0f
+        var lastY = 0f
+        for (i in startIdx until end) {
+            val p = pts[i]
+            val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(p[0], p[1]))
+            val x = mapLeft + pf.x
+            val y = pf.y
+            if (!started) {
+                path.moveTo(x, y); started = true
+            } else if (kotlin.math.hypot((x - lastX).toDouble(), (y - lastY).toDouble()) > maxJump) {
+                path.moveTo(x, y)
+            } else {
+                path.lineTo(x, y)
+            }
+            lastX = x; lastY = y
+        }
+        return path
     }
 
     private fun drawProjectedBreadcrumb(
@@ -647,13 +824,30 @@ class CarMapRenderer(
         if (pts == null || pts.size < 2) return null
         val step = (pts.size + MAX_PROJECTED_POINTS - 1) / MAX_PROJECTED_POINTS
         val path = Path()
+        // A point far outside the view (or a tilted-horizon point) can
+        // project to a wild pixel; a lineTo to it streaks a nonsensical
+        // line across the surface. Break the path on any jump larger than
+        // this many surface-heights and resume with a moveTo.
+        val maxJump = snap.bitmap.height * 4f
         var started = false
+        var lastX = 0f
+        var lastY = 0f
         var i = 0
         while (i < pts.size) {
             val p = pts[i]
             val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(p[0], p[1]))
             val x = mapLeft + pf.x
-            if (!started) { path.moveTo(x, pf.y); started = true } else path.lineTo(x, pf.y)
+            val y = pf.y
+            if (!started) {
+                path.moveTo(x, y)
+                started = true
+            } else if (kotlin.math.hypot((x - lastX).toDouble(), (y - lastY).toDouble()) > maxJump) {
+                path.moveTo(x, y) // discontinuity — don't streak a line to it
+            } else {
+                path.lineTo(x, y)
+            }
+            lastX = x
+            lastY = y
             if (i == pts.size - 1) break
             i = (i + step).coerceAtMost(pts.size - 1)
         }
@@ -675,10 +869,24 @@ class CarMapRenderer(
         snap: org.maplibre.android.snapshotter.MapSnapshot,
         mapLeft: Float,
         loc: Location,
+        following: Boolean,
     ) {
-        val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude))
-        val x = mapLeft + pf.x
-        val y = pf.y
+        // While following: pin the puck to a fixed screen anchor (centre-X,
+        // low — matching the look-ahead camera) so it stays rock-steady as
+        // the map scrolls beneath it, even when the snapshot lags the
+        // camera. When panning (free camera): project the real position.
+        val x: Float
+        val y: Float
+        if (following) {
+            x = mapLeft + snap.bitmap.width / 2f
+            y = snap.bitmap.height * PUCK_SCREEN_FRACTION
+        } else {
+            val pf = snap.pixelForLatLng(
+                org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude),
+            )
+            x = mapLeft + pf.x
+            y = pf.y
+        }
         val r = MARKER_RADIUS
         canvas.save()
         if (tilted) canvas.scale(1f, PITCH_FORESHORTEN, x, y)
@@ -707,31 +915,18 @@ class CarMapRenderer(
         )
     }
 
-    /** Map-area HUD. Speed/heading/altitude moved to the instrument
-     *  column — what remains here is the trip strip (distance,
-     *  duration, REC dot) and the OSM attribution. */
-    private fun drawHud(canvas: Canvas, mapLeft: Float, mapRight: Float, h: Int, dark: Boolean) {
-        val inset = stableArea ?: visibleArea ?: Rect(0, 0, mapRight.toInt(), h)
+    /** Map-area HUD over the full-bleed map: the OBD ambient-temp badge,
+     *  the recording trip strip, and the OSM attribution — each placed
+     *  clear of the corner instrument dials in [layout]. */
+    /** Map-area HUD over the full-bleed map: the recording trip strip and the
+     *  required OSM attribution, both bottom-centre over the map (clear of the
+     *  edge-HUD gauges). The ambient temperature now lives in the cluster. */
+    private fun drawHud(canvas: Canvas, w: Int, h: Int, dark: Boolean) {
         val pad = h * 0.03f
-        val unit = min((mapRight - mapLeft).toInt(), h) * 0.13f
+        val unit = h * 0.13f
+        val cx = w / 2f
 
-        // ── Outside-temp badge, top-left of the map (OBD ambient temp) ──
-        ambientTempC?.let { c ->
-            val txt = "%.0f°C".format(Locale.ROOT, c)
-            hudTextPaint.textAlign = Paint.Align.LEFT
-            hudTextPaint.textSize = unit * 0.36f
-            val tx = mapLeft + pad * 1.5f
-            val ty = inset.top + pad * 1.5f + hudTextPaint.textSize
-            val tw = hudTextPaint.measureText(txt)
-            bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
-            val rect = RectF(tx - pad / 2, ty - hudTextPaint.textSize, tx + tw + pad / 2, ty + pad / 2)
-            canvas.drawRoundRect(rect, rect.height() / 2, rect.height() / 2, bubblePaint)
-            canvas.drawRoundRect(rect, rect.height() / 2, rect.height() / 2, bubbleStrokePaint)
-            hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
-            canvas.drawText(txt, tx, ty - hudTextPaint.textSize * 0.18f, hudTextPaint)
-        }
-
-        // ── Trip strip, bottom-left of the map ──
+        // Recording trip strip (distance · duration + REC dot), bottom-centre.
         val rec = recording as? RecordingState.Recording
         if (rec != null) {
             val stripText = "%.1f km   %s".format(
@@ -741,41 +936,26 @@ class CarMapRenderer(
             )
             hudTextPaint.textAlign = Paint.Align.LEFT
             hudTextPaint.textSize = unit * 0.34f
-            val sx = mapLeft + pad * 1.5f
-            val sy = inset.bottom - pad * 1.5f
             val tw = hudTextPaint.measureText(stripText)
             val recDotSpace = unit * 0.55f
+            val totalW = tw + recDotSpace
+            val sx = cx - totalW / 2f
+            val sy = h - pad * 2.6f
             bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
-            val strip = RectF(
-                sx - pad / 2,
-                sy - unit * 0.42f,
-                sx + tw + recDotSpace + pad / 2,
-                sy + unit * 0.22f,
-            )
+            val strip = RectF(sx - pad / 2, sy - unit * 0.42f, sx + totalW + pad / 2, sy + unit * 0.22f)
             canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubblePaint)
             canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubbleStrokePaint)
             hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
             canvas.drawText(stripText, sx, sy, hudTextPaint)
-            // Pulse-free REC dot — a steady red dot reads "recording"
-            // without needing an animation loop.
             recDotPaint.color = if (rec.paused) REC_PAUSED else REC_ACTIVE
             canvas.drawCircle(sx + tw + recDotSpace / 2, sy - unit * 0.10f, unit * 0.13f, recDotPaint)
         }
 
-        // ── OSM attribution, bottom-right of the map (tile-policy
-        // requirement). Tiny, pinned 2px off the map's right edge and
-        // the visible bottom (inset.bottom — the surface extends under
-        // the host's dock, so h would hide it). Present and legible,
-        // but out of the way. ──
-        hudTextPaint.textAlign = Paint.Align.RIGHT
+        // OSM attribution (tile-policy requirement). Tiny, bottom-centre.
+        hudTextPaint.textAlign = Paint.Align.CENTER
         hudTextPaint.textSize = h * 0.013f
         hudTextPaint.color = if (dark) HUD_MUTED_DARK else HUD_MUTED_LIGHT
-        canvas.drawText(
-            "© OpenStreetMap",
-            mapRight - 2f,
-            inset.bottom - 2f,
-            hudTextPaint,
-        )
+        canvas.drawText("© OpenStreetMap", cx, h - 4f, hudTextPaint)
     }
 
     /** Regularity-test panel, top-centre: the early/late delta is THE
@@ -911,20 +1091,50 @@ class CarMapRenderer(
 
         /** MapLibre camera pitch when tilt is on — the native 2.5D
          *  perspective (labels stay upright, road recedes). The host's
-         *  driving-mode tilt cap is 60°; 50 reads well without
-         *  over-flattening the foreground. */
-        const val CAR_PITCH_DEG = 50.0
+         *  driving-mode tilt cap is 60°; 57 leans into the road ahead for
+         *  the nav look-ahead camera without hitting the cap. */
+        const val CAR_PITCH_DEG = 57.0
+
+        // ── Smooth-animation loop tunables (see ensureAnimating) ──
+        /** Frame cadence of the dead-reckoning loop. ~15 fps: smooth
+         *  enough, conservative on the MapLibre re-snapshot cost (the host
+         *  kills slow apps). Lower toward ~33 ms only if a real head unit
+         *  tolerates it. */
+        const val FRAME_MS = 66L
+        /** Per-frame easing factor for needles + heading (0..1). */
+        const val EASE = 0.25f
+        /** Below this ground speed the vehicle is treated as stopped (no
+         *  dead-reckoning, loop idles). */
+        const val MIN_MOVE_MPS = 0.8f
+        /** Never extrapolate position more than this past the last fix —
+         *  a dropped fix shouldn't fling the marker down the road. */
+        const val MAX_EXTRAPOLATE_SEC = 2.0
+        /** Camera look-ahead as a fraction of the surface height (in metres
+         *  of ground), pushing the puck low on the screen. Tune to taste —
+         *  higher = puck lower / more road ahead. */
+        const val LOOK_AHEAD_FRACTION = 0.22
+        /** Fixed on-screen anchor for the puck while following — fraction
+         *  of surface height from the top (~78% down). Keep roughly in
+         *  step with LOOK_AHEAD_FRACTION so puck and map agree. */
+        const val PUCK_SCREEN_FRACTION = 0.78f
+        /** Consecutive route points drawn ahead of the vehicle, full
+         *  fidelity (no decimation). ~90 ≈ the next several km at BRouter's
+         *  ~100 m node spacing — more than the zoomed nav view shows. */
+        const val ROUTE_DRAW_POINTS = 90
         /** Vertical squash applied to the vehicle marker when tilted, so
          *  it lies on the ground plane instead of facing the camera —
          *  cos of the camera pitch. */
         val PITCH_FORESHORTEN = cos(Math.toRadians(CAR_PITCH_DEG)).toFloat()
-        /** Cap on the left gauge block (2 columns) as a fraction of the
-         *  surface width — keeps the map at least half the screen. On
-         *  wide car screens the square cells are narrower than this. */
-        const val GAUGE_BLOCK_FRACTION = 0.5f
         /** Recent G-force samples kept for the corner G-meter trail. At
          *  the car sample rate (~5 Hz) this is a few seconds of history. */
         const val GFORCE_TRAIL = 24
+
+        /** Power peak-hold window and instant-efficiency averaging window. */
+        const val PEAK_WINDOW_MS = 30_000L
+        const val EFF_WINDOW_MS = 2_000L
+        /** Cockpit needs a wide surface; below this aspect ratio (w/h) the
+         *  cluster falls back to the single integrated gauge. */
+        const val COCKPIT_MIN_ASPECT = 1.1f
 
         /** Pan clamp (≈±55 km) — keeps a runaway drag from scrolling
          *  far off the route. */

@@ -67,16 +67,42 @@ class TripDashboardSession : Session() {
         if (intent.action != CarContext.ACTION_NAVIGATE) return false
         val uri = intent.data ?: return false
         if (!uri.scheme.equals("geo", ignoreCase = true)) return false
+        // Respond on the surface the instant we accept the intent — the
+        // banner shows "Finding…" before geocoding/origin resolve, so the
+        // app visibly reacts to "navigate to X" even while the route is
+        // still pending.
+        NavigationController.indicateSearching(searchLabel(uri))
         // Resolve + route off the main thread (geocoding may hit the
-        // network); the dashboard shows "computing route" meanwhile.
+        // network); the dashboard shows progress meanwhile.
         lifecycleScope.launch {
-            val dest = resolveDestination(uri) ?: return@launch
+            val dest = resolveDestination(uri)
+            if (dest == null) {
+                NavigationController.reportUnresolved("Couldn't find that destination")
+                return@launch
+            }
             NavigationController.navigateTo(carContext, dest.lat, dest.lon, dest.label)
         }
         return true
     }
 
     private data class Dest(val lat: Double, val lon: Double, val label: String?)
+
+    /** Best-effort human label from a `geo:` URI's `q` parameter, for the
+     *  immediate "Finding …" banner. Strips a trailing `(label)` coord
+     *  annotation and any bare lat,lng so the banner reads naturally. */
+    private fun searchLabel(uri: Uri): String? {
+        val query = uri.schemeSpecificPart?.substringAfter('?', "") ?: return null
+        val q = query.split('&')
+            .firstOrNull { it.startsWith("q=") }
+            ?.substringAfter("q=")
+            ?.let { runCatching { URLDecoder.decode(it, "UTF-8") }.getOrNull() }
+            ?.substringBefore('(')
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: return null
+        // A bare "lat,lng" isn't a friendly label — skip it.
+        return if (parseLatLng(q) != null) null else q
+    }
 
     /**
      * Parse a `geo:` URI per the Assistant navigation-intent contract:

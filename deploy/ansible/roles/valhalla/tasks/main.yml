@@ -1,0 +1,55 @@
+# Server-side Valhalla routing for GPSinfo (valhalla.appmire.be). Mirrors the
+# tile-server app role: an /opt dir, a docker-compose, bring it up. The
+# container builds routing tiles from the configured OSM extracts on first run
+# (can take a while for Benelux, much longer for europe) and then serves the
+# HTTP API on loopback; the nginx role fronts it with TLS + the ?key= gate.
+---
+- name: Ensure Valhalla app dir (owned by deploy user)
+  become: true
+  ansible.builtin.file:
+    path: "{{ valhalla_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Ensure custom_files dir (built routing tiles persist here)
+  ansible.builtin.file:
+    path: "{{ valhalla_app_dir }}/custom_files"
+    state: directory
+    mode: "0755"
+
+- name: Render Valhalla docker-compose
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ valhalla_app_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Pull + start Valhalla (first run builds tiles in the background)
+  ansible.builtin.command:
+    chdir: "{{ valhalla_app_dir }}"
+    cmd: docker compose up -d
+  register: up
+  changed_when: >-
+    'Started' in up.stderr or 'Created' in up.stderr or
+    'Recreate' in up.stderr or 'Pulled' in up.stderr
+
+# /status returns 200 only once tiles are built and loaded. On the very first
+# deploy the tile build can outlast this window, so don't fail the play — the
+# container keeps building and comes up on its own; re-run --tags valhalla to
+# confirm. On later runs (tiles cached) it answers quickly.
+- name: Wait for Valhalla /status on loopback (tiles may still be building)
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ valhalla_port }}/status"
+    status_code: [200]
+  register: v_up
+  retries: 30
+  delay: 10
+  until: v_up.status == 200
+  failed_when: false
+
+- name: Report Valhalla readiness
+  ansible.builtin.debug:
+    msg: >-
+      Valhalla {{ 'is UP' if (v_up.status | default(0)) == 200
+      else 'is still building tiles — re-run --tags valhalla later to confirm' }}.

@@ -295,6 +295,11 @@
     <string name="car_waiting_fix" tools:ignore="MissingTranslation">Waiting for GPS fix…</string>
     <string name="car_action_end_nav" tools:ignore="MissingTranslation">End route</string>
     <string name="car_action_navigate" tools:ignore="MissingTranslation">Where to?</string>
+    <string name="car_routes_title" tools:ignore="MissingTranslation">Choose a route</string>
+    <string name="car_action_go" tools:ignore="MissingTranslation">Go</string>
+    <string name="car_route_fastest" tools:ignore="MissingTranslation">Fastest</string>
+    <string name="car_route_shortest" tools:ignore="MissingTranslation">Shortest</string>
+    <string name="car_route_economic" tools:ignore="MissingTranslation">Economic</string>
     <string name="car_nav_destination" tools:ignore="MissingTranslation">Destination</string>
     <string name="car_search_hint" tools:ignore="MissingTranslation">Search address or place</string>
     <string name="car_search_prompt" tools:ignore="MissingTranslation">Type a destination to search</string>

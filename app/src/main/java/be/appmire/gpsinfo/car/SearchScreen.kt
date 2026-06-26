@@ -112,11 +112,9 @@ class SearchScreen(carContext: CarContext) : Screen(carContext) {
     }
 
     private fun drive(r: GeocodeResult) {
-        NavigationController.navigateTo(
-            carContext, r.lat, r.lon, destName = r.label, destDetail = r.detail,
-        )
-        // Back to the map to watch guidance.
-        screenManager.popToRoot()
+        // Show the route chooser (fastest/shortest/economic); it navigates
+        // directly when offline / no alternatives.
+        screenManager.push(RouteChoiceScreen(carContext, r.lat, r.lon, r.label, r.detail))
     }
 
     private companion object {

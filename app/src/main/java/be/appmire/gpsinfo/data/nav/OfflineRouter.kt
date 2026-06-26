@@ -1,6 +1,7 @@
 package be.appmire.gpsinfo.data.nav
 
 import android.content.Context
+import be.appmire.gpsinfo.BuildConfig
 import btools.router.OsmNodeNamed
 import btools.router.RoutingContext
 import btools.router.RoutingEngine
@@ -31,26 +32,27 @@ import kotlinx.coroutines.withContext
  * integer coordinates are offset microdegrees: ilon = (lon+180)·10⁶,
  * ilat = (lat+90)·10⁶.
  */
-class OfflineRouter(context: Context) {
+class OfflineRouter(context: Context) : Router {
 
     private val appContext = context.applicationContext
     private val baseDir = File(appContext.filesDir, "brouter")
     val segmentsDir = File(baseDir, "segments").apply { mkdirs() }
     private val profilesDir = File(baseDir, "profiles2").apply { mkdirs() }
 
-    /** Compute a car route. Returns null with no throw on "no route
-     *  found" (missing tiles, unreachable target); throws only on
-     *  programming errors. */
-    suspend fun route(
+    /** Compute a car route for [profile]. Returns null with no throw on
+     *  "no route found" (missing tiles, unreachable target); throws only
+     *  on programming errors. */
+    override suspend fun route(
         fromLat: Double,
         fromLon: Double,
         toLat: Double,
         toLon: Double,
+        profile: RouteProfile,
     ): OfflineRoute? = withContext(Dispatchers.IO) {
         installProfilesIfNeeded()
 
         val rc = RoutingContext()
-        rc.localFunction = File(profilesDir, PROFILE_FILE).absolutePath
+        rc.localFunction = File(profilesDir, profileFile(profile)).absolutePath
         // 1 = auto: generates the VoiceHint list without committing to
         // a specific export dialect.
         rc.turnInstructionMode = 1
@@ -86,6 +88,14 @@ class OfflineRouter(context: Context) {
             )
         } ?: emptyList()
 
+        if (BuildConfig.DEBUG) android.util.Log.d(
+            "NavDiag",
+            "route pts=${points.size} dist=${track.distance}m turns=${turns.size} " +
+                turns.take(8).joinToString(" ") {
+                    "[i=${it.trackIndex} ${it.command} d2n=${it.distanceToNextMeters.toInt()}]"
+                } + " lastTurnIdx=${turns.lastOrNull()?.trackIndex}",
+        )
+
         OfflineRoute(
             points = points,
             distanceMeters = track.distance,
@@ -96,9 +106,19 @@ class OfflineRouter(context: Context) {
 
     /** Which segment tiles a route between these points needs, and
      *  which of them are still missing locally. */
-    fun missingTiles(fromLat: Double, fromLon: Double, toLat: Double, toLon: Double): List<String> =
+    override fun missingTiles(fromLat: Double, fromLon: Double, toLat: Double, toLon: Double): List<String> =
         Rd5Tiles.tilesForBoundingBox(fromLat, fromLon, toLat, toLon)
             .filterNot { File(segmentsDir, it).exists() }
+
+    /** BRouter profile (.brf) for a [RouteProfile].
+     *  TODO(nav-engine-v2): ship distinct car-shortest / eco profiles, or
+     *  let Valhalla differentiate via costing. Until then every profile
+     *  uses the time-optimal car-vario, so the route options render but
+     *  don't yet meaningfully differ — full differentiation lands with
+     *  Valhalla (docs/design/nav-engine-v2.md). */
+    private fun profileFile(profile: RouteProfile): String = when (profile) {
+        RouteProfile.FASTEST, RouteProfile.SHORTEST, RouteProfile.ECONOMIC -> PROFILE_FILE
+    }
 
     private fun namedNode(label: String, lat: Double, lon: Double): OsmNodeNamed =
         OsmNodeNamed().apply {
@@ -160,6 +180,9 @@ data class TurnHint(
     val distanceToNextMeters: Double,
     /** Index of the turn's node in [OfflineRoute.points]. */
     val trackIndex: Int,
+    /** Lane guidance for this maneuver, or null when the engine has none
+     *  (BRouter). Populated by Valhalla — see [Lane]. */
+    val lanes: List<Lane>? = null,
 )
 
 /** BRouter command ids mapped to a stable app-side vocabulary. */

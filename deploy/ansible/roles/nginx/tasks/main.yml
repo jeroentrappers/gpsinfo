@@ -58,3 +58,47 @@
   vars:
     have_cert: true
   notify: reload nginx
+
+# ── Valhalla routing vhost (valhalla.appmire.be) ──────────────────────────
+- name: Does a TLS cert already exist for Valhalla?
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ valhalla_domain }}/fullchain.pem"
+  register: valhalla_tls_cert
+
+- name: Render Valhalla vhost
+  ansible.builtin.template:
+    src: valhalla.conf.j2
+    dest: "/etc/nginx/sites-available/{{ valhalla_domain }}"
+    mode: "0644"
+  vars:
+    have_cert: "{{ valhalla_tls_cert.stat.exists }}"
+  notify: reload nginx
+
+- name: Enable Valhalla vhost
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ valhalla_domain }}"
+    dest: "/etc/nginx/sites-enabled/{{ valhalla_domain }}"
+    state: link
+  notify: reload nginx
+
+- name: Apply nginx changes now (needed before certbot)
+  ansible.builtin.meta: flush_handlers
+
+- name: Obtain TLS cert for Valhalla
+  when: enable_tls and not valhalla_tls_cert.stat.exists
+  ansible.builtin.command:
+    cmd: >-
+      certbot certonly --nginx --non-interactive --agree-tos -m {{ certbot_email }}
+      -d {{ valhalla_domain }}
+  register: valhalla_certbot_run
+  changed_when: "'Congratulations' in valhalla_certbot_run.stdout or 'Successfully received' in valhalla_certbot_run.stdout"
+
+- name: Re-render Valhalla vhost with TLS
+  when: enable_tls
+  ansible.builtin.template:
+    src: valhalla.conf.j2
+    dest: "/etc/nginx/sites-available/{{ valhalla_domain }}"
+    mode: "0644"
+  vars:
+    have_cert: true
+  notify: reload nginx
