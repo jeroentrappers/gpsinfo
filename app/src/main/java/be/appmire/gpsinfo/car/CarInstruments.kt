@@ -94,6 +94,10 @@ class CarInstruments {
         val rLL = ((lBot - lTop) / 2f).coerceAtLeast(H * 0.07f) / sinSweep
         val yMid = (aT + aB) / 2f
         val rL = ((aB - aT) / 2f).coerceAtLeast(H * 0.10f) / sinSweep
+        // When the speed scale is tucked smaller than the full (power) scale,
+        // shrink its tick labels / marks / insets by the same ratio so they don't
+        // look oversized on the compact dial.
+        val sL = (rLL / rL).coerceIn(0.5f, 1f)
         val cxL = aL + rLL          // arc's near edge hugs the left screen edge
         val cxR = aR - rL           // …and the right screen edge
         val spA = { t: Float -> 180f - sweep + 2f * sweep * t }   // left: bottom → top
@@ -112,12 +116,12 @@ class CarInstruments {
         val pStops = powerStops()
 
         // ── LEFT — speed scale + level fill + limit dot + value tip ──
-        scaleTicks(canvas, cxL, yL, rLL, tickLen, rLL - gr * 0.36f, gr, f.tick, sStops, SPEED_KNEES, false, spA)
-        fillArc(canvas, cxL, yL, rLL, spA(0f), spA(speedFrac(d.kmh)), LCD, fillW)
+        scaleTicks(canvas, cxL, yL, rLL, tickLen * sL, rLL - gr * 0.36f * sL, gr * sL, f.tick * sL, sStops, SPEED_KNEES, false, spA)
+        fillArc(canvas, cxL, yL, rLL, spA(0f), spA(speedFrac(d.kmh)), LCD, fillW * sL)
         if (d.speedLimitKmh != null) {
-            limitDot(canvas, cxL, yL, rLL - gr * CK_LIMINSET, spA(speedFrac(d.speedLimitKmh.toDouble())), gr * CK_LIMDOT)
+            limitDot(canvas, cxL, yL, rLL - gr * CK_LIMINSET * sL, spA(speedFrac(d.speedLimitKmh.toDouble())), gr * CK_LIMDOT * sL)
         }
-        outsideTip(canvas, cxL, yL, rLL, spA(speedFrac(d.kmh)), LCD, tipLen)
+        outsideTip(canvas, cxL, yL, rLL, spA(speedFrac(d.kmh)), LCD, tipLen * sL)
         // Readout (number · km/h · ±acc/odo), centred at the inner column.
         mono.textAlign = Paint.Align.CENTER
         mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
