@@ -1,6 +1,7 @@
 package be.appmire.gpsinfo.data.nav
 
 import android.content.Context
+import be.appmire.gpsinfo.BuildConfig
 import btools.router.OsmNodeNamed
 import btools.router.RoutingContext
 import btools.router.RoutingEngine
@@ -87,7 +88,7 @@ class OfflineRouter(context: Context) : Router {
             )
         } ?: emptyList()
 
-        android.util.Log.d(
+        if (BuildConfig.DEBUG) android.util.Log.d(
             "NavDiag",
             "route pts=${points.size} dist=${track.distance}m turns=${turns.size} " +
                 turns.take(8).joinToString(" ") {

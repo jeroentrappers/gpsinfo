@@ -2,6 +2,7 @@ package be.appmire.gpsinfo.data.nav
 
 import android.content.Context
 import android.location.Location
+import be.appmire.gpsinfo.BuildConfig
 import be.appmire.gpsinfo.data.model.GnssSnapshot
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
@@ -403,7 +404,7 @@ object NavigationController {
         val pace = if (s.route.distanceMeters > 0)
             s.route.durationSeconds.toDouble() / s.route.distanceMeters else 0.0
 
-        android.util.Log.d(
+        if (BuildConfig.DEBUG) android.util.Log.d(
             "NavDiag",
             "offer seg=${snap.segmentIndex} along=${snap.alongM.toInt()}m cross=${snap.crossTrackM.toInt()}m " +
                 "nextIdx=${nextTurn?.trackIndex} cmd=${nextTurn?.command} " +
@@ -430,7 +431,7 @@ object NavigationController {
             acc += haversineM(route.points[i - 1], route.points[i])
             cumDist[i] = acc
         }
-        android.util.Log.d(
+        if (BuildConfig.DEBUG) android.util.Log.d(
             "NavDiag",
             "install cumLast=${cumDist.lastOrNull()?.toInt()}m pts=${route.points.size} " +
                 "turns=${route.turns.size} firstTurnIdx=${route.turns.firstOrNull()?.trackIndex} " +
