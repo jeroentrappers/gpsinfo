@@ -49,40 +49,52 @@ class CarInstruments {
      *  left during turn-by-turn) the whole cluster shifts to the space that's
      *  left and never sits under the host chrome. */
     fun drawCockpit(canvas: Canvas, w: Int, h: Int, d: ClusterData, area: RectF) {
+        val W = w.toFloat()
         val H = h.toFloat()
-        val aL = area.left
-        val aT = area.top
-        val aR = area.right
-        val aB = area.bottom
-        val aW = (aR - aL).coerceAtLeast(w * 0.3f)
+        // Gauges hug the physical left/right edges. The host stacks its turn card
+        // and destination card in a left rail during turn-by-turn — detected by a
+        // large left inset on the safe area — so the SPEED scale tucks into the
+        // vertical gap between those two cards then, and uses the full safe height
+        // otherwise. The power scale (right, no cards there) always uses the full
+        // safe height.
+        val edge = W * CK_EDGE
+        val aL = edge
+        val aR = W - edge
+        val aW = aR - aL
+        // Vertical band = the host's safe area top/bottom. A top inset is a top
+        // (turn) card, a bottom inset is a bottom (destination) card — so the
+        // scales tuck between exactly what THIS host draws, whether that's both
+        // cards or just the bottom one. (On hosts that stack both cards in a left
+        // rail instead, the rail shows as a left inset, handled below.)
+        val aT = area.top.coerceIn(0f, H * 0.42f)
+        val aB = area.bottom.coerceIn(H * 0.58f, H)
 
-        // Scrims blend the edge gauges into the map, anchored to the safe edges.
+        // Scrims blend the edge gauges into the map.
         val scrimW = aW * CK_SCRIM
         scrim.shader = LinearGradient(aL, 0f, aL + scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
-        canvas.drawRect(aL, 0f, aL + scrimW, H, scrim)
+        canvas.drawRect(0f, 0f, aL + scrimW, H, scrim)
         scrim.shader = LinearGradient(aR, 0f, aR - scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
-        canvas.drawRect(aR - scrimW, 0f, aR, H, scrim)
+        canvas.drawRect(aR - scrimW, 0f, W, H, scrim)
         scrim.shader = null
 
         val gr = H * 0.42f * SHARED_R
         val f = Fonts(gr)
         val sweep = CK_CURVE
-        // Scales fill the safe band vertically; 0 sits at the (safe) bottom.
         val yMid = (aT + aB) / 2f
-        val halfH = ((aB - aT) / 2f).coerceAtLeast(H * 0.12f)
+        val halfH = ((aB - aT) / 2f).coerceAtLeast(H * 0.10f)
         val rL = halfH / sin(Math.toRadians(sweep.toDouble())).toFloat()
-        val pad = aW * 0.03f
-        val cxL = aL + pad + rL          // arc's near edge hugs the safe-left edge
-        val cxR = aR - pad - rL          // …and the safe-right edge
+        val cxL = aL + rL          // arc's near edge hugs the left screen edge
+        val cxR = aR - rL          // …and the right screen edge
         val spA = { t: Float -> 180f - sweep + 2f * sweep * t }   // left: bottom → top
         val pwA = { t: Float -> sweep - 2f * sweep * t }          // right: bottom → top
         val tickLen = gr * 0.16f
-        val tipLen = (gr * 0.14f).coerceAtMost(pad * 0.9f)
+        val tipLen = (gr * 0.14f).coerceAtMost((edge * 0.9f).coerceAtLeast(8f))
         val fillW = gr * 0.05f
         val lx = aL + aW * CK_NUMINSET
         val rx = aR - aW * CK_NUMINSET
 
-        // Clock + temp top-centre of the safe area.
+        // Clock + temp top-centre (between the host's top-left turn card and the
+        // top-right action strip).
         clockTemp(canvas, (aL + aR) / 2f, aT + f.clock * 0.2f, f, d)
 
         val sStops = speedStops()
@@ -532,6 +544,7 @@ class CarInstruments {
 
         // Cockpit.
         const val CK_CURVE = 15f
+        const val CK_EDGE = 0.04f
         const val CK_SCRIM = 0.33f
         const val CK_NUMINSET = 0.14f
         const val CK_DIALX = 0.80f
