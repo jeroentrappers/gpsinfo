@@ -44,7 +44,8 @@ private fun ClusterPreview() {
         drawIntoCanvas { c ->
             val nc = c.nativeCanvas
             if (w >= h * 1.1f) {
-                instruments.drawCockpit(nc, w, h, PREVIEW_DATA)
+                // Simulate the host's safe area (status/action chrome top & bottom).
+                instruments.drawCockpit(nc, w, h, PREVIEW_DATA, RectF(w * 0.05f, h * 0.2f, w * 0.94f, h * 0.86f))
             } else {
                 val s = min(w, h) * 0.98f
                 val cx = w / 2f

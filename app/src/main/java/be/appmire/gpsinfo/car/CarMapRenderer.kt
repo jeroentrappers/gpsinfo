@@ -601,7 +601,12 @@ class CarMapRenderer(
     private fun drawCluster(canvas: Canvas, w: Int, h: Int, loc: Location?) {
         val d = buildClusterData(loc)
         if (w >= h * COCKPIT_MIN_ASPECT) {
-            instruments.drawCockpit(canvas, w, h, d)
+            // Lay the cluster out inside the host's safe rectangle. During
+            // turn-by-turn the host claims a left rail (turn card + ETA), which
+            // shrinks the safe area from the left — the gauges then shift right
+            // of it rather than hiding underneath. Falls back to the full surface.
+            val safe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
+            instruments.drawCockpit(canvas, w, h, d, RectF(safe))
         } else {
             // Centred square housing; the map shows above and below it.
             val s = min(w.toFloat(), h.toFloat()) * 0.98f

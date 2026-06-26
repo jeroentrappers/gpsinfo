@@ -10,7 +10,6 @@ import android.graphics.Shader
 import android.graphics.Typeface
 import java.util.Locale
 import kotlin.math.abs
-import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.ln
 import kotlin.math.min
@@ -44,74 +43,82 @@ class CarInstruments {
 
     // ── Public entry points ─────────────────────────────────────────
 
-    /** Cockpit edge-HUD over the full-bleed map ([w]×[h] = whole surface). */
-    fun drawCockpit(canvas: Canvas, w: Int, h: Int, d: ClusterData) {
-        val W = w.toFloat()
+    /** Cockpit edge-HUD over the full-bleed map. Everything is laid out inside
+     *  [area] — the host's safe rectangle in surface pixels — so when the host
+     *  claims a region for its nav rail (turn card + ETA, which it stacks on the
+     *  left during turn-by-turn) the whole cluster shifts to the space that's
+     *  left and never sits under the host chrome. */
+    fun drawCockpit(canvas: Canvas, w: Int, h: Int, d: ClusterData, area: RectF) {
         val H = h.toFloat()
-        val cy = H * CY
+        val aL = area.left
+        val aT = area.top
+        val aR = area.right
+        val aB = area.bottom
+        val aW = (aR - aL).coerceAtLeast(w * 0.3f)
 
-        // Scrims blend the edge HUD into the map and keep text legible over any
-        // tiles (day or night) — the HUD always reads light-on-dark.
-        val scrimW = W * CK_SCRIM
-        scrim.shader = LinearGradient(0f, 0f, scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, scrimW, H, scrim)
-        scrim.shader = LinearGradient(W, 0f, W - scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
-        canvas.drawRect(W - scrimW, 0f, W, H, scrim)
+        // Scrims blend the edge gauges into the map, anchored to the safe edges.
+        val scrimW = aW * CK_SCRIM
+        scrim.shader = LinearGradient(aL, 0f, aL + scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+        canvas.drawRect(aL, 0f, aL + scrimW, H, scrim)
+        scrim.shader = LinearGradient(aR, 0f, aR - scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+        canvas.drawRect(aR - scrimW, 0f, aR, H, scrim)
         scrim.shader = null
 
         val gr = H * 0.42f * SHARED_R
         val f = Fonts(gr)
-        val hSpan = H * CK_VSPAN
         val sweep = CK_CURVE
-        val rL = hSpan / sin(Math.toRadians(sweep.toDouble())).toFloat()
-        val edge = W * CK_EDGE
-        val cxL = edge + rL
-        val cxR = W - edge - rL
-        // Lift the speed scale's bottom so the bottom-left corner stays free for
-        // the host's ETA card while navigating; 0 still sits at the raised bottom.
-        val botPx = (hSpan - H * CK_LEFTBOT).coerceAtLeast(0f)
-        val botDeg = Math.toDegrees(asin((botPx / rL).coerceIn(0f, 1f).toDouble())).toFloat()
-        val spA = { t: Float -> 180f - botDeg + (botDeg + sweep) * t }   // left: raised bottom → top
-        val pwA = { t: Float -> sweep - 2f * sweep * t }                 // right: bottom → top
-        val tickLen = (gr * 0.16f).coerceAtMost((edge * 0.9f).coerceAtLeast(8f))
-        val tipLen = (gr * 0.14f).coerceAtMost((edge * 0.9f).coerceAtLeast(8f))
+        // Scales fill the safe band vertically; 0 sits at the (safe) bottom.
+        val yMid = (aT + aB) / 2f
+        val halfH = ((aB - aT) / 2f).coerceAtLeast(H * 0.12f)
+        val rL = halfH / sin(Math.toRadians(sweep.toDouble())).toFloat()
+        val pad = aW * 0.03f
+        val cxL = aL + pad + rL          // arc's near edge hugs the safe-left edge
+        val cxR = aR - pad - rL          // …and the safe-right edge
+        val spA = { t: Float -> 180f - sweep + 2f * sweep * t }   // left: bottom → top
+        val pwA = { t: Float -> sweep - 2f * sweep * t }          // right: bottom → top
+        val tickLen = gr * 0.16f
+        val tipLen = (gr * 0.14f).coerceAtMost(pad * 0.9f)
         val fillW = gr * 0.05f
-        val lx = edge + W * CK_NUMINSET
-        val rx = W - edge - W * CK_NUMINSET
+        val lx = aL + aW * CK_NUMINSET
+        val rx = aR - aW * CK_NUMINSET
 
-        clockTemp(canvas, lx, H * 0.10f, f, d)   // top-left; centre-top stays clear for the host card
+        // Clock + temp top-centre of the safe area.
+        clockTemp(canvas, (aL + aR) / 2f, aT + f.clock * 0.2f, f, d)
 
         val sStops = speedStops()
         val pStops = powerStops()
 
         // ── LEFT — speed scale + level fill + limit dot + value tip ──
-        scaleTicks(canvas, cxL, cy, rL, tickLen, rL - gr * 0.36f, gr, f.tick, sStops, SPEED_KNEES, false, spA)
-        fillArc(canvas, cxL, cy, rL, spA(0f), spA(speedFrac(d.kmh)), LCD, fillW)
+        scaleTicks(canvas, cxL, yMid, rL, tickLen, rL - gr * 0.36f, gr, f.tick, sStops, SPEED_KNEES, false, spA)
+        fillArc(canvas, cxL, yMid, rL, spA(0f), spA(speedFrac(d.kmh)), LCD, fillW)
         if (d.speedLimitKmh != null) {
-            limitDot(canvas, cxL, cy, rL - gr * CK_LIMINSET, spA(speedFrac(d.speedLimitKmh.toDouble())), gr * CK_LIMDOT)
+            limitDot(canvas, cxL, yMid, rL - gr * CK_LIMINSET, spA(speedFrac(d.speedLimitKmh.toDouble())), gr * CK_LIMDOT)
         }
-        outsideTip(canvas, cxL, cy, rL, spA(speedFrac(d.kmh)), LCD, tipLen)
+        outsideTip(canvas, cxL, yMid, rL, spA(speedFrac(d.kmh)), LCD, tipLen)
         // Readout (number · km/h · ±acc/odo), centred at the inner column.
         mono.textAlign = Paint.Align.CENTER
         mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
-        canvas.drawText(if (d.hasSpeed) "${d.kmh.toInt()}" else "––", lx, cy, mono)
+        canvas.drawText(if (d.hasSpeed) "${d.kmh.toInt()}" else "––", lx, yMid, mono)
         mono.color = MUTED; mono.textSize = f.unit
-        canvas.drawText("km/h", lx, cy + f.unit * 1.6f, mono)
+        canvas.drawText("km/h", lx, yMid + f.unit * 1.6f, mono)
         mono.color = LCD_DIM; mono.textSize = f.sub; mono.isFakeBoldText = false
-        canvas.drawText(subLine(d), lx, cy + f.unit * 1.6f + f.sub * 1.6f, mono)
+        canvas.drawText(subLine(d), lx, yMid + f.unit * 1.6f + f.sub * 1.6f, mono)
 
         // ── RIGHT — power scale + level fill + peak + value tip ──
-        scaleTicks(canvas, cxR, cy, rL, tickLen, rL - gr * 0.36f, gr, f.tick, pStops, POWER_KNEES, !d.obd, pwA)
+        scaleTicks(canvas, cxR, yMid, rL, tickLen, rL - gr * 0.36f, gr, f.tick, pStops, POWER_KNEES, !d.obd, pwA)
         if (d.obd) {
             val kw = d.kw ?: 0.0
-            fillArc(canvas, cxR, cy, rL, pwA(powerFrac(0.0)), pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, fillW)
-            d.peakKw?.let { peakMark(canvas, cxR, cy, rL, pwA(powerFrac(it)), gr) }
-            outsideTip(canvas, cxR, cy, rL, pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, tipLen)
-            powerReadout(canvas, rx, cy, f, d, inlineUnit = true)
+            fillArc(canvas, cxR, yMid, rL, pwA(powerFrac(0.0)), pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, fillW)
+            d.peakKw?.let { peakMark(canvas, cxR, yMid, rL, pwA(powerFrac(it)), gr) }
+            outsideTip(canvas, cxR, yMid, rL, pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, tipLen)
+            powerReadout(canvas, rx, yMid, f, d, inlineUnit = true)
         }
 
-        // ── Merged compass + G-meter, floating lower-right ──
-        combinedCentre(canvas, W * CK_DIALX, H * CK_DIALY, H * CK_DIALSCALE, d)
+        // ── Merged compass + G-meter, anchored a fixed margin above the safe
+        // bottom (no longer sunk to a fixed Y). ──
+        val dialR = H * CK_DIALSCALE
+        val dialCy = (aB - dialR - (aB - aT) * 0.04f).coerceAtLeast(yMid)
+        combinedCentre(canvas, aL + aW * CK_DIALX, dialCy, dialR, d)
     }
 
     /** Integrated single gauge filling [cell] (narrow/portrait surfaces). */
@@ -525,13 +532,9 @@ class CarInstruments {
 
         // Cockpit.
         const val CK_CURVE = 15f
-        const val CK_EDGE = 0.04f
         const val CK_SCRIM = 0.33f
-        const val CK_VSPAN = 0.46f
         const val CK_NUMINSET = 0.14f
-        const val CK_LEFTBOT = 0.14f
         const val CK_DIALX = 0.80f
-        const val CK_DIALY = 0.85f
         const val CK_DIALSCALE = 0.12f
         const val CK_LIMDOT = 0.06f
         const val CK_LIMINSET = 0.0f
