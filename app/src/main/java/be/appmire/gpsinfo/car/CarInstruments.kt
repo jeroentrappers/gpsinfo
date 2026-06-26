@@ -80,11 +80,22 @@ class CarInstruments {
         val gr = H * 0.42f * SHARED_R
         val f = Fonts(gr)
         val sweep = CK_CURVE
+        val sinSweep = sin(Math.toRadians(sweep.toDouble())).toFloat()
+        // When the host stacks its cards in a LEFT rail (large left inset), tuck
+        // the speed scale into the rail's vertical middle — the gap between the
+        // turn card (top) and the destination card (bottom). Hosts that lay the
+        // cards out as top/bottom bands already express that gap through the
+        // aT/aB insets, so there the left band is simply the full safe height.
+        val leftRail = area.left > W * 0.12f
+        val railH = aB - aT
+        val lTop = if (leftRail) aT + railH * CK_RAIL_GAP else aT
+        val lBot = if (leftRail) aB - railH * CK_RAIL_GAP else aB
+        val yL = (lTop + lBot) / 2f
+        val rLL = ((lBot - lTop) / 2f).coerceAtLeast(H * 0.07f) / sinSweep
         val yMid = (aT + aB) / 2f
-        val halfH = ((aB - aT) / 2f).coerceAtLeast(H * 0.10f)
-        val rL = halfH / sin(Math.toRadians(sweep.toDouble())).toFloat()
-        val cxL = aL + rL          // arc's near edge hugs the left screen edge
-        val cxR = aR - rL          // …and the right screen edge
+        val rL = ((aB - aT) / 2f).coerceAtLeast(H * 0.10f) / sinSweep
+        val cxL = aL + rLL          // arc's near edge hugs the left screen edge
+        val cxR = aR - rL           // …and the right screen edge
         val spA = { t: Float -> 180f - sweep + 2f * sweep * t }   // left: bottom → top
         val pwA = { t: Float -> sweep - 2f * sweep * t }          // right: bottom → top
         val tickLen = gr * 0.16f
@@ -101,20 +112,20 @@ class CarInstruments {
         val pStops = powerStops()
 
         // ── LEFT — speed scale + level fill + limit dot + value tip ──
-        scaleTicks(canvas, cxL, yMid, rL, tickLen, rL - gr * 0.36f, gr, f.tick, sStops, SPEED_KNEES, false, spA)
-        fillArc(canvas, cxL, yMid, rL, spA(0f), spA(speedFrac(d.kmh)), LCD, fillW)
+        scaleTicks(canvas, cxL, yL, rLL, tickLen, rLL - gr * 0.36f, gr, f.tick, sStops, SPEED_KNEES, false, spA)
+        fillArc(canvas, cxL, yL, rLL, spA(0f), spA(speedFrac(d.kmh)), LCD, fillW)
         if (d.speedLimitKmh != null) {
-            limitDot(canvas, cxL, yMid, rL - gr * CK_LIMINSET, spA(speedFrac(d.speedLimitKmh.toDouble())), gr * CK_LIMDOT)
+            limitDot(canvas, cxL, yL, rLL - gr * CK_LIMINSET, spA(speedFrac(d.speedLimitKmh.toDouble())), gr * CK_LIMDOT)
         }
-        outsideTip(canvas, cxL, yMid, rL, spA(speedFrac(d.kmh)), LCD, tipLen)
+        outsideTip(canvas, cxL, yL, rLL, spA(speedFrac(d.kmh)), LCD, tipLen)
         // Readout (number · km/h · ±acc/odo), centred at the inner column.
         mono.textAlign = Paint.Align.CENTER
         mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
-        canvas.drawText(if (d.hasSpeed) "${d.kmh.toInt()}" else "––", lx, yMid, mono)
+        canvas.drawText(if (d.hasSpeed) "${d.kmh.toInt()}" else "––", lx, yL, mono)
         mono.color = MUTED; mono.textSize = f.unit
-        canvas.drawText("km/h", lx, yMid + f.unit * 1.6f, mono)
+        canvas.drawText("km/h", lx, yL + f.unit * 1.6f, mono)
         mono.color = LCD_DIM; mono.textSize = f.sub; mono.isFakeBoldText = false
-        canvas.drawText(subLine(d), lx, yMid + f.unit * 1.6f + f.sub * 1.6f, mono)
+        canvas.drawText(subLine(d), lx, yL + f.unit * 1.6f + f.sub * 1.6f, mono)
 
         // ── RIGHT — power scale + level fill + peak + value tip ──
         scaleTicks(canvas, cxR, yMid, rL, tickLen, rL - gr * 0.36f, gr, f.tick, pStops, POWER_KNEES, !d.obd, pwA)
@@ -546,6 +557,10 @@ class CarInstruments {
         const val CK_CURVE = 15f
         const val CK_EDGE = 0.04f
         const val CK_SCRIM = 0.33f
+        /** On a left-rail host, the speed scale tucks into the rail's middle: this
+         *  is the fraction of the rail height reserved at top (turn card) and at
+         *  bottom (destination card). */
+        const val CK_RAIL_GAP = 0.30f
         const val CK_NUMINSET = 0.14f
         const val CK_DIALX = 0.80f
         const val CK_DIALSCALE = 0.12f
