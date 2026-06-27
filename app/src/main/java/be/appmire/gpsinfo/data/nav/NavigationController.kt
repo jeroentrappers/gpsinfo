@@ -362,29 +362,49 @@ object NavigationController {
             return
         }
 
-        // Off-route detection → silent local re-route.
+        // Where the next maneuver is — computed before off-route handling so a
+        // missed turn can reroute faster than generic drift. Clamp to the
+        // distance actually left: a turn can't be farther than the destination
+        // (guards a stray voice-hint index or a bad snap).
+        val nextTurn = s.route.turns.firstOrNull { it.trackIndex > snap.segmentIndex }
+        val distToTurn = (nextTurn?.let {
+            max(0.0, cumDist[it.trackIndex.coerceIn(cumDist.indices)] - snap.alongM)
+        } ?: remaining).coerceAtMost(remaining)
+
+        // Off-route detection → silent re-route. A driver who ignores the next
+        // turn is off-route *right at the maneuver*, so inside the turn zone we
+        // reroute far sooner than the generic 3-fix drift debounce: immediately
+        // when the miss is unambiguous (well past the corridor), otherwise
+        // within ~2 fixes. Generic drift on open road keeps the 3-fix debounce
+        // so GPS noise doesn't trigger spurious recalculations. Every reroute
+        // recomputes from the CURRENT position, so the engine picks the new
+        // best path itself — a safe U-turn or an alternative route.
         if (snap.crossTrackM > OFF_ROUTE_M) {
             offRouteCount++
-            if (offRouteCount >= OFF_ROUTE_CONSECUTIVE && !reRouting) {
+            val nearTurn = distToTurn < MISSED_TURN_ZONE_M
+            val needed = when {
+                nearTurn && snap.crossTrackM > OFF_ROUTE_M * 2 -> 1
+                nearTurn -> MISSED_TURN_CONSECUTIVE
+                else -> OFF_ROUTE_CONSECUTIVE
+            }
+            if (offRouteCount >= needed && !reRouting) {
                 reRouting = true
                 val ctxRouter = router
-                if (ctxRouter != null) {
-                    scope.launch {
-                        // Online reroute first (fast); BRouter if offline.
-                        val fresh = onlineRouter.route(
-                            loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
-                        ) ?: ctxRouter.route(
-                            loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
-                        )
-                        synchronized(this@NavigationController) {
-                            reRouting = false
-                            offRouteCount = 0
-                            if (fresh != null && fresh.points.size >= 2 &&
-                                _state.value is NavState.Navigating
-                            ) {
-                                installRoute(fresh, s.destLat, s.destLon)
-                                voice?.announceReroute()
-                            }
+                scope.launch {
+                    // Online reroute first (fast, profile-aware); BRouter if offline.
+                    val fresh = onlineRouter.route(
+                        loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
+                    ) ?: ctxRouter?.route(
+                        loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
+                    )
+                    synchronized(this@NavigationController) {
+                        reRouting = false
+                        offRouteCount = 0
+                        if (fresh != null && fresh.points.size >= 2 &&
+                            _state.value is NavState.Navigating
+                        ) {
+                            installRoute(fresh, s.destLat, s.destLon)
+                            voice?.announceReroute()
                         }
                     }
                 }
@@ -393,13 +413,6 @@ object NavigationController {
             offRouteCount = 0
         }
 
-        val nextTurn = s.route.turns.firstOrNull { it.trackIndex > snap.segmentIndex }
-        // Clamp to the distance that's actually left: a turn can never be
-        // farther away than the destination. Guards against a stray
-        // voice-hint index or a bad snap producing a nonsensical value.
-        val distToTurn = (nextTurn?.let {
-            max(0.0, cumDist[it.trackIndex.coerceIn(cumDist.indices)] - snap.alongM)
-        } ?: remaining).coerceAtMost(remaining)
         // ETA scales the route's own pace over what's left.
         val pace = if (s.route.distanceMeters > 0)
             s.route.durationSeconds.toDouble() / s.route.distanceMeters else 0.0
@@ -477,13 +490,35 @@ object NavigationController {
      *  projections per fix, not 500. Falls back to a full scan when
      *  the window misses badly (e.g. after a re-route). */
     internal fun snapToRoute(route: OfflineRoute, loc: Location, lastIndex: Int): RouteSnap {
+        val n = route.points.size
         val windowed = snapScan(
             route, loc,
-            from = (lastIndex - 5).coerceAtLeast(0),
-            to = (lastIndex + 60).coerceAtMost(route.points.size - 2),
+            from = (lastIndex - SNAP_WINDOW_BACK).coerceAtLeast(0),
+            to = (lastIndex + SNAP_WINDOW_AHEAD).coerceAtMost(n - 2),
         )
+        // Solidly within the local corridor — trust it.
         if (windowed.crossTrackM < OFF_ROUTE_M * 2) return windowed
-        return snapScan(route, loc, 0, route.points.size - 2)
+        // Off the local corridor. A naive global-nearest scan here is what
+        // produced the "130 km straight" bug: on a long route that passes
+        // near itself (parallel carriageways, overpasses, returning to the
+        // same town) the closest segment by lat/lon can be hundreds of points
+        // ahead — teleporting segmentIndex past every real turn so only the
+        // final "arrive" maneuver is left, shown as "straight" for the whole
+        // remaining distance. Only ADOPT a global re-snap when it's
+        // unambiguous: genuinely on that segment (small cross-track) AND not
+        // an implausible jump in route distance from where we were (no vehicle
+        // covers > a km-ish between ~1 Hz fixes).
+        val global = snapScan(route, loc, 0, n - 2)
+        if (cumDist.isEmpty()) return windowed
+        val li = lastIndex.coerceIn(cumDist.indices)
+        val gi = global.segmentIndex.coerceIn(cumDist.indices)
+        val jumpM = cumDist[gi] - cumDist[li]
+        val plausible = global.crossTrackM <= OFF_ROUTE_M &&
+            jumpM <= MAX_RESNAP_FORWARD_M && jumpM >= -MAX_RESNAP_BACK_M
+        // When the global match isn't a trustworthy re-snap, keep the local
+        // (off-route) result so the off-route counter triggers a real reroute
+        // instead of the maneuver logic silently teleporting down the route.
+        return if (plausible && global.crossTrackM < windowed.crossTrackM) global else windowed
     }
 
     private fun snapScan(route: OfflineRoute, loc: Location, from: Int, to: Int): RouteSnap {
@@ -540,6 +575,20 @@ object NavigationController {
     private const val TAG = "NavCtl"
     private const val OFF_ROUTE_M = 50.0
     private const val OFF_ROUTE_CONSECUTIVE = 3
+    /** Within this distance of the next maneuver, an off-route reading is
+     *  treated as a missed turn and rerouted on the fast path. */
+    private const val MISSED_TURN_ZONE_M = 60.0
+    /** Consecutive off-route fixes that trigger a reroute inside the turn
+     *  zone (vs [OFF_ROUTE_CONSECUTIVE] for generic open-road drift). */
+    private const val MISSED_TURN_CONSECUTIVE = 2
+    /** Local snap search window (points) around the last matched index. */
+    private const val SNAP_WINDOW_BACK = 5
+    private const val SNAP_WINDOW_AHEAD = 60
+    /** Max plausible forward re-snap (m) when off the local corridor; beyond
+     *  this a "nearest" global match is a route self-proximity lookalike, not
+     *  real progress, so it's rejected to avoid teleporting past real turns. */
+    private const val MAX_RESNAP_FORWARD_M = 1500.0
+    private const val MAX_RESNAP_BACK_M = 300.0
     private const val ARRIVAL_M = 40.0
     private const val FAILED_BANNER_MS = 6_000L
     /** How long a navigate intent waits for the first GNSS fix before

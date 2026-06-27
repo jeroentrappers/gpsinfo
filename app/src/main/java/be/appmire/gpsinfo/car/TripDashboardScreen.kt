@@ -35,6 +35,7 @@ import be.appmire.gpsinfo.data.rally.RallyState
 import be.appmire.gpsinfo.util.TrailNaming
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.sample
@@ -68,6 +69,11 @@ class TripDashboardScreen(
     private var recording: RecordingState = RecordingState.Idle
     private var rally: RallyState = RallyState.Idle
     private var nav: NavigationController.NavState = NavigationController.NavState.Idle
+
+    /** In-memory copy of the user's car-overlay drag/scale layout, kept in
+     *  sync with DataStore so the edit-mode persistence callback can patch a
+     *  single element and re-save the whole blob. */
+    private var overlayLayout: CarOverlayLayout = CarOverlayLayout()
     private var collectJob: Job? = null
     private var gForceJob: Job? = null
 
@@ -180,6 +186,7 @@ class TripDashboardScreen(
      *  the rally state changes phase (the action strips swap), so
      *  those are the only [invalidate] triggers. Idempotent: called
      *  from onStart and again after a mid-session permission grant. */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun startCollecting() {
         if (collectJob != null) return
         // Re-link the paired wheel probe so RT distance comes from
@@ -190,8 +197,16 @@ class TripDashboardScreen(
                 be.appmire.gpsinfo.data.SettingsRepository(carContext.applicationContext)
             )
         val locRepo = LocationRepository(carContext.applicationContext)
+        // Auto-drive ("test drive"): while the simulator is enabled it
+        // replaces the live GPS with synthetic fixes walking the route, so
+        // the whole surface drives itself end-to-end (Play AUTO_DRIVE check).
+        val locationSource = be.appmire.gpsinfo.data.nav.NavigationSimulator.active
+            .flatMapLatest { simulating ->
+                if (simulating) be.appmire.gpsinfo.data.nav.NavigationSimulator.snapshots()
+                else locRepo.snapshots()
+            }
         collectJob = combine(
-            locRepo.snapshots(),
+            locationSource,
             TrailRecordingController.state,
             RallyController.state,
             NavigationController.state,
@@ -255,6 +270,56 @@ class TripDashboardScreen(
         SpeedLimitProvider.limit
             .onEach { renderer.updateSpeedLimit(it) }
             .launchIn(lifecycleScope)
+
+        // Which optional overlays to draw, from the phone's "Android Auto"
+        // settings. Defaults keep the surface navigation-only (Play policy);
+        // each extra overlay is opt-in.
+        val settings = be.appmire.gpsinfo.data.SettingsRepository(carContext.applicationContext)
+        combine(
+            settings.carOverlaySpeed,
+            settings.carOverlaySpeedLimit,
+            settings.carOverlayCluster,
+            settings.carOverlayCompass,
+            settings.carOverlayRecordingStrip,
+            settings.carOverlayRallyPanel,
+        ) { v ->
+            CarOverlayConfig(
+                speed = v[0],
+                speedLimit = v[1],
+                cluster = v[2],
+                compass = v[3],
+                recordingStrip = v[4],
+                rallyPanel = v[5],
+            )
+        }
+            .onEach { renderer.updateOverlayConfig(it) }
+            .launchIn(lifecycleScope)
+
+        // Dynamic overlay layout (drag/scale per nav state). Push the active
+        // state's overrides whenever the saved layout or the nav phase changes.
+        combine(
+            settings.carOverlayLayoutJson,
+            NavigationController.state,
+        ) { json, navState ->
+            val layout = CarOverlayLayout.fromJson(json)
+            overlayLayout = layout
+            val state = if (
+                navState is NavigationController.NavState.Navigating ||
+                navState is NavigationController.NavState.Preparing
+            ) OverlayState.NAV else OverlayState.IDLE
+            state to layout
+        }
+            .onEach { (state, layout) ->
+                renderer.updateOverlayLayout(state, layout.forState(state))
+            }
+            .launchIn(lifecycleScope)
+
+        // Persist a finished edit: patch the one element in the right state
+        // bucket and re-save the whole layout blob.
+        renderer.onLayoutChanged = { state, element, override ->
+            overlayLayout = overlayLayout.with(state, element, override)
+            lifecycleScope.launch { settings.setCarOverlayLayoutJson(overlayLayout.toJson()) }
+        }
 
         // G-meter feed, on its own job. The fused accelerometer stream
         // runs at the game sensor rate (~50 Hz); sample it down to a
@@ -374,6 +439,30 @@ class TripDashboardScreen(
                     )
                 }
                 addAction(placesAction)
+                // Layout editor — parked only (dragging while driving is
+                // unsafe and the host blocks it). Only offered when not
+                // actively navigating, both to keep the strip within its
+                // 4-action cap and because the layout is best tuned at rest.
+                if (nav !is NavigationController.NavState.Navigating &&
+                    nav !is NavigationController.NavState.Preparing
+                ) {
+                    addAction(
+                        Action.Builder()
+                            .setTitle(
+                                carContext.getString(
+                                    if (renderer.isEditMode()) R.string.car_action_done
+                                    else R.string.car_action_edit_layout
+                                )
+                            )
+                            .setOnClickListener(
+                                ParkedOnlyOnClickListener.create {
+                                    renderer.setEditMode(!renderer.isEditMode())
+                                    invalidate()
+                                }
+                            )
+                            .build()
+                    )
+                }
             }.build()
         }
 

@@ -1,0 +1,6 @@
+• Android Auto: the navigation screen is now map-focused by default. Gauges, compass, recording strip and rally panel are optional — switch them on under Settings → Android Auto overlays.
+• Test-drive simulation for navigation.
+• Route line now starts right at your position (no gap).
+• Fixed a wrong "next turn" distance (no more long "straight" before a nearby turn).
+• Faster reroute when you miss a turn.
+• Customisable car overlay layout: drag & pinch while parked.

@@ -144,6 +144,22 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         /** Version the user dismissed the update banner for. When the
          *  latest release is newer than this, the banner returns. */
         val UpdateDismissedVersion = stringPreferencesKey("update_dismissed_version")
+
+        // ── Android Auto surface overlays ───────────────────────────
+        // Which optional overlays the car navigation surface draws on top
+        // of the map. Defaults keep a fresh install navigation-only (Play
+        // Auto policy): only the speed + speed-limit badge (driving info)
+        // are on; the full gauge cluster, compass/G-meter, recording strip
+        // and rally panel are opt-in.
+        val CarOverlaySpeed = booleanPreferencesKey("car_overlay_speed")
+        val CarOverlaySpeedLimit = booleanPreferencesKey("car_overlay_speed_limit")
+        val CarOverlayCluster = booleanPreferencesKey("car_overlay_cluster")
+        val CarOverlayCompass = booleanPreferencesKey("car_overlay_compass")
+        val CarOverlayRecordingStrip = booleanPreferencesKey("car_overlay_recording_strip")
+        val CarOverlayRallyPanel = booleanPreferencesKey("car_overlay_rally_panel")
+        /** JSON blob of per-state, per-element drag/scale overrides for the
+         *  car surface; decoded by the car layer (CarOverlayLayout). */
+        val CarOverlayLayout = stringPreferencesKey("car_overlay_layout")
     }
 
     override val maxSpeedKmh: Flow<Float> = context.dataStore.data
@@ -414,6 +430,61 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setUpdateDismissedVersion(value: String) {
         context.dataStore.edit { it[Keys.UpdateDismissedVersion] = value }
+    }
+
+    // ---------- Android Auto surface overlays ----------
+    // Exposed as primitive flows so the data layer stays free of car-package
+    // types; the car layer assembles these into its CarOverlayConfig.
+
+    val carOverlaySpeed: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.CarOverlaySpeed] ?: true }
+
+    suspend fun setCarOverlaySpeed(value: Boolean) {
+        context.dataStore.edit { it[Keys.CarOverlaySpeed] = value }
+    }
+
+    val carOverlaySpeedLimit: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.CarOverlaySpeedLimit] ?: true }
+
+    suspend fun setCarOverlaySpeedLimit(value: Boolean) {
+        context.dataStore.edit { it[Keys.CarOverlaySpeedLimit] = value }
+    }
+
+    val carOverlayCluster: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.CarOverlayCluster] ?: false }
+
+    suspend fun setCarOverlayCluster(value: Boolean) {
+        context.dataStore.edit { it[Keys.CarOverlayCluster] = value }
+    }
+
+    val carOverlayCompass: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.CarOverlayCompass] ?: false }
+
+    suspend fun setCarOverlayCompass(value: Boolean) {
+        context.dataStore.edit { it[Keys.CarOverlayCompass] = value }
+    }
+
+    val carOverlayRecordingStrip: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.CarOverlayRecordingStrip] ?: false }
+
+    suspend fun setCarOverlayRecordingStrip(value: Boolean) {
+        context.dataStore.edit { it[Keys.CarOverlayRecordingStrip] = value }
+    }
+
+    val carOverlayRallyPanel: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.CarOverlayRallyPanel] ?: false }
+
+    suspend fun setCarOverlayRallyPanel(value: Boolean) {
+        context.dataStore.edit { it[Keys.CarOverlayRallyPanel] = value }
+    }
+
+    /** Raw JSON of the car overlay drag/scale layout; decoded by the car
+     *  layer's CarOverlayLayout. Null until the user customises a layout. */
+    val carOverlayLayoutJson: Flow<String?> = context.dataStore.data
+        .map { it[Keys.CarOverlayLayout] }
+
+    suspend fun setCarOverlayLayoutJson(value: String) {
+        context.dataStore.edit { it[Keys.CarOverlayLayout] = value }
     }
 
     suspend fun setHrZoneConfig(cfg: HrZoneConfig) {

@@ -48,7 +48,7 @@ class CarInstruments {
      *  claims a region for its nav rail (turn card + ETA, which it stacks on the
      *  left during turn-by-turn) the whole cluster shifts to the space that's
      *  left and never sits under the host chrome. */
-    fun drawCockpit(canvas: Canvas, w: Int, h: Int, d: ClusterData, area: RectF) {
+    fun drawCockpit(canvas: Canvas, w: Int, h: Int, d: ClusterData, area: RectF, showCompass: Boolean = true) {
         val W = w.toFloat()
         val H = h.toFloat()
         // Gauges hug the physical left/right edges. The host stacks its turn card
@@ -142,14 +142,17 @@ class CarInstruments {
         }
 
         // ── Merged compass + G-meter, anchored a fixed margin above the safe
-        // bottom (no longer sunk to a fixed Y). ──
-        val dialR = H * CK_DIALSCALE
-        val dialCy = (aB - dialR - (aB - aT) * 0.04f).coerceAtLeast(yMid)
-        combinedCentre(canvas, aL + aW * CK_DIALX, dialCy, dialR, d)
+        // bottom (no longer sunk to a fixed Y). Opt-in: a compass/G-meter
+        // isn't navigation guidance, so it's only drawn when enabled. ──
+        if (showCompass) {
+            val dialR = H * CK_DIALSCALE
+            val dialCy = (aB - dialR - (aB - aT) * 0.04f).coerceAtLeast(yMid)
+            combinedCentre(canvas, aL + aW * CK_DIALX, dialCy, dialR, d)
+        }
     }
 
     /** Integrated single gauge filling [cell] (narrow/portrait surfaces). */
-    fun drawIntegrated(canvas: Canvas, cell: RectF, d: ClusterData) {
+    fun drawIntegrated(canvas: Canvas, cell: RectF, d: ClusterData, showCompass: Boolean = true) {
         val W = cell.width()
         val H = cell.height()
         val cx = cell.left + W / 2f
@@ -180,7 +183,7 @@ class CarInstruments {
         }
 
         clockTemp(canvas, cx + IN_TOP_X * R, cy + IN_TOP_Y * R, f, d)
-        combinedCentre(canvas, cx, cy, rc, d)
+        if (showCompass) combinedCentre(canvas, cx, cy, rc, d)
 
         // Speed readout (number · ±acc/odo) + EU limit roundel; units on the face.
         mono.textAlign = Paint.Align.CENTER

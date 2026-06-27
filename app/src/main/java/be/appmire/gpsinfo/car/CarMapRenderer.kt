@@ -255,6 +255,72 @@ class CarMapRenderer(
         scheduleRender()
     }
 
+    /** Which optional overlays to draw on top of the navigation map. Starts
+     *  at the navigation-only baseline (only the speed + speed-limit badge);
+     *  the screen feeds the user's choices via [updateOverlayConfig]. */
+    private var overlayConfig: CarOverlayConfig = CarOverlayConfig()
+
+    fun updateOverlayConfig(config: CarOverlayConfig) {
+        if (config == overlayConfig) return
+        overlayConfig = config
+        scheduleRender()
+    }
+
+    // ── Dynamic overlay layout (drag / pinch, per nav state) ─────────
+    /** User drag/scale overrides for the CURRENT state, pushed by the screen
+     *  (which selects the nav vs idle bucket). */
+    private var overlayLayout: Map<OverlayElement, LayoutOverride> = emptyMap()
+    private var overlayState: OverlayState = OverlayState.IDLE
+    /** Parked-only "edit layout" mode: gestures reposition/resize the
+     *  selected overlay instead of panning/zooming the map. */
+    private var editMode = false
+    private var selectedElement: OverlayElement? = null
+    /** Post-transform bounds of each overlay drawn this frame, for hit-testing
+     *  taps in edit mode. */
+    private val elementBounds = HashMap<OverlayElement, RectF>()
+    private val dirtyElements = HashSet<OverlayElement>()
+    private var surfaceW = 0
+    private var surfaceH = 0
+
+    /** Persist callback — the screen writes the override to DataStore in the
+     *  right state bucket. Set by the owner. */
+    var onLayoutChanged: ((OverlayState, OverlayElement, LayoutOverride) -> Unit)? = null
+
+    fun updateOverlayLayout(state: OverlayState, layout: Map<OverlayElement, LayoutOverride>) {
+        // Don't let a persisted value flowing back clobber a live drag.
+        if (editMode) return
+        if (state == overlayState && layout == overlayLayout) return
+        overlayState = state
+        overlayLayout = layout
+        scheduleRender()
+    }
+
+    fun setEditMode(active: Boolean) {
+        if (active == editMode) return
+        editMode = active
+        if (!active) {
+            // Persist everything touched this session.
+            val cb = onLayoutChanged
+            if (cb != null) {
+                for (el in dirtyElements) cb(overlayState, el, overlayLayout[el] ?: LayoutOverride())
+            }
+            dirtyElements.clear()
+            selectedElement = null
+        }
+        scheduleRender()
+    }
+
+    fun isEditMode(): Boolean = editMode
+
+    /** Apply [transform] to the selected element's override and repaint. */
+    private fun mutateSelected(transform: (LayoutOverride) -> LayoutOverride) {
+        val el = selectedElement ?: return
+        val next = transform(overlayLayout[el] ?: LayoutOverride())
+        overlayLayout = overlayLayout.toMutableMap().apply { put(el, next) }
+        dirtyElements.add(el)
+        scheduleRender()
+    }
+
     init {
         sessionLifecycle.addObserver(this)
         carContext.getCarService(AppManager::class.java).setSurfaceCallback(this)
@@ -495,11 +561,30 @@ class CarMapRenderer(
 
     override fun onScale(focusX: Float, focusY: Float, scaleFactor: Float) {
         mainHandler.post {
+            // Edit mode: pinch resizes the selected overlay instead of the map.
+            if (editMode && selectedElement != null) {
+                mutateSelected { it.copy(scale = (it.scale * scaleFactor).coerceIn(MIN_OVERLAY_SCALE, MAX_OVERLAY_SCALE)) }
+                return@post
+            }
             pinchAccumulator *= scaleFactor
             if (pinchAccumulator > SCALE_STEP || pinchAccumulator < 1f / SCALE_STEP) {
                 nudgeZoom(log2(pinchAccumulator.toDouble()))
                 pinchAccumulator = 1f
             }
+        }
+    }
+
+    /** Taps select an overlay to edit (edit mode only). */
+    override fun onClick(x: Float, y: Float) {
+        mainHandler.post {
+            if (!editMode) return@post
+            // Smallest box containing the tap wins, so a small badge layered
+            // over the big cluster is still selectable.
+            selectedElement = elementBounds.entries
+                .filter { it.value.contains(x, y) }
+                .minByOrNull { it.value.width() * it.value.height() }
+                ?.key
+            scheduleRender()
         }
     }
 
@@ -509,6 +594,19 @@ class CarMapRenderer(
      *  drag, accounting for MapLibre's zoom, bearing and pitch exactly. */
     override fun onScroll(distanceX: Float, distanceY: Float) {
         mainHandler.post {
+            // Edit mode: drag repositions the selected overlay. distanceX/Y are
+            // (old - new), so negate to make the overlay follow the finger.
+            if (editMode && selectedElement != null) {
+                val w = surfaceW.coerceAtLeast(1)
+                val h = surfaceH.coerceAtLeast(1)
+                mutateSelected {
+                    it.copy(
+                        dx = (it.dx - distanceX / w).coerceIn(-MAX_OVERLAY_OFFSET, MAX_OVERLAY_OFFSET),
+                        dy = (it.dy - distanceY / h).coerceIn(-MAX_OVERLAY_OFFSET, MAX_OVERLAY_OFFSET),
+                    )
+                }
+                return@post
+            }
             if (!panMode) return@post
             val snap = snapshotter.latest ?: return@post
             val w = snap.bitmap.width
@@ -564,6 +662,9 @@ class CarMapRenderer(
         val dark = carContext.isDarkMode
         val bg = if (dark) BG_DARK else BG_LIGHT
         canvas.drawColor(bg)
+        surfaceW = w
+        surfaceH = h
+        elementBounds.clear()
 
         // The last fix dead-reckoned forward to this frame (see
         // displayedLocation), so the map + needles glide between the
@@ -582,15 +683,87 @@ class CarMapRenderer(
             drawWaitingForFix(canvas, 0f, w.toFloat(), h, dark)
         }
 
-        drawCluster(canvas, w, h, loc)
-        drawHud(canvas, w, h, dark)
+        // Optional overlays — opt-in, default OFF (Play Auto policy: keep
+        // the nav template to map + driving info). The full gauge cluster
+        // already shows speed + limit, so the minimal badge is the
+        // navigation-only fallback shown when the cluster is hidden.
+        if (overlayConfig.cluster) {
+            val clusterSafe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
+            overlay(canvas, OverlayElement.CLUSTER, RectF(clusterSafe)) {
+                drawCluster(canvas, w, h, loc)
+            }
+        } else {
+            drawSpeedBadge(canvas, w, h, loc, dark)
+        }
+        drawHud(canvas, w, h, dark, showRecordingStrip = overlayConfig.recordingStrip)
         // Centre the banners on the safe area, not the raw screen, so they
         // track the host's chrome layout instead of hiding under it.
         val safe = stableArea ?: visibleArea ?: Rect(0, 0, w, h)
         val bannerLeft = safe.left.toFloat().coerceIn(0f, w.toFloat())
         val bannerRight = safe.right.toFloat().coerceIn(bannerLeft, w.toFloat())
-        drawRallyPanel(canvas, bannerLeft, bannerRight, h, dark)
+        if (overlayConfig.rallyPanel) drawRallyPanel(canvas, bannerLeft, bannerRight, h, dark)
         drawNavStatus(canvas, bannerLeft, bannerRight, h, dark)
+
+        if (editMode) drawEditHint(canvas, w, h)
+    }
+
+    // ── Overlay transform + edit-mode decoration ────────────────────
+
+    private val overlayMatrix = android.graphics.Matrix()
+
+    /** Draw [element] through its user drag/scale override. [natRect] is the
+     *  element's designed bounds (its centre is the scale pivot); [draw]
+     *  renders at the natural position. Records the transformed bounds for
+     *  tap hit-testing and, in edit mode, outlines the element. */
+    private inline fun overlay(canvas: Canvas, element: OverlayElement, natRect: RectF, draw: () -> Unit) {
+        val ov = overlayLayout[element] ?: LayoutOverride()
+        val dxPx = ov.dx * surfaceW
+        val dyPx = ov.dy * surfaceH
+        val cx = natRect.centerX()
+        val cy = natRect.centerY()
+        canvas.save()
+        canvas.translate(dxPx, dyPx)
+        canvas.scale(ov.scale, ov.scale, cx, cy)
+        draw()
+        canvas.restore()
+        overlayMatrix.reset()
+        overlayMatrix.postScale(ov.scale, ov.scale, cx, cy)
+        overlayMatrix.postTranslate(dxPx, dyPx)
+        val tb = RectF(natRect)
+        overlayMatrix.mapRect(tb)
+        elementBounds[element] = tb
+        if (editMode) drawEditDecoration(element, tb, canvas)
+    }
+
+    private fun drawEditDecoration(element: OverlayElement, bounds: RectF, canvas: Canvas) {
+        editPaint.style = Paint.Style.STROKE
+        val selected = element == selectedElement
+        editPaint.strokeWidth = if (selected) 5f else 2.5f
+        editPaint.color = EDIT_SELECT
+        editPaint.alpha = if (selected) 255 else 150
+        canvas.drawRoundRect(bounds, 14f, 14f, editPaint)
+        editPaint.alpha = 255
+    }
+
+    /** Banner explaining the edit gestures, top-centre, while editing. */
+    private fun drawEditHint(canvas: Canvas, w: Int, h: Int) {
+        val text = if (selectedElement != null) {
+            carContext.getString(be.appmire.gpsinfo.R.string.car_edit_hint_selected)
+        } else {
+            carContext.getString(be.appmire.gpsinfo.R.string.car_edit_hint_tap)
+        }
+        hudTextPaint.textAlign = Paint.Align.CENTER
+        hudTextPaint.isFakeBoldText = false
+        hudTextPaint.textSize = h * 0.035f
+        val tw = hudTextPaint.measureText(text)
+        val cx = w / 2f
+        val pad = h * 0.025f
+        val top = h * 0.5f - h * 0.04f
+        bubblePaint.color = EDIT_HINT_BG
+        val rect = RectF(cx - tw / 2 - pad, top, cx + tw / 2 + pad, top + h * 0.04f + pad)
+        canvas.drawRoundRect(rect, rect.height() / 2, rect.height() / 2, bubblePaint)
+        hudTextPaint.color = Color.WHITE
+        canvas.drawText(text, cx, top + h * 0.04f + pad * 0.1f, hudTextPaint)
     }
 
     /** The instrument cluster, overlaid on the full-bleed map. The host surface
@@ -600,19 +773,20 @@ class CarMapRenderer(
      *  surface, the gauges are overlays. */
     private fun drawCluster(canvas: Canvas, w: Int, h: Int, loc: Location?) {
         val d = buildClusterData(loc)
+        val showCompass = overlayConfig.compass
         if (w >= h * COCKPIT_MIN_ASPECT) {
             // Lay the cluster out inside the host's safe rectangle. During
             // turn-by-turn the host claims a left rail (turn card + ETA), which
             // shrinks the safe area from the left — the gauges then shift right
             // of it rather than hiding underneath. Falls back to the full surface.
             val safe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
-            instruments.drawCockpit(canvas, w, h, d, RectF(safe))
+            instruments.drawCockpit(canvas, w, h, d, RectF(safe), showCompass)
         } else {
             // Centred square housing; the map shows above and below it.
             val s = min(w.toFloat(), h.toFloat()) * 0.98f
             val cx = w / 2f
             val cy = h / 2f
-            instruments.drawIntegrated(canvas, RectF(cx - s / 2f, cy - s / 2f, cx + s / 2f, cy + s / 2f), d)
+            instruments.drawIntegrated(canvas, RectF(cx - s / 2f, cy - s / 2f, cx + s / 2f, cy + s / 2f), d, showCompass)
         }
     }
 
@@ -661,12 +835,16 @@ class CarMapRenderer(
         val tw = hudTextPaint.measureText(text)
         val top = inset.top + pad
         val panelH = h * 0.04f + pad * 1.5f
-        bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
         val rect = RectF(cx - tw / 2 - pad, top, cx + tw / 2 + pad, top + panelH)
-        canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubblePaint)
-        canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubbleStrokePaint)
-        hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
-        canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
+        overlay(canvas, OverlayElement.NAV_BANNER, rect) {
+            bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+            canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubblePaint)
+            canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubbleStrokePaint)
+            hudTextPaint.textAlign = Paint.Align.CENTER
+            hudTextPaint.textSize = h * 0.04f
+            hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+            canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
+        }
     }
 
     /**
@@ -733,9 +911,33 @@ class CarMapRenderer(
         // under it) so it never jitters against a snapshot that lags the
         // moving camera.
         val following = hasBearing && !panMode
-        drawProjectedRoute(canvas, snap, mapLeft, loc)
+        val puck = puckScreenPoint(snap, mapLeft, loc, following)
+        drawProjectedRoute(canvas, snap, mapLeft, loc, puck)
         drawProjectedBreadcrumb(canvas, snap, mapLeft)
-        drawProjectedMarker(canvas, snap, mapLeft, loc, following)
+        drawProjectedMarker(canvas, puck)
+    }
+
+    /** The vehicle puck's drawn position this frame: a fixed low-centre
+     *  anchor while following (the map scrolls under it), or the real
+     *  projected location when panning. Shared by the marker and the route
+     *  line so the line always emanates from the puck — no gap. */
+    private fun puckScreenPoint(
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+        loc: Location,
+        following: Boolean,
+    ): android.graphics.PointF {
+        return if (following) {
+            android.graphics.PointF(
+                mapLeft + snap.bitmap.width / 2f,
+                snap.bitmap.height * PUCK_SCREEN_FRACTION,
+            )
+        } else {
+            val pf = snap.pixelForLatLng(
+                org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude),
+            )
+            android.graphics.PointF(mapLeft + pf.x, pf.y)
+        }
     }
 
     private fun drawProjectedRoute(
@@ -743,8 +945,9 @@ class CarMapRenderer(
         snap: org.maplibre.android.snapshotter.MapSnapshot,
         mapLeft: Float,
         loc: Location,
+        puck: android.graphics.PointF,
     ) {
-        val path = routeAheadPath(navRoute, snap, mapLeft, loc) ?: return
+        val path = routeAheadPath(navRoute, snap, mapLeft, loc, puck) ?: return
         navCasingPaint.strokeWidth = 16f
         navRoutePaint.strokeWidth = 10f
         canvas.drawPath(path, navCasingPaint)
@@ -763,6 +966,7 @@ class CarMapRenderer(
         snap: org.maplibre.android.snapshotter.MapSnapshot,
         mapLeft: Float,
         loc: Location,
+        puck: android.graphics.PointF,
     ): Path? {
         if (pts == null || pts.size < 2) return null
         // Nearest point to the vehicle — cheap squared-degree scan.
@@ -774,22 +978,24 @@ class CarMapRenderer(
             val d = dLat * dLat + dLon * dLon
             if (d < best) { best = d; startIdx = i }
         }
-        val end = (startIdx + ROUTE_DRAW_POINTS).coerceAtMost(pts.size)
-        if (end - startIdx < 2) return null
+        // Start the line AT the puck and only walk points strictly ahead of
+        // the vehicle: the nearest point is usually just behind the puck, so
+        // including it would draw a tiny backward stub and reopen the gap the
+        // line is meant to close.
+        val firstAhead = (startIdx + 1).coerceAtMost(pts.size)
+        val end = (firstAhead + ROUTE_DRAW_POINTS).coerceAtMost(pts.size)
         val maxJump = snap.bitmap.height * 4f
         val path = Path()
-        var started = false
-        var lastX = 0f
-        var lastY = 0f
-        for (i in startIdx until end) {
+        path.moveTo(puck.x, puck.y)
+        var lastX = puck.x
+        var lastY = puck.y
+        for (i in firstAhead until end) {
             val p = pts[i]
             val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(p[0], p[1]))
             val x = mapLeft + pf.x
             val y = pf.y
-            if (!started) {
-                path.moveTo(x, y); started = true
-            } else if (kotlin.math.hypot((x - lastX).toDouble(), (y - lastY).toDouble()) > maxJump) {
-                path.moveTo(x, y)
+            if (kotlin.math.hypot((x - lastX).toDouble(), (y - lastY).toDouble()) > maxJump) {
+                path.moveTo(x, y) // discontinuity — don't streak a line to it
             } else {
                 path.lineTo(x, y)
             }
@@ -866,27 +1072,12 @@ class CarMapRenderer(
      *  semi-transparent so the road underneath stays visible. */
     private fun drawProjectedMarker(
         canvas: Canvas,
-        snap: org.maplibre.android.snapshotter.MapSnapshot,
-        mapLeft: Float,
-        loc: Location,
-        following: Boolean,
+        puck: android.graphics.PointF,
     ) {
-        // While following: pin the puck to a fixed screen anchor (centre-X,
-        // low — matching the look-ahead camera) so it stays rock-steady as
-        // the map scrolls beneath it, even when the snapshot lags the
-        // camera. When panning (free camera): project the real position.
-        val x: Float
-        val y: Float
-        if (following) {
-            x = mapLeft + snap.bitmap.width / 2f
-            y = snap.bitmap.height * PUCK_SCREEN_FRACTION
-        } else {
-            val pf = snap.pixelForLatLng(
-                org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude),
-            )
-            x = mapLeft + pf.x
-            y = pf.y
-        }
+        // The puck position is resolved once per frame (see puckScreenPoint)
+        // and shared with the route line so the line starts exactly here.
+        val x = puck.x
+        val y = puck.y
         val r = MARKER_RADIUS
         canvas.save()
         if (tilted) canvas.scale(1f, PITCH_FORESHORTEN, x, y)
@@ -921,14 +1112,16 @@ class CarMapRenderer(
     /** Map-area HUD over the full-bleed map: the recording trip strip and the
      *  required OSM attribution, both bottom-centre over the map (clear of the
      *  edge-HUD gauges). The ambient temperature now lives in the cluster. */
-    private fun drawHud(canvas: Canvas, w: Int, h: Int, dark: Boolean) {
+    private fun drawHud(canvas: Canvas, w: Int, h: Int, dark: Boolean, showRecordingStrip: Boolean) {
         val pad = h * 0.03f
         val unit = h * 0.13f
         val cx = w / 2f
 
         // Recording trip strip (distance · duration + REC dot), bottom-centre.
+        // Opt-in: a recording readout isn't navigation info, so it's off by
+        // default and only drawn when the user enabled it.
         val rec = recording as? RecordingState.Recording
-        if (rec != null) {
+        if (rec != null && showRecordingStrip) {
             val stripText = "%.1f km   %s".format(
                 Locale.ROOT,
                 rec.distanceMetres / 1000.0,
@@ -941,14 +1134,18 @@ class CarMapRenderer(
             val totalW = tw + recDotSpace
             val sx = cx - totalW / 2f
             val sy = h - pad * 2.6f
-            bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
             val strip = RectF(sx - pad / 2, sy - unit * 0.42f, sx + totalW + pad / 2, sy + unit * 0.22f)
-            canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubblePaint)
-            canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubbleStrokePaint)
-            hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
-            canvas.drawText(stripText, sx, sy, hudTextPaint)
-            recDotPaint.color = if (rec.paused) REC_PAUSED else REC_ACTIVE
-            canvas.drawCircle(sx + tw + recDotSpace / 2, sy - unit * 0.10f, unit * 0.13f, recDotPaint)
+            overlay(canvas, OverlayElement.RECORDING_STRIP, strip) {
+                bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+                canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubblePaint)
+                canvas.drawRoundRect(strip, strip.height() / 2, strip.height() / 2, bubbleStrokePaint)
+                hudTextPaint.textAlign = Paint.Align.LEFT
+                hudTextPaint.textSize = unit * 0.34f
+                hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+                canvas.drawText(stripText, sx, sy, hudTextPaint)
+                recDotPaint.color = if (rec.paused) REC_PAUSED else REC_ACTIVE
+                canvas.drawCircle(sx + tw + recDotSpace / 2, sy - unit * 0.10f, unit * 0.13f, recDotPaint)
+            }
         }
 
         // OSM attribution (tile-policy requirement). Tiny, bottom-centre.
@@ -956,6 +1153,80 @@ class CarMapRenderer(
         hudTextPaint.textSize = h * 0.013f
         hudTextPaint.color = if (dark) HUD_MUTED_DARK else HUD_MUTED_LIGHT
         canvas.drawText("© OpenStreetMap", cx, h - 4f, hudTextPaint)
+    }
+
+    /** Minimal driving-info badge for the navigation-only surface (drawn when
+     *  the full gauge cluster is hidden): a compact speed pill and an EU
+     *  speed-limit roundel, bottom-left inside the host's safe area, clear of
+     *  the bottom-centre attribution / recording strip. Both are individually
+     *  toggleable; speed + posted limit are explicitly permitted driving
+     *  information under the Auto nav-template policy. */
+    private fun drawSpeedBadge(canvas: Canvas, w: Int, h: Int, loc: Location?, dark: Boolean) {
+        if (!overlayConfig.speed && !overlayConfig.speedLimit) return
+        val safe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
+        val pad = h * 0.03f
+        val left = safe.left.toFloat().coerceIn(0f, w.toFloat()) + pad
+        val bottom = safe.bottom.toFloat().coerceIn(0f, h.toFloat()) - pad
+
+        // Speed pill — big number + km/h unit, bottom-left. Designed bounds are
+        // fixed (independent of the limit sign) so each can be dragged alone.
+        if (overlayConfig.speed) {
+            val kmh = if (loc != null && loc.hasSpeed()) (dispSpeedMps * 3.6f).toInt() else null
+            val numText = kmh?.toString() ?: "––"
+            val unitText = " km/h"
+            hudTextPaint.isFakeBoldText = true
+            hudTextPaint.textSize = h * 0.085f
+            val numW = hudTextPaint.measureText(numText)
+            hudTextPaint.isFakeBoldText = false
+            hudTextPaint.textSize = h * 0.04f
+            val unitW = hudTextPaint.measureText(unitText)
+            val pillH = h * 0.105f
+            val pillW = numW + unitW + pad * 1.6f
+            val pill = RectF(left, bottom - pillH, left + pillW, bottom)
+            overlay(canvas, OverlayElement.SPEED, pill) {
+                bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+                canvas.drawRoundRect(pill, pillH / 2, pillH / 2, bubblePaint)
+                canvas.drawRoundRect(pill, pillH / 2, pillH / 2, bubbleStrokePaint)
+                val baseY = pill.bottom - pillH * 0.30f
+                hudTextPaint.textAlign = Paint.Align.LEFT
+                hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+                hudTextPaint.isFakeBoldText = true
+                hudTextPaint.textSize = h * 0.085f
+                canvas.drawText(numText, pill.left + pad * 0.8f, baseY, hudTextPaint)
+                hudTextPaint.isFakeBoldText = false
+                hudTextPaint.color = if (dark) HUD_MUTED_DARK else HUD_MUTED_LIGHT
+                hudTextPaint.textSize = h * 0.04f
+                canvas.drawText(unitText, pill.left + pad * 0.8f + numW, baseY, hudTextPaint)
+            }
+        }
+
+        // EU speed-limit roundel — white disc, red ring, black number — sits
+        // above the speed pill's slot by default; draggable independently.
+        val limit = speedLimitKmh
+        if (overlayConfig.speedLimit && limit != null) {
+            val r = h * 0.06f
+            val cx = left + r
+            val cy = bottom - h * 0.105f - pad * 0.8f - r
+            val natRect = RectF(cx - r, cy - r, cx + r, cy + r)
+            overlay(canvas, OverlayElement.SPEED_LIMIT, natRect) {
+                limitFillPaint.color = Color.WHITE
+                canvas.drawCircle(cx, cy, r, limitFillPaint)
+                limitRingPaint.color = SIGN_RED
+                limitRingPaint.strokeWidth = r * 0.22f
+                canvas.drawCircle(cx, cy, r * 0.84f, limitRingPaint)
+                val s = limit.toString()
+                hudTextPaint.textAlign = Paint.Align.CENTER
+                hudTextPaint.isFakeBoldText = true
+                hudTextPaint.color = Color.BLACK
+                var fs = r * 1.0f
+                hudTextPaint.textSize = fs
+                while (hudTextPaint.measureText(s) > r * 1.4f && fs > 4f) {
+                    fs *= 0.9f; hudTextPaint.textSize = fs
+                }
+                canvas.drawText(s, cx, cy + fs * 0.36f, hudTextPaint)
+                hudTextPaint.isFakeBoldText = false
+            }
+        }
     }
 
     /** Regularity-test panel, top-centre: the early/late delta is THE
@@ -994,17 +1265,21 @@ class CarMapRenderer(
                 val panelW = maxOf(deltaWidth, subWidth) + pad * 3
                 val panelH = h * 0.14f + h * 0.045f + pad * 2.5f
                 val top = inset.top + pad
-                bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
                 val rect = RectF(cx - panelW / 2, top, cx + panelW / 2, top + panelH)
-                canvas.drawRoundRect(rect, pad, pad, bubblePaint)
-                canvas.drawRoundRect(rect, pad, pad, bubbleStrokePaint)
-                hudTextPaint.textSize = h * 0.14f
-                hudTextPaint.color = deltaColor
-                canvas.drawText(deltaText, cx, top + pad * 0.6f + h * 0.12f, hudTextPaint)
-                hudTextPaint.isFakeBoldText = false
-                hudTextPaint.textSize = h * 0.045f
-                hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
-                canvas.drawText(subText, cx, top + panelH - pad, hudTextPaint)
+                overlay(canvas, OverlayElement.RALLY_PANEL, rect) {
+                    bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+                    canvas.drawRoundRect(rect, pad, pad, bubblePaint)
+                    canvas.drawRoundRect(rect, pad, pad, bubbleStrokePaint)
+                    hudTextPaint.textAlign = Paint.Align.CENTER
+                    hudTextPaint.isFakeBoldText = true
+                    hudTextPaint.textSize = h * 0.14f
+                    hudTextPaint.color = deltaColor
+                    canvas.drawText(deltaText, cx, top + pad * 0.6f + h * 0.12f, hudTextPaint)
+                    hudTextPaint.isFakeBoldText = false
+                    hudTextPaint.textSize = h * 0.045f
+                    hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+                    canvas.drawText(subText, cx, top + panelH - pad, hudTextPaint)
+                }
             }
             is RallyState.Armed -> {
                 val text = carContext.getString(be.appmire.gpsinfo.R.string.car_rally_armed)
@@ -1015,12 +1290,16 @@ class CarMapRenderer(
                 val tw = hudTextPaint.measureText(text)
                 val top = inset.top + pad
                 val panelH = h * 0.04f + pad * 1.5f
-                bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
                 val rect = RectF(cx - tw / 2 - pad, top, cx + tw / 2 + pad, top + panelH)
-                canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubblePaint)
-                canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubbleStrokePaint)
-                hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
-                canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
+                overlay(canvas, OverlayElement.RALLY_PANEL, rect) {
+                    bubblePaint.color = if (dark) BUBBLE_DARK else BUBBLE_LIGHT
+                    canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubblePaint)
+                    canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubbleStrokePaint)
+                    hudTextPaint.textAlign = Paint.Align.CENTER
+                    hudTextPaint.textSize = h * 0.04f
+                    hudTextPaint.color = if (dark) Color.WHITE else Color.BLACK
+                    canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
+                }
             }
             RallyState.Idle -> Unit
         }
@@ -1071,6 +1350,9 @@ class CarMapRenderer(
     }
     private val hudTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val recDotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val limitFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val limitRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val editPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     /** FILTER_BITMAP so the snapshot bitmap blits smoothly. */
     private val layerPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val darkScrimPaint = Paint().apply { color = TILE_DARK_SCRIM }
@@ -1170,6 +1452,15 @@ class CarMapRenderer(
         const val HUD_MUTED_LIGHT = 0xFF5F6B76.toInt()
         const val REC_ACTIVE = 0xFFE53935.toInt()
         const val REC_PAUSED = 0xFFFFB300.toInt()
+        const val SIGN_RED = 0xFFD32F2F.toInt()
+        // Overlay drag/scale limits (Phase 4 edit mode).
+        const val MIN_OVERLAY_SCALE = 0.4f
+        const val MAX_OVERLAY_SCALE = 3.0f
+        /** Max overlay offset as a fraction of surface size, so a runaway drag
+         *  can't fling an element off-screen and out of reach. */
+        const val MAX_OVERLAY_OFFSET = 0.9f
+        const val EDIT_SELECT = 0xFFE67635.toInt()
+        const val EDIT_HINT_BG = 0xCC000000.toInt()
         const val RALLY_ON_TIME = 0xFF43A047.toInt()
         const val RALLY_NEAR = 0xFFF9A825.toInt()
         const val RALLY_OFF = 0xFFE53935.toInt()

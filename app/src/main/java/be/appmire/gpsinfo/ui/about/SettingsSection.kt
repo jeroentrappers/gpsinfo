@@ -68,6 +68,18 @@ fun SettingsSection(
     onVibrationCuesEnabledChange: (Boolean) -> Unit = {},
     dashboardDensity: DashboardDensity = DashboardDensity.Standard,
     onDashboardDensityChange: (DashboardDensity) -> Unit = {},
+    carOverlaySpeed: Boolean = true,
+    onCarOverlaySpeedChange: (Boolean) -> Unit = {},
+    carOverlaySpeedLimit: Boolean = true,
+    onCarOverlaySpeedLimitChange: (Boolean) -> Unit = {},
+    carOverlayCluster: Boolean = false,
+    onCarOverlayClusterChange: (Boolean) -> Unit = {},
+    carOverlayCompass: Boolean = false,
+    onCarOverlayCompassChange: (Boolean) -> Unit = {},
+    carOverlayRecordingStrip: Boolean = false,
+    onCarOverlayRecordingStripChange: (Boolean) -> Unit = {},
+    carOverlayRallyPanel: Boolean = false,
+    onCarOverlayRallyPanelChange: (Boolean) -> Unit = {},
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -148,8 +160,97 @@ fun SettingsSection(
                 onChange = onAltitudeSmoothEnabledChange,
             )
 
+            Spacer(Modifier.padding(top = 20.dp))
+            Text(
+                text = stringResource(R.string.settings_car_overlays_label).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.settings_car_overlays_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.padding(top = 12.dp))
+            ToggleRow(
+                R.string.settings_car_overlay_speed,
+                R.string.settings_car_overlay_speed_body,
+                carOverlaySpeed, onCarOverlaySpeedChange,
+            )
+            Spacer(Modifier.padding(top = 8.dp))
+            ToggleRow(
+                R.string.settings_car_overlay_speed_limit,
+                R.string.settings_car_overlay_speed_limit_body,
+                carOverlaySpeedLimit, onCarOverlaySpeedLimitChange,
+            )
+            Spacer(Modifier.padding(top = 8.dp))
+            ToggleRow(
+                R.string.settings_car_overlay_cluster,
+                R.string.settings_car_overlay_cluster_body,
+                carOverlayCluster, onCarOverlayClusterChange,
+            )
+            Spacer(Modifier.padding(top = 8.dp))
+            ToggleRow(
+                R.string.settings_car_overlay_compass,
+                R.string.settings_car_overlay_compass_body,
+                carOverlayCompass, onCarOverlayCompassChange,
+            )
+            Spacer(Modifier.padding(top = 8.dp))
+            ToggleRow(
+                R.string.settings_car_overlay_recording,
+                R.string.settings_car_overlay_recording_body,
+                carOverlayRecordingStrip, onCarOverlayRecordingStripChange,
+            )
+            Spacer(Modifier.padding(top = 8.dp))
+            ToggleRow(
+                R.string.settings_car_overlay_rally,
+                R.string.settings_car_overlay_rally_body,
+                carOverlayRallyPanel, onCarOverlayRallyPanelChange,
+            )
+
             Spacer(Modifier.padding(top = 16.dp))
             ShowTourRow(onShowTour = onShowTour)
+        }
+    }
+}
+
+/** A title + subtitle row with a trailing switch — the shared shape of the
+ *  toggle rows above (NMEA, cues, car overlays). */
+@Composable
+private fun ToggleRow(
+    titleRes: Int,
+    bodyRes: Int,
+    enabled: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onChange(!enabled) }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(titleRes),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(bodyRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            androidx.compose.material3.Switch(
+                checked = enabled,
+                onCheckedChange = onChange,
+            )
         }
     }
 }

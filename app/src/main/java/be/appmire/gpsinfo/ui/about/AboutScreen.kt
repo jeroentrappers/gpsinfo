@@ -117,6 +117,20 @@ fun AboutScreen(
         val nmeaLoggingEnabled by vm.nmeaLoggingEnabled.collectAsStateWithLifecycle()
         val nmeaBtBridgeEnabled by vm.nmeaBtBridgeEnabled.collectAsStateWithLifecycle()
         val altitudeSmoothEnabled by vm.altitudeSmoothEnabled.collectAsStateWithLifecycle()
+        val carOverlaySpeed by vm.carOverlaySpeed.collectAsStateWithLifecycle()
+        val carOverlaySpeedLimit by vm.carOverlaySpeedLimit.collectAsStateWithLifecycle()
+        val carOverlayCluster by vm.carOverlayCluster.collectAsStateWithLifecycle()
+        val carOverlayCompass by vm.carOverlayCompass.collectAsStateWithLifecycle()
+        val carOverlayRecordingStrip by vm.carOverlayRecordingStrip.collectAsStateWithLifecycle()
+        val carOverlayRallyPanel by vm.carOverlayRallyPanel.collectAsStateWithLifecycle()
+        val carOverlay = CarOverlayControls(
+            speed = carOverlaySpeed, onSpeed = vm::setCarOverlaySpeed,
+            speedLimit = carOverlaySpeedLimit, onSpeedLimit = vm::setCarOverlaySpeedLimit,
+            cluster = carOverlayCluster, onCluster = vm::setCarOverlayCluster,
+            compass = carOverlayCompass, onCompass = vm::setCarOverlayCompass,
+            recordingStrip = carOverlayRecordingStrip, onRecordingStrip = vm::setCarOverlayRecordingStrip,
+            rallyPanel = carOverlayRallyPanel, onRallyPanel = vm::setCarOverlayRallyPanel,
+        )
         if (isLandscape) {
             AboutLandscape(
                 padding = padding,
@@ -143,6 +157,7 @@ fun AboutScreen(
                 onNmeaBtBridgeEnabledChange = vm::setNmeaBtBridgeEnabled,
                 altitudeSmoothEnabled = altitudeSmoothEnabled,
                 onAltitudeSmoothEnabledChange = vm::setAltitudeSmoothEnabled,
+                carOverlay = carOverlay,
                 onOpenSite = { IntentHelpers.openUrl(context, APPMIRE_URL) },
                 onOpenPaypal = { IntentHelpers.openUrl(context, PAYPAL_URL) },
                 onOpenLiberapay = { IntentHelpers.openUrl(context, LIBERAPAY_URL) },
@@ -176,6 +191,7 @@ fun AboutScreen(
                 onNmeaBtBridgeEnabledChange = vm::setNmeaBtBridgeEnabled,
                 altitudeSmoothEnabled = altitudeSmoothEnabled,
                 onAltitudeSmoothEnabledChange = vm::setAltitudeSmoothEnabled,
+                carOverlay = carOverlay,
                 onOpenSite = { IntentHelpers.openUrl(context, APPMIRE_URL) },
                 onOpenPaypal = { IntentHelpers.openUrl(context, PAYPAL_URL) },
                 onOpenLiberapay = { IntentHelpers.openUrl(context, LIBERAPAY_URL) },
@@ -186,6 +202,17 @@ fun AboutScreen(
         }
     }
 }
+
+/** Bundles the six "Android Auto" overlay toggles + their setters so the
+ *  About layout composables thread one param instead of twelve. */
+private class CarOverlayControls(
+    val speed: Boolean, val onSpeed: (Boolean) -> Unit,
+    val speedLimit: Boolean, val onSpeedLimit: (Boolean) -> Unit,
+    val cluster: Boolean, val onCluster: (Boolean) -> Unit,
+    val compass: Boolean, val onCompass: (Boolean) -> Unit,
+    val recordingStrip: Boolean, val onRecordingStrip: (Boolean) -> Unit,
+    val rallyPanel: Boolean, val onRallyPanel: (Boolean) -> Unit,
+)
 
 @Composable
 private fun AboutPortrait(
@@ -213,6 +240,7 @@ private fun AboutPortrait(
     onNmeaBtBridgeEnabledChange: (Boolean) -> Unit,
     altitudeSmoothEnabled: Boolean,
     onAltitudeSmoothEnabledChange: (Boolean) -> Unit,
+    carOverlay: CarOverlayControls,
     onOpenSite: () -> Unit,
     onOpenPaypal: () -> Unit,
     onOpenLiberapay: () -> Unit,
@@ -266,6 +294,18 @@ private fun AboutPortrait(
             onNmeaBtBridgeEnabledChange = onNmeaBtBridgeEnabledChange,
             altitudeSmoothEnabled = altitudeSmoothEnabled,
             onAltitudeSmoothEnabledChange = onAltitudeSmoothEnabledChange,
+            carOverlaySpeed = carOverlay.speed,
+            onCarOverlaySpeedChange = carOverlay.onSpeed,
+            carOverlaySpeedLimit = carOverlay.speedLimit,
+            onCarOverlaySpeedLimitChange = carOverlay.onSpeedLimit,
+            carOverlayCluster = carOverlay.cluster,
+            onCarOverlayClusterChange = carOverlay.onCluster,
+            carOverlayCompass = carOverlay.compass,
+            onCarOverlayCompassChange = carOverlay.onCompass,
+            carOverlayRecordingStrip = carOverlay.recordingStrip,
+            onCarOverlayRecordingStripChange = carOverlay.onRecordingStrip,
+            carOverlayRallyPanel = carOverlay.rallyPanel,
+            onCarOverlayRallyPanelChange = carOverlay.onRallyPanel,
         )
         Spacer(Modifier.height(16.dp))
         LicenseCard()
@@ -301,6 +341,7 @@ private fun AboutLandscape(
     onNmeaBtBridgeEnabledChange: (Boolean) -> Unit,
     altitudeSmoothEnabled: Boolean,
     onAltitudeSmoothEnabledChange: (Boolean) -> Unit,
+    carOverlay: CarOverlayControls,
     onOpenSite: () -> Unit,
     onOpenPaypal: () -> Unit,
     onOpenLiberapay: () -> Unit,
@@ -366,6 +407,18 @@ private fun AboutLandscape(
             onNmeaBtBridgeEnabledChange = onNmeaBtBridgeEnabledChange,
             altitudeSmoothEnabled = altitudeSmoothEnabled,
             onAltitudeSmoothEnabledChange = onAltitudeSmoothEnabledChange,
+            carOverlaySpeed = carOverlay.speed,
+            onCarOverlaySpeedChange = carOverlay.onSpeed,
+            carOverlaySpeedLimit = carOverlay.speedLimit,
+            onCarOverlaySpeedLimitChange = carOverlay.onSpeedLimit,
+            carOverlayCluster = carOverlay.cluster,
+            onCarOverlayClusterChange = carOverlay.onCluster,
+            carOverlayCompass = carOverlay.compass,
+            onCarOverlayCompassChange = carOverlay.onCompass,
+            carOverlayRecordingStrip = carOverlay.recordingStrip,
+            onCarOverlayRecordingStripChange = carOverlay.onRecordingStrip,
+            carOverlayRallyPanel = carOverlay.rallyPanel,
+            onCarOverlayRallyPanelChange = carOverlay.onRallyPanel,
         )
             Spacer(Modifier.height(16.dp))
             LicenseCard()

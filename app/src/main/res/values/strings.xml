@@ -295,6 +295,10 @@
     <string name="car_waiting_fix" tools:ignore="MissingTranslation">Waiting for GPS fix…</string>
     <string name="car_action_end_nav" tools:ignore="MissingTranslation">End route</string>
     <string name="car_action_navigate" tools:ignore="MissingTranslation">Where to?</string>
+    <string name="car_action_edit_layout" tools:ignore="MissingTranslation">Edit layout</string>
+    <string name="car_action_done" tools:ignore="MissingTranslation">Done</string>
+    <string name="car_edit_hint_tap" tools:ignore="MissingTranslation">Tap an element to select it</string>
+    <string name="car_edit_hint_selected" tools:ignore="MissingTranslation">Drag to move · pinch to resize · Done to save</string>
     <string name="car_routes_title" tools:ignore="MissingTranslation">Choose a route</string>
     <string name="car_action_go" tools:ignore="MissingTranslation">Go</string>
     <string name="car_route_fastest" tools:ignore="MissingTranslation">Fastest</string>
@@ -420,6 +424,20 @@
     <string name="settings_nmea_logging_body" tools:ignore="MissingTranslation">Write the GPS chip\'s raw NMEA sentences to cache/nmea/ during recordings. Off by default; for debugging chip behaviour.</string>
     <string name="settings_nmea_bt_bridge" tools:ignore="MissingTranslation">NMEA over Bluetooth (SPP)</string>
     <string name="settings_nmea_bt_bridge_body" tools:ignore="MissingTranslation">Rebroadcast raw NMEA sentences over Bluetooth Serial Port (RFCOMM) during recordings, so a paired chart-plotter or desktop tool can use the phone as an external GPS puck.</string>
+    <string name="settings_car_overlays_label" tools:ignore="MissingTranslation">Android Auto overlays</string>
+    <string name="settings_car_overlays_body" tools:ignore="MissingTranslation">Extra information drawn on the car navigation screen. The map, route and your position always show; everything below is optional and off by default to keep the screen navigation-focused.</string>
+    <string name="settings_car_overlay_speed" tools:ignore="MissingTranslation">Speed readout</string>
+    <string name="settings_car_overlay_speed_body" tools:ignore="MissingTranslation">Show your current speed on the car map.</string>
+    <string name="settings_car_overlay_speed_limit" tools:ignore="MissingTranslation">Speed-limit sign</string>
+    <string name="settings_car_overlay_speed_limit_body" tools:ignore="MissingTranslation">Show the posted speed limit for the road you\'re on.</string>
+    <string name="settings_car_overlay_cluster" tools:ignore="MissingTranslation">Instrument cluster</string>
+    <string name="settings_car_overlay_cluster_body" tools:ignore="MissingTranslation">Full speed + power gauges along the screen edges (uses OBD when connected).</string>
+    <string name="settings_car_overlay_compass" tools:ignore="MissingTranslation">Compass &amp; G-meter</string>
+    <string name="settings_car_overlay_compass_body" tools:ignore="MissingTranslation">Add the heading compass and lateral/longitudinal G dial to the cluster.</string>
+    <string name="settings_car_overlay_recording" tools:ignore="MissingTranslation">Recording trip strip</string>
+    <string name="settings_car_overlay_recording_body" tools:ignore="MissingTranslation">Show distance and duration while a track recording is active.</string>
+    <string name="settings_car_overlay_rally" tools:ignore="MissingTranslation">Rally panel</string>
+    <string name="settings_car_overlay_rally_body" tools:ignore="MissingTranslation">Show the regularity-test timing panel during a rally stage.</string>
     <string name="nav_pick_coords_plus_label" tools:ignore="MissingTranslation">Plus Code (optional)</string>
     <string name="nav_pick_coords_alt_label" tools:ignore="MissingTranslation">Plus Code or Maidenhead (optional)</string>
     <string name="trail_recording_stats" tools:ignore="MissingTranslation">%1$d pts · %2$s</string>

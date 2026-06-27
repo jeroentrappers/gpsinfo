@@ -57,11 +57,24 @@ class ClusterNavReporter(
                 NavigationController.stop()
             }
 
-            override fun onAutoDriveEnabled() = Unit
+            override fun onAutoDriveEnabled() {
+                // Play's "test drive" verification: simulate driving the
+                // active route. The simulator feeds synthetic fixes through
+                // the normal pipeline, so guidance + the surface drive
+                // themselves to the destination.
+                be.appmire.gpsinfo.data.nav.NavigationSimulator.enable()
+            }
         })
         NavigationController.state
             .onEach(::report)
             .launchIn(lifecycle.coroutineScope)
+        // Stand the simulator down when the projection cycle ends, so a
+        // stale auto-drive flag can't bleed into the next session.
+        lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onDestroy(owner: androidx.lifecycle.LifecycleOwner) {
+                be.appmire.gpsinfo.data.nav.NavigationSimulator.disable()
+            }
+        })
     }
 
     private fun report(state: NavigationController.NavState) {
@@ -77,8 +90,12 @@ class ClusterNavReporter(
                     ensureStarted(mgr)
                     mgr.updateTrip(buildTrip(state))
                 }
-                // Idle / Arrived / Failed → release the cluster.
-                else -> end(mgr)
+                // Idle / Arrived / Failed → release the cluster and stop any
+                // auto-drive simulation (route finished or cancelled).
+                else -> {
+                    be.appmire.gpsinfo.data.nav.NavigationSimulator.disable()
+                    end(mgr)
+                }
             }
         }
     }

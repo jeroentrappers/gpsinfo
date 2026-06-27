@@ -309,6 +309,38 @@ class DashboardViewModel(
         }
     }
 
+    // ── Android Auto surface overlays ───────────────────────────────
+    // Which optional overlays the car navigation surface draws. Defaults
+    // keep a fresh install navigation-only (Play Auto policy); each extra
+    // overlay is opt-in here and read by CarMapRenderer on the car side.
+    private fun carOverlayFlow(
+        select: (SettingsRepository) -> kotlinx.coroutines.flow.Flow<Boolean>,
+        default: Boolean,
+    ): StateFlow<Boolean> =
+        (settings as? SettingsRepository)?.let(select)
+            ?.stateIn(viewModelScope, SharingStarted.Eagerly, default)
+            ?: MutableStateFlow(default)
+
+    val carOverlaySpeed: StateFlow<Boolean> = carOverlayFlow({ it.carOverlaySpeed }, true)
+    val carOverlaySpeedLimit: StateFlow<Boolean> = carOverlayFlow({ it.carOverlaySpeedLimit }, true)
+    val carOverlayCluster: StateFlow<Boolean> = carOverlayFlow({ it.carOverlayCluster }, false)
+    val carOverlayCompass: StateFlow<Boolean> = carOverlayFlow({ it.carOverlayCompass }, false)
+    val carOverlayRecordingStrip: StateFlow<Boolean> =
+        carOverlayFlow({ it.carOverlayRecordingStrip }, false)
+    val carOverlayRallyPanel: StateFlow<Boolean> = carOverlayFlow({ it.carOverlayRallyPanel }, false)
+
+    fun setCarOverlaySpeed(value: Boolean) = persistCarOverlay { it.setCarOverlaySpeed(value) }
+    fun setCarOverlaySpeedLimit(value: Boolean) = persistCarOverlay { it.setCarOverlaySpeedLimit(value) }
+    fun setCarOverlayCluster(value: Boolean) = persistCarOverlay { it.setCarOverlayCluster(value) }
+    fun setCarOverlayCompass(value: Boolean) = persistCarOverlay { it.setCarOverlayCompass(value) }
+    fun setCarOverlayRecordingStrip(value: Boolean) =
+        persistCarOverlay { it.setCarOverlayRecordingStrip(value) }
+    fun setCarOverlayRallyPanel(value: Boolean) = persistCarOverlay { it.setCarOverlayRallyPanel(value) }
+
+    private fun persistCarOverlay(block: suspend (SettingsRepository) -> Unit) {
+        viewModelScope.launch { (settings as? SettingsRepository)?.let { block(it) } }
+    }
+
     // Altitude smoothing — exponentially-weighted IIR filter that
     // takes the edge off the ±5-10 m per-sample jitter on consumer
     // GNSS. The filter lives on the VM scope so it carries state
