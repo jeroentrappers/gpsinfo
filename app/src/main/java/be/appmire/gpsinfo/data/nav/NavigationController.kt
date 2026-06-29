@@ -554,19 +554,19 @@ object NavigationController {
         if (alts.isEmpty()) return emptyList()
         val from = s.segmentIndex.coerceIn(0, (s.route.points.size - 1).coerceAtLeast(0))
         val currentAhead = s.route.points.subList(from, s.route.points.size)
-        // Live traffic on the CURRENT route: its penalty inflates the current
-        // time so an alternative that avoids a jam shows a real saving, and a
-        // hard block flags a reroute-worthy situation.
+        // Valhalla durations are now live-traffic-aware (current-time routing
+        // against the server's traffic overlay), so the time delta uses them
+        // directly. The live incident feed is still consulted to force-surface
+        // an alternative when the current route is hard-blocked ahead.
         val incidents = TrafficController.incidents.value
-        val (curPenalty, curBlocked) = trafficCost(currentAhead, incidents)
+        val curBlocked = trafficCost(currentAhead, incidents).second
         val out = ArrayList<RouteAlternative>()
         for (alt in alts) {
             if (alt.points.size < 2) continue
             val fork = forkDistance(alt.points, currentAhead) ?: continue
             if (fork < FORK_MIN_M || fork > FORK_HORIZON_M) continue
-            val (altPenalty, altBlocked) = trafficCost(alt.points, incidents)
-            // Time delta is traffic-adjusted; distance delta is geometric.
-            val dSec = (alt.durationSeconds + altPenalty) - (s.etaSeconds + curPenalty)
+            val altBlocked = trafficCost(alt.points, incidents).second
+            val dSec = alt.durationSeconds - s.etaSeconds
             val dM = (alt.distanceMeters - s.distanceRemainingM).toInt()
             val faster = dSec <= -MIN_TIME_SAVE_S
             val shorter = dM <= -MIN_DIST_SAVE_M

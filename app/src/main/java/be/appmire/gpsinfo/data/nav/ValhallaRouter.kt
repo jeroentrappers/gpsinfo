@@ -131,6 +131,10 @@ class ValhallaRouter : Router {
             .put("format", "osrm")
             .put("turn_lanes", true)
             .put("geometries", "polyline6")
+            // Current-time routing so the server's live-traffic overlay
+            // (phase 2) is applied — routes avoid jams/closures and ETAs
+            // reflect them. Harmless when no traffic is loaded (free-flow).
+            .put("date_time", JSONObject().put("type", 0))
         if (alternates > 0) req.put("alternates", alternates)
         return req
     }
