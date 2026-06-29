@@ -1,6 +1,10 @@
 # Managed by Ansible. GPSinfo live-traffic aggregation service
-# (traffic.appmire.be). Built from the Go source synced to ./src, served on
-# loopback; the host nginx fronts it with TLS + the ?key= gate.
+# (traffic.appmire.be). Built from the Go source synced to ./src.
+#
+# Uses host networking so it can both (a) be fronted by the host nginx on
+# 127.0.0.1:{{ traffic_port }} and (b) reach the loopback Valhalla
+# (127.0.0.1:8002) for edge resolution (phase 2). No isolation needed for a
+# small internal service.
 services:
   traffic:
     build:
@@ -8,10 +12,13 @@ services:
     image: gpsinfo-traffic:local
     container_name: gpsinfo-traffic
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:{{ traffic_port }}:8080"
-{% if traffic_wallonia_user | default('') %}
+    network_mode: host
+    command: ["-addr", "127.0.0.1:{{ traffic_port }}"]
     environment:
+      # Valhalla base URL for /trace_attributes edge resolution (loopback on
+      # the host). Empty disables the phase-2 edge→speed pipeline.
+      TRAFFIC_VALHALLA_URL: "{{ traffic_valhalla_url | default('') }}"
+{% if traffic_wallonia_user | default('') %}
       # Wallonia/SOFICO feed needs basic-auth (contract-gated); set in secrets.yml.
       TRAFFIC_BE_WALLONIA_USER: "{{ traffic_wallonia_user }}"
       TRAFFIC_BE_WALLONIA_PASS: "{{ traffic_wallonia_pass }}"

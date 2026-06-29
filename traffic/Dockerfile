@@ -11,4 +11,6 @@ FROM gcr.io/distroless/static-debian12
 COPY --from=build /traffic /traffic
 EXPOSE 8080
 # Loopback in production; the host nginx fronts it with TLS + the ?key= gate.
-ENTRYPOINT ["/traffic", "-addr", ":8080"]
+# -addr is in CMD so compose can override it (e.g. host networking).
+ENTRYPOINT ["/traffic"]
+CMD ["-addr", ":8080"]

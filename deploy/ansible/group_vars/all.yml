@@ -118,6 +118,10 @@ traffic_app_dir: /opt/gpsinfo-traffic
 traffic_port: 8793             # loopback only; nginx fronts it
 # Reuse the tile/routing API key gate (override in secrets.yml if desired).
 traffic_api_key: "{{ tiles_api_key }}"
+# Valhalla loopback for phase-2 edge resolution (/trace_attributes). The
+# traffic container uses host networking, so it reaches the routing service
+# directly on the host loopback.
+traffic_valhalla_url: "http://127.0.0.1:{{ valhalla_port }}"
 # Wallonia/SOFICO basic-auth (optional; set in secrets.yml once you have a
 # contract + credentials from the dataset owner).
 # traffic_wallonia_user: ""

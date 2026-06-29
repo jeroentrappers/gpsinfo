@@ -106,17 +106,21 @@ func main() {
 	}
 
 	hub := newHub()
+	// Phase 2: resolve incidents to Valhalla edges + target live speeds.
+	// Inert unless TRAFFIC_VALHALLA_URL points at a Valhalla instance.
+	edgeIndex := newEdgeSpeedIndex(os.Getenv("TRAFFIC_VALHALLA_URL"))
 	for _, src := range sources {
 		if !src.Enabled || src.URL == "" {
 			continue
 		}
-		go pollLoop(src, store, hub)
+		go pollLoop(src, store, hub, edgeIndex)
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", store.handleHealth)
 	mux.HandleFunc("/traffic", store.handleSnapshot)
 	mux.HandleFunc("/events", hub.handleSSE)
+	mux.HandleFunc("/edgespeeds", edgeIndex.handle)
 	log.Printf("traffic service listening on %s", *addr)
 	log.Fatal(http.ListenAndServe(*addr, mux))
 }
@@ -156,7 +160,7 @@ func fetch(src Source) ([]Incident, time.Time, error) {
 	return parseDATEX(data, src.ID, src.SRS)
 }
 
-func pollLoop(src Source, store *Store, hub *Hub) {
+func pollLoop(src Source, store *Store, hub *Hub, edgeIndex *EdgeSpeedIndex) {
 	t := time.NewTicker(src.Interval)
 	defer t.Stop()
 	for {
@@ -168,6 +172,8 @@ func pollLoop(src Source, store *Store, hub *Hub) {
 			store.set(src.ID, inc, pub)
 			log.Printf("[%s] %d incidents (pub %s)", src.ID, len(inc), pub.Format(time.RFC3339))
 			hub.broadcast(sseUpdate{Source: src.ID, Count: len(inc), Pub: pub})
+			// Refresh the Valhalla edge→speed map (resolves only new incidents).
+			edgeIndex.update(store.allIncidents())
 		}
 		<-t.C
 	}
@@ -205,6 +211,16 @@ func (s *Store) markError(id string, err error) {
 	}
 	st.err = err.Error()
 	st.fetched = time.Now()
+}
+
+func (s *Store) allIncidents() []Incident {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := []Incident{}
+	for _, st := range s.src {
+		out = append(out, st.incidents...)
+	}
+	return out
 }
 
 func (s *Store) snapshot(b *bbox) []Incident {
