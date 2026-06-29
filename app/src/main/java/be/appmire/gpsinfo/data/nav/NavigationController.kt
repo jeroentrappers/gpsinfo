@@ -509,7 +509,7 @@ object NavigationController {
         altJob?.cancel()
         if (BuildConfig.ROUTING_BASE_URL.isEmpty()) return
         if (onlineRouter !is ValhallaRouter) return
-        TrafficController.start() // so fork scoring sees live traffic
+        TrafficController.start() // drives the recompute-on-traffic-change trigger below
         altJob = scope.launch {
             // Periodic recompute…
             launch {
@@ -554,67 +554,21 @@ object NavigationController {
         if (alts.isEmpty()) return emptyList()
         val from = s.segmentIndex.coerceIn(0, (s.route.points.size - 1).coerceAtLeast(0))
         val currentAhead = s.route.points.subList(from, s.route.points.size)
-        // Valhalla durations are now live-traffic-aware (current-time routing
-        // against the server's traffic overlay), so the time delta uses them
-        // directly. The live incident feed is still consulted to force-surface
-        // an alternative when the current route is hard-blocked ahead.
-        val incidents = TrafficController.incidents.value
-        val curBlocked = trafficCost(currentAhead, incidents).second
+        // Valhalla routes with the server's live-traffic overlay (current-time
+        // requests), so durations are already traffic-aware — keep alternatives
+        // that fork ahead and save time or distance, full stop. (The earlier
+        // client-side traffic scoring is retired now that the engine does it.)
         val out = ArrayList<RouteAlternative>()
         for (alt in alts) {
             if (alt.points.size < 2) continue
             val fork = forkDistance(alt.points, currentAhead) ?: continue
             if (fork < FORK_MIN_M || fork > FORK_HORIZON_M) continue
-            val altBlocked = trafficCost(alt.points, incidents).second
             val dSec = alt.durationSeconds - s.etaSeconds
             val dM = (alt.distanceMeters - s.distanceRemainingM).toInt()
-            val faster = dSec <= -MIN_TIME_SAVE_S
-            val shorter = dM <= -MIN_DIST_SAVE_M
-            // Reroute-due-to-traffic: surface an avoiding alternative whenever
-            // the current route is hard-blocked ahead, regardless of thresholds.
-            val avoidsBlock = curBlocked && !altBlocked
-            if (!faster && !shorter && !avoidsBlock) continue
+            if (dSec > -MIN_TIME_SAVE_S && dM > -MIN_DIST_SAVE_M) continue // no benefit on either axis
             out.add(RouteAlternative(alt, dSec, dM, fork))
         }
-        // Biggest (traffic-adjusted) saver first — block-avoiders sort to the
-        // top because the current route carries the block penalty.
         return out.sortedBy { it.deltaSeconds }.take(MAX_ALTERNATIVES)
-    }
-
-    /** Live-traffic cost of a route: a time penalty from incidents lying on
-     *  it, plus whether it's hard-blocked (closure / accident). */
-    private fun trafficCost(routePts: List<RoutePoint>, incidents: List<TrafficIncident>): Pair<Int, Boolean> {
-        if (incidents.isEmpty() || routePts.isEmpty()) return 0 to false
-        var penalty = 0
-        var blocked = false
-        for (inc in incidents) {
-            if (inc.geometry.isEmpty() || !incidentOnRoute(inc, routePts)) continue
-            when (inc.category) {
-                "laneClosure", "accident" -> { penalty += BLOCK_PENALTY_S; blocked = true }
-                "congestion" -> penalty += CONGESTION_PENALTY_S
-                "roadworks" -> penalty += ROADWORKS_PENALTY_S
-            }
-        }
-        return penalty to blocked
-    }
-
-    /** True if any (sampled) incident vertex lies within [ON_ROUTE_M] of the
-     *  (sampled) route — cheap point-proximity, bounded for per-tick cost. */
-    private fun incidentOnRoute(inc: TrafficIncident, routePts: List<RoutePoint>): Boolean {
-        val ig = inc.geometry
-        val iStep = maxOf(1, ig.size / 4)
-        val rStep = maxOf(1, routePts.size / CUR_SCAN_PTS)
-        var i = 0
-        while (i < ig.size) {
-            val ip = RoutePoint(ig[i][1], ig[i][0]) // geometry is [lon, lat]
-            var r = 0
-            while (r < routePts.size) {
-                if (haversineM(ip, routePts[r]) < ON_ROUTE_M) return true
-                r += rStep
-            }
-            i += iStep
-        }
-        return false
     }
 
     /** Distance along [altPts] to where it first leaves [current] (the fork),
@@ -767,14 +721,8 @@ object NavigationController {
     private const val SAME_PATH_M = 30.0
     private const val ALT_SCAN_PTS = 120
     private const val CUR_SCAN_PTS = 250
-    // Traffic-aware scoring of forks (tunable on the road).
-    /** An incident vertex within this of a route counts as "on" it. */
-    private const val ON_ROUTE_M = 40.0
-    /** Time penalties added to a route's ETA per on-route incident. A block
-     *  (closure/accident) is large enough to effectively force avoidance. */
-    private const val BLOCK_PENALTY_S = 1_800
-    private const val CONGESTION_PENALTY_S = 300
-    private const val ROADWORKS_PENALTY_S = 60
+    // Fork trade-offs use Valhalla's live-traffic-aware durations directly; the
+    // former client-side incident scoring is retired (the routing engine owns it).
     /** Local snap search window (points) around the last matched index. */
     private const val SNAP_WINDOW_BACK = 5
     private const val SNAP_WINDOW_AHEAD = 60
