@@ -1,6 +1,6 @@
-• Traffico in tempo reale: code, lavori e chiusure sulla mappa, con percorsi e orari di arrivo basati sul traffico.
-• Ricalcolo automatico e percorsi alternativi ai bivi, con il tempo e la distanza risparmiati.
+• Traffico in tempo reale sulla mappa: code, lavori e chiusure, con percorsi e orari di arrivo basati sul traffico.
+• Ricalcolo automatico e percorsi alternativi ai bivi, con tempo e distanza risparmiati.
 • Nuovissima schermata di navigazione per telefono (verticale e orizzontale).
-• Indicazioni vocali svolta per svolta: muto, sintetico o dettagliato, scelta della lingua e una prova TTS.
-• L'OBD si riconnette automaticamente; velocità ora con precisione di 0,1 km/h.
-• Android Auto si adatta correttamente allo spazio disponibile.
+• Voce svolta per svolta: muto, sintetico/dettagliato, lingua e prova TTS.
+• L'OBD si riconnette automaticamente; velocità a 0,1 km/h.
+• Android Auto si adatta correttamente.

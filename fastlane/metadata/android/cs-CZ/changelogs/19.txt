@@ -1,6 +1,6 @@
-• Doprava živě: kolony, práce na silnici a uzavírky na mapě, s trasami a časy příjezdu zohledňujícími dopravu.
+• Doprava živě na mapě: kolony, práce a uzavírky, s trasami a časy příjezdu podle dopravy.
 • Automatický přepočet a alternativní trasy na rozcestích, s ušetřeným časem a vzdáleností.
 • Zcela nová navigační obrazovka pro telefon (na výšku i na šířku).
-• Hlasová navigace zatáčku po zatáčce: ztlumení, stručně nebo podrobně, volba jazyka a test TTS.
-• OBD se automaticky znovu připojuje; rychlost nyní s přesností 0,1 km/h.
-• Android Auto se správně přizpůsobí dostupnému prostoru.
+• Hlasová navigace: ztlumení, stručně/podrobně, volba jazyka a test TTS.
+• OBD se automaticky znovu připojuje; rychlost s přesností 0,1 km/h.
+• Android Auto se správně přizpůsobí.

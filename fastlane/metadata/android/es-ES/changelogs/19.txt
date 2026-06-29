@@ -1,6 +1,6 @@
-• Tráfico en directo: atascos, obras y cortes en el mapa, con rutas y horas de llegada según el tráfico.
-• Recálculo automático y rutas alternativas en las bifurcaciones, mostrando el tiempo y la distancia ahorrados.
+• Tráfico en directo en el mapa: atascos, obras y cortes, con rutas y horas de llegada según el tráfico.
+• Recálculo automático y rutas alternativas en bifurcaciones, con el tiempo y la distancia ahorrados.
 • Nueva pantalla de navegación para el teléfono (vertical y horizontal).
-• Indicaciones de voz giro a giro: silencio, breve o detallado, elección de idioma y una prueba de TTS.
-• El OBD se reconecta automáticamente; velocidad ahora con 0,1 km/h.
-• Android Auto se ajusta correctamente al espacio disponible.
+• Voz giro a giro: silencio, breve/detallado, idioma y prueba de TTS.
+• El OBD se reconecta automáticamente; velocidad con 0,1 km/h.
+• Android Auto se ajusta correctamente.

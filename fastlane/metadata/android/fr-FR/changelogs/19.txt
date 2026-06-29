@@ -1,6 +1,6 @@
-• Trafic en direct : embouteillages, travaux et fermetures sur la carte, avec itinéraires et heures d'arrivée tenant compte du trafic.
+• Trafic en direct sur la carte : embouteillages, travaux et fermetures, avec itinéraires et heures d'arrivée selon le trafic.
 • Recalcul automatique et itinéraires alternatifs aux bifurcations, avec le temps et la distance gagnés.
 • Tout nouvel écran de navigation pour téléphone (portrait & paysage).
-• Guidage vocal virage par virage : muet, concis ou détaillé, choix de la langue et un test TTS.
-• L'OBD se reconnecte automatiquement ; vitesse affichée à 0,1 km/h près.
-• Android Auto s'adapte correctement à l'espace disponible.
+• Guidage vocal : muet, concis/détaillé, choix de la langue et test TTS.
+• L'OBD se reconnecte automatiquement ; vitesse à 0,1 km/h.
+• Android Auto s'adapte correctement.

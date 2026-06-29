@@ -1,6 +1,6 @@
-• Ruch na żywo: korki, roboty drogowe i zamknięcia na mapie, z trasami i czasami przyjazdu uwzględniającymi ruch.
-• Automatyczne przeliczanie trasy i alternatywne trasy na rozjazdach, z pokazaniem zaoszczędzonego czasu i odległości.
+• Ruch na żywo na mapie: korki, roboty i zamknięcia, z trasami i czasami przyjazdu uwzględniającymi ruch.
+• Automatyczne przeliczanie i trasy alternatywne na rozjazdach, z zaoszczędzonym czasem i odległością.
 • Zupełnie nowy ekran nawigacji na telefon (pionowo i poziomo).
-• Głosowe wskazówki zakręt po zakręcie: wyciszenie, zwięźle lub szczegółowo, wybór języka i test TTS.
-• OBD automatycznie ponawia połączenie; prędkość teraz z dokładnością do 0,1 km/h.
-• Android Auto poprawnie dopasowuje się do dostępnej przestrzeni.
+• Wskazówki głosowe: wyciszenie, zwięźle/szczegółowo, wybór języka i test TTS.
+• OBD łączy się automatycznie ponownie; prędkość z dokładnością 0,1 km/h.
+• Android Auto poprawnie się skaluje.

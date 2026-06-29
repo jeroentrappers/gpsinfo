@@ -1,6 +1,6 @@
-• Trânsito ao vivo: congestionamentos, obras e bloqueios no mapa, com rotas e horários de chegada que consideram o trânsito.
-• Recálculo automático e rotas alternativas nas bifurcações, mostrando o tempo e a distância economizados.
+• Trânsito ao vivo no mapa: congestionamentos, obras e bloqueios, com rotas e horários que consideram o trânsito.
+• Recálculo automático e rotas alternativas nas bifurcações, com tempo e distância economizados.
 • Nova tela de navegação para o telefone (retrato e paisagem).
-• Orientação por voz curva a curva: mudo, conciso ou detalhado, escolha de idioma e um teste de TTS.
-• O OBD se reconecta automaticamente; velocidade agora com 0,1 km/h.
-• O Android Auto se ajusta corretamente ao espaço disponível.
+• Voz curva a curva: mudo, conciso/detalhado, idioma e teste de TTS.
+• O OBD se reconecta automaticamente; velocidade com 0,1 km/h.
+• O Android Auto se ajusta corretamente.

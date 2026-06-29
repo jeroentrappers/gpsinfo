@@ -1,6 +1,6 @@
-• Live verkeer: files, wegenwerken en afsluitingen op de kaart, met verkeersbewuste routes en aankomsttijden.
-• Automatisch omrijden en alternatieve routes bij splitsingen, met de gewonnen tijd en afstand.
+• Live verkeer op de kaart: files, wegenwerken en afsluitingen, met verkeersbewuste routes en aankomsttijden.
+• Automatisch omrijden en alternatieve routes bij splitsingen, met gewonnen tijd en afstand.
 • Gloednieuw navigatiescherm voor de telefoon (staand & liggend).
-• Gesproken navigatie-instructies: dempen, beknopt of uitgebreid, taalkeuze en een TTS-test.
-• OBD blijft automatisch opnieuw verbinden; snelheid nu tot op 0,1 km/u.
-• Android Auto past zich correct aan de beschikbare ruimte aan.
+• Gesproken instructies: dempen, beknopt/uitgebreid, taalkeuze en TTS-test.
+• OBD verbindt automatisch opnieuw; snelheid tot op 0,1 km/u.
+• Android Auto schaalt correct mee.
