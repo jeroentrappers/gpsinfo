@@ -264,6 +264,15 @@ class CarMapRenderer(
         scheduleRender()
     }
 
+    /** En-route alternatives (NavigationController) — drawn dimmed beneath the
+     *  route, with the best one's trade-off in a banner. */
+    private var alternatives: List<be.appmire.gpsinfo.data.nav.NavigationController.RouteAlternative> = emptyList()
+
+    fun updateAlternatives(alts: List<be.appmire.gpsinfo.data.nav.NavigationController.RouteAlternative>) {
+        alternatives = alts
+        scheduleRender()
+    }
+
     /** Which optional overlays to draw on top of the navigation map. Starts
      *  at the navigation-only baseline (only the speed + speed-limit badge);
      *  the screen feeds the user's choices via [updateOverlayConfig]. */
@@ -721,6 +730,7 @@ class CarMapRenderer(
         val bannerRight = safe.right.toFloat().coerceIn(bannerLeft, w.toFloat())
         if (overlayConfig.rallyPanel) drawRallyPanel(canvas, bannerLeft, bannerRight, h, dark)
         drawNavStatus(canvas, bannerLeft, bannerRight, h, dark)
+        drawAltBanner(canvas, bannerLeft, bannerRight, h, dark)
 
         if (editMode) drawEditHint(canvas, w, h)
     }
@@ -940,6 +950,7 @@ class CarMapRenderer(
         // moving camera.
         val following = hasBearing && !panMode
         val puck = puckScreenPoint(snap, mapLeft, loc, following)
+        drawAlternatives(canvas, snap, mapLeft)
         drawProjectedRoute(canvas, snap, mapLeft, loc, puck)
         drawTraffic(canvas, snap, mapLeft)
         drawProjectedBreadcrumb(canvas, snap, mapLeft)
@@ -967,6 +978,88 @@ class CarMapRenderer(
             )
             android.graphics.PointF(mapLeft + pf.x, pf.y)
         }
+    }
+
+    /** Dimmed indigo lines for the en-route alternatives, drawn beneath the
+     *  active route so the upcoming fork reads at a glance. */
+    private fun drawAlternatives(
+        canvas: Canvas,
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+    ) {
+        if (alternatives.isEmpty()) return
+        val maxJump = snap.bitmap.height * 4f
+        altPaint.color = ALT_ROUTE_COLOR
+        altPaint.strokeWidth = 12f
+        for (alt in alternatives) {
+            val pts = alt.route.points
+            if (pts.size < 2) continue
+            val step = (pts.size + MAX_PROJECTED_POINTS - 1) / MAX_PROJECTED_POINTS
+            val path = Path()
+            var started = false
+            var lastX = 0f
+            var lastY = 0f
+            var i = 0
+            while (i < pts.size) {
+                val p = pts[i]
+                val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(p.lat, p.lon))
+                val x = mapLeft + pf.x
+                val y = pf.y
+                if (!started) {
+                    path.moveTo(x, y); started = true
+                } else if (kotlin.math.hypot((x - lastX).toDouble(), (y - lastY).toDouble()) > maxJump) {
+                    path.moveTo(x, y)
+                } else {
+                    path.lineTo(x, y)
+                }
+                lastX = x; lastY = y
+                if (i == pts.size - 1) break
+                i = (i + step).coerceAtMost(pts.size - 1)
+            }
+            canvas.drawPath(path, altPaint)
+        }
+    }
+
+    /** Best alternative's trade-off, e.g. "Alt: 2 min longer · 10 km shorter",
+     *  in a pill below the top edge. Returns the on-screen rect (for nothing
+     *  yet — accept is via the action strip). */
+    private fun drawAltBanner(canvas: Canvas, mapLeft: Float, mapRight: Float, h: Int, dark: Boolean) {
+        val alt = alternatives.firstOrNull() ?: return
+        if (rally !is RallyState.Idle || navStatusText != null) return
+        val text = carContext.getString(be.appmire.gpsinfo.R.string.car_alt_banner, altTradeoffText(alt))
+        val inset = stableArea ?: visibleArea ?: Rect(0, 0, mapRight.toInt(), h)
+        val pad = h * 0.03f
+        val cx = (mapLeft + mapRight) / 2f
+        hudTextPaint.textAlign = Paint.Align.CENTER
+        hudTextPaint.isFakeBoldText = false
+        hudTextPaint.textSize = h * 0.04f
+        val tw = hudTextPaint.measureText(text)
+        val top = inset.top + pad
+        val panelH = h * 0.04f + pad * 1.5f
+        bubblePaint.color = ALT_BANNER_BG
+        val rect = RectF(cx - tw / 2 - pad, top, cx + tw / 2 + pad, top + panelH)
+        canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubblePaint)
+        canvas.drawRoundRect(rect, panelH / 2, panelH / 2, bubbleStrokePaint)
+        hudTextPaint.color = Color.WHITE
+        canvas.drawText(text, cx, top + panelH - pad * 0.85f, hudTextPaint)
+    }
+
+    /** "2 min longer · 10 km shorter" (metric) from an alternative's deltas. */
+    private fun altTradeoffText(alt: be.appmire.gpsinfo.data.nav.NavigationController.RouteAlternative): String {
+        val parts = ArrayList<String>(2)
+        val mins = abs(alt.deltaSeconds) / 60
+        val timeSaves = alt.deltaSeconds <= 0
+        if (mins >= 1) {
+            parts.add(carContext.getString(if (timeSaves) be.appmire.gpsinfo.R.string.nav_alt_faster else be.appmire.gpsinfo.R.string.nav_alt_slower, mins))
+        }
+        val distSaves = alt.deltaMeters <= 0
+        if (abs(alt.deltaMeters) >= 500) {
+            val km = "%.0f km".format(Locale.ROOT, abs(alt.deltaMeters) / 1000.0)
+            parts.add(carContext.getString(if (distSaves) be.appmire.gpsinfo.R.string.nav_alt_shorter else be.appmire.gpsinfo.R.string.nav_alt_longer, km))
+        }
+        if (parts.isEmpty()) return carContext.getString(be.appmire.gpsinfo.R.string.nav_alt_title)
+        val sep = if (parts.size == 2 && timeSaves != distSaves) " ${carContext.getString(be.appmire.gpsinfo.R.string.nav_alt_but)} " else " · "
+        return parts.joinToString(sep)
     }
 
     private fun drawProjectedRoute(
@@ -1439,6 +1532,11 @@ class CarMapRenderer(
         strokeJoin = Paint.Join.ROUND
     }
     private val trafficFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val altPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
     private val limitFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val limitRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val editPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -1548,6 +1646,9 @@ class CarMapRenderer(
         const val TRAFFIC_ROADWORKS = 0xFFF9A825.toInt()  // amber
         const val TRAFFIC_CLOSURE = 0xFFFB8C00.toInt()    // orange
         const val TRAFFIC_OTHER = 0xFF9E9E9E.toInt()      // grey
+        // En-route alternatives.
+        const val ALT_ROUTE_COLOR = 0xCC5C6BC0.toInt()    // dimmed indigo
+        const val ALT_BANNER_BG = 0xE63949AB.toInt()      // indigo banner
         // Overlay drag/scale limits (Phase 4 edit mode).
         const val MIN_OVERLAY_SCALE = 0.4f
         const val MAX_OVERLAY_SCALE = 3.0f

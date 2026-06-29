@@ -13,6 +13,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,11 +63,28 @@ object NavigationController {
             /** Posted speed limit (km/h) for the segment the vehicle is
              *  on, from the route's OSM `maxspeed`; null when untagged. */
             val speedLimitKmh: Int? = null,
+            /** Significant en-route alternatives offered at an upcoming fork
+             *  (computed periodically), with their time/distance trade-offs.
+             *  Empty when nothing worthwhile diverges soon. */
+            val alternatives: List<RouteAlternative> = emptyList(),
         ) : NavState
 
         data class Arrived(val destLat: Double, val destLon: Double) : NavState
         data class Failed(val message: String) : NavState
     }
+
+    /**
+     * An alternative route offered mid-drive at a real upcoming fork.
+     * Deltas are vs. the remaining current route: negative = saving
+     * (faster / shorter), positive = cost. [forkDistanceM] is how far ahead
+     * the alternative diverges from the current route.
+     */
+    data class RouteAlternative(
+        val route: OfflineRoute,
+        val deltaSeconds: Int,
+        val deltaMeters: Int,
+        val forkDistanceM: Double,
+    )
 
     private val _state = MutableStateFlow<NavState>(NavState.Idle)
     val state: StateFlow<NavState> = _state.asStateFlow()
@@ -80,6 +98,7 @@ object NavigationController {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var routeJob: Job? = null
     private var corridorJob: Job? = null
+    private var altJob: Job? = null
     private var router: OfflineRouter? = null
 
     /** Online engine (server-side Valhalla): tried first for profile-aware,
@@ -322,6 +341,7 @@ object NavigationController {
     @Synchronized
     fun stop() {
         routeJob?.cancel()
+        altJob?.cancel()
         // The corridor map cache keeps downloading after stop on
         // purpose — the tiles stay useful for the next drive; only a
         // new navigateTo (or process death) supersedes it.
@@ -467,6 +487,88 @@ object NavigationController {
             destName = lastDestName,
             speedLimitKmh = speedLimitAt(route, 0),
         )
+        startAlternativesLoop(destLat, destLon)
+    }
+
+    /** Switch to a suggested alternative (user accepted the fork). */
+    @Synchronized
+    fun acceptAlternative(alt: RouteAlternative) {
+        val s = _state.value as? NavState.Navigating ?: return
+        installRoute(alt.route, s.destLat, s.destLon)
+        voice?.announceReroute()
+    }
+
+    /**
+     * Periodically (while navigating) compute route alternatives from the
+     * current position and keep only those that diverge at a real upcoming
+     * fork with a worthwhile time/distance trade-off. Online only (Valhalla);
+     * a fresh [installRoute] restarts the loop with the new destination.
+     */
+    private fun startAlternativesLoop(destLat: Double, destLon: Double) {
+        altJob?.cancel()
+        if (BuildConfig.ROUTING_BASE_URL.isEmpty()) return
+        val valhalla = onlineRouter as? ValhallaRouter ?: return
+        altJob = scope.launch {
+            while (isActive) {
+                delay(ALT_INTERVAL_MS)
+                val s = _state.value as? NavState.Navigating ?: break
+                if (reRouting) continue
+                val loc = lastLocation ?: continue
+                val alts = runCatching {
+                    valhalla.routeAlternatives(loc.latitude, loc.longitude, destLat, destLon, lastProfile, 2)
+                }.getOrDefault(emptyList())
+                val ranked = rankAlternatives(alts, s)
+                synchronized(this@NavigationController) {
+                    val cur = _state.value as? NavState.Navigating ?: return@synchronized
+                    if (cur.alternatives != ranked) _state.value = cur.copy(alternatives = ranked)
+                }
+            }
+        }
+    }
+
+    /** Keep alternatives that diverge at a near fork and save time or
+     *  distance vs. the remaining current route (better on ≥1 axis). */
+    private fun rankAlternatives(alts: List<OfflineRoute>, s: NavState.Navigating): List<RouteAlternative> {
+        if (alts.isEmpty()) return emptyList()
+        val from = s.segmentIndex.coerceIn(0, (s.route.points.size - 1).coerceAtLeast(0))
+        val currentAhead = s.route.points.subList(from, s.route.points.size)
+        val out = ArrayList<RouteAlternative>()
+        for (alt in alts) {
+            if (alt.points.size < 2) continue
+            val fork = forkDistance(alt.points, currentAhead) ?: continue
+            if (fork < FORK_MIN_M || fork > FORK_HORIZON_M) continue
+            val dSec = alt.durationSeconds - s.etaSeconds
+            val dM = (alt.distanceMeters - s.distanceRemainingM).toInt()
+            val faster = dSec <= -MIN_TIME_SAVE_S
+            val shorter = dM <= -MIN_DIST_SAVE_M
+            if (!faster && !shorter) continue
+            out.add(RouteAlternative(alt, dSec, dM, fork))
+        }
+        return out.sortedBy { it.deltaSeconds }.take(MAX_ALTERNATIVES)
+    }
+
+    /** Distance along [altPts] to where it first leaves [current] (the fork),
+     *  or null if it stays on the current route through the scan window
+     *  (i.e. it's the same path, not a distinct alternative). */
+    private fun forkDistance(altPts: List<RoutePoint>, current: List<RoutePoint>): Double? {
+        if (altPts.size < 2 || current.isEmpty()) return null
+        var cum = 0.0
+        val limit = minOf(altPts.size, ALT_SCAN_PTS)
+        for (i in 1 until limit) {
+            cum += haversineM(altPts[i - 1], altPts[i])
+            if (nearestDistM(altPts[i], current) > SAME_PATH_M) return cum
+        }
+        return null
+    }
+
+    private fun nearestDistM(p: RoutePoint, poly: List<RoutePoint>): Double {
+        var best = Double.MAX_VALUE
+        val limit = minOf(poly.size, CUR_SCAN_PTS)
+        for (i in 0 until limit) {
+            val d = haversineM(p, poly[i])
+            if (d < best) best = d
+        }
+        return best
     }
 
     /** Posted limit for the segment the vehicle is on: the node at the
@@ -581,6 +683,20 @@ object NavigationController {
     /** Consecutive off-route fixes that trigger a reroute inside the turn
      *  zone (vs [OFF_ROUTE_CONSECUTIVE] for generic open-road drift). */
     private const val MISSED_TURN_CONSECUTIVE = 2
+    // ── En-route alternatives ("fork in the road") ──
+    private const val ALT_INTERVAL_MS = 60_000L
+    /** A fork must be at least this far ahead (not on top of us) and no
+     *  farther than the horizon (still actionable / relevant). */
+    private const val FORK_MIN_M = 150.0
+    private const val FORK_HORIZON_M = 6_000.0
+    /** Minimum saving to bother offering an alternative (better on ≥1 axis). */
+    private const val MIN_TIME_SAVE_S = 60
+    private const val MIN_DIST_SAVE_M = 1_000
+    private const val MAX_ALTERNATIVES = 2
+    /** Points within this of the current route count as "same road". */
+    private const val SAME_PATH_M = 30.0
+    private const val ALT_SCAN_PTS = 120
+    private const val CUR_SCAN_PTS = 250
     /** Local snap search window (points) around the last matched index. */
     private const val SNAP_WINDOW_BACK = 5
     private const val SNAP_WINDOW_AHEAD = 60

@@ -300,6 +300,16 @@
     <string name="nav_eta_remaining" tools:ignore="MissingTranslation">time left</string>
     <string name="nav_eta_distance" tools:ignore="MissingTranslation">distance</string>
     <string name="nav_recenter" tools:ignore="MissingTranslation">Recenter</string>
+    <string name="nav_alt_title" tools:ignore="MissingTranslation">Alternative route</string>
+    <string name="nav_alt_faster" tools:ignore="MissingTranslation">%1$d min faster</string>
+    <string name="nav_alt_slower" tools:ignore="MissingTranslation">%1$d min longer</string>
+    <string name="nav_alt_shorter" tools:ignore="MissingTranslation">%1$s shorter</string>
+    <string name="nav_alt_longer" tools:ignore="MissingTranslation">%1$s longer</string>
+    <string name="nav_alt_but" tools:ignore="MissingTranslation">but</string>
+    <string name="nav_alt_take" tools:ignore="MissingTranslation">Take</string>
+    <string name="car_alt_banner" tools:ignore="MissingTranslation">Alt: %1$s</string>
+    <string name="car_action_take_alt" tools:ignore="MissingTranslation">Take alt</string>
+    <string name="nav_alt_dismiss" tools:ignore="MissingTranslation">Dismiss</string>
     <string name="car_obd_lost_title" tools:ignore="MissingTranslation">OBD connection lost</string>
     <string name="car_obd_lost_body" tools:ignore="MissingTranslation">Couldn\'t reach the OBD adapter for 5 minutes. Keep trying to reconnect, or stop?</string>
     <string name="car_obd_keep_trying" tools:ignore="MissingTranslation">Keep trying</string>

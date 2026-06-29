@@ -111,6 +111,7 @@ class ValhallaRouter : Router {
 
     private fun requestJson(
         fromLat: Double, fromLon: Double, toLat: Double, toLon: Double, profile: RouteProfile,
+        alternates: Int = 0,
     ): JSONObject {
         val locations = JSONArray()
             .put(JSONObject().put("lat", fromLat).put("lon", fromLon))
@@ -121,7 +122,7 @@ class ValhallaRouter : Router {
             RouteProfile.SHORTEST -> autoOpts.put("shortest", true)
             RouteProfile.ECONOMIC -> autoOpts.put("use_highways", 0.3).put("use_tolls", 0.2)
         }
-        return JSONObject()
+        val req = JSONObject()
             .put("locations", locations)
             .put("costing", "auto")
             .put("costing_options", JSONObject().put("auto", autoOpts))
@@ -130,6 +131,42 @@ class ValhallaRouter : Router {
             .put("format", "osrm")
             .put("turn_lanes", true)
             .put("geometries", "polyline6")
+        if (alternates > 0) req.put("alternates", alternates)
+        return req
+    }
+
+    /**
+     * Compute up to [count] route alternatives from ([fromLat],[fromLon]) to
+     * the destination — used for en-route "fork in the road" suggestions.
+     * Returns all routes Valhalla offers (the first is the primary), or an
+     * empty list when offline / on error.
+     */
+    suspend fun routeAlternatives(
+        fromLat: Double, fromLon: Double, toLat: Double, toLon: Double,
+        profile: RouteProfile, count: Int = 2,
+    ): List<OfflineRoute> = withContext(Dispatchers.IO) {
+        val base = BuildConfig.ROUTING_BASE_URL.trimEnd('/')
+        if (base.isEmpty()) return@withContext emptyList()
+        val key = BuildConfig.TILES_API_KEY
+        val url = URL(base + "/route" + if (key.isNotEmpty()) "?key=$key" else "")
+        val body = requestJson(fromLat, fromLon, toLat, toLon, profile, alternates = count).toString()
+        val conn = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 8_000
+            readTimeout = 20_000
+            setRequestProperty("Content-Type", "application/json")
+        }
+        try {
+            conn.outputStream.use { it.write(body.toByteArray()) }
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) return@withContext emptyList()
+            parseAllOsrm(JSONObject(conn.inputStream.bufferedReader().readText()))
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "valhalla alternates failed", e)
+            emptyList()
+        } finally {
+            conn.disconnect()
+        }
     }
 
     // ── Response (OSRM format) ─────────────────────────────────────
@@ -138,8 +175,21 @@ class ValhallaRouter : Router {
         if (d.optString("code") != "Ok") return null
         val routes = d.optJSONArray("routes") ?: return null
         if (routes.length() == 0) return null
-        val route = routes.getJSONObject(0)
+        return parseRouteObj(routes.getJSONObject(0))
+    }
 
+    /** Every route in an OSRM response (primary first), for alternatives. */
+    private fun parseAllOsrm(d: JSONObject): List<OfflineRoute> {
+        if (d.optString("code") != "Ok") return emptyList()
+        val routes = d.optJSONArray("routes") ?: return emptyList()
+        val out = ArrayList<OfflineRoute>(routes.length())
+        for (i in 0 until routes.length()) {
+            parseRouteObj(routes.getJSONObject(i))?.let { out.add(it) }
+        }
+        return out
+    }
+
+    private fun parseRouteObj(route: JSONObject): OfflineRoute? {
         // Build the point list from the per-step geometries (deduping the
         // shared boundary point) so each maneuver's track index lines up
         // with the polyline — equivalent to route.geometry, but indexable.

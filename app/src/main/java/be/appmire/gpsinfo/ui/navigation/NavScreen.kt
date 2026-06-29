@@ -24,11 +24,13 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.VolumeOff
 import androidx.compose.material.icons.outlined.VolumeUp
+import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -55,6 +58,7 @@ import be.appmire.gpsinfo.ui.livemap.MapLibreMapHost
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import be.appmire.gpsinfo.util.UnitConverter
 import be.appmire.gpsinfo.util.speedUnitLabel
+import kotlin.math.abs
 
 /**
  * Full-screen phone turn-by-turn navigation, the phone analogue of the
@@ -103,6 +107,7 @@ fun NavScreen(
         n.route.points.subList(from, n.route.points.size)
     }
     var recenter by remember { mutableIntStateOf(0) }
+    var dismissedAltKey by remember { mutableStateOf<String?>(null) }
     val voiceOn by vm.voiceGuidanceEnabled.collectAsStateWithLifecycle()
 
     // Live traffic: subscribe and keep the viewport on the active route.
@@ -126,6 +131,7 @@ fun NavScreen(
             navigationTarget = null,
             tbtRoute = tbtRoute,
             traffic = traffic,
+            alternativeRoutes = navg?.alternatives?.map { it.route.points } ?: emptyList(),
             recenterTrigger = recenter,
             darkMap = darkMap,
             simplified = true,
@@ -140,6 +146,14 @@ fun NavScreen(
                     NavLandscape(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice) { exit(onExit) }
                 } else {
                     NavPortrait(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice) { exit(onExit) }
+                }
+                val topAlt = ns.alternatives.firstOrNull()
+                if (topAlt != null && altKey(topAlt) != dismissedAltKey) {
+                    AlternativeCard(
+                        alt = topAlt, unit = unit, modifier = content,
+                        onTake = { NavigationController.acceptAlternative(topAlt) },
+                        onDismiss = { dismissedAltKey = altKey(topAlt) },
+                    )
                 }
             }
             is NavigationController.NavState.Preparing ->
@@ -480,6 +494,78 @@ private fun RecenterButton(onRecenter: () -> Unit, modifier: Modifier = Modifier
     ) {
         Icon(Icons.Outlined.MyLocation, contentDescription = androidx.compose.ui.res.stringResource(R.string.nav_recenter))
     }
+}
+
+/** Mid-drive "fork in the road" suggestion: the trade-off + take/dismiss. */
+@Composable
+private fun AlternativeCard(
+    alt: NavigationController.RouteAlternative,
+    unit: UnitSystem,
+    modifier: Modifier,
+    onTake: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Surface(
+            color = MaterialTheme.colorScheme.tertiaryContainer,
+            shape = RoundedCornerShape(22.dp),
+            tonalElevation = 6.dp,
+            shadowElevation = 10.dp,
+        ) {
+            Column(
+                Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    stringResource(R.string.nav_alt_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Text(
+                    altTradeoff(alt, unit),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    textAlign = TextAlign.Center,
+                )
+                Row(
+                    Modifier.padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.nav_alt_dismiss)) }
+                    Button(onClick = onTake) { Text(stringResource(R.string.nav_alt_take)) }
+                }
+            }
+        }
+    }
+}
+
+private fun altKey(a: NavigationController.RouteAlternative): String =
+    "${a.deltaSeconds}_${a.deltaMeters}_${a.route.points.size}"
+
+/** "2 min longer but 10 km shorter" — only the significant parts, joined
+ *  with "but" when it's a genuine trade-off (one saves, the other costs). */
+@Composable
+private fun altTradeoff(a: NavigationController.RouteAlternative, unit: UnitSystem): String {
+    val parts = ArrayList<String>(2)
+    val mins = abs(a.deltaSeconds) / 60
+    val timeSaves = a.deltaSeconds <= 0
+    if (mins >= 1) {
+        parts += stringResource(if (timeSaves) R.string.nav_alt_faster else R.string.nav_alt_slower, mins)
+    }
+    val distSaves = a.deltaMeters <= 0
+    if (abs(a.deltaMeters) >= 500) {
+        val dist = formatNavDistance(abs(a.deltaMeters).toDouble(), unit)
+        parts += stringResource(if (distSaves) R.string.nav_alt_shorter else R.string.nav_alt_longer, dist)
+    }
+    if (parts.isEmpty()) return stringResource(R.string.nav_alt_title)
+    val sep = if (parts.size == 2 && timeSaves != distSaves) {
+        " ${stringResource(R.string.nav_alt_but)} "
+    } else {
+        " · "
+    }
+    return parts.joinToString(sep)
 }
 
 @Composable

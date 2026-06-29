@@ -71,6 +71,8 @@ fun MapLibreMapHost(
     tbtRoute: List<be.appmire.gpsinfo.data.nav.RoutePoint>? = null,
     /** Live traffic incidents (TrafficController) to draw as coloured lines. */
     traffic: List<be.appmire.gpsinfo.data.nav.TrafficIncident> = emptyList(),
+    /** En-route alternative routes to draw dimmed beneath the active route. */
+    alternativeRoutes: List<List<be.appmire.gpsinfo.data.nav.RoutePoint>> = emptyList(),
     /** Bumped by the caller to force a one-shot recenter on the user. */
     recenterTrigger: Int,
     /** Use OpenFreeMap's dark style instead of Liberty. */
@@ -123,6 +125,7 @@ fun MapLibreMapHost(
             holder.update(
                 loc, follow || forceRecenter, viewMode, gpsBearingDeg,
                 recording, navigationTarget, tbtRoute, darkMap, simplified, traffic,
+                alternativeRoutes,
             )
         },
     )
@@ -167,6 +170,8 @@ private class MapHolder {
     private val trafficLines = ArrayList<Line>()
     private val trafficCircles = ArrayList<Circle>()
     private var lastTrafficKey = ""
+    private val altLines = ArrayList<Line>()
+    private var lastAltKey = ""
 
     private var seeded = false
     private val trailPoints = ArrayList<LatLng>()
@@ -206,6 +211,8 @@ private class MapHolder {
         trafficLines.clear()
         trafficCircles.clear()
         lastTrafficKey = ""
+        altLines.clear()
+        lastAltKey = ""
         lastRoutePointCount = -1
         lastTbtPointCount = -1
         applied3d = null
@@ -343,6 +350,7 @@ private class MapHolder {
         darkMap: Boolean,
         simplified: Boolean,
         traffic: List<be.appmire.gpsinfo.data.nav.TrafficIncident>,
+        alternativeRoutes: List<List<be.appmire.gpsinfo.data.nav.RoutePoint>>,
     ) {
         wantDark = darkMap
         val map = map ?: return
@@ -458,6 +466,24 @@ private class MapHolder {
         } else {
             destDot?.let { circles.delete(it); destDot = null }
             routeLine?.let { lines.delete(it); routeLine = null; lastRoutePointCount = -1 }
+        }
+
+        // En-route alternatives — dimmed indigo lines drawn before (beneath)
+        // the active route so the primary stays clearly "the way".
+        val altKey = alternativeRoutes.joinToString("|") { it.size.toString() }
+        if (altKey != lastAltKey) {
+            lastAltKey = altKey
+            altLines.forEach { lines.delete(it) }
+            altLines.clear()
+            for (alt in alternativeRoutes) {
+                if (alt.size < 2) continue
+                altLines.add(
+                    lines.create(
+                        LineOptions().withLatLngs(alt.map { LatLng(it.lat, it.lon) })
+                            .withLineColor("#5C6BC0").withLineWidth(6f).withLineOpacity(0.55f),
+                    ),
+                )
+            }
         }
 
         // Offline turn-by-turn route (NavigationController) — the

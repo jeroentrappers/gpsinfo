@@ -277,6 +277,9 @@ class TripDashboardScreen(
                 renderer.updateNavProgress(
                     (navState as? NavigationController.NavState.Navigating)?.distanceRemainingM
                 )
+                renderer.updateAlternatives(
+                    (navState as? NavigationController.NavState.Navigating)?.alternatives ?: emptyList()
+                )
                 // Always-on speed limit: while navigating the route's own
                 // (offline, segment-accurate) limit wins; otherwise resolve the
                 // current road offline-first (BRouter) + online refine (Valhalla).
@@ -381,10 +384,11 @@ class TripDashboardScreen(
      *  the upcoming turn, and the countdown in 10 m steps — anything
      *  else changing shouldn't burn a template refresh. */
     private fun navTemplateKey(s: NavigationController.NavState): Any? = when (s) {
-        is NavigationController.NavState.Navigating -> Triple(
+        is NavigationController.NavState.Navigating -> listOf(
             s.nextTurn?.trackIndex,
             (s.distanceToTurnM / 10).toInt(),
             (s.etaSeconds / 60),
+            s.alternatives.isNotEmpty(),
         )
         else -> s::class
     }
@@ -482,6 +486,20 @@ class TripDashboardScreen(
                     )
                 }
                 addAction(placesAction)
+                // Take an en-route alternative when one is offered at a fork.
+                val navAlt = (nav as? NavigationController.NavState.Navigating)
+                    ?.alternatives?.firstOrNull()
+                if (navAlt != null) {
+                    addAction(
+                        Action.Builder()
+                            .setTitle(carContext.getString(R.string.car_action_take_alt))
+                            .setOnClickListener {
+                                NavigationController.acceptAlternative(navAlt)
+                                invalidate()
+                            }
+                            .build()
+                    )
+                }
                 // Layout editor — only while the vehicle is stopped (GPS
                 // standstill), and not during active navigation (keeps the
                 // strip within its 4-action cap and the layout is tuned at
