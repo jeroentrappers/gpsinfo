@@ -114,6 +114,23 @@ fun LiveMapScreen(
     val loc = state.gnss.location
     val unit = state.unitSystem
 
+    // Live traffic incidents (TrafficController), drawn on the map. The
+    // viewport follows the route while navigating, else the current fix.
+    val traffic by be.appmire.gpsinfo.data.nav.TrafficController.incidents
+        .collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        be.appmire.gpsinfo.data.nav.TrafficController.start()
+    }
+    androidx.compose.runtime.LaunchedEffect(tbtRoute, loc?.latitude, loc?.longitude) {
+        if (tbtRoute != null && tbtRoute.size >= 2) {
+            be.appmire.gpsinfo.data.nav.TrafficController.setRoute(
+                tbtRoute.map { doubleArrayOf(it.lat, it.lon) },
+            )
+        } else {
+            loc?.let { be.appmire.gpsinfo.data.nav.TrafficController.setLocation(it.latitude, it.longitude) }
+        }
+    }
+
     // OBD live feed — outside temp etc. Only active if the user configured
     // an adapter in the OBD Lab (startIfConfigured no-ops otherwise).
     val obdLive by be.appmire.gpsinfo.obd.ObdLiveController.state.collectAsStateWithLifecycle()
@@ -274,6 +291,7 @@ fun LiveMapScreen(
                 recording = recording,
                 navigationTarget = navigationTarget,
                 tbtRoute = tbtRoute,
+                traffic = traffic,
                 recenterTrigger = recenterTrigger,
                 darkMap = darkMap,
                 simplified = navigating,

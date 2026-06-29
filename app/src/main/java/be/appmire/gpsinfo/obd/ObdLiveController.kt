@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,13 @@ data class ObdLiveData(
     /** Measured period of the last poll cycle (ms) — the settled cadence
      *  the adaptive pacer converged to. 0 until the first cycle. */
     val pollIntervalMs: Long = 0,
+    /** True while the link is down and the controller is actively retrying
+     *  (between attempts). Lets the UI show a "reconnecting…" hint. */
+    val reconnecting: Boolean = false,
+    /** True once reconnection has failed for [RETRY_PROMPT_MS] without a
+     *  link: retrying is paused and the UI should ask the user whether to
+     *  keep trying ([continueReconnecting]) or give up ([giveUp]). */
+    val awaitingDecision: Boolean = false,
 ) {
     val powerKw: Double? get() = values[ObdRole.POWER_KW]
     val socPercent: Double? get() = values[ObdRole.BATTERY_SOC]
@@ -50,7 +58,13 @@ object ObdLiveController {
     /** Start the feed for the repository's active adapter+mapping, if any.
      *  No-op when nothing is configured or already running. */
     fun startIfConfigured(context: Context) {
-        if (running) return
+        if (running) {
+            // Already running — but if it's paused after the 5-minute prompt
+            // (e.g. on a surface with no decision dialog), re-entry resumes it
+            // rather than leaving the feed stuck.
+            if (_state.value.awaitingDecision) continueReconnecting()
+            return
+        }
         val appContext = context.applicationContext
         val repo = ObdMappingRepository(appContext)
         val store = repo.load()
@@ -59,94 +73,162 @@ object ObdLiveController {
         start(appContext, address, mapping)
     }
 
+    /** Set by [continueReconnecting] to release the post-5-minute pause. */
+    @Volatile
+    private var resumeRequested = false
+
     fun start(context: Context, address: String, mapping: ObdMapping) {
         if (running) stop()
         running = true
+        resumeRequested = false
         val appContext = context.applicationContext
         job = scope.launch {
-            val conn = ObdConnection(appContext)
-            try {
-                conn.connect(address)
-                val monitor = ObdLoadMonitor()
-                val mgr = ObdManager(
-                    conn,
-                    onRead = { ok, busy, timedOut, latencyMs ->
-                        monitor.onOutcome(ok, busy, timedOut, latencyMs)
-                    },
-                )
-                mgr.runInit()
-                _state.value = ObdLiveData(connected = true, values = emptyMap())
+            // Continuous reconnection loop. ELM/Bluetooth links are flaky —
+            // the adapter browns out, the socket drops, the car sleeps a bus.
+            // Rather than die on the first failure, keep retrying with a
+            // capped backoff. After RETRY_PROMPT_MS of failing without a
+            // link we pause and surface awaitingDecision so the UI can ask
+            // the driver whether to keep trying or give up (so we don't
+            // hammer Bluetooth forever in a dead car).
+            var firstFailureAtMs = 0L
+            var backoffMs = INITIAL_BACKOFF_MS
+            while (isActive && running) {
+                val connectedAtLeastOnce = runSession(appContext, address, mapping)
+                if (!isActive || !running) break
 
-                // Tier the mapped roles: FAST polled every cycle (the
-                // power needle); the rest trickle round-robin so they
-                // refresh on their own slow cadence without stalling power.
-                val fast = mapping.roles.entries.filter { it.key.tier == PollTier.FAST }
-                val slow = mapping.roles.entries.filter { it.key.tier != PollTier.FAST }
-                val slowStd = slow.filter { isStdPid(it.value) }
-                val slowUds = slow.filter { !isStdPid(it.value) }
-                // One round-robin "unit" per slow signal; the standard PIDs
-                // collapse into a single multi-PID batch unit.
-                val slowUnits: List<suspend (ObdManager, MutableMap<String, IntArray?>) -> Map<ObdRole, Double?>> =
-                    buildList {
-                        if (slowStd.isNotEmpty()) add { m, _ -> pollBatch(m, slowStd) }
-                        slowUds.forEach { e -> add { m, c -> mapOf(e.key to pollSingle(m, e.key, e.value, c)) } }
-                    }
-
-                // Power is a single DID on some makes, but on MEB it must
-                // be computed V×I — derive it when no direct power role is
-                // mapped but voltage + current are (both FAST so it tracks).
-                val derivePower = ObdRole.POWER_KW !in mapping.roles &&
-                    ObdRole.HV_VOLTAGE in mapping.roles && ObdRole.HV_CURRENT in mapping.roles
-
-                val acc = LinkedHashMap<ObdRole, Double?>()
-                var cycle = 0L
-                var rr = 0
-                var lastPublish = System.currentTimeMillis()
-                while (isActive) {
-                    // Per-cycle response cache: roles that share one request
-                    // (e.g. Hyundai voltage+current+temp all from 220101)
-                    // trigger a single ELM read, decoded per role.
-                    val cache = HashMap<String, IntArray?>()
-                    for ((role, request) in fast) acc[role] = pollSingle(mgr, role, request, cache)
-                    if (derivePower) {
-                        val v = acc[ObdRole.HV_VOLTAGE]
-                        val i = acc[ObdRole.HV_CURRENT]
-                        // Sign so consumption (discharge, I<0) reads positive
-                        // on the energy dial and regen reads negative.
-                        if (v != null && i != null) acc[ObdRole.POWER_KW] = -(v * i) / 1000.0
-                    }
-                    if (slowUnits.isNotEmpty() && cycle % SLOW_EVERY == 0L) {
-                        slowUnits[rr % slowUnits.size](mgr, cache).forEach { (r, v) -> acc[r] = v }
-                        rr++
-                    }
-                    val now = System.currentTimeMillis()
-                    _state.value = ObdLiveData(
-                        connected = conn.isConnected,
-                        values = LinkedHashMap(acc),
-                        pollIntervalMs = now - lastPublish,
-                    )
-                    lastPublish = now
-                    // Adaptive pacing: back off when the bus/adapter is
-                    // overloaded, speed up when it's keeping up.
-                    delay(monitor.delayMs())
-                    cycle++
+                if (connectedAtLeastOnce) {
+                    // A good session ended (drop / bus sleep). Reset the
+                    // failure window and backoff, then reconnect promptly.
+                    firstFailureAtMs = 0L
+                    backoffMs = INITIAL_BACKOFF_MS
                 }
-            } catch (_: Exception) {
-                // Surface as disconnected; a future start() retries.
-                _state.value = ObdLiveData(connected = false)
-            } finally {
-                conn.close()
-                running = false
+                if (firstFailureAtMs == 0L) firstFailureAtMs = nowMs()
+
+                if (nowMs() - firstFailureAtMs >= RETRY_PROMPT_MS) {
+                    // Five minutes of failure — pause and ask the user.
+                    _state.value = ObdLiveData(awaitingDecision = true)
+                    awaitDecision()
+                    if (!isActive || !running) break
+                    // User chose to keep trying: reset the window and go again.
+                    firstFailureAtMs = 0L
+                    backoffMs = INITIAL_BACKOFF_MS
+                    continue
+                }
+
+                _state.value = ObdLiveData(reconnecting = true)
+                delay(backoffMs)
+                backoffMs = (backoffMs * 2).coerceAtMost(MAX_BACKOFF_MS)
             }
         }
+    }
+
+    /** Resume retrying after the 5-minute pause (UI "keep trying"). */
+    fun continueReconnecting() {
+        resumeRequested = true
+    }
+
+    /** Stop retrying for good (UI "give up"). */
+    fun giveUp() = stop()
+
+    /** Suspend until the user releases the pause (or the feed is stopped). */
+    private suspend fun awaitDecision() {
+        resumeRequested = false
+        while (running && !resumeRequested) delay(DECISION_POLL_MS)
+    }
+
+    /** One connect→init→poll session. Returns true if the link came up at
+     *  least once before it ended (so the outer loop can reset its backoff /
+     *  failure window). Never throws — failures end the session, not the app. */
+    private suspend fun runSession(appContext: Context, address: String, mapping: ObdMapping): Boolean {
+        val conn = ObdConnection(appContext)
+        var connectedAtLeastOnce = false
+        try {
+            conn.connect(address)
+            val monitor = ObdLoadMonitor()
+            val mgr = ObdManager(
+                conn,
+                onRead = { ok, busy, timedOut, latencyMs ->
+                    monitor.onOutcome(ok, busy, timedOut, latencyMs)
+                },
+            )
+            mgr.runInit()
+            connectedAtLeastOnce = true
+            _state.value = ObdLiveData(connected = true, values = emptyMap())
+
+            // Tier the mapped roles: FAST polled every cycle (the
+            // power needle); the rest trickle round-robin so they
+            // refresh on their own slow cadence without stalling power.
+            val fast = mapping.roles.entries.filter { it.key.tier == PollTier.FAST }
+            val slow = mapping.roles.entries.filter { it.key.tier != PollTier.FAST }
+            val slowStd = slow.filter { isStdPid(it.value) }
+            val slowUds = slow.filter { !isStdPid(it.value) }
+            // One round-robin "unit" per slow signal; the standard PIDs
+            // collapse into a single multi-PID batch unit.
+            val slowUnits: List<suspend (ObdManager, MutableMap<String, IntArray?>) -> Map<ObdRole, Double?>> =
+                buildList {
+                    if (slowStd.isNotEmpty()) add { m, _ -> pollBatch(m, slowStd) }
+                    slowUds.forEach { e -> add { m, c -> mapOf(e.key to pollSingle(m, e.key, e.value, c)) } }
+                }
+
+            // Power is a single DID on some makes, but on MEB it must
+            // be computed V×I — derive it when no direct power role is
+            // mapped but voltage + current are (both FAST so it tracks).
+            val derivePower = ObdRole.POWER_KW !in mapping.roles &&
+                ObdRole.HV_VOLTAGE in mapping.roles && ObdRole.HV_CURRENT in mapping.roles
+
+            val acc = LinkedHashMap<ObdRole, Double?>()
+            var cycle = 0L
+            var rr = 0
+            var lastPublish = System.currentTimeMillis()
+            while (currentCoroutineContext().isActive && running) {
+                // Per-cycle response cache: roles that share one request
+                // (e.g. Hyundai voltage+current+temp all from 220101)
+                // trigger a single ELM read, decoded per role.
+                val cache = HashMap<String, IntArray?>()
+                for ((role, request) in fast) acc[role] = pollSingle(mgr, role, request, cache)
+                if (derivePower) {
+                    val v = acc[ObdRole.HV_VOLTAGE]
+                    val i = acc[ObdRole.HV_CURRENT]
+                    // Sign so consumption (discharge, I<0) reads positive
+                    // on the energy dial and regen reads negative.
+                    if (v != null && i != null) acc[ObdRole.POWER_KW] = -(v * i) / 1000.0
+                }
+                if (slowUnits.isNotEmpty() && cycle % SLOW_EVERY == 0L) {
+                    slowUnits[rr % slowUnits.size](mgr, cache).forEach { (r, v) -> acc[r] = v }
+                    rr++
+                }
+                // A dropped socket reads as not-connected — bail so the outer
+                // loop reconnects instead of spinning on a dead link.
+                if (!conn.isConnected) break
+                val now = System.currentTimeMillis()
+                _state.value = ObdLiveData(
+                    connected = true,
+                    values = LinkedHashMap(acc),
+                    pollIntervalMs = now - lastPublish,
+                )
+                lastPublish = now
+                // Adaptive pacing: back off when the bus/adapter is
+                // overloaded, speed up when it's keeping up.
+                delay(monitor.delayMs())
+                cycle++
+            }
+        } catch (_: Exception) {
+            // Link failed / dropped — the outer loop decides whether to retry.
+        } finally {
+            conn.close()
+        }
+        return connectedAtLeastOnce
     }
 
     fun stop() {
         job?.cancel()
         job = null
         running = false
+        resumeRequested = false
         _state.value = ObdLiveData(connected = false)
     }
+
+    private fun nowMs(): Long = android.os.SystemClock.elapsedRealtime()
 
     /** Poll one mapped role, decoding with the command that fills THAT
      *  role for THIS request (so roles sharing a request — same payload,
@@ -198,4 +280,12 @@ object ObdLiveController {
     /** A slow unit ticks every [SLOW_EVERY] cycles; the cycle delay itself
      *  is adaptive (see [ObdLoadMonitor]). */
     private const val SLOW_EVERY = 10L
+
+    /** Reconnect backoff: first retry quick, doubling up to the cap. */
+    private const val INITIAL_BACKOFF_MS = 2_000L
+    private const val MAX_BACKOFF_MS = 20_000L
+    /** Keep retrying for this long before pausing to ask the user. */
+    private const val RETRY_PROMPT_MS = 5 * 60 * 1000L
+    /** How often the paused loop checks for the user's keep-trying signal. */
+    private const val DECISION_POLL_MS = 250L
 }

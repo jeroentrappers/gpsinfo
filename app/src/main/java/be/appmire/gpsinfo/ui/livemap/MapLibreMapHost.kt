@@ -69,6 +69,8 @@ fun MapLibreMapHost(
     /** Active offline turn-by-turn route (NavigationController), drawn
      *  as the primary route line; null when not navigating. */
     tbtRoute: List<be.appmire.gpsinfo.data.nav.RoutePoint>? = null,
+    /** Live traffic incidents (TrafficController) to draw as coloured lines. */
+    traffic: List<be.appmire.gpsinfo.data.nav.TrafficIncident> = emptyList(),
     /** Bumped by the caller to force a one-shot recenter on the user. */
     recenterTrigger: Int,
     /** Use OpenFreeMap's dark style instead of Liberty. */
@@ -120,7 +122,7 @@ fun MapLibreMapHost(
             lastRecenter[0] = recenterTrigger
             holder.update(
                 loc, follow || forceRecenter, viewMode, gpsBearingDeg,
-                recording, navigationTarget, tbtRoute, darkMap, simplified,
+                recording, navigationTarget, tbtRoute, darkMap, simplified, traffic,
             )
         },
     )
@@ -162,6 +164,9 @@ private class MapHolder {
     private var trailLine: Line? = null
     private var routeLine: Line? = null
     private var tbtLine: Line? = null
+    private val trafficLines = ArrayList<Line>()
+    private val trafficCircles = ArrayList<Circle>()
+    private var lastTrafficKey = ""
 
     private var seeded = false
     private val trailPoints = ArrayList<LatLng>()
@@ -198,6 +203,9 @@ private class MapHolder {
         trailLine = null
         routeLine = null
         tbtLine = null
+        trafficLines.clear()
+        trafficCircles.clear()
+        lastTrafficKey = ""
         lastRoutePointCount = -1
         lastTbtPointCount = -1
         applied3d = null
@@ -219,7 +227,7 @@ private class MapHolder {
             }
             // OpenFreeMap's dark style is near-black with low-contrast
             // roads; brighten the road network + water so features read.
-            if (uri == MapLibreStyle.DARK) tuneDarkStyle(style)
+            if (uri == MapLibreStyle.DARK) tuneDarkStyle(style) else tuneLightStyle(style)
             loadedUri = uri
             styleLoading = false
         }
@@ -269,6 +277,40 @@ private class MapHolder {
         }
     }
 
+    /** Warm up OpenFreeMap's pale Liberty *light* style into a Waze-like day
+     *  map: warm light-grey land so white streets pop, saturated blue water
+     *  and greens, slightly warmer buildings. Liberty's road colours (orange
+     *  motorways, yellow arterials, white minor) are already good, so roads
+     *  are left alone — only the surfaces are retuned. Per layer by type + id
+     *  substring so it survives missing/renamed layers (best-effort). */
+    private fun tuneLightStyle(style: Style) {
+        for (layer in style.layers) {
+            val id = layer.id.lowercase()
+            runCatching {
+                when (layer) {
+                    is BackgroundLayer ->
+                        layer.setProperties(PropertyFactory.backgroundColor(DAY_LAND))
+
+                    is FillLayer -> {
+                        val color = when {
+                            id.contains("water") -> DAY_WATER
+                            id.contains("park") || id.contains("wood") || id.contains("forest") ||
+                                id.contains("grass") || id.contains("golf") || id.contains("cemetery") ||
+                                id.contains("vegetation") || id.contains("scrub") -> DAY_GREEN
+                            id.contains("building") -> DAY_BUILDING
+                            id.contains("land") || id.contains("earth") ||
+                                id.contains("residential") || id.contains("sand") -> DAY_LAND
+                            else -> return@runCatching // leave aeroway / other fills as-is
+                        }
+                        layer.setProperties(PropertyFactory.fillColor(color))
+                    }
+
+                    else -> {}
+                }
+            }
+        }
+    }
+
     private fun isRoad(id: String): Boolean =
         id.startsWith("highway") || id.startsWith("road") || id.contains("transportation") ||
             id.startsWith("bridge") || id.startsWith("tunnel") || id.startsWith("street")
@@ -300,6 +342,7 @@ private class MapHolder {
         tbtRoute: List<be.appmire.gpsinfo.data.nav.RoutePoint>?,
         darkMap: Boolean,
         simplified: Boolean,
+        traffic: List<be.appmire.gpsinfo.data.nav.TrafficIncident>,
     ) {
         wantDark = darkMap
         val map = map ?: return
@@ -433,6 +476,44 @@ private class MapHolder {
             tbtLine = null
             lastTbtPointCount = -1
         }
+
+        // Live traffic incidents — coloured lines (jams/closures/roadworks)
+        // and dots for point incidents. Rebuilt only when the set changes.
+        val tKey = "${traffic.size}|${traffic.firstOrNull()?.id ?: ""}|${traffic.lastOrNull()?.updated ?: ""}"
+        if (tKey != lastTrafficKey) {
+            lastTrafficKey = tKey
+            trafficLines.forEach { lines.delete(it) }
+            trafficLines.clear()
+            trafficCircles.forEach { circles.delete(it) }
+            trafficCircles.clear()
+            for (inc in traffic) {
+                val color = trafficColor(inc.category)
+                val geo = inc.geometry
+                when {
+                    geo.size == 1 -> trafficCircles.add(
+                        circles.create(
+                            CircleOptions().withLatLng(LatLng(geo[0][1], geo[0][0]))
+                                .withCircleRadius(6f).withCircleColor(color)
+                                .withCircleStrokeColor("#FFFFFF").withCircleStrokeWidth(1.5f),
+                        ),
+                    )
+                    geo.size >= 2 -> trafficLines.add(
+                        lines.create(
+                            LineOptions().withLatLngs(geo.map { LatLng(it[1], it[0]) })
+                                .withLineColor(color).withLineWidth(5f),
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun trafficColor(category: String): String = when (category) {
+        "accident" -> "#B71C1C"
+        "congestion" -> "#E53935"
+        "roadworks" -> "#F9A825"
+        "laneClosure" -> "#FB8C00"
+        else -> "#9E9E9E"
     }
 
     fun release() {
@@ -502,6 +583,11 @@ private class MapHolder {
         const val NIGHT_ROAD_CASING = "#3C4858" // thin darker road outline
         const val NIGHT_TEXT = "#DCE3ED" // soft near-white labels
         const val NIGHT_TEXT_HALO = "#1A2230" // halo matched to bg
+        /** Waze-like day palette layered over the pale Liberty light style. */
+        const val DAY_LAND = "#E7E4DB" // warm light-grey land
+        const val DAY_WATER = "#A6CEF0" // saturated blue water
+        const val DAY_GREEN = "#C2E0A2" // parks / woods
+        const val DAY_BUILDING = "#DED9CB" // warm grey buildings
         /** Camera pitch in heading-up (driving) mode — 2.5D perspective.
          *  Near MapLibre's 60° cap for a strong driving lean. */
         const val HEADING_UP_PITCH_DEG = 58.0

@@ -44,13 +44,25 @@ class VoiceGuide(context: Context) {
     @Volatile
     private var unit: UnitSystem = UnitSystem.Metric
 
+    /** Master mute (settings / nav-screen toggle). */
+    @Volatile
+    private var enabled: Boolean = true
+
+    /** Detailed mode — adds "continue for X" on long straights. */
+    @Volatile
+    private var verbose: Boolean = false
+
+    /** Chosen spoken-instruction locale, or null to follow the app/system. */
+    @Volatile
+    private var voiceLocale: Locale? = null
+
     init {
         tts = TextToSpeech(ctx) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                // Pronounce the localized phrases in the app's own locale;
-                // the engine falls back to its default voice if that
+                // Pronounce the localized phrases in the chosen (or app's)
+                // locale; the engine falls back to its default voice if that
                 // language pack isn't installed.
-                runCatching { tts.language = appLocale() }
+                applyLocale()
                 ready = true
             }
         }
@@ -60,9 +72,21 @@ class VoiceGuide(context: Context) {
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                 .build(),
         )
-        SettingsRepository(ctx).unitSystem
-            .onEach { unit = it }
+        val settings = SettingsRepository(ctx)
+        settings.unitSystem.onEach { unit = it }.launchIn(scope)
+        settings.voiceGuidanceEnabled.onEach { enabled = it }.launchIn(scope)
+        settings.voiceVerbose.onEach { verbose = it }.launchIn(scope)
+        settings.voiceLanguageTag
+            .onEach {
+                voiceLocale = it?.takeIf { t -> t.isNotBlank() }?.let { t -> Locale.forLanguageTag(t) }
+                applyLocale()
+            }
             .launchIn(scope)
+    }
+
+    private fun applyLocale() {
+        if (!::tts.isInitialized) return
+        runCatching { tts.language = voiceLocale ?: appLocale() }
     }
 
     /** Identity of the turn the ladder currently tracks. */
@@ -70,12 +94,14 @@ class VoiceGuide(context: Context) {
     private var announcedFar = false
     private var announcedNear = false
     private var announcedNow = false
+    private var announcedContinue = false
 
     fun resetAnnouncements() {
         trackedTurnIndex = -1
         announcedFar = false
         announcedNear = false
         announcedNow = false
+        announcedContinue = false
     }
 
     fun announceStart(route: OfflineRoute) {
@@ -92,8 +118,15 @@ class VoiceGuide(context: Context) {
             announcedFar = false
             announcedNear = false
             announcedNow = false
+            announcedContinue = false
         }
         val cue = cue(turn) ?: return
+        // Detailed mode: a "continue for X" heads-up on long straights,
+        // before the regular distance rungs kick in.
+        if (verbose && !announcedContinue && distanceM > CONTINUE_M) {
+            announcedContinue = true
+            speak(ctx.getString(R.string.voice_continue_for, spokenDistance(distanceM)))
+        }
         when {
             distanceM <= NOW_M && !announcedNow -> {
                 announcedNow = true
@@ -179,7 +212,7 @@ class VoiceGuide(context: Context) {
     private fun appLocale(): Locale = ctx.resources.configuration.locales[0]
 
     private fun speak(text: String) {
-        if (!ready) return
+        if (!ready || !enabled) return
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "nav-${System.currentTimeMillis()}")
     }
 
@@ -187,6 +220,9 @@ class VoiceGuide(context: Context) {
         const val FAR_M = 650.0
         const val NEAR_M = 170.0
         const val NOW_M = 38.0
+        /** Above this distance to the next turn, detailed mode says
+         *  "continue for X" once. */
+        const val CONTINUE_M = 1500.0
 
         const val FEET_PER_METER = 3.28084
         const val FEET_PER_MILE = 5280.0

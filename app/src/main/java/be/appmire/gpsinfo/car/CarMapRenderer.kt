@@ -255,6 +255,15 @@ class CarMapRenderer(
         scheduleRender()
     }
 
+    /** Live traffic incidents (TrafficController), projected onto the map as
+     *  coloured lines so jams/closures/roadworks read against the route. */
+    private var traffic: List<be.appmire.gpsinfo.data.nav.TrafficIncident> = emptyList()
+
+    fun updateTraffic(incidents: List<be.appmire.gpsinfo.data.nav.TrafficIncident>) {
+        traffic = incidents
+        scheduleRender()
+    }
+
     /** Which optional overlays to draw on top of the navigation map. Starts
      *  at the navigation-only baseline (only the speed + speed-limit badge);
      *  the screen feeds the user's choices via [updateOverlayConfig]. */
@@ -648,7 +657,16 @@ class CarMapRenderer(
             null
         } ?: return
         try {
-            drawFrame(canvas, container.width, container.height)
+            // Drive the frame off the LIVE locked-canvas dimensions, not the
+            // cached SurfaceContainer size. Hosts resize the surface (split
+            // screen, window drag, inset changes) without always re-delivering
+            // onSurfaceAvailable — the container size then goes stale and the
+            // map stops tracking the available space. The locked canvas always
+            // reflects the real current buffer, so the snapshotter re-renders
+            // at the new size and the layout stays reactive.
+            val w = if (canvas.width > 0) canvas.width else container.width
+            val h = if (canvas.height > 0) canvas.height else container.height
+            drawFrame(canvas, w, h)
         } finally {
             try {
                 surface.unlockCanvasAndPost(canvas)
@@ -903,7 +921,17 @@ class CarMapRenderer(
             return
         }
         val bmp = snap.bitmap
-        canvas.drawBitmap(bmp, mapLeft, 0f, layerPaint)
+        if (bmp.width == mapW && bmp.height == h) {
+            canvas.drawBitmap(bmp, mapLeft, 0f, layerPaint)
+        } else {
+            // The surface resized since this snapshot was taken (a fresh,
+            // correctly-sized one is already requested above). Stretch the
+            // current bitmap to fill the new area for this one transitional
+            // frame so the map tracks the available space immediately instead
+            // of leaving a gap or overflowing.
+            val dst = RectF(mapLeft, 0f, mapLeft + mapW, h.toFloat())
+            canvas.drawBitmap(bmp, null, dst, layerPaint)
+        }
         if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
 
         // Overlays projected through the snapshot. While following, the
@@ -913,6 +941,7 @@ class CarMapRenderer(
         val following = hasBearing && !panMode
         val puck = puckScreenPoint(snap, mapLeft, loc, following)
         drawProjectedRoute(canvas, snap, mapLeft, loc, puck)
+        drawTraffic(canvas, snap, mapLeft)
         drawProjectedBreadcrumb(canvas, snap, mapLeft)
         drawProjectedMarker(canvas, puck)
     }
@@ -1002,6 +1031,60 @@ class CarMapRenderer(
             lastX = x; lastY = y
         }
         return path
+    }
+
+    /** Live traffic incidents projected onto the map: coloured lines for
+     *  jams/closures/roadworks, a dot for point incidents. Budget-capped so a
+     *  busy feed can't flood the per-frame JNI projection cost. */
+    private fun drawTraffic(
+        canvas: Canvas,
+        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        mapLeft: Float,
+    ) {
+        if (traffic.isEmpty()) return
+        var budget = MAX_PROJECTED_POINTS * 4
+        val maxJump = snap.bitmap.height * 4f
+        for (inc in traffic) {
+            if (budget <= 0) break
+            val geo = inc.geometry
+            if (geo.isEmpty()) continue
+            budget -= geo.size
+            val color = trafficColor(inc.category)
+            if (geo.size == 1) {
+                val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(geo[0][1], geo[0][0]))
+                trafficFillPaint.color = color
+                canvas.drawCircle(mapLeft + pf.x, pf.y, 9f, trafficFillPaint)
+                continue
+            }
+            val path = Path()
+            var started = false
+            var lastX = 0f
+            var lastY = 0f
+            for (p in geo) {
+                val pf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(p[1], p[0]))
+                val x = mapLeft + pf.x
+                val y = pf.y
+                if (!started) {
+                    path.moveTo(x, y); started = true
+                } else if (kotlin.math.hypot((x - lastX).toDouble(), (y - lastY).toDouble()) > maxJump) {
+                    path.moveTo(x, y)
+                } else {
+                    path.lineTo(x, y)
+                }
+                lastX = x; lastY = y
+            }
+            trafficPaint.color = color
+            trafficPaint.strokeWidth = 12f
+            canvas.drawPath(path, trafficPaint)
+        }
+    }
+
+    private fun trafficColor(category: String): Int = when (category) {
+        "accident" -> TRAFFIC_ACCIDENT
+        "congestion" -> TRAFFIC_CONGESTION
+        "roadworks" -> TRAFFIC_ROADWORKS
+        "laneClosure" -> TRAFFIC_CLOSURE
+        else -> TRAFFIC_OTHER
     }
 
     private fun drawProjectedBreadcrumb(
@@ -1171,8 +1254,8 @@ class CarMapRenderer(
         // Speed pill — big number + km/h unit, bottom-left. Designed bounds are
         // fixed (independent of the limit sign) so each can be dragged alone.
         if (overlayConfig.speed) {
-            val kmh = if (loc != null && loc.hasSpeed()) (dispSpeedMps * 3.6f).toInt() else null
-            val numText = kmh?.toString() ?: "––"
+            val numText = if (loc != null && loc.hasSpeed())
+                "%.1f".format(Locale.ROOT, dispSpeedMps * 3.6f) else "––"
             val unitText = " km/h"
             hudTextPaint.isFakeBoldText = true
             hudTextPaint.textSize = h * 0.085f
@@ -1350,6 +1433,12 @@ class CarMapRenderer(
     }
     private val hudTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val recDotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val trafficPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+    private val trafficFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val limitFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val limitRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val editPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -1453,6 +1542,12 @@ class CarMapRenderer(
         const val REC_ACTIVE = 0xFFE53935.toInt()
         const val REC_PAUSED = 0xFFFFB300.toInt()
         const val SIGN_RED = 0xFFD32F2F.toInt()
+        // Live traffic incident colours.
+        const val TRAFFIC_CONGESTION = 0xFFE53935.toInt() // red
+        const val TRAFFIC_ACCIDENT = 0xFFB71C1C.toInt()   // dark red
+        const val TRAFFIC_ROADWORKS = 0xFFF9A825.toInt()  // amber
+        const val TRAFFIC_CLOSURE = 0xFFFB8C00.toInt()    // orange
+        const val TRAFFIC_OTHER = 0xFF9E9E9E.toInt()      // grey
         // Overlay drag/scale limits (Phase 4 edit mode).
         const val MIN_OVERLAY_SCALE = 0.4f
         const val MAX_OVERLAY_SCALE = 3.0f

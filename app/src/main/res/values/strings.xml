@@ -295,6 +295,15 @@
     <string name="car_waiting_fix" tools:ignore="MissingTranslation">Waiting for GPS fix…</string>
     <string name="car_action_end_nav" tools:ignore="MissingTranslation">End route</string>
     <string name="car_action_navigate" tools:ignore="MissingTranslation">Where to?</string>
+    <string name="car_nav_arrived_title" tools:ignore="MissingTranslation">You\'ve arrived</string>
+    <string name="nav_eta_arrival" tools:ignore="MissingTranslation">arrival</string>
+    <string name="nav_eta_remaining" tools:ignore="MissingTranslation">time left</string>
+    <string name="nav_eta_distance" tools:ignore="MissingTranslation">distance</string>
+    <string name="nav_recenter" tools:ignore="MissingTranslation">Recenter</string>
+    <string name="car_obd_lost_title" tools:ignore="MissingTranslation">OBD connection lost</string>
+    <string name="car_obd_lost_body" tools:ignore="MissingTranslation">Couldn\'t reach the OBD adapter for 5 minutes. Keep trying to reconnect, or stop?</string>
+    <string name="car_obd_keep_trying" tools:ignore="MissingTranslation">Keep trying</string>
+    <string name="car_obd_give_up" tools:ignore="MissingTranslation">Stop OBD</string>
     <string name="car_action_edit_layout" tools:ignore="MissingTranslation">Edit layout</string>
     <string name="car_action_done" tools:ignore="MissingTranslation">Done</string>
     <string name="car_edit_hint_tap" tools:ignore="MissingTranslation">Tap an element to select it</string>
@@ -831,10 +840,25 @@
     <string name="voice_recalculated">Route recalculated.</string>
     <string name="voice_arrived">You have arrived.</string>
     <string name="voice_in_distance">In %1$s, %2$s</string>
+    <string name="voice_continue_for" tools:ignore="MissingTranslation">Continue for %1$s</string>
     <string name="voice_dist_meters">%1$d metres</string>
     <string name="voice_dist_kilometers">%1$s kilometres</string>
     <string name="voice_dist_feet">%1$d feet</string>
     <string name="voice_dist_miles">%1$s miles</string>
+    <string name="settings_voice_guidance" tools:ignore="MissingTranslation">Voice guidance</string>
+    <string name="settings_voice_enabled" tools:ignore="MissingTranslation">Spoken instructions</string>
+    <string name="settings_voice_enabled_body" tools:ignore="MissingTranslation">Speak turn-by-turn directions while navigating.</string>
+    <string name="settings_voice_detailed" tools:ignore="MissingTranslation">Detailed guidance</string>
+    <string name="settings_voice_detailed_body" tools:ignore="MissingTranslation">Also announce \"continue for…\" on long stretches.</string>
+    <string name="settings_voice_language" tools:ignore="MissingTranslation">Instruction language</string>
+    <string name="settings_voice_language_default" tools:ignore="MissingTranslation">Match app language</string>
+    <string name="settings_voice_test" tools:ignore="MissingTranslation">Test voice</string>
+    <string name="settings_voice_test_phrase" tools:ignore="MissingTranslation">In 300 metres, turn right.</string>
+    <string name="settings_voice_install_title" tools:ignore="MissingTranslation">No sound, or wrong language?</string>
+    <string name="settings_voice_install_body" tools:ignore="MissingTranslation">Spoken guidance uses Android\'s built-in Text-to-Speech. If you hear nothing, open Android\'s Text-to-speech settings to install or enable a voice / language pack, then choose the language above.</string>
+    <string name="settings_voice_open_tts" tools:ignore="MissingTranslation">Open Android TTS settings</string>
+    <string name="nav_mute" tools:ignore="MissingTranslation">Mute voice</string>
+    <string name="nav_unmute" tools:ignore="MissingTranslation">Unmute voice</string>
     <string name="settings_obd_lab">OBD2 Lab</string>
     <string name="metric_outside_temp">Outside</string>
     <string name="about_map_attribution">Map data © OpenStreetMap contributors · Tiles by OpenFreeMap · Rendering by MapLibre</string>

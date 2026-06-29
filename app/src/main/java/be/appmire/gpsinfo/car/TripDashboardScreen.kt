@@ -94,6 +94,15 @@ class TripDashboardScreen(
     private var obdProvidesEnergy = false
     private var obdJob: Job? = null
 
+    /** Guards the one-shot OBD reconnect prompt so the 5-minute decision
+     *  dialog is pushed once, not on every state emission. */
+    private var obdPromptShown = false
+
+    /** Whether the vehicle is at a standstill (GPS speed below
+     *  [STOPPED_MPS]) — gates the layout-editor action's visibility.
+     *  Starts true so the editor is reachable before the first fix. */
+    private var stopped = true
+
     private val energyListener = OnCarDataAvailableListener<EnergyLevel> { level ->
         if (!obdProvidesEnergy) {
             // Prefer EV state of charge; fall back to fuel % for combustion.
@@ -145,6 +154,12 @@ class TripDashboardScreen(
                 } else {
                     obdProvidesEnergy = false
                     renderer.updateAmbientTemp(null)
+                }
+                // After 5 min of failed reconnection the controller pauses and
+                // asks: keep trying or give up. Surface that once.
+                if (d.awaitingDecision && !obdPromptShown) {
+                    obdPromptShown = true
+                    screenManager.push(ObdReconnectScreen(carContext) { obdPromptShown = false })
                 }
             }
             .launchIn(lifecycleScope)
@@ -230,6 +245,16 @@ class TripDashboardScreen(
                     (rec is RecordingState.Recording) != (recording is RecordingState.Recording)
                 val rallyPhaseChanged = rallyState::class != rally::class
                 val navChanged = navTemplateKey(navState) != navTemplateKey(nav)
+                // Standstill drives the layout-editor button's visibility: it's
+                // only offered (and only usable) when the vehicle is stopped,
+                // from GPS speed — the host's "parked" state isn't exposed to
+                // apps and, over projection, often reads as "driving" even at a
+                // standstill. Auto-leave edit mode the moment we start moving.
+                val mps = gnss.location?.takeIf { it.hasSpeed() }?.speed ?: 0f
+                val nowStopped = mps < STOPPED_MPS
+                val stoppedChanged = nowStopped != stopped
+                stopped = nowStopped
+                if (!nowStopped && renderer.isEditMode()) renderer.setEditMode(false)
                 recording = rec
                 rally = rallyState
                 nav = navState
@@ -262,13 +287,31 @@ class TripDashboardScreen(
                         navLimitKmh = (navState as? NavigationController.NavState.Navigating)?.speedLimitKmh,
                     )
                 }
-                if (recordingToggled || rallyPhaseChanged || navChanged) invalidate()
+                // Live traffic viewport: the route corridor while navigating,
+                // otherwise a box around the vehicle.
+                val navg2 = navState as? NavigationController.NavState.Navigating
+                if (navg2 != null) {
+                    be.appmire.gpsinfo.data.nav.TrafficController.setRoute(
+                        navg2.route.points.map { doubleArrayOf(it.lat, it.lon) },
+                    )
+                } else {
+                    gnss.location?.let {
+                        be.appmire.gpsinfo.data.nav.TrafficController.setLocation(it.latitude, it.longitude)
+                    }
+                }
+                if (recordingToggled || rallyPhaseChanged || navChanged || stoppedChanged) invalidate()
             }
             .launchIn(lifecycleScope)
 
         // Push the resolved speed limit to the cluster as it settles.
         SpeedLimitProvider.limit
             .onEach { renderer.updateSpeedLimit(it) }
+            .launchIn(lifecycleScope)
+
+        // Live traffic: subscribe (SSE under the hood) and draw incidents.
+        be.appmire.gpsinfo.data.nav.TrafficController.start()
+        be.appmire.gpsinfo.data.nav.TrafficController.incidents
+            .onEach { renderer.updateTraffic(it) }
             .launchIn(lifecycleScope)
 
         // Which optional overlays to draw, from the phone's "Android Auto"
@@ -439,11 +482,16 @@ class TripDashboardScreen(
                     )
                 }
                 addAction(placesAction)
-                // Layout editor — parked only (dragging while driving is
-                // unsafe and the host blocks it). Only offered when not
-                // actively navigating, both to keep the strip within its
-                // 4-action cap and because the layout is best tuned at rest.
-                if (nav !is NavigationController.NavState.Navigating &&
+                // Layout editor — only while the vehicle is stopped (GPS
+                // standstill), and not during active navigation (keeps the
+                // strip within its 4-action cap and the layout is tuned at
+                // rest). We gate on our own standstill signal rather than a
+                // ParkedOnlyOnClickListener: the host's "parked" gate often
+                // reports "driving" even at a standstill over projection,
+                // which is exactly the "not allowed while driving" toast.
+                // Editing auto-exits the moment the car starts moving again.
+                if (stopped &&
+                    nav !is NavigationController.NavState.Navigating &&
                     nav !is NavigationController.NavState.Preparing
                 ) {
                     addAction(
@@ -454,12 +502,10 @@ class TripDashboardScreen(
                                     else R.string.car_action_edit_layout
                                 )
                             )
-                            .setOnClickListener(
-                                ParkedOnlyOnClickListener.create {
-                                    renderer.setEditMode(!renderer.isEditMode())
-                                    invalidate()
-                                }
-                            )
+                            .setOnClickListener {
+                                renderer.setEditMode(!renderer.isEditMode())
+                                invalidate()
+                            }
                             .build()
                     )
                 }
@@ -641,5 +687,9 @@ class TripDashboardScreen(
         /** G-meter redraw cadence on the car — ~5 fps for the corner
          *  dial. Glanceable, not a game. */
         const val GFORCE_SAMPLE_MS = 200L
+
+        /** Below this GPS speed (m/s ≈ 1.8 km/h) the vehicle is treated as
+         *  stopped, so the layout editor may be opened. */
+        const val STOPPED_MPS = 0.5f
     }
 }

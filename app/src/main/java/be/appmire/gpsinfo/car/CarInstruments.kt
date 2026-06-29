@@ -69,12 +69,16 @@ class CarInstruments {
         val aT = area.top.coerceIn(0f, H * 0.42f)
         val aB = area.bottom.coerceIn(H * 0.58f, H)
 
-        // Scrims blend the edge gauges into the map.
+        // Scrims blend the edge gauges into the map. The right scrim only
+        // shows with an OBD feed — without it there's no right (power) arc, so
+        // the right edge stays clean map instead of a vignette over nothing.
         val scrimW = aW * CK_SCRIM
         scrim.shader = LinearGradient(aL, 0f, aL + scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
         canvas.drawRect(0f, 0f, aL + scrimW, H, scrim)
-        scrim.shader = LinearGradient(aR, 0f, aR - scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
-        canvas.drawRect(aR - scrimW, 0f, W, H, scrim)
+        if (d.obd) {
+            scrim.shader = LinearGradient(aR, 0f, aR - scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+            canvas.drawRect(aR - scrimW, 0f, W, H, scrim)
+        }
         scrim.shader = null
 
         val gr = H * 0.42f * SHARED_R
@@ -125,15 +129,17 @@ class CarInstruments {
         // Readout (number · km/h · ±acc/odo), centred at the inner column.
         mono.textAlign = Paint.Align.CENTER
         mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
-        canvas.drawText(if (d.hasSpeed) "${d.kmh.toInt()}" else "––", lx, yL, mono)
+        canvas.drawText(if (d.hasSpeed) "%.1f".format(Locale.ROOT, d.kmh) else "––", lx, yL, mono)
         mono.color = MUTED; mono.textSize = f.unit
         canvas.drawText("km/h", lx, yL + f.unit * 1.6f, mono)
         mono.color = LCD_DIM; mono.textSize = f.sub; mono.isFakeBoldText = false
         canvas.drawText(subLine(d), lx, yL + f.unit * 1.6f + f.sub * 1.6f, mono)
 
-        // ── RIGHT — power scale + level fill + peak + value tip ──
-        scaleTicks(canvas, cxR, yMid, rL, tickLen, rL - gr * 0.36f, gr, f.tick, pStops, POWER_KNEES, !d.obd, pwA)
+        // ── RIGHT — power scale + level fill + peak + value tip. Only drawn
+        // with an OBD feed; without it the right arc would be an empty dimmed
+        // twin of the speed arc, so the right side is left to the map. ──
         if (d.obd) {
+            scaleTicks(canvas, cxR, yMid, rL, tickLen, rL - gr * 0.36f, gr, f.tick, pStops, POWER_KNEES, false, pwA)
             val kw = d.kw ?: 0.0
             fillArc(canvas, cxR, yMid, rL, pwA(powerFrac(0.0)), pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, fillW)
             d.peakKw?.let { peakMark(canvas, cxR, yMid, rL, pwA(powerFrac(it)), gr) }
@@ -190,7 +196,7 @@ class CarInstruments {
         val sx = cx + IN_SP_X * R
         val sy = cy + IN_SP_Y * R
         mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
-        canvas.drawText(if (d.hasSpeed) "${d.kmh.toInt()}" else "––", sx, sy, mono)
+        canvas.drawText(if (d.hasSpeed) "%.1f".format(Locale.ROOT, d.kmh) else "––", sx, sy, mono)
         mono.color = LCD_DIM; mono.isFakeBoldText = false; mono.textSize = f.sub
         canvas.drawText(subLine(d), sx, sy + f.sub * 1.4f, mono)
         if (d.speedLimitKmh != null) limitSign(canvas, sx, sy - f.digit * 1.5f, f.digit * 0.62f, d.speedLimitKmh)
@@ -501,7 +507,7 @@ class CarInstruments {
     }
 
     private fun subLine(d: ClusterData): String =
-        "±${d.speedAccKmh?.roundToInt() ?: 0}   %.1f km".format(Locale.ROOT, d.odometerKm)
+        "±%.1f   %.1f km".format(Locale.ROOT, d.speedAccKmh ?: 0f, d.odometerKm)
 
     private fun gFrac(x: Float): Float {
         val xx = x.coerceIn(0f, 1f)

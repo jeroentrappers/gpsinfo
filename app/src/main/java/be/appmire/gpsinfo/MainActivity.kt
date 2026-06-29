@@ -89,12 +89,14 @@ private object Routes {
     const val StrideCalibration = "stride-calibration"
     const val DashboardProfileEditor = "dashboard-profile-editor"
     const val LiveMap = "live-map"
+    const val Nav = "nav"
     const val PaceTargets = "pace-targets/{trailId}"
     fun paceTargets(id: String) = "pace-targets/$id"
     const val Rally = "rally"
     const val WheelPair = "wheel-pair"
     const val GForce = "gforce"
     const val ObdLab = "obd-lab"
+    const val VoiceGuidance = "voice-guidance"
     const val Tools = "tools"
 }
 
@@ -292,7 +294,10 @@ class MainActivity : ComponentActivity() {
                                             this@MainActivity, target.latDeg, target.lonDeg,
                                             destName = target.name,
                                         )
-                                    nav.popBackStack()
+                                    // Replace the picker with the full nav screen.
+                                    nav.navigate(Routes.Nav) {
+                                        popUpTo(Routes.NavPicker) { inclusive = true }
+                                    }
                                 },
                             )
                         }
@@ -367,10 +372,17 @@ class MainActivity : ComponentActivity() {
                                 onOpenStrideCalibration = { nav.navigate(Routes.StrideCalibration) },
                                 onOpenDashboardEditor = { nav.navigate(Routes.DashboardProfileEditor) },
                                 onOpenObdLab = { nav.navigate(Routes.ObdLab) },
+                                onOpenVoiceGuidance = { nav.navigate(Routes.VoiceGuidance) },
                             )
                         }
                         composable(Routes.ObdLab) {
                             be.appmire.gpsinfo.ui.obd.ObdLabScreen(onBack = { nav.popBackStack() })
+                        }
+                        composable(Routes.VoiceGuidance) {
+                            be.appmire.gpsinfo.ui.navigation.VoiceGuidanceScreen(
+                                vm = vm,
+                                onBack = { nav.popBackStack() },
+                            )
                         }
                         composable(Routes.HrPair) {
                             HeartRatePairingScreen(
@@ -447,6 +459,12 @@ class MainActivity : ComponentActivity() {
                                         else be.appmire.gpsinfo.ui.activity.DetailLevel.PRO,
                                     )
                                 },
+                            )
+                        }
+                        composable(Routes.Nav) {
+                            be.appmire.gpsinfo.ui.navigation.NavScreen(
+                                vm = vm,
+                                onExit = { nav.popBackStack() },
                             )
                         }
                         composable(Routes.PaceTargets) { entry ->

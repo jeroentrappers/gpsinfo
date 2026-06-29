@@ -60,6 +60,10 @@ class CarMapSnapshotter(
     private var want3d = true
     private var applied3d: Boolean? = null
 
+    /** Whether the Waze-style day palette has been pushed onto the current
+     *  (lazily loaded) style. Reset on each (re)create so it re-applies. */
+    private var paletteApplied = false
+
     /** Show / hide 3D building extrusions on the next render. */
     fun setBuildings3d(enabled: Boolean) {
         if (enabled == want3d) return
@@ -96,9 +100,73 @@ class CarMapSnapshotter(
                 .withLogo(false),
         )
         // Force the next request to render even if the camera matches,
-        // and re-apply the building-3d visibility to the fresh style.
+        // and re-apply the building-3d visibility + day palette to the
+        // fresh style.
         lastRequestedCam = null
         applied3d = null
+        paletteApplied = false
+    }
+
+    /**
+     * Push a Waze-style day palette onto the (OpenFreeMap *Liberty*) style
+     * once it has loaded — the stock Liberty light style reads as bland on
+     * the car screen (very pale land, weak road casings). We warm the land
+     * so white streets pop, saturate water and greens, and give the road
+     * hierarchy bolder fills + casings, the way Waze's day map does. Each
+     * layer is set defensively (the style/layer set can vary), so an
+     * unknown id is simply skipped. Returns true when it just applied
+     * (so the caller renders a fresh frame).
+     */
+    private fun applyDayPalette(snap: MapSnapshotter): Boolean {
+        if (paletteApplied) return false
+        // Probe a layer that always exists to tell whether the style has
+        // loaded yet; if not, retry on the next request.
+        runCatching { snap.getLayer("background") }.getOrNull() ?: return false
+
+        fun fill(id: String, color: String) = runCatching {
+            snap.getLayer(id)?.setProperties(PropertyFactory.fillColor(color))
+        }
+        fun line(id: String, color: String) = runCatching {
+            snap.getLayer(id)?.setProperties(PropertyFactory.lineColor(color))
+        }
+        runCatching {
+            snap.getLayer("background")?.setProperties(PropertyFactory.backgroundColor(LAND))
+        }
+
+        // Surfaces.
+        fill("water", WATER)
+        listOf("waterway_river", "waterway_other", "waterway_tunnel").forEach { line(it, WATER) }
+        fill("park", PARK); fill("landcover_grass", GRASS); fill("landcover_wood", WOOD)
+        fill("building", BUILDING)
+        runCatching {
+            snap.getLayer("building-3d")?.setProperties(PropertyFactory.fillExtrusionColor(BUILDING))
+        }
+
+        // Road hierarchy — fills then casings, across surface/tunnel/bridge.
+        listOf("road_motorway", "road_motorway_link", "tunnel_motorway", "tunnel_motorway_link",
+            "bridge_motorway", "bridge_motorway_link").forEach { line(it, MOTORWAY) }
+        listOf("road_motorway_casing", "road_motorway_link_casing", "tunnel_motorway_casing",
+            "tunnel_motorway_link_casing", "bridge_motorway_casing", "bridge_motorway_link_casing")
+            .forEach { line(it, MOTORWAY_CASING) }
+
+        listOf("road_trunk_primary", "tunnel_trunk_primary", "bridge_trunk_primary",
+            "road_link", "tunnel_link", "bridge_link").forEach { line(it, ARTERIAL) }
+        listOf("road_trunk_primary_casing", "tunnel_trunk_primary_casing", "bridge_trunk_primary_casing",
+            "road_link_casing", "tunnel_link_casing", "bridge_link_casing").forEach { line(it, ARTERIAL_CASING) }
+
+        listOf("road_secondary_tertiary", "tunnel_secondary_tertiary", "bridge_secondary_tertiary")
+            .forEach { line(it, SECONDARY) }
+        listOf("road_secondary_tertiary_casing", "tunnel_secondary_tertiary_casing",
+            "bridge_secondary_tertiary_casing").forEach { line(it, SECONDARY_CASING) }
+
+        listOf("road_minor", "road_service_track", "tunnel_minor", "tunnel_service_track",
+            "tunnel_street", "bridge_street", "bridge_service_track").forEach { line(it, MINOR) }
+        listOf("road_minor_casing", "road_service_track_casing", "tunnel_service_track_casing",
+            "tunnel_street_casing", "bridge_street_casing", "bridge_service_track_casing")
+            .forEach { line(it, MINOR_CASING) }
+
+        paletteApplied = true
+        return true
     }
 
     /**
@@ -108,10 +176,11 @@ class CarMapSnapshotter(
     fun request(w: Int, h: Int, cam: CameraPosition) {
         ensureSized(w, h)
         val snap = snapshotter ?: return
-        // A pending building-3d visibility change forces a render even if
-        // the camera is unchanged.
+        // A pending building-3d visibility change or the one-time day-palette
+        // recolor forces a render even if the camera is unchanged.
         val styleChanged = applyBuildings3d(snap)
-        if (!styleChanged && !cameraMovedEnough(lastRequestedCam, cam)) return
+        val recolored = applyDayPalette(snap)
+        if (!styleChanged && !recolored && !cameraMovedEnough(lastRequestedCam, cam)) return
         if (inFlight) {
             // Coalesce: remember only the freshest camera; it'll be
             // drained when the in-flight snapshot completes.
@@ -167,6 +236,23 @@ class CarMapSnapshotter(
     private companion object {
         /** OpenFreeMap "liberty" style's extruded-buildings layer. */
         const val BUILDING_3D_LAYER = "building-3d"
+
+        // Waze-style day palette (see applyDayPalette). Warm land so white
+        // streets pop; saturated water/greens; bold road hierarchy + casings.
+        const val LAND = "#E7E4DB"
+        const val WATER = "#A6CEF0"
+        const val PARK = "#C2E0A2"
+        const val GRASS = "#BCDD9C"
+        const val WOOD = "#C6E4AC"
+        const val BUILDING = "#DED9CB"
+        const val MOTORWAY = "#F8B24A"
+        const val MOTORWAY_CASING = "#E08A2E"
+        const val ARTERIAL = "#FBD068"
+        const val ARTERIAL_CASING = "#E2A646"
+        const val SECONDARY = "#FCE3A0"
+        const val SECONDARY_CASING = "#D8C68C"
+        const val MINOR = "#FFFFFF"
+        const val MINOR_CASING = "#C6C1B5"
 
         /** Re-render thresholds — below these the on-screen change
          *  isn't worth a snapshot. ~5 m of movement, 1.5° of heading,

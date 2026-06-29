@@ -160,6 +160,17 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         /** JSON blob of per-state, per-element drag/scale overrides for the
          *  car surface; decoded by the car layer (CarOverlayLayout). */
         val CarOverlayLayout = stringPreferencesKey("car_overlay_layout")
+
+        // ── Spoken turn-by-turn guidance ────────────────────────────
+        /** Master on/off for spoken navigation instructions (the nav
+         *  screen's mute toggle writes this). On by default. */
+        val VoiceGuidanceEnabled = booleanPreferencesKey("voice_guidance_enabled")
+        /** Detailed voice mode — adds "continue for X" on long straights
+         *  on top of the turn cues. Off (concise) by default. */
+        val VoiceVerbose = booleanPreferencesKey("voice_verbose")
+        /** BCP-47 tag for the spoken-instruction language; null = follow
+         *  the app/system language. */
+        val VoiceLanguageTag = stringPreferencesKey("voice_language_tag")
     }
 
     override val maxSpeedKmh: Flow<Float> = context.dataStore.data
@@ -485,6 +496,33 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setCarOverlayLayoutJson(value: String) {
         context.dataStore.edit { it[Keys.CarOverlayLayout] = value }
+    }
+
+    // ---------- Spoken turn-by-turn guidance ----------
+
+    val voiceGuidanceEnabled: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.VoiceGuidanceEnabled] ?: true }
+
+    suspend fun setVoiceGuidanceEnabled(value: Boolean) {
+        context.dataStore.edit { it[Keys.VoiceGuidanceEnabled] = value }
+    }
+
+    val voiceVerbose: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.VoiceVerbose] ?: false }
+
+    suspend fun setVoiceVerbose(value: Boolean) {
+        context.dataStore.edit { it[Keys.VoiceVerbose] = value }
+    }
+
+    /** BCP-47 language tag for spoken instructions; null = follow app/system. */
+    val voiceLanguageTag: Flow<String?> = context.dataStore.data
+        .map { it[Keys.VoiceLanguageTag] }
+
+    suspend fun setVoiceLanguageTag(value: String?) {
+        context.dataStore.edit { prefs ->
+            if (value.isNullOrBlank()) prefs.remove(Keys.VoiceLanguageTag)
+            else prefs[Keys.VoiceLanguageTag] = value
+        }
     }
 
     suspend fun setHrZoneConfig(cfg: HrZoneConfig) {

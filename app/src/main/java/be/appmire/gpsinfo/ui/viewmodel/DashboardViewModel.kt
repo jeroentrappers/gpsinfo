@@ -341,6 +341,34 @@ class DashboardViewModel(
         viewModelScope.launch { (settings as? SettingsRepository)?.let { block(it) } }
     }
 
+    // ── Spoken navigation guidance ──────────────────────────────────
+    val voiceGuidanceEnabled: StateFlow<Boolean> =
+        (settings as? SettingsRepository)?.voiceGuidanceEnabled
+            ?.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+            ?: MutableStateFlow(true)
+
+    val voiceVerbose: StateFlow<Boolean> =
+        (settings as? SettingsRepository)?.voiceVerbose
+            ?.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+            ?: MutableStateFlow(false)
+
+    val voiceLanguageTag: StateFlow<String?> =
+        (settings as? SettingsRepository)?.voiceLanguageTag
+            ?.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+            ?: MutableStateFlow(null)
+
+    fun setVoiceGuidanceEnabled(value: Boolean) {
+        viewModelScope.launch { (settings as? SettingsRepository)?.setVoiceGuidanceEnabled(value) }
+    }
+
+    fun setVoiceVerbose(value: Boolean) {
+        viewModelScope.launch { (settings as? SettingsRepository)?.setVoiceVerbose(value) }
+    }
+
+    fun setVoiceLanguageTag(value: String?) {
+        viewModelScope.launch { (settings as? SettingsRepository)?.setVoiceLanguageTag(value) }
+    }
+
     // Altitude smoothing — exponentially-weighted IIR filter that
     // takes the edge off the ±5-10 m per-sample jitter on consumer
     // GNSS. The filter lives on the VM scope so it carries state

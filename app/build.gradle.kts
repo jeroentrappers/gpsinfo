@@ -47,6 +47,11 @@ val tilesApiKey = keystoreProps.getProperty("tilesApiKey")
 //   routingBaseUrl / GPSINFO_ROUTING_BASE_URL   e.g. https://valhalla.appmire.be
 val routingBaseUrl = keystoreProps.getProperty("routingBaseUrl")
     ?: System.getenv("GPSINFO_ROUTING_BASE_URL") ?: "https://valhalla.appmire.be"
+// Live traffic aggregation service (DATEX II → incidents over SSE + snapshot).
+// Empty → live traffic disabled. Gated by the same key as the tiles/routing.
+//   trafficBaseUrl / GPSINFO_TRAFFIC_BASE_URL   e.g. https://traffic.appmire.be
+val trafficBaseUrl = keystoreProps.getProperty("trafficBaseUrl")
+    ?: System.getenv("GPSINFO_TRAFFIC_BASE_URL") ?: "https://traffic.appmire.be"
 
 android {
     namespace = "be.appmire.gpsinfo"
@@ -64,6 +69,7 @@ android {
         buildConfigField("String", "TILES_BASE_URL", "\"$tilesBaseUrl\"")
         buildConfigField("String", "TILES_API_KEY", "\"$tilesApiKey\"")
         buildConfigField("String", "ROUTING_BASE_URL", "\"$routingBaseUrl\"")
+        buildConfigField("String", "TRAFFIC_BASE_URL", "\"$trafficBaseUrl\"")
     }
 
     // Strip everything except the languages we actually ship resources for.
