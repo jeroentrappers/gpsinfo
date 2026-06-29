@@ -1,0 +1,6 @@
+• Live traffic: jams, roadworks and closures shown on the map, with traffic-aware routes and ETAs.
+• Automatic rerouting and alternative routes at forks, showing the time and distance saved.
+• Brand-new phone navigation screen (portrait & landscape).
+• Spoken turn-by-turn guidance: mute, concise or detailed, language choice and a TTS test.
+• OBD keeps reconnecting automatically; speed now shown to 0.1 km/h.
+• Android Auto resizes correctly with the available space.

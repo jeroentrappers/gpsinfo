@@ -1,0 +1,6 @@
+• Canlı trafik: tıkanıklıklar, yol çalışmaları ve kapanmalar haritada; trafiğe duyarlı rotalar ve varış süreleri.
+• Kavşaklarda otomatik yeniden rota ve alternatif rotalar; kazanılan süre ve mesafeyle birlikte.
+• Telefon için yepyeni navigasyon ekranı (dikey ve yatay).
+• Sesli dönüş dönüş yönlendirme: sessiz, kısa veya ayrıntılı, dil seçimi ve TTS testi.
+• OBD otomatik olarak yeniden bağlanır; hız artık 0,1 km/sa hassasiyetinde.
+• Android Auto, kullanılabilir alana doğru şekilde uyum sağlar.

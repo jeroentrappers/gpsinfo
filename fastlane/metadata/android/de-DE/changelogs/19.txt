@@ -1,0 +1,6 @@
+• Live-Verkehr: Staus, Baustellen und Sperrungen auf der Karte, mit verkehrsbewussten Routen und Ankunftszeiten.
+• Automatische Neuberechnung und alternative Routen an Abzweigungen, mit gesparter Zeit und Strecke.
+• Brandneuer Navigationsbildschirm fürs Handy (Hoch- & Querformat).
+• Gesprochene Abbiegehinweise: stumm, knapp oder ausführlich, Sprachauswahl und ein TTS-Test.
+• OBD verbindet sich automatisch neu; Geschwindigkeit jetzt auf 0,1 km/h genau.
+• Android Auto passt sich korrekt an den verfügbaren Platz an.
