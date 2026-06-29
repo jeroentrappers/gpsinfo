@@ -19,19 +19,25 @@
     state: directory
     mode: "0755"
 
+- name: Sync the live-traffic writer source (sidecar build context)
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../traffic/writer/"
+    dest: "{{ valhalla_app_dir }}/writer/"
+    mode: "0644"
+
 - name: Render Valhalla docker-compose
   ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: "{{ valhalla_app_dir }}/docker-compose.yml"
     mode: "0644"
 
-- name: Pull + start Valhalla (first run builds tiles in the background)
+- name: Pull + start Valhalla + build the traffic-writer sidecar
   ansible.builtin.command:
     chdir: "{{ valhalla_app_dir }}"
-    cmd: docker compose up -d
+    cmd: docker compose up -d --build
   register: up
   changed_when: >-
-    'Started' in up.stderr or 'Created' in up.stderr or
+    'Started' in up.stderr or 'Created' in up.stderr or 'Built' in up.stderr or
     'Recreate' in up.stderr or 'Pulled' in up.stderr
 
 # /status returns 200 only once tiles are built and loaded. On the very first
@@ -53,3 +59,30 @@
     msg: >-
       Valhalla {{ 'is UP' if (v_up.status | default(0)) == 200
       else 'is still building tiles — re-run --tags valhalla later to confirm' }}.
+
+# ── Live-traffic overlay (phase 2) ─────────────────────────────────────────
+# First run only: build the edge-aligned traffic.tar skeleton from the tiles,
+# prime it once with current speeds, then restart Valhalla so it memory-maps a
+# populated overlay (Valhalla only adopts live traffic that's present when it
+# maps the file; thereafter the writer's ongoing updates are picked up live).
+- name: Check for the traffic.tar overlay
+  ansible.builtin.stat:
+    path: "{{ valhalla_app_dir }}/custom_files/traffic.tar"
+  register: traffic_tar
+
+- name: Build the traffic.tar skeleton (first run)
+  when: not traffic_tar.stat.exists and (v_up.status | default(0)) == 200
+  ansible.builtin.command:
+    cmd: docker exec -u root gpsinfo-valhalla valhalla_build_extract -c /custom_files/valhalla.json -t -O
+  changed_when: true
+
+- name: Prime the overlay once, then restart Valhalla to map it
+  when: not traffic_tar.stat.exists and (v_up.status | default(0)) == 200
+  ansible.builtin.shell:
+    chdir: "{{ valhalla_app_dir }}"
+    cmd: >-
+      docker exec gpsinfo-traffic-writer sh -c
+      'curl -fsS "$EDGESPEEDS_URL" -o /tmp/p.json && traffic-updater "$TRAFFIC_TAR" /tmp/p.json' ;
+      docker compose restart valhalla
+  changed_when: true
+  failed_when: false

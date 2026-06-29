@@ -26,6 +26,10 @@ services:
       build_time_zones: "True"
       build_elevation: "False"
       server_threads: "{{ valhalla_threads }}"
+      # Live-traffic overlay: builds an edge-aligned traffic.tar and points
+      # mjolnir.traffic_extract at it, so the gpsinfo-traffic-writer sidecar can
+      # poke live per-edge speeds that routing/ETA pick up (phase 2).
+      traffic_tar_name: "traffic.tar"
 {% if not (valhalla_local_pbf | default('')) %}
       # Geofabrik download → routing tiles (built once, cached).
       tile_urls: "{{ valhalla_pbf_urls | join(' ') }}"
@@ -37,3 +41,26 @@ services:
       # picks up any .pbf in /custom_files when no tile_urls is set.
       - {{ valhalla_local_pbf }}:/custom_files/{{ valhalla_local_pbf | basename }}:ro
 {% endif %}
+
+  # Live-traffic writer (phase 2): polls the gpsinfo-traffic service's
+  # /edgespeeds and pokes per-edge speeds into the memory-mapped traffic.tar
+  # that Valhalla reads for current-time routing. Built from ./writer; shares
+  # the custom_files volume; host networking to reach the loopback traffic
+  # service. Compiled against this image's exact TrafficSpeed layout.
+  traffic-writer:
+    build:
+      context: ./writer
+      args:
+        VALHALLA_IMAGE: {{ valhalla_image }}
+    image: gpsinfo-traffic-writer:local
+    container_name: gpsinfo-traffic-writer
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./custom_files:/custom_files
+    environment:
+      TRAFFIC_TAR: /custom_files/traffic.tar
+      EDGESPEEDS_URL: "http://127.0.0.1:{{ traffic_port }}/edgespeeds"
+      INTERVAL: "45"
+    depends_on:
+      - valhalla
