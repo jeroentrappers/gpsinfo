@@ -21,6 +21,8 @@
       tags: [app]
     - role: valhalla        # server-side routing (valhalla.appmire.be)
       tags: [valhalla]
+    - role: traffic         # live traffic aggregation (traffic.appmire.be)
+      tags: [traffic]
     - role: nginx
       become: true
       tags: [nginx]

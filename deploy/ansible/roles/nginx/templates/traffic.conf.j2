@@ -1,0 +1,64 @@
+# Managed by Ansible — GPSinfo live-traffic service ({{ traffic_domain }}).
+# Reverse-proxies the loopback traffic container behind the same ?key= gate +
+# rate limit as the tiles/routing. The /events endpoint is Server-Sent Events,
+# so buffering is OFF and read timeouts are long for that location.
+{% if have_cert | default(false) %}
+server {
+    server_name {{ traffic_domain }};
+    listen [::]:443 ssl;
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/{{ traffic_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ traffic_domain }}/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Live event stream: no buffering, keep the connection open.
+    location = /events {
+        if ($arg_key != "{{ traffic_api_key }}") { return 403; }
+        proxy_pass http://127.0.0.1:{{ traffic_port }};
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_cache off;
+        chunked_transfer_encoding off;
+        proxy_read_timeout 3600s;
+        add_header Access-Control-Allow-Origin $cors_allow_origin always;
+        add_header Vary Origin always;
+    }
+
+    location / {
+        if ($arg_key != "{{ traffic_api_key }}") { return 403; }
+        limit_req zone=gpsinfo_routing burst=10 nodelay;
+        proxy_pass http://127.0.0.1:{{ traffic_port }};
+        proxy_read_timeout 60s;
+        add_header Access-Control-Allow-Origin $cors_allow_origin always;
+        add_header Vary Origin always;
+    }
+}
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ traffic_domain }};
+    location / { return 301 https://$host$request_uri; }
+}
+{% else %}
+# Pre-TLS: plain HTTP so certbot --nginx can find the vhost; key still gates.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ traffic_domain }};
+    location = /events {
+        if ($arg_key != "{{ traffic_api_key }}") { return 403; }
+        proxy_pass http://127.0.0.1:{{ traffic_port }};
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+    }
+    location / {
+        if ($arg_key != "{{ traffic_api_key }}") { return 403; }
+        limit_req zone=gpsinfo_routing burst=10 nodelay;
+        proxy_pass http://127.0.0.1:{{ traffic_port }};
+    }
+}
+{% endif %}

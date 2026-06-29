@@ -1,0 +1,18 @@
+# Managed by Ansible. GPSinfo live-traffic aggregation service
+# (traffic.appmire.be). Built from the Go source synced to ./src, served on
+# loopback; the host nginx fronts it with TLS + the ?key= gate.
+services:
+  traffic:
+    build:
+      context: ./src
+    image: gpsinfo-traffic:local
+    container_name: gpsinfo-traffic
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:{{ traffic_port }}:8080"
+{% if traffic_wallonia_user | default('') %}
+    environment:
+      # Wallonia/SOFICO feed needs basic-auth (contract-gated); set in secrets.yml.
+      TRAFFIC_BE_WALLONIA_USER: "{{ traffic_wallonia_user }}"
+      TRAFFIC_BE_WALLONIA_PASS: "{{ traffic_wallonia_pass }}"
+{% endif %}

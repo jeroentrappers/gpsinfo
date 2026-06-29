@@ -1,0 +1,50 @@
+# Live traffic aggregation service for GPSinfo (traffic.appmire.be).
+# Copies the Go service source to the box, builds the Docker image and runs
+# it on loopback; the nginx role fronts it with TLS + the ?key= gate. Light
+# workload (one ~1 MB XML/min, in-memory), so no resource caps.
+---
+- name: Ensure traffic app dir (owned by deploy user)
+  become: true
+  ansible.builtin.file:
+    path: "{{ traffic_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Sync traffic service source to the box
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../traffic/"
+    dest: "{{ traffic_app_dir }}/src/"
+    mode: "0644"
+
+- name: Render traffic docker-compose
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ traffic_app_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Build + start the traffic service
+  ansible.builtin.command:
+    chdir: "{{ traffic_app_dir }}"
+    cmd: docker compose up -d --build
+  register: up
+  changed_when: >-
+    'Started' in up.stderr or 'Built' in up.stderr or 'Created' in up.stderr or
+    'Recreate' in up.stderr or 'Pulled' in up.stderr
+
+- name: Wait for /healthz on loopback
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ traffic_port }}/healthz"
+    status_code: [200]
+  register: t_up
+  retries: 12
+  delay: 5
+  until: t_up.status == 200
+  failed_when: false
+
+- name: Report traffic service readiness
+  ansible.builtin.debug:
+    msg: >-
+      Traffic service {{ 'is UP' if (t_up.status | default(0)) == 200
+      else 'did not answer /healthz yet — check `docker compose logs` on the box' }}.

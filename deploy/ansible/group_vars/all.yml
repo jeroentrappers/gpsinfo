@@ -106,3 +106,19 @@ valhalla_local_pbf: /opt/charging/osrm-data/eu-west.osm.pbf
 # Reuse the tile server's API key gate (override in secrets.yml for a
 # dedicated routing key).
 valhalla_api_key: "{{ tiles_api_key }}"
+
+# ── Live traffic aggregation service (traffic.appmire.be) ───────────────────
+# Go service (deploy from ./traffic) that polls the national DATEX II feeds,
+# normalizes to WGS84 incidents, and serves them to clients over SSE + a JSON
+# snapshot. Belgium/Flanders is live (open feed); Wallonia/SOFICO needs
+# basic-auth creds (contract-gated) — set traffic_wallonia_user/pass in
+# secrets.yml and add its URL to enable. Loopback only; nginx fronts it.
+traffic_domain: traffic.appmire.be
+traffic_app_dir: /opt/gpsinfo-traffic
+traffic_port: 8793             # loopback only; nginx fronts it
+# Reuse the tile/routing API key gate (override in secrets.yml if desired).
+traffic_api_key: "{{ tiles_api_key }}"
+# Wallonia/SOFICO basic-auth (optional; set in secrets.yml once you have a
+# contract + credentials from the dataset owner).
+# traffic_wallonia_user: ""
+# traffic_wallonia_pass: ""
