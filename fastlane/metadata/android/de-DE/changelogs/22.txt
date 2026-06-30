@@ -1,0 +1,3 @@
+• Kombinierte Ansicht: Aktiviere das Kombiinstrument, um Tempo-, Energie- und Kompassanzeige direkt auf den Karten-Tab zu legen — Karte, Navigation und Anzeigen auf einem Bildschirm.
+• Die Energieanzeige zeigt jetzt Leistung, Ladung und Reichweite live bei verbundenem OBD-Adapter.
+• Ziehen, Zoomen, Entfernen und Zurücksetzen funktionieren weiterhin für jede Anzeige.

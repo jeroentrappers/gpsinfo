@@ -1,0 +1,3 @@
+• Birleşik görünüm: gösterge panelini açarak hız, enerji ve pusula göstergelerini doğrudan Harita sekmesine yerleştirin — harita, navigasyon ve göstergeler tek ekranda.
+• Enerji göstergesi, bir OBD adaptörü bağlıyken artık canlı güç, şarj ve menzili gösterir.
+• Sürükleme, sıkıştırma, kaldırma ve sıfırlama her gösterge için çalışmaya devam eder.

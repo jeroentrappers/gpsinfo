@@ -1,0 +1,3 @@
+• Kombinované zobrazení: zapněte přístrojový panel a překryjte ukazatele rychlosti, energie a kompasu přímo na kartě Mapa — mapa, navigace i ukazatele na jedné obrazovce.
+• Ukazatel energie nyní zobrazuje živý výkon, nabití a dojezd, když je připojen adaptér OBD.
+• Tažení, sevření, odebrání a obnovení stále fungují u každého ukazatele.

@@ -1,0 +1,3 @@
+• Vista combinata: attiva il quadro strumenti per sovrapporre gli indicatori di velocità, energia e bussola alla scheda Mappa — mappa, navigazione e indicatori in un'unica schermata.
+• L'indicatore di energia ora mostra potenza, carica e autonomia in tempo reale quando è collegato un adattatore OBD.
+• Trascina, pizzica, rimuovi e ripristina funzionano ancora per ogni indicatore.

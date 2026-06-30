@@ -1,0 +1,3 @@
+• Combined view: turn on the instrument cluster to overlay the speed, energy and compass gauges right on the Map tab — full map, navigation and gauges on one screen.
+• The energy gauge now shows live power, charge and range when an OBD adapter is connected.
+• Drag, pinch, remove and reset still work for every gauge.

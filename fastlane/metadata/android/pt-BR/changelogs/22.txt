@@ -1,0 +1,3 @@
+• Vista combinada: ative o painel de instrumentos para sobrepor os medidores de velocidade, energia e bússola na aba Mapa — mapa, navegação e medidores em uma só tela.
+• O medidor de energia agora mostra potência, carga e autonomia ao vivo quando um adaptador OBD está conectado.
+• Arrastar, pinçar, remover e redefinir continuam funcionando para cada medidor.

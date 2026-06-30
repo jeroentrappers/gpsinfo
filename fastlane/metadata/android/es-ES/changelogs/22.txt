@@ -1,0 +1,3 @@
+• Vista combinada: activa el cuadro de instrumentos para superponer los indicadores de velocidad, energía y brújula en la pestaña Mapa — mapa, navegación e indicadores en una sola pantalla.
+• El indicador de energía ahora muestra potencia, carga y autonomía en directo cuando hay un adaptador OBD conectado.
+• Arrastrar, pellizcar, eliminar y restablecer siguen funcionando en cada indicador.

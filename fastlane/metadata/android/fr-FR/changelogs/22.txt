@@ -1,0 +1,3 @@
+• Vue combinée : activez le combiné d'instruments pour superposer les jauges de vitesse, d'énergie et de boussole sur l'onglet Carte — carte, navigation et jauges sur un seul écran.
+• La jauge d'énergie affiche désormais la puissance, la charge et l'autonomie en direct lorsqu'un adaptateur OBD est connecté.
+• Glisser, pincer, supprimer et réinitialiser fonctionnent toujours pour chaque jauge.

@@ -1,0 +1,3 @@
+• Widok łączony: włącz zestaw wskaźników, aby nałożyć wskaźniki prędkości, energii i kompasu na kartę Mapa — mapa, nawigacja i wskaźniki na jednym ekranie.
+• Wskaźnik energii pokazuje teraz na żywo moc, naładowanie i zasięg, gdy podłączony jest adapter OBD.
+• Przeciąganie, ściąganie, usuwanie i resetowanie nadal działają dla każdego wskaźnika.

@@ -1,0 +1,3 @@
+• Gecombineerde weergave: zet de instrumentencluster aan om de meters voor snelheid, energie en kompas over de kaart-tab te leggen — kaart, navigatie en meters op één scherm.
+• De energiemeter toont nu live vermogen, lading en bereik als er een OBD-adapter is verbonden.
+• Slepen, knijpen, verwijderen en resetten werken nog steeds voor elke meter.
