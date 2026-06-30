@@ -1,0 +1,3 @@
+• OBD: pokud adaptér zůstane připojen, ale přestane posílat data, aplikace se nyní automaticky znovu připojí a znovu použije poslední funkční profil.
+• Funkční profil, kterému chybí jen jeden senzor, se kvůli tomu znovu nepřipojuje.
+• VW ID. (MEB): venkovní teplota se nyní čte přes standardní PID okolí.

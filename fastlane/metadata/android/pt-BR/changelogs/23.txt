@@ -1,0 +1,3 @@
+• OBD: se o adaptador continuar conectado mas parar de enviar dados, o app reconecta automaticamente e reaplica o último perfil que funcionou.
+• Um perfil que funciona mas só está sem um sensor não é reconectado por isso.
+• VW ID. (MEB): a temperatura externa agora é lida pelo PID ambiente padrão.

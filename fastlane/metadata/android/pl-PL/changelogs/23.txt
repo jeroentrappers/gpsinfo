@@ -1,0 +1,3 @@
+• OBD: jeśli adapter pozostaje połączony, ale przestaje wysyłać dane, aplikacja automatycznie łączy się ponownie i ponownie stosuje ostatni działający profil.
+• Działający profil, któremu brakuje tylko jednego czujnika, nie jest z tego powodu łączony ponownie.
+• VW ID. (MEB): temperatura zewnętrzna jest teraz odczytywana standardowym PID-em otoczenia.

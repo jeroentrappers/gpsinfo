@@ -1,0 +1,3 @@
+• OBD: if the adapter stays connected but stops sending data, the app now reconnects automatically and reapplies the last profile that worked.
+• A working profile that's just missing one sensor is never reconnected for that alone.
+• VW ID. (MEB): outside temperature now read via the standard ambient PID.

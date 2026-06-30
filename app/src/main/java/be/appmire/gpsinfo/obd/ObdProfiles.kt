@@ -106,12 +106,16 @@ object ObdProfiles {
                     u16(b, 0)?.let { it / 64.0 }
                 },
             ),
-            // Outside/ambient temp from the HVAC ECU (DID 2609, 1 byte ÷
-            // 2 − 50) — more reliable on a BEV than standard PID 0146.
+            // Outside/ambient temp. The HVAC-ECU UDS DID (222609) returns NO
+            // DATA on at least some MEB cars, so use the standard ambient-air
+            // PID 0146 (A − 40 °C) on 11-bit addressing — answered by the
+            // gateway/ECM (7E8). Each command carries its full ATSP/ATSH/ATCRA
+            // prefix, so this poll switches to SP6 and the BMS polls switch
+            // back to SP7 cleanly (ObdManager re-sends a changed prefix).
             ProfileCommand(
                 ObdRole.AMBIENT_TEMP,
-                ObdCommand("ambient", "Outside temp", "°C", hvac("222609")) { b ->
-                    b.getOrNull(0)?.let { it / 2.0 - 50.0 }
+                ObdCommand("ambient", "Outside temp", "°C", "ATSP6;ATSH7DF;ATCRA7E8;0146") { b ->
+                    b.getOrNull(0)?.let { it - 40.0 }
                 },
             ),
         ),

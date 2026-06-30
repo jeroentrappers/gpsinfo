@@ -1,0 +1,3 @@
+• OBD: adaptör bağlı kalıp veri göndermeyi durdurursa, uygulama artık otomatik olarak yeniden bağlanır ve çalışan son profili yeniden uygular.
+• Yalnızca bir sensörü eksik olan çalışan bir profil bu yüzden yeniden bağlanmaz.
+• VW ID. (MEB): dış sıcaklık artık standart ortam PID'i ile okunur.
