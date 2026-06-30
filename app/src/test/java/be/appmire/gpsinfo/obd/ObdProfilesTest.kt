@@ -34,8 +34,12 @@ class ObdProfilesTest {
     }
 
     @Test
-    fun `MEB outside temp is byte over 2 minus 50`() {
-        assertEquals(5.0, decode(ObdRole.AMBIENT_TEMP, intArrayOf(0x6E))!!, 0.001) // 110/2-50
+    fun `MEB outside temp is standard ambient PID byte minus 40`() {
+        // Switched from the HVAC UDS DID (no data on real MEB) to standard
+        // ambient-air PID 0146 (A − 40) on 11-bit addressing.
+        assertEquals(30.0, decode(ObdRole.AMBIENT_TEMP, intArrayOf(0x46))!!, 0.001) // 70-40
+        val amb = ObdProfiles.VW_MEB.commands.first { it.role == ObdRole.AMBIENT_TEMP }.command
+        assertEquals("ATSP6;ATSH7DF;ATCRA7E8;0146", amb.request)
     }
 
     @Test
