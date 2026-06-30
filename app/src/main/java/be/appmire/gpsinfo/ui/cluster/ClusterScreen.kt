@@ -64,6 +64,9 @@ fun ClusterScreen(
 ) {
     val data by vm.clusterData.collectAsStateWithLifecycle()
     val persisted by vm.phoneOverlayLayout.collectAsStateWithLifecycle()
+    // Start the OBD feed (if configured) so the energy gauge shows live data.
+    val obdCtx = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(Unit) { be.appmire.gpsinfo.obd.ObdLiveController.startIfConfigured(obdCtx) }
 
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val ctx = if (landscape) PhoneOverlayContext.CLUSTER_LANDSCAPE else PhoneOverlayContext.CLUSTER_PORTRAIT

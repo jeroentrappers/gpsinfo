@@ -868,13 +868,20 @@ class DashboardViewModel(
 
     // ---------- Instrument cluster (shared with Android Auto) ----------
 
-    /** Posted speed limit for the cluster: the active navigation limit while
-     *  navigating, else the always-on provider's best guess (may be null). */
-    private val clusterLimitFlow = combine(
+    /** Side inputs to the cluster that don't come from the sensor flows: the
+     *  posted limit (active navigation limit while navigating, else the
+     *  always-on provider) and the live OBD feed (power/SOC/range/temp). */
+    private data class ClusterAux(
+        val limitKmh: Int?,
+        val obd: be.appmire.gpsinfo.obd.ObdLiveData,
+    )
+
+    private val clusterAuxFlow = combine(
         NavigationController.state,
         SpeedLimitProvider.limit,
-    ) { ns, sl ->
-        (ns as? NavigationController.NavState.Navigating)?.speedLimitKmh ?: sl
+        be.appmire.gpsinfo.obd.ObdLiveController.state,
+    ) { ns, sl, obd ->
+        ClusterAux((ns as? NavigationController.NavState.Navigating)?.speedLimitKmh ?: sl, obd)
     }
 
     /** The same data the Android-Auto instrument cluster renders, assembled
@@ -883,9 +890,9 @@ class DashboardViewModel(
      *  OBD on the phone, so the power fields stay null and the power gauge is
      *  omitted. ~30 Hz from the sensor flows, only while a surface subscribes. */
     val clusterData: StateFlow<ClusterData> = combine(
-        gnssState, compass, gForce, recordingState, clusterLimitFlow,
-    ) { gnss, comp, gf, rec, limit ->
-        buildClusterData(gnss, comp, gf, rec, limit)
+        gnssState, compass, gForce, recordingState, clusterAuxFlow,
+    ) { gnss, comp, gf, rec, aux ->
+        buildClusterData(gnss, comp, gf, rec, aux)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
@@ -904,7 +911,7 @@ class DashboardViewModel(
         comp: CompassReading,
         gf: be.appmire.gpsinfo.data.model.GForceSample,
         rec: RecordingState,
-        limitKmh: Int?,
+        aux: ClusterAux,
     ): ClusterData {
         val loc = gnss.location
         val hasSpeed = loc?.hasSpeed() == true
@@ -918,20 +925,26 @@ class DashboardViewModel(
         val moving = hasSpeed && loc!!.hasBearing() && loc.speed > 1.5f
         val heading = if (moving) loc!!.bearing else comp.magneticHeadingDeg
         val odoKm = (rec as? RecordingState.Recording)?.distanceMetres?.div(1000.0) ?: 0.0
+        val obd = aux.obd
+        val hasObd = obd.connected
         return ClusterData(
             kmh = kmh,
             hasSpeed = hasSpeed,
             speedAccKmh = accKmh,
-            kw = null, peakKw = null, consKwh100 = null, socPct = null, rangeKm = null,
+            kw = if (hasObd) obd.powerKw else null,
+            peakKw = null,
+            consKwh100 = null,
+            socPct = if (hasObd) obd.socPercent?.toFloat() else null,
+            rangeKm = if (hasObd) obd.rangeKm?.toFloat() else null,
             headingDeg = heading,
             hasHeading = true,
             latG = gf.lateralG,
             lonG = gf.longitudinalG,
-            speedLimitKmh = limitKmh,
+            speedLimitKmh = aux.limitKmh,
             odometerKm = odoKm,
-            ambientTempC = null,
+            ambientTempC = if (hasObd) obd.ambientTempC else null,
             clock = clusterClockFmt.format(java.util.Date()),
-            obd = false,
+            obd = hasObd,
         )
     }
 

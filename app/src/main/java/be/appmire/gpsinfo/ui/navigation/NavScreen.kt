@@ -137,6 +137,10 @@ fun NavScreen(
     // Live traffic: subscribe and keep the viewport on the active route.
     val traffic by TrafficController.incidents.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { TrafficController.start() }
+    // Start the OBD feed (if an adapter is configured) so the cluster's energy
+    // gauge shows live power/SOC/range here too. No-ops without an adapter.
+    val obdCtx = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(Unit) { be.appmire.gpsinfo.obd.ObdLiveController.startIfConfigured(obdCtx) }
     LaunchedEffect(navg?.route) {
         val n = navg
         if (n != null) TrafficController.setRoute(n.route.points.map { doubleArrayOf(it.lat, it.lon) })
