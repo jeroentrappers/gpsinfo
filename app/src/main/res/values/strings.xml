@@ -144,8 +144,9 @@
     <!-- Overlay layout editing (phone nav + cluster) -->
     <string name="overlay_edit_layout">Edit layout</string>
     <string name="overlay_edit_done">Done</string>
-    <string name="overlay_edit_reset">Reset layout</string>
-    <string name="overlay_edit_hint">Drag to move · pinch to resize</string>
+    <string name="overlay_edit_reset">Reset to defaults</string>
+    <string name="overlay_edit_remove">Remove element</string>
+    <string name="overlay_edit_hint">Tap to select · drag to move · pinch to resize</string>
 
     <!-- Speed screen -->
     <string name="screen_speed">Speed</string>

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +39,8 @@ import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.ui.overlay.LocalOverlayEdit
 import be.appmire.gpsinfo.ui.overlay.OverlayEditScope
 import be.appmire.gpsinfo.ui.overlay.PhoneOverlayContext
+import be.appmire.gpsinfo.ui.overlay.PhoneOverlayElement
+import be.appmire.gpsinfo.ui.overlay.removable
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 
 /** Housing colour the integrated gauge fills with — keep the surround the
@@ -67,6 +70,7 @@ fun ClusterScreen(
 
     var editing by remember { mutableStateOf(false) }
     var parentPx by remember { mutableStateOf(IntSize.Zero) }
+    var selected by remember { mutableStateOf<PhoneOverlayElement?>(null) }
     // Working copy edited live; seeded from the persisted layout whenever not
     // editing, saved back when the user leaves edit mode.
     var working by remember { mutableStateOf(persisted) }
@@ -86,12 +90,19 @@ fun ClusterScreen(
                 },
                 actions = {
                     if (editing) {
-                        IconButton(onClick = { working = working.cleared(ctx) }) {
+                        IconButton(
+                            onClick = { selected?.let { working = working.hide(ctx, it); selected = null } },
+                            enabled = selected?.removable == true,
+                        ) {
+                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.overlay_edit_remove))
+                        }
+                        IconButton(onClick = { working = working.cleared(ctx); selected = null }) {
                             Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.overlay_edit_reset))
                         }
                     }
                     IconButton(onClick = {
                         if (editing) vm.savePhoneOverlayLayout(working)
+                        selected = null
                         editing = !editing
                     }) {
                         Icon(
@@ -126,6 +137,8 @@ fun ClusterScreen(
                 layout = working,
                 parentPx = parentPx,
                 onChange = { el, ov -> working = working.with(ctx, el, ov) },
+                selected = selected,
+                onSelect = { selected = it },
             )
             CompositionLocalProvider(LocalOverlayEdit provides scope) {
                 ClusterGauges(

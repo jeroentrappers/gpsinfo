@@ -14,6 +14,7 @@ import be.appmire.gpsinfo.car.CarInstruments
 import be.appmire.gpsinfo.car.ClusterData
 import be.appmire.gpsinfo.ui.overlay.PhoneOverlayElement
 import be.appmire.gpsinfo.ui.overlay.overlayElement
+import be.appmire.gpsinfo.ui.overlay.overlayElementVisible
 
 /**
  * The instrument cluster as **independent** gauges — speed, energy/power and
@@ -32,32 +33,31 @@ fun ClusterGauges(
     BoxWithConstraints(modifier) {
         val landscape = maxWidth >= maxHeight
         val minDim = if (maxWidth <= maxHeight) maxWidth else maxHeight
+        val speedVisible = overlayElementVisible(PhoneOverlayElement.CLUSTER_SPEED)
+        val powerVisible = overlayElementVisible(PhoneOverlayElement.CLUSTER_POWER)
+        val compassVisible = showCompass && overlayElementVisible(PhoneOverlayElement.CLUSTER_COMPASS)
         if (landscape) {
             // Speed left, compass centre, energy right — a row across the width.
             val s = minDim * 0.72f
-            GaugeCanvas(PhoneOverlayElement.CLUSTER_SPEED, Modifier.align(Alignment.CenterStart).size(s)) { c, r ->
+            if (speedVisible) GaugeCanvas(PhoneOverlayElement.CLUSTER_SPEED, Modifier.align(Alignment.CenterStart).size(s)) { c, r ->
                 instruments.drawSpeedDial(c, r, data)
             }
-            if (showCompass) {
-                GaugeCanvas(PhoneOverlayElement.CLUSTER_COMPASS, Modifier.align(Alignment.Center).size(minDim * 0.52f)) { c, r ->
-                    instruments.drawCompassDial(c, r, data)
-                }
+            if (compassVisible) GaugeCanvas(PhoneOverlayElement.CLUSTER_COMPASS, Modifier.align(Alignment.Center).size(minDim * 0.52f)) { c, r ->
+                instruments.drawCompassDial(c, r, data)
             }
-            GaugeCanvas(PhoneOverlayElement.CLUSTER_POWER, Modifier.align(Alignment.CenterEnd).size(s)) { c, r ->
+            if (powerVisible) GaugeCanvas(PhoneOverlayElement.CLUSTER_POWER, Modifier.align(Alignment.CenterEnd).size(s)) { c, r ->
                 instruments.drawPowerDial(c, r, data)
             }
         } else {
             // Speed top, compass middle, energy bottom — a column down the height.
             val s = maxWidth * 0.6f
-            GaugeCanvas(PhoneOverlayElement.CLUSTER_SPEED, Modifier.align(Alignment.TopCenter).size(s)) { c, r ->
+            if (speedVisible) GaugeCanvas(PhoneOverlayElement.CLUSTER_SPEED, Modifier.align(Alignment.TopCenter).size(s)) { c, r ->
                 instruments.drawSpeedDial(c, r, data)
             }
-            if (showCompass) {
-                GaugeCanvas(PhoneOverlayElement.CLUSTER_COMPASS, Modifier.align(Alignment.Center).size(maxWidth * 0.5f)) { c, r ->
-                    instruments.drawCompassDial(c, r, data)
-                }
+            if (compassVisible) GaugeCanvas(PhoneOverlayElement.CLUSTER_COMPASS, Modifier.align(Alignment.Center).size(maxWidth * 0.5f)) { c, r ->
+                instruments.drawCompassDial(c, r, data)
             }
-            GaugeCanvas(PhoneOverlayElement.CLUSTER_POWER, Modifier.align(Alignment.BottomCenter).size(s)) { c, r ->
+            if (powerVisible) GaugeCanvas(PhoneOverlayElement.CLUSTER_POWER, Modifier.align(Alignment.BottomCenter).size(s)) { c, r ->
                 instruments.drawPowerDial(c, r, data)
             }
         }

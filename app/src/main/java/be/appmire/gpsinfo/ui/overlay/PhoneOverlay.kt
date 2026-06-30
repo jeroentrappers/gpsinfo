@@ -1,8 +1,10 @@
 package be.appmire.gpsinfo.ui.overlay
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -14,6 +16,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import be.appmire.gpsinfo.car.LayoutOverride
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -41,6 +44,12 @@ enum class PhoneOverlayElement(val key: String) {
     }
 }
 
+/** Whether the user may remove this element while editing. Core turn-by-turn
+ *  info (the maneuver card and the ETA) stays — it can be moved/scaled but not
+ *  removed, so a layout can't hide essential guidance. */
+val PhoneOverlayElement.removable: Boolean
+    get() = this != PhoneOverlayElement.MANEUVER && this != PhoneOverlayElement.ETA
+
 /** Overrides are stored per surface × orientation so each combination keeps
  *  its own layout (the nav cluster and the full-screen cluster differ, and so
  *  do portrait vs landscape). */
@@ -55,14 +64,18 @@ enum class PhoneOverlayContext(val key: String) {
     }
 }
 
-/** Per-context, per-element overrides, persisted as one JSON blob in
- *  SettingsRepository. */
+/** Per-context, per-element overrides (offset/scale) plus the set of removed
+ *  (hidden) elements, persisted as one JSON blob in SettingsRepository. */
 @Immutable
 data class PhoneOverlayLayout(
     val byContext: Map<PhoneOverlayContext, Map<PhoneOverlayElement, LayoutOverride>> = emptyMap(),
+    val hiddenByContext: Map<PhoneOverlayContext, Set<PhoneOverlayElement>> = emptyMap(),
 ) {
     fun get(ctx: PhoneOverlayContext, el: PhoneOverlayElement): LayoutOverride =
         byContext[ctx]?.get(el) ?: LayoutOverride()
+
+    fun isHidden(ctx: PhoneOverlayContext, el: PhoneOverlayElement): Boolean =
+        hiddenByContext[ctx]?.contains(el) == true
 
     /** Copy with one element's override replaced for [ctx]. */
     fun with(ctx: PhoneOverlayContext, el: PhoneOverlayElement, ov: LayoutOverride): PhoneOverlayLayout {
@@ -70,19 +83,27 @@ data class PhoneOverlayLayout(
         val forCtx = (contexts[ctx] ?: emptyMap()).toMutableMap()
         if (ov.isIdentity) forCtx.remove(el) else forCtx[el] = ov
         if (forCtx.isEmpty()) contexts.remove(ctx) else contexts[ctx] = forCtx
-        return PhoneOverlayLayout(contexts)
+        return copy(byContext = contexts)
     }
 
-    /** Copy with all overrides for [ctx] cleared (reset). */
-    fun cleared(ctx: PhoneOverlayContext): PhoneOverlayLayout =
-        PhoneOverlayLayout(byContext.toMutableMap().apply { remove(ctx) })
+    /** Copy with [el] marked removed (hidden) for [ctx]. */
+    fun hide(ctx: PhoneOverlayContext, el: PhoneOverlayElement): PhoneOverlayLayout {
+        val hidden = hiddenByContext.toMutableMap()
+        hidden[ctx] = (hidden[ctx] ?: emptySet()) + el
+        return copy(hiddenByContext = hidden)
+    }
+
+    /** Copy with everything for [ctx] reset to defaults (overrides + removals). */
+    fun cleared(ctx: PhoneOverlayContext): PhoneOverlayLayout = copy(
+        byContext = byContext.toMutableMap().apply { remove(ctx) },
+        hiddenByContext = hiddenByContext.toMutableMap().apply { remove(ctx) },
+    )
 
     fun toJson(): String {
         val root = JSONObject()
-        for ((ctx, elements) in byContext) {
-            if (elements.isEmpty()) continue
+        for (ctx in (byContext.keys + hiddenByContext.keys)) {
             val ctxObj = JSONObject()
-            for ((el, ov) in elements) {
+            byContext[ctx]?.forEach { (el, ov) ->
                 ctxObj.put(
                     el.key,
                     JSONObject()
@@ -91,21 +112,28 @@ data class PhoneOverlayLayout(
                         .put("scale", ov.scale.toDouble()),
                 )
             }
-            root.put(ctx.key, ctxObj)
+            hiddenByContext[ctx]?.takeIf { it.isNotEmpty() }?.let { hidden ->
+                ctxObj.put("_hidden", JSONArray(hidden.map { it.key }))
+            }
+            if (ctxObj.length() > 0) root.put(ctx.key, ctxObj)
         }
         return root.toString()
     }
 
     companion object {
+        private const val HIDDEN_KEY = "_hidden"
+
         fun fromJson(raw: String?): PhoneOverlayLayout {
             if (raw.isNullOrBlank()) return PhoneOverlayLayout()
             return runCatching {
                 val root = JSONObject(raw)
                 val byContext = HashMap<PhoneOverlayContext, Map<PhoneOverlayElement, LayoutOverride>>()
+                val hiddenByContext = HashMap<PhoneOverlayContext, Set<PhoneOverlayElement>>()
                 for (ctx in PhoneOverlayContext.entries) {
                     val ctxObj = root.optJSONObject(ctx.key) ?: continue
                     val elements = HashMap<PhoneOverlayElement, LayoutOverride>()
                     for (key in ctxObj.keys()) {
+                        if (key == HIDDEN_KEY) continue
                         val el = PhoneOverlayElement.fromKey(key) ?: continue
                         val o = ctxObj.optJSONObject(key) ?: continue
                         elements[el] = LayoutOverride(
@@ -115,8 +143,16 @@ data class PhoneOverlayLayout(
                         )
                     }
                     if (elements.isNotEmpty()) byContext[ctx] = elements
+                    val hiddenArr = ctxObj.optJSONArray(HIDDEN_KEY)
+                    if (hiddenArr != null) {
+                        val hidden = HashSet<PhoneOverlayElement>()
+                        for (i in 0 until hiddenArr.length()) {
+                            PhoneOverlayElement.fromKey(hiddenArr.optString(i))?.let { hidden.add(it) }
+                        }
+                        if (hidden.isNotEmpty()) hiddenByContext[ctx] = hidden
+                    }
                 }
-                PhoneOverlayLayout(byContext)
+                PhoneOverlayLayout(byContext, hiddenByContext)
             }.getOrDefault(PhoneOverlayLayout())
         }
     }
@@ -136,13 +172,26 @@ data class OverlayEditScope(
      *  (the padded content box). */
     val parentPx: IntSize,
     val onChange: (PhoneOverlayElement, LayoutOverride) -> Unit,
+    /** Currently selected element (tapped in edit mode), or null. */
+    val selected: PhoneOverlayElement? = null,
+    val onSelect: (PhoneOverlayElement?) -> Unit = {},
 )
 
 /** Null when no editor is hosting — [Modifier.overlayElement] is then a no-op,
  *  so the same composables work unchanged outside an editable screen. */
 val LocalOverlayEdit = compositionLocalOf<OverlayEditScope?> { null }
 
-private val EditBorder = Color(0xCC7FE3FF)
+/** Whether [element] should be drawn — false once the user removes it (until
+ *  the layout is reset). True when no editor is hosting. The hosting screen
+ *  uses this to skip composing removed elements. */
+@Composable
+fun overlayElementVisible(element: PhoneOverlayElement): Boolean {
+    val scope = LocalOverlayEdit.current ?: return true
+    return !scope.layout.isHidden(scope.context, element)
+}
+
+private val EditBorder = Color(0x99FFFFFF)
+private val SelectBorder = Color(0xFF7FE3FF)
 
 /**
  * Tag a composable as a positionable overlay element. Applies its saved
@@ -166,10 +215,19 @@ fun Modifier.overlayElement(element: PhoneOverlayElement): Modifier = composed {
         scaleY = override.scale
     }
     if (scope.editing) {
+        val selected = scope.selected == element
         m = m
-            .border(1.5.dp, EditBorder, RoundedCornerShape(10.dp))
+            .border(
+                if (selected) 2.5.dp else 1.5.dp,
+                if (selected) SelectBorder else EditBorder,
+                RoundedCornerShape(10.dp),
+            )
+            .pointerInput(element) {
+                detectTapGestures { scope.onSelect(element) }
+            }
             .pointerInput(element, w, h) {
                 detectTransformGestures { _, pan, zoom, _ ->
+                    scope.onSelect(element)
                     val o = live.value
                     scope.onChange(
                         element,

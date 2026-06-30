@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Refresh
@@ -67,6 +68,8 @@ import be.appmire.gpsinfo.ui.overlay.OverlayEditScope
 import be.appmire.gpsinfo.ui.overlay.PhoneOverlayContext
 import be.appmire.gpsinfo.ui.overlay.PhoneOverlayElement
 import be.appmire.gpsinfo.ui.overlay.overlayElement
+import be.appmire.gpsinfo.ui.overlay.overlayElementVisible
+import be.appmire.gpsinfo.ui.overlay.removable
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import be.appmire.gpsinfo.util.UnitConverter
 import be.appmire.gpsinfo.util.speedUnitLabel
@@ -149,6 +152,7 @@ fun NavScreen(
     val persistedLayout by vm.phoneOverlayLayout.collectAsStateWithLifecycle()
     var editingLayout by remember { mutableStateOf(false) }
     var overlayParentPx by remember { mutableStateOf(IntSize.Zero) }
+    var selectedEl by remember { mutableStateOf<PhoneOverlayElement?>(null) }
     var workingLayout by remember { mutableStateOf(persistedLayout) }
     LaunchedEffect(persistedLayout) { if (!editingLayout) workingLayout = persistedLayout }
 
@@ -188,6 +192,8 @@ fun NavScreen(
                     layout = workingLayout,
                     parentPx = overlayParentPx,
                     onChange = { el, ov -> workingLayout = workingLayout.with(overlayCtx, el, ov) },
+                    selected = selectedEl,
+                    onSelect = { selectedEl = it },
                 )
                 CompositionLocalProvider(LocalOverlayEdit provides editScope) {
                     if (isLandscape) {
@@ -200,10 +206,15 @@ fun NavScreen(
                 // the editable set (no overlayElement tag).
                 NavEditControls(
                     editing = editingLayout,
+                    canRemove = selectedEl?.removable == true,
                     modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp),
-                    onReset = { workingLayout = workingLayout.cleared(overlayCtx) },
+                    onRemove = {
+                        selectedEl?.let { workingLayout = workingLayout.hide(overlayCtx, it); selectedEl = null }
+                    },
+                    onReset = { workingLayout = workingLayout.cleared(overlayCtx); selectedEl = null },
                     onToggle = {
                         if (editingLayout) vm.savePhoneOverlayLayout(workingLayout)
+                        selectedEl = null
                         editingLayout = !editingLayout
                     },
                 )
@@ -263,7 +274,9 @@ private fun NavLandscape(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             ManeuverCard(n, unit, Modifier.fillMaxWidth().overlayElement(PhoneOverlayElement.MANEUVER))
-            LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp).overlayElement(PhoneOverlayElement.LANES))
+            if (overlayElementVisible(PhoneOverlayElement.LANES)) {
+                LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp).overlayElement(PhoneOverlayElement.LANES))
+            }
             Spacer(Modifier.weight(1f))
             EtaCard(n, unit, Modifier.fillMaxWidth().overlayElement(PhoneOverlayElement.ETA))
         }
@@ -281,8 +294,8 @@ private fun NavLandscape(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             RecenterButton(onRecenter)
-            // Cockpit shows the speed itself, so drop the plain badge then.
-            if (cluster == null) {
+            // The cluster shows the speed itself, so drop the plain badge then.
+            if (cluster == null && overlayElementVisible(PhoneOverlayElement.SPEED)) {
                 SpeedAndLimit(loc, unit, n.speedLimitKmh, Modifier.overlayElement(PhoneOverlayElement.SPEED))
             }
         }
@@ -311,11 +324,13 @@ private fun NavPortrait(
                 Spacer(Modifier.width(8.dp))
                 ExitButton(onExit = onExit)
             }
-            LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp).overlayElement(PhoneOverlayElement.LANES))
+            if (overlayElementVisible(PhoneOverlayElement.LANES)) {
+                LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp).overlayElement(PhoneOverlayElement.LANES))
+            }
         }
         if (cluster != null) {
             cluster.invoke(this)
-        } else {
+        } else if (overlayElementVisible(PhoneOverlayElement.SPEED)) {
             SpeedAndLimit(
                 loc, unit, n.speedLimitKmh,
                 Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp)
@@ -484,7 +499,9 @@ private fun SpeedAndLimit(
 @Composable
 private fun NavEditControls(
     editing: Boolean,
+    canRemove: Boolean,
     modifier: Modifier,
+    onRemove: () -> Unit,
     onReset: () -> Unit,
     onToggle: () -> Unit,
 ) {
@@ -494,6 +511,19 @@ private fun NavEditControls(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            if (editing && canRemove) {
+                FloatingActionButton(
+                    onClick = onRemove,
+                    modifier = Modifier.size(48.dp),
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                ) {
+                    Icon(
+                        Icons.Outlined.Delete,
+                        contentDescription = stringResource(R.string.overlay_edit_remove),
+                    )
+                }
+            }
             if (editing) {
                 FloatingActionButton(
                     onClick = onReset,
