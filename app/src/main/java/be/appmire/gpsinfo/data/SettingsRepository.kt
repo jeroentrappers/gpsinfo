@@ -160,6 +160,11 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         /** JSON blob of per-state, per-element drag/scale overrides for the
          *  car surface; decoded by the car layer (CarOverlayLayout). */
         val CarOverlayLayout = stringPreferencesKey("car_overlay_layout")
+        /** JSON blob of per-context (surface × orientation), per-element
+         *  drag/scale overrides for the PHONE overlays (nav screen + cluster
+         *  screen); decoded by the UI layer (PhoneOverlayLayout). Separate
+         *  from the car layout — the phone geometry is unrelated. */
+        val PhoneOverlayLayout = stringPreferencesKey("phone_overlay_layout")
 
         // ── Spoken turn-by-turn guidance ────────────────────────────
         /** Master on/off for spoken navigation instructions (the nav
@@ -496,6 +501,15 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setCarOverlayLayoutJson(value: String) {
         context.dataStore.edit { it[Keys.CarOverlayLayout] = value }
+    }
+
+    /** Raw JSON of the phone overlay drag/scale layout; decoded by the UI
+     *  layer's PhoneOverlayLayout. Null until the user customises a layout. */
+    val phoneOverlayLayoutJson: Flow<String?> = context.dataStore.data
+        .map { it[Keys.PhoneOverlayLayout] }
+
+    suspend fun setPhoneOverlayLayoutJson(value: String) {
+        context.dataStore.edit { it[Keys.PhoneOverlayLayout] = value }
     }
 
     // ---------- Spoken turn-by-turn guidance ----------

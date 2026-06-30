@@ -118,6 +118,10 @@
 
     <!-- Speed screen -->
     <string name="screen_cluster">Instrumentencluster</string>
+    <string name="overlay_edit_layout">Indeling bewerken</string>
+    <string name="overlay_edit_done">Klaar</string>
+    <string name="overlay_edit_reset">Indeling resetten</string>
+    <string name="overlay_edit_hint">Sleep om te verplaatsen · knijp om te schalen</string>
     <string name="screen_speed">Snelheid</string>
     <string name="screen_speed_hud">Snelheid · HUD</string>
     <string name="hud_toggle_on">HUD-modus aan — tik om uit te schakelen</string>

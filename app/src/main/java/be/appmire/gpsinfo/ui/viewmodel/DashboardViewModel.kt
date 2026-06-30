@@ -38,6 +38,7 @@ import be.appmire.gpsinfo.data.model.NavigationTarget
 import be.appmire.gpsinfo.data.model.SunInfo
 import be.appmire.gpsinfo.data.model.withTargetPace
 import be.appmire.gpsinfo.data.sun.SunPositionCalculator
+import be.appmire.gpsinfo.ui.overlay.PhoneOverlayLayout
 import be.appmire.gpsinfo.util.NavigationMath
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -932,6 +933,19 @@ class DashboardViewModel(
             clock = clusterClockFmt.format(java.util.Date()),
             obd = false,
         )
+    }
+
+    /** Drag/scale layout overrides for the phone overlays (nav + cluster
+     *  screens), decoded from the persisted JSON. */
+    val phoneOverlayLayout: StateFlow<PhoneOverlayLayout> =
+        ((settings as? SettingsRepository)?.phoneOverlayLayoutJson
+            ?: kotlinx.coroutines.flow.flowOf(null))
+            .map { PhoneOverlayLayout.fromJson(it) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PhoneOverlayLayout())
+
+    fun savePhoneOverlayLayout(layout: PhoneOverlayLayout) {
+        val repo = settings as? SettingsRepository ?: return
+        viewModelScope.launch { repo.setPhoneOverlayLayoutJson(layout.toJson()) }
     }
 
     /** Live list of saved trails for the trails list screen. */

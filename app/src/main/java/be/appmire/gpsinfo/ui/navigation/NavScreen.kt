@@ -20,8 +20,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.VolumeOff
 import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.Button
@@ -32,6 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -42,7 +46,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,6 +63,11 @@ import be.appmire.gpsinfo.data.nav.TurnCommand
 import be.appmire.gpsinfo.ui.cluster.ClusterMode
 import be.appmire.gpsinfo.ui.cluster.GaugeCluster
 import be.appmire.gpsinfo.ui.livemap.MapLibreMapHost
+import be.appmire.gpsinfo.ui.overlay.LocalOverlayEdit
+import be.appmire.gpsinfo.ui.overlay.OverlayEditScope
+import be.appmire.gpsinfo.ui.overlay.PhoneOverlayContext
+import be.appmire.gpsinfo.ui.overlay.PhoneOverlayElement
+import be.appmire.gpsinfo.ui.overlay.overlayElement
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import be.appmire.gpsinfo.util.UnitConverter
 import be.appmire.gpsinfo.util.speedUnitLabel
@@ -132,6 +143,16 @@ fun NavScreen(
     val isLandscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
         Configuration.ORIENTATION_LANDSCAPE
 
+    // Drag/pinch layout editing (the phone analogue of the car edit mode).
+    // The working copy is edited live and saved on leaving edit mode; the
+    // saved overrides apply in normal use too. Kept per orientation.
+    val overlayCtx = if (isLandscape) PhoneOverlayContext.NAV_LANDSCAPE else PhoneOverlayContext.NAV_PORTRAIT
+    val persistedLayout by vm.phoneOverlayLayout.collectAsStateWithLifecycle()
+    var editingLayout by remember { mutableStateOf(false) }
+    var overlayParentPx by remember { mutableStateOf(IntSize.Zero) }
+    var workingLayout by remember { mutableStateOf(persistedLayout) }
+    LaunchedEffect(persistedLayout) { if (!editingLayout) workingLayout = persistedLayout }
+
     Box(Modifier.fillMaxSize()) {
         MapLibreMapHost(
             loc = loc,
@@ -150,6 +171,7 @@ fun NavScreen(
         )
 
         val content = Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp)
+            .onSizeChanged { overlayParentPx = it }
         when (val ns = navState) {
             is NavigationController.NavState.Navigating -> {
                 val onToggleVoice = { vm.setVoiceGuidanceEnabled(!voiceOn) }
@@ -162,7 +184,9 @@ fun NavScreen(
                         if (isLandscape) {
                             {
                                 NavClusterOverlay(
-                                    vm, compassOn, Modifier.fillMaxSize(), ClusterMode.COCKPIT,
+                                    vm, compassOn,
+                                    Modifier.fillMaxSize().overlayElement(PhoneOverlayElement.CLUSTER),
+                                    ClusterMode.COCKPIT,
                                     cockpitArea = { w, h -> android.graphics.RectF(0f, h * 0.30f, w, h * 0.74f) },
                                 )
                             }
@@ -170,19 +194,40 @@ fun NavScreen(
                             {
                                 NavClusterOverlay(
                                     vm, compassOn,
-                                    Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp).size(168.dp),
+                                    Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp).size(168.dp)
+                                        .overlayElement(PhoneOverlayElement.CLUSTER),
                                     ClusterMode.INTEGRATED,
                                 )
                             }
                         }
                     } else null
-                if (isLandscape) {
-                    NavLandscape(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice, clusterUi) { exit(onExit) }
-                } else {
-                    NavPortrait(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice, clusterUi) { exit(onExit) }
+                val editScope = OverlayEditScope(
+                    editing = editingLayout,
+                    context = overlayCtx,
+                    layout = workingLayout,
+                    parentPx = overlayParentPx,
+                    onChange = { el, ov -> workingLayout = workingLayout.with(overlayCtx, el, ov) },
+                )
+                CompositionLocalProvider(LocalOverlayEdit provides editScope) {
+                    if (isLandscape) {
+                        NavLandscape(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice, clusterUi) { exit(onExit) }
+                    } else {
+                        NavPortrait(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice, clusterUi) { exit(onExit) }
+                    }
                 }
+                // Edit-layout controls sit above everything and aren't part of
+                // the editable set (no overlayElement tag).
+                NavEditControls(
+                    editing = editingLayout,
+                    modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp),
+                    onReset = { workingLayout = workingLayout.cleared(overlayCtx) },
+                    onToggle = {
+                        if (editingLayout) vm.savePhoneOverlayLayout(workingLayout)
+                        editingLayout = !editingLayout
+                    },
+                )
                 val topAlt = ns.alternatives.firstOrNull()
-                if (topAlt != null && altKey(topAlt) != dismissedAltKey) {
+                if (topAlt != null && altKey(topAlt) != dismissedAltKey && !editingLayout) {
                     AlternativeCard(
                         alt = topAlt, unit = unit, modifier = content,
                         onTake = { NavigationController.acceptAlternative(topAlt) },
@@ -236,10 +281,10 @@ private fun NavLandscape(
                 .align(Alignment.TopStart),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            ManeuverCard(n, unit, Modifier.fillMaxWidth())
-            LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp))
+            ManeuverCard(n, unit, Modifier.fillMaxWidth().overlayElement(PhoneOverlayElement.MANEUVER))
+            LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp).overlayElement(PhoneOverlayElement.LANES))
             Spacer(Modifier.weight(1f))
-            EtaCard(n, unit, Modifier.fillMaxWidth())
+            EtaCard(n, unit, Modifier.fillMaxWidth().overlayElement(PhoneOverlayElement.ETA))
         }
         // Right edge controls + live readouts.
         Row(
@@ -256,7 +301,9 @@ private fun NavLandscape(
         ) {
             RecenterButton(onRecenter)
             // Cockpit shows the speed itself, so drop the plain badge then.
-            if (cluster == null) SpeedAndLimit(loc, unit, n.speedLimitKmh)
+            if (cluster == null) {
+                SpeedAndLimit(loc, unit, n.speedLimitKmh, Modifier.overlayElement(PhoneOverlayElement.SPEED))
+            }
         }
     }
 }
@@ -279,18 +326,19 @@ private fun NavPortrait(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                ManeuverCard(n, unit, Modifier.weight(1f))
+                ManeuverCard(n, unit, Modifier.weight(1f).overlayElement(PhoneOverlayElement.MANEUVER))
                 Spacer(Modifier.width(8.dp))
                 ExitButton(onExit = onExit)
             }
-            LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp))
+            LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp).overlayElement(PhoneOverlayElement.LANES))
         }
         if (cluster != null) {
             cluster.invoke(this)
         } else {
             SpeedAndLimit(
                 loc, unit, n.speedLimitKmh,
-                Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp),
+                Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp)
+                    .overlayElement(PhoneOverlayElement.SPEED),
             )
         }
         Column(
@@ -301,7 +349,10 @@ private fun NavPortrait(
             MuteButton(voiceOn, onToggleVoice)
             RecenterButton(onRecenter)
         }
-        EtaCard(n, unit, Modifier.align(Alignment.BottomCenter).fillMaxWidth())
+        EtaCard(
+            n, unit,
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().overlayElement(PhoneOverlayElement.ETA),
+        )
     }
 }
 
@@ -440,6 +491,69 @@ private fun SpeedAndLimit(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 3.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Edit-layout controls overlaid on the nav screen: a pencil/check toggle
+ *  (mid-right), a reset button while editing, and a one-line hint. Not part
+ *  of the editable element set. */
+@Composable
+private fun NavEditControls(
+    editing: Boolean,
+    modifier: Modifier,
+    onReset: () -> Unit,
+    onToggle: () -> Unit,
+) {
+    Box(modifier) {
+        Column(
+            modifier = Modifier.align(Alignment.CenterEnd),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            if (editing) {
+                FloatingActionButton(
+                    onClick = onReset,
+                    modifier = Modifier.size(48.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ) {
+                    Icon(
+                        Icons.Outlined.Refresh,
+                        contentDescription = stringResource(R.string.overlay_edit_reset),
+                    )
+                }
+            }
+            FloatingActionButton(
+                onClick = onToggle,
+                modifier = Modifier.size(52.dp),
+                containerColor = if (editing) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surface,
+                contentColor = if (editing) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.primary,
+            ) {
+                Icon(
+                    if (editing) Icons.Outlined.Check else Icons.Outlined.Edit,
+                    contentDescription = stringResource(
+                        if (editing) R.string.overlay_edit_done else R.string.overlay_edit_layout,
+                    ),
+                )
+            }
+        }
+        if (editing) {
+            Surface(
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 92.dp),
+                color = MaterialTheme.colorScheme.inverseSurface,
+                shape = RoundedCornerShape(50),
+                tonalElevation = 3.dp,
+            ) {
+                Text(
+                    stringResource(R.string.overlay_edit_hint),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                    style = MaterialTheme.typography.labelMedium,
                 )
             }
         }

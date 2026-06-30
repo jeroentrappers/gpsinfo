@@ -141,6 +141,12 @@
     <!-- Instrument cluster screen -->
     <string name="screen_cluster">Instrument cluster</string>
 
+    <!-- Overlay layout editing (phone nav + cluster) -->
+    <string name="overlay_edit_layout">Edit layout</string>
+    <string name="overlay_edit_done">Done</string>
+    <string name="overlay_edit_reset">Reset layout</string>
+    <string name="overlay_edit_hint">Drag to move · pinch to resize</string>
+
     <!-- Speed screen -->
     <string name="screen_speed">Speed</string>
     <string name="screen_speed_hud">Speed · HUD</string>
