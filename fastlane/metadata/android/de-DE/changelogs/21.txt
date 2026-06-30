@@ -1,0 +1,3 @@
+• Das Kombiinstrument besteht jetzt aus einzelnen Anzeigen — Tempo, Energie und Kompass/G — die sich unabhängig verschieben und skalieren lassen.
+• Layout bearbeiten: Anzeige antippen zum Auswählen, ziehen zum Verschieben, zoomen zum Skalieren.
+• Eine nicht benötigte Anzeige entfernen oder das Layout auf Standard zurücksetzen.

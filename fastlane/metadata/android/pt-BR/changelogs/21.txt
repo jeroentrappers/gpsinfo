@@ -1,0 +1,3 @@
+• O painel de instrumentos agora são medidores separados — velocidade, energia e bússola/G — que você pode mover e redimensionar de forma independente.
+• Editar layout: toque em um medidor para selecioná-lo, arraste para mover, pince para redimensionar.
+• Remova um medidor que não quer ou redefina o layout para o padrão.

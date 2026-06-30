@@ -1,0 +1,3 @@
+• Le combiné d'instruments est désormais composé de jauges séparées — vitesse, énergie et boussole/G — que vous pouvez déplacer et redimensionner indépendamment.
+• Modifier la disposition : touchez une jauge pour la sélectionner, glissez pour la déplacer, pincez pour la redimensionner.
+• Supprimez une jauge inutile, ou réinitialisez la disposition par défaut.

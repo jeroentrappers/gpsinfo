@@ -1,0 +1,3 @@
+• Přístrojový panel nyní tvoří samostatné ukazatele — rychlost, energie a kompas/G — které lze nezávisle přesouvat a měnit jejich velikost.
+• Úprava rozvržení: klepnutím ukazatel vyberete, tažením přesunete, sevřením změníte velikost.
+• Nepotřebný ukazatel odeberte nebo rozvržení obnovte na výchozí.

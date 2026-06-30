@@ -1,0 +1,3 @@
+• Gösterge paneli artık ayrı göstergelerden oluşuyor — hız, enerji ve pusula/G — bunları bağımsız olarak taşıyıp boyutlandırabilirsiniz.
+• Düzeni düzenle: seçmek için bir göstergeye dokunun, taşımak için sürükleyin, boyutlandırmak için sıkıştırın.
+• İstemediğiniz bir göstergeyi kaldırın veya düzeni varsayılana sıfırlayın.

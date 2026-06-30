@@ -1,0 +1,3 @@
+• El cuadro de instrumentos ahora son indicadores separados — velocidad, energía y brújula/G — que puedes mover y escalar de forma independiente.
+• Editar diseño: toca un indicador para seleccionarlo, arrastra para moverlo, pellizca para cambiar su tamaño.
+• Elimina un indicador que no quieras o restablece el diseño predeterminado.

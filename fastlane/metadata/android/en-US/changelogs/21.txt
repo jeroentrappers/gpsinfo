@@ -1,0 +1,3 @@
+• The instrument cluster is now separate gauges — speed, energy and compass/G — that you can move and scale independently.
+• Edit layout: tap a gauge to select it, drag to move, pinch to resize.
+• Remove a gauge you don't want, or reset the layout back to defaults.

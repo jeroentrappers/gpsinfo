@@ -1,0 +1,3 @@
+• Il quadro strumenti ora è composto da indicatori separati — velocità, energia e bussola/G — che puoi spostare e ridimensionare in modo indipendente.
+• Modifica layout: tocca un indicatore per selezionarlo, trascina per spostarlo, pizzica per ridimensionarlo.
+• Rimuovi un indicatore che non vuoi o ripristina il layout predefinito.

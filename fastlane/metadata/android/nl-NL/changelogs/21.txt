@@ -1,0 +1,3 @@
+• De instrumentencluster bestaat nu uit losse meters — snelheid, energie en kompas/G — die je apart kunt verplaatsen en schalen.
+• Indeling bewerken: tik op een meter om te selecteren, sleep om te verplaatsen, knijp om te schalen.
+• Verwijder een meter die je niet wilt, of zet de indeling terug naar standaard.

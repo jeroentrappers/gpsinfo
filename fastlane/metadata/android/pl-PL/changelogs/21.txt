@@ -1,0 +1,3 @@
+• Zestaw wskaźników to teraz osobne wskaźniki — prędkość, energia i kompas/G — które możesz niezależnie przesuwać i skalować.
+• Edycja układu: dotknij wskaźnika, aby go zaznaczyć, przeciągnij, aby przesunąć, ściśnij, aby zmienić rozmiar.
+• Usuń niepotrzebny wskaźnik lub przywróć układ domyślny.
