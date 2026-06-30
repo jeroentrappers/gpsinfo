@@ -1,0 +1,3 @@
+• Il quadro strumenti ora funziona anche sul telefono: a schermo intero in Strumenti › Quadro strumenti e come overlay opzionale nella schermata di navigazione.
+• HUD cockpit sui bordi in orizzontale, indicatore singolo in verticale.
+• Modifica layout: trascina e pizzica ogni elemento (quadro, velocità, manovra, arrivo) per spostarlo e ridimensionarlo; salvato per orientamento.

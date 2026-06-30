@@ -1,0 +1,3 @@
+• Le combiné d'instruments fonctionne aussi sur le téléphone : plein écran dans Outils › Combiné d'instruments, et en superposition optionnelle sur l'écran de navigation.
+• HUD cockpit sur les bords en paysage, jauge unique en portrait.
+• Modifier la disposition : glissez et pincez chaque élément (combiné, vitesse, manœuvre, arrivée) pour le déplacer et le redimensionner ; enregistré par orientation.

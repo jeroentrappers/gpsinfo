@@ -1,0 +1,3 @@
+• De instrumentencluster werkt nu ook op de telefoon: schermvullend via Extra › Instrumentencluster, en als optionele overlay op het navigatiescherm.
+• Cockpit-rand-HUD liggend, enkele meter staand.
+• Indeling bewerken: sleep en knijp elk element (cluster, snelheid, manoeuvre, ETA) om te verplaatsen en schalen; opgeslagen per oriëntatie.

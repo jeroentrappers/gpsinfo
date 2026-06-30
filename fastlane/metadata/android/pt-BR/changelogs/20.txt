@@ -1,0 +1,3 @@
+• O painel de instrumentos agora também funciona no telefone: em tela cheia em Ferramentas › Painel de instrumentos e como sobreposição opcional na tela de navegação.
+• HUD de cockpit nas bordas no modo paisagem, medidor único no modo retrato.
+• Editar layout: arraste e pince cada elemento (painel, velocidade, manobra, chegada) para mover e redimensionar; salvo por orientação.

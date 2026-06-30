@@ -61,8 +61,8 @@ android {
         applicationId = "be.appmire.gpsinfo"
         minSdk = 24
         targetSdk = 37
-        versionCode = 19
-        versionName = "2.6.0"
+        versionCode = 20
+        versionName = "2.7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // minSdk 24 has reliable native VectorDrawable support — no support library needed.
 

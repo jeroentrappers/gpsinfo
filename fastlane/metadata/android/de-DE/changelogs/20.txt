@@ -1,0 +1,3 @@
+• Das Kombiinstrument läuft jetzt auch am Telefon: Vollbild unter Extras › Kombiinstrument und als optionales Overlay im Navigationsbildschirm.
+• Cockpit-Rand-HUD im Querformat, Einzelanzeige im Hochformat.
+• Layout bearbeiten: jedes Element (Cluster, Tempo, Abbiegung, ETA) ziehen und zoomen zum Verschieben und Skalieren; pro Ausrichtung gespeichert.

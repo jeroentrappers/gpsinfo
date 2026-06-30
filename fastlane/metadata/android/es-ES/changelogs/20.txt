@@ -1,0 +1,3 @@
+• El cuadro de instrumentos también funciona en el teléfono: pantalla completa en Herramientas › Cuadro de instrumentos, y como superposición opcional en la pantalla de navegación.
+• HUD de cabina en los bordes en horizontal, indicador único en vertical.
+• Editar diseño: arrastra y pellizca cada elemento (cuadro, velocidad, maniobra, llegada) para moverlo y cambiar su tamaño; guardado por orientación.

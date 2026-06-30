@@ -1,0 +1,3 @@
+• Zestaw wskaźników działa teraz także na telefonie: pełnoekranowo w Narzędzia › Zestaw wskaźników oraz jako opcjonalna nakładka na ekranie nawigacji.
+• HUD kokpitu przy krawędziach w poziomie, pojedynczy wskaźnik w pionie.
+• Edycja układu: przeciągaj i ściągaj każdy element (zestaw, prędkość, manewr, przyjazd), aby przesuwać i skalować; zapisywane dla każdej orientacji.

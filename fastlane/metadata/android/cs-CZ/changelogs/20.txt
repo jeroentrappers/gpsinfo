@@ -1,0 +1,3 @@
+• Přístrojový panel nyní funguje i v telefonu: na celou obrazovku v Nástroje › Přístrojový panel a jako volitelná vrstva na navigační obrazovce.
+• Kokpitový HUD u okrajů na šířku, jeden ukazatel na výšku.
+• Úprava rozvržení: tažením a sevřením přesuňte a změňte velikost každého prvku (panel, rychlost, manévr, příjezd); uloženo podle orientace.

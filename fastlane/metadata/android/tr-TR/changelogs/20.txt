@@ -1,0 +1,3 @@
+• Gösterge paneli artık telefonda da çalışıyor: Araçlar › Gösterge paneli altında tam ekran ve navigasyon ekranında isteğe bağlı katman olarak.
+• Yatayda kenarlarda kokpit HUD, dikeyde tek gösterge.
+• Düzeni düzenle: her öğeyi (gösterge, hız, manevra, varış) sürükleyip sıkıştırarak taşıyın ve yeniden boyutlandırın; yöne göre kaydedilir.

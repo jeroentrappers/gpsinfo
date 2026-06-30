@@ -1,0 +1,3 @@
+• The instrument cluster now runs on the phone too: full-screen under Tools › Instrument cluster, and as an opt-in overlay on the navigation screen.
+• Cockpit edge-HUD in landscape, single gauge in portrait.
+• Edit layout: drag and pinch each element (cluster, speed, maneuver, ETA) to reposition and resize; saved per orientation.
