@@ -77,11 +77,20 @@ object ObdLiveController {
     @Volatile
     private var resumeRequested = false
 
+    /** The mapping that last actually produced data. Reconnects prefer it, so
+     *  if the configured profile stops delivering we fall back to the last one
+     *  that worked rather than re-trying a dead profile. */
+    @Volatile
+    private var lastGoodMapping: ObdMapping? = null
+    private var repo: ObdMappingRepository? = null
+
     fun start(context: Context, address: String, mapping: ObdMapping) {
         if (running) stop()
         running = true
         resumeRequested = false
+        lastGoodMapping = null
         val appContext = context.applicationContext
+        repo = ObdMappingRepository(appContext)
         job = scope.launch {
             // Continuous reconnection loop. ELM/Bluetooth links are flaky —
             // the adapter browns out, the socket drops, the car sleeps a bus.
@@ -93,7 +102,10 @@ object ObdLiveController {
             var firstFailureAtMs = 0L
             var backoffMs = INITIAL_BACKOFF_MS
             while (isActive && running) {
-                val connectedAtLeastOnce = runSession(appContext, address, mapping)
+                // Reconnect with the last profile that actually delivered data;
+                // until one does, use the configured mapping.
+                val useMapping = lastGoodMapping ?: mapping
+                val connectedAtLeastOnce = runSession(appContext, address, useMapping)
                 if (!isActive || !running) break
 
                 if (connectedAtLeastOnce) {
@@ -180,12 +192,27 @@ object ObdLiveController {
             var cycle = 0L
             var rr = 0
             var lastPublish = System.currentTimeMillis()
+            // No-data watchdog: a link can be up while the car answers nothing
+            // useful (asleep bus, wrong profile, adapter wedged). If no mapped
+            // role yields a value for NODATA_TIMEOUT_MS, end the session so the
+            // outer loop disconnects and reconnects. Keyed on ANY role, so a
+            // working profile that just lacks one sensor (e.g. VW_MEB with no
+            // ambient temp) is never recycled for that alone.
+            var lastDataMs = nowMs()
             while (currentCoroutineContext().isActive && running) {
                 // Per-cycle response cache: roles that share one request
                 // (e.g. Hyundai voltage+current+temp all from 220101)
                 // trigger a single ELM read, decoded per role.
                 val cache = HashMap<String, IntArray?>()
-                for ((role, request) in fast) acc[role] = pollSingle(mgr, role, request, cache)
+                // Track values read THIS cycle (not the retained acc): a car
+                // that goes to sleep keeps stale acc values, so freshness, not
+                // presence, is what tells us the link is still delivering.
+                var fresh = false
+                for ((role, request) in fast) {
+                    val v = pollSingle(mgr, role, request, cache)
+                    acc[role] = v
+                    if (v != null) fresh = true
+                }
                 if (derivePower) {
                     val v = acc[ObdRole.HV_VOLTAGE]
                     val i = acc[ObdRole.HV_CURRENT]
@@ -194,12 +221,25 @@ object ObdLiveController {
                     if (v != null && i != null) acc[ObdRole.POWER_KW] = -(v * i) / 1000.0
                 }
                 if (slowUnits.isNotEmpty() && cycle % SLOW_EVERY == 0L) {
-                    slowUnits[rr % slowUnits.size](mgr, cache).forEach { (r, v) -> acc[r] = v }
+                    val read = slowUnits[rr % slowUnits.size](mgr, cache)
+                    read.forEach { (r, v) -> acc[r] = v }
+                    if (read.values.any { it != null }) fresh = true
                     rr++
                 }
                 // A dropped socket reads as not-connected — bail so the outer
                 // loop reconnects instead of spinning on a dead link.
                 if (!conn.isConnected) break
+                // Watchdog: fresh data keeps the link; a live-but-silent link
+                // (no fresh value for NODATA_TIMEOUT_MS) is recycled.
+                if (fresh) {
+                    lastDataMs = nowMs()
+                    if (lastGoodMapping !== mapping) {
+                        lastGoodMapping = mapping
+                        runCatching { repo?.saveActive(mapping, address) }
+                    }
+                } else if (nowMs() - lastDataMs >= NODATA_TIMEOUT_MS) {
+                    break
+                }
                 val now = System.currentTimeMillis()
                 _state.value = ObdLiveData(
                     connected = true,
@@ -280,6 +320,10 @@ object ObdLiveController {
     /** A slow unit ticks every [SLOW_EVERY] cycles; the cycle delay itself
      *  is adaptive (see [ObdLoadMonitor]). */
     private const val SLOW_EVERY = 10L
+
+    /** Connected but no usable data for this long → recycle the link
+     *  (disconnect + reconnect with the last known good profile). */
+    private const val NODATA_TIMEOUT_MS = 12_000L
 
     /** Reconnect backoff: first retry quick, doubling up to the cap. */
     private const val INITIAL_BACKOFF_MS = 2_000L
