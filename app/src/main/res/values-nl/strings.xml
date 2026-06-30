@@ -117,6 +117,7 @@
     <string name="screen_compass">Kompas</string>
 
     <!-- Speed screen -->
+    <string name="screen_cluster">Instrumentencluster</string>
     <string name="screen_speed">Snelheid</string>
     <string name="screen_speed_hud">Snelheid · HUD</string>
     <string name="hud_toggle_on">HUD-modus aan — tik om uit te schakelen</string>

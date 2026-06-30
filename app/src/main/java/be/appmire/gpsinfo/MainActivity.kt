@@ -97,6 +97,7 @@ private object Routes {
     const val GForce = "gforce"
     const val ObdLab = "obd-lab"
     const val VoiceGuidance = "voice-guidance"
+    const val Cluster = "cluster"
     const val Tools = "tools"
 }
 
@@ -384,6 +385,12 @@ class MainActivity : ComponentActivity() {
                                 onBack = { nav.popBackStack() },
                             )
                         }
+                        composable(Routes.Cluster) {
+                            be.appmire.gpsinfo.ui.cluster.ClusterScreen(
+                                vm = vm,
+                                onBack = { nav.popBackStack() },
+                            )
+                        }
                         composable(Routes.HrPair) {
                             HeartRatePairingScreen(
                                 vm = vm,
@@ -497,6 +504,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenObdLab = { nav.navigate(Routes.ObdLab) },
                                 onOpenGhost = { nav.navigate(Routes.Ghost) },
                                 onOpenNavigate = { nav.navigate(Routes.NavPicker) },
+                                onOpenCluster = { nav.navigate(Routes.Cluster) },
                                 onOpenSettings = { nav.navigate(Routes.About) },
                             )
                         }

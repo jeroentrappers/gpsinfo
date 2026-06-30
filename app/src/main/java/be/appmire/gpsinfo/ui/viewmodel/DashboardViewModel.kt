@@ -11,8 +11,11 @@ import android.content.Context
 import be.appmire.gpsinfo.data.AudibleCueManager
 import be.appmire.gpsinfo.data.DashboardDensity
 import be.appmire.gpsinfo.data.CyclingPowerRepository
+import be.appmire.gpsinfo.car.ClusterData
 import be.appmire.gpsinfo.data.HeartRateRepository
 import be.appmire.gpsinfo.data.model.CyclingPowerState
+import be.appmire.gpsinfo.data.nav.NavigationController
+import be.appmire.gpsinfo.data.nav.SpeedLimitProvider
 import be.appmire.gpsinfo.data.LocationDataSource
 import be.appmire.gpsinfo.data.LocationRepository
 import be.appmire.gpsinfo.data.RecordingState
@@ -53,6 +56,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
 import kotlin.math.ceil
 
 /**
@@ -860,6 +864,75 @@ class DashboardViewModel(
      *  wide controller so the FAB reflects what the background service
      *  is doing while the activity is paused. */
     val recordingState: StateFlow<RecordingState> = TrailRecordingController.state
+
+    // ---------- Instrument cluster (shared with Android Auto) ----------
+
+    /** Posted speed limit for the cluster: the active navigation limit while
+     *  navigating, else the always-on provider's best guess (may be null). */
+    private val clusterLimitFlow = combine(
+        NavigationController.state,
+        SpeedLimitProvider.limit,
+    ) { ns, sl ->
+        (ns as? NavigationController.NavState.Navigating)?.speedLimitKmh ?: sl
+    }
+
+    /** The same data the Android-Auto instrument cluster renders, assembled
+     *  for the phone so [be.appmire.gpsinfo.car.CarInstruments] can draw the
+     *  identical gauges on-device (cluster screen + nav overlay). There's no
+     *  OBD on the phone, so the power fields stay null and the power gauge is
+     *  omitted. ~30 Hz from the sensor flows, only while a surface subscribes. */
+    val clusterData: StateFlow<ClusterData> = combine(
+        gnssState, compass, gForce, recordingState, clusterLimitFlow,
+    ) { gnss, comp, gf, rec, limit ->
+        buildClusterData(gnss, comp, gf, rec, limit)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        ClusterData(
+            kmh = 0.0, hasSpeed = false, speedAccKmh = null,
+            kw = null, peakKw = null, consKwh100 = null, socPct = null, rangeKm = null,
+            headingDeg = 0f, hasHeading = false, latG = 0f, lonG = 0f,
+            speedLimitKmh = null, odometerKm = 0.0, ambientTempC = null, clock = "", obd = false,
+        ),
+    )
+
+    private val clusterClockFmt = SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+
+    private fun buildClusterData(
+        gnss: GnssSnapshot,
+        comp: CompassReading,
+        gf: be.appmire.gpsinfo.data.model.GForceSample,
+        rec: RecordingState,
+        limitKmh: Int?,
+    ): ClusterData {
+        val loc = gnss.location
+        val hasSpeed = loc?.hasSpeed() == true
+        val kmh = if (hasSpeed) loc!!.speed * 3.6 else 0.0
+        val accKmh = if (loc != null && hasSpeed &&
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
+            loc.hasSpeedAccuracy()
+        ) loc.speedAccuracyMetersPerSecond * 3.6f else null
+        // GPS course once genuinely moving (its Doppler bearing is stable
+        // then); the magnetic compass holds heading at a standstill.
+        val moving = hasSpeed && loc!!.hasBearing() && loc.speed > 1.5f
+        val heading = if (moving) loc!!.bearing else comp.magneticHeadingDeg
+        val odoKm = (rec as? RecordingState.Recording)?.distanceMetres?.div(1000.0) ?: 0.0
+        return ClusterData(
+            kmh = kmh,
+            hasSpeed = hasSpeed,
+            speedAccKmh = accKmh,
+            kw = null, peakKw = null, consKwh100 = null, socPct = null, rangeKm = null,
+            headingDeg = heading,
+            hasHeading = true,
+            latG = gf.lateralG,
+            lonG = gf.longitudinalG,
+            speedLimitKmh = limitKmh,
+            odometerKm = odoKm,
+            ambientTempC = null,
+            clock = clusterClockFmt.format(java.util.Date()),
+            obd = false,
+        )
+    }
 
     /** Live list of saved trails for the trails list screen. */
     val trails: StateFlow<List<TrailSummary>> = trailRepo.trails

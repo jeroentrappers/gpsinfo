@@ -54,6 +54,8 @@ import be.appmire.gpsinfo.data.UnitSystem
 import be.appmire.gpsinfo.data.nav.NavigationController
 import be.appmire.gpsinfo.data.nav.TrafficController
 import be.appmire.gpsinfo.data.nav.TurnCommand
+import be.appmire.gpsinfo.ui.cluster.ClusterMode
+import be.appmire.gpsinfo.ui.cluster.GaugeCluster
 import be.appmire.gpsinfo.ui.livemap.MapLibreMapHost
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import be.appmire.gpsinfo.util.UnitConverter
@@ -110,6 +112,15 @@ fun NavScreen(
     var dismissedAltKey by remember { mutableStateOf<String?>(null) }
     val voiceOn by vm.voiceGuidanceEnabled.collectAsStateWithLifecycle()
 
+    // Same instrument cluster as the Android Auto surface, opt-in via the
+    // shared overlay settings. When on, it replaces the plain speed badge
+    // (the cluster shows speed + limit itself); the compass/G-meter centre
+    // follows its own toggle. The ~30 Hz cluster data is collected inside
+    // NavClusterOverlay so only that subtree — not the whole map screen —
+    // recomposes with it.
+    val clusterOn by vm.carOverlayCluster.collectAsStateWithLifecycle()
+    val compassOn by vm.carOverlayCompass.collectAsStateWithLifecycle()
+
     // Live traffic: subscribe and keep the viewport on the active route.
     val traffic by TrafficController.incidents.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { TrafficController.start() }
@@ -142,10 +153,13 @@ fun NavScreen(
         when (val ns = navState) {
             is NavigationController.NavState.Navigating -> {
                 val onToggleVoice = { vm.setVoiceGuidanceEnabled(!voiceOn) }
+                val clusterUi: (@Composable (Modifier) -> Unit)? = if (clusterOn) {
+                    { m -> NavClusterOverlay(vm, compassOn, m) }
+                } else null
                 if (isLandscape) {
-                    NavLandscape(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice) { exit(onExit) }
+                    NavLandscape(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice, clusterUi) { exit(onExit) }
                 } else {
-                    NavPortrait(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice) { exit(onExit) }
+                    NavPortrait(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice, clusterUi) { exit(onExit) }
                 }
                 val topAlt = ns.alternatives.firstOrNull()
                 if (topAlt != null && altKey(topAlt) != dismissedAltKey) {
@@ -187,6 +201,7 @@ private fun NavLandscape(
     modifier: Modifier,
     onRecenter: () -> Unit,
     onToggleVoice: () -> Unit,
+    cluster: (@Composable (Modifier) -> Unit)?,
     onExit: () -> Unit,
 ) {
     Box(modifier) {
@@ -218,7 +233,8 @@ private fun NavLandscape(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             RecenterButton(onRecenter)
-            SpeedAndLimit(loc, unit, n.speedLimitKmh)
+            if (cluster != null) cluster(Modifier.size(200.dp))
+            else SpeedAndLimit(loc, unit, n.speedLimitKmh)
         }
     }
 }
@@ -232,6 +248,7 @@ private fun NavPortrait(
     modifier: Modifier,
     onRecenter: () -> Unit,
     onToggleVoice: () -> Unit,
+    cluster: (@Composable (Modifier) -> Unit)?,
     onExit: () -> Unit,
 ) {
     Box(modifier) {
@@ -246,10 +263,14 @@ private fun NavPortrait(
             }
             LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp))
         }
-        SpeedAndLimit(
-            loc, unit, n.speedLimitKmh,
-            Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp),
-        )
+        if (cluster != null) {
+            cluster(Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp).size(168.dp))
+        } else {
+            SpeedAndLimit(
+                loc, unit, n.speedLimitKmh,
+                Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp),
+            )
+        }
         Column(
             modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 84.dp),
             horizontalAlignment = Alignment.End,
@@ -401,6 +422,19 @@ private fun SpeedAndLimit(
             }
         }
     }
+}
+
+/** The Android-Auto instrument cluster (integrated layout) overlaid on the
+ *  nav map. Collects the ~30 Hz cluster data here, in its own recomposition
+ *  scope, so the map and chrome don't re-lay-out with every sensor tick. */
+@Composable
+private fun NavClusterOverlay(
+    vm: DashboardViewModel,
+    showCompass: Boolean,
+    modifier: Modifier,
+) {
+    val data by vm.clusterData.collectAsStateWithLifecycle()
+    GaugeCluster(data, modifier, showCompass = showCompass, mode = ClusterMode.INTEGRATED)
 }
 
 /** EU posted-limit roundel: white disc, red ring, black number. The limit

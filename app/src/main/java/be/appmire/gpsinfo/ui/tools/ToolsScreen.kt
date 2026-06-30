@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.SatelliteAlt
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SpaceDashboard
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.SportsScore
 import androidx.compose.material.icons.outlined.Terminal
@@ -51,12 +52,14 @@ fun ToolsScreen(
     onOpenObdLab: () -> Unit,
     onOpenGhost: () -> Unit,
     onOpenNavigate: () -> Unit,
+    onOpenCluster: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val items = listOf(
         ToolItem(Icons.Outlined.SatelliteAlt, R.string.activity_gpslab_title, onOpenGpsLab),
         ToolItem(Icons.Outlined.Explore, R.string.screen_compass, onOpenCompass),
         ToolItem(Icons.Outlined.Speed, R.string.screen_speed, onOpenSpeed),
+        ToolItem(Icons.Outlined.SpaceDashboard, R.string.screen_cluster, onOpenCluster),
         ToolItem(Icons.Outlined.Terminal, R.string.screen_nmea, onOpenNmea),
         ToolItem(Icons.Outlined.Navigation, R.string.nav_start, onOpenNavigate),
         ToolItem(Icons.Outlined.SportsScore, R.string.rally_title, onOpenRally),

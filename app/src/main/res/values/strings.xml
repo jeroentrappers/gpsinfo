@@ -138,6 +138,9 @@
     <!-- Compass detail -->
     <string name="screen_compass">Compass</string>
 
+    <!-- Instrument cluster screen -->
+    <string name="screen_cluster">Instrument cluster</string>
+
     <!-- Speed screen -->
     <string name="screen_speed">Speed</string>
     <string name="screen_speed_hud">Speed · HUD</string>
@@ -444,7 +447,7 @@
     <string name="settings_nmea_bt_bridge" tools:ignore="MissingTranslation">NMEA over Bluetooth (SPP)</string>
     <string name="settings_nmea_bt_bridge_body" tools:ignore="MissingTranslation">Rebroadcast raw NMEA sentences over Bluetooth Serial Port (RFCOMM) during recordings, so a paired chart-plotter or desktop tool can use the phone as an external GPS puck.</string>
     <string name="settings_car_overlays_label" tools:ignore="MissingTranslation">Android Auto overlays</string>
-    <string name="settings_car_overlays_body" tools:ignore="MissingTranslation">Extra information drawn on the car navigation screen. The map, route and your position always show; everything below is optional and off by default to keep the screen navigation-focused.</string>
+    <string name="settings_car_overlays_body" tools:ignore="MissingTranslation">Extra information drawn on the car navigation screen. The map, route and your position always show; everything below is optional and off by default to keep the screen navigation-focused. The instrument cluster and compass also appear on the phone navigation screen, and the cluster is available full-screen under Tools › Instrument cluster.</string>
     <string name="settings_car_overlay_speed" tools:ignore="MissingTranslation">Speed readout</string>
     <string name="settings_car_overlay_speed_body" tools:ignore="MissingTranslation">Show your current speed on the car map.</string>
     <string name="settings_car_overlay_speed_limit" tools:ignore="MissingTranslation">Speed-limit sign</string>
