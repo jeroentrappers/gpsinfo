@@ -30,8 +30,11 @@ enum class PhoneOverlayElement(val key: String) {
     MANEUVER("maneuver"),
     LANES("lanes"),
     ETA("eta"),
-    CLUSTER("cluster"),
-    SPEED("speed");
+    SPEED("speed"),
+    // Independently positionable cluster gauges.
+    CLUSTER_SPEED("cl_speed"),
+    CLUSTER_POWER("cl_power"),
+    CLUSTER_COMPASS("cl_compass");
 
     companion object {
         fun fromKey(k: String): PhoneOverlayElement? = entries.firstOrNull { it.key == k }

@@ -38,8 +38,6 @@ import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.ui.overlay.LocalOverlayEdit
 import be.appmire.gpsinfo.ui.overlay.OverlayEditScope
 import be.appmire.gpsinfo.ui.overlay.PhoneOverlayContext
-import be.appmire.gpsinfo.ui.overlay.PhoneOverlayElement
-import be.appmire.gpsinfo.ui.overlay.overlayElement
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 
 /** Housing colour the integrated gauge fills with — keep the surround the
@@ -130,14 +128,10 @@ fun ClusterScreen(
                 onChange = { el, ov -> working = working.with(ctx, el, ov) },
             )
             CompositionLocalProvider(LocalOverlayEdit provides scope) {
-                GaugeCluster(
+                ClusterGauges(
                     data = data,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp)
-                        .overlayElement(PhoneOverlayElement.CLUSTER),
                     showCompass = true,
-                    mode = ClusterMode.AUTO,
+                    modifier = Modifier.fillMaxSize().padding(8.dp),
                 )
             }
         }

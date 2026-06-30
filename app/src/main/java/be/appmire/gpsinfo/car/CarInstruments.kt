@@ -207,6 +207,77 @@ class CarInstruments {
         if (d.obd) unit(canvas, cx + IN_PWU_X * R, cy + IN_PWU_Y * R, "kW", f)
     }
 
+    // ── Standalone single-gauge dials ───────────────────────────────
+    // Each draws ONE self-contained round gauge filling [cell], in the same
+    // visual language as the cluster, so the phone can lay them out as
+    // independently movable/scalable elements (speed, energy, compass) rather
+    // than one monolithic block. A 270° scale with the gap at the bottom; the
+    // value rides the scale as a glowing fill + outside tip, leaving the centre
+    // free for the readout.
+
+    /** Angle (deg) along a 270° bottom-gap dial for fraction [t] in [0,1]. */
+    private fun dialAng(t: Float): Float = 135f + t * 270f
+
+    private fun dialHousing(c: Canvas, cx: Float, cy: Float, R: Float) {
+        fill.color = HOUSING
+        c.drawCircle(cx, cy, R * 1.06f, fill)
+        ring.color = fade(MUTED, 0.5f)
+        ring.strokeWidth = R * 0.02f
+        c.drawCircle(cx, cy, R * 1.04f, ring)
+    }
+
+    /** Self-contained speed dial: scale + level fill + value tip, big readout
+     *  and the posted-limit roundel in the middle. */
+    fun drawSpeedDial(c: Canvas, cell: RectF, d: ClusterData) {
+        val R = min(cell.width(), cell.height()) * 0.46f
+        val cx = cell.centerX()
+        val cy = cell.centerY()
+        val f = Fonts(R)
+        dialHousing(c, cx, cy, R)
+        scaleTicks(c, cx, cy, R * 0.92f, R * 0.10f, R * 0.72f, R, f.tick, speedStops(), SPEED_KNEES, false, ::dialAng)
+        val frac = speedFrac(d.kmh)
+        fillArc(c, cx, cy, R * 0.92f, dialAng(0f), dialAng(frac), LCD, R * 0.05f)
+        outsideTip(c, cx, cy, R * 0.92f, dialAng(frac), LCD, R * 0.10f)
+        if (d.speedLimitKmh != null) limitSign(c, cx, cy - R * 0.34f, R * 0.18f, d.speedLimitKmh)
+        mono.textAlign = Paint.Align.CENTER
+        mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
+        c.drawText(if (d.hasSpeed) "%.1f".format(Locale.ROOT, d.kmh) else "––", cx, cy + f.digit * 0.35f, mono)
+        mono.color = MUTED; mono.isFakeBoldText = false; mono.textSize = f.unit
+        c.drawText("km/h", cx, cy + f.digit * 0.95f, mono)
+        mono.color = LCD_DIM; mono.textSize = f.sub
+        c.drawText(subLine(d), cx, cy + f.digit * 0.95f + f.sub * 1.5f, mono)
+    }
+
+    /** Self-contained power/energy dial. Without an OBD feed the scale still
+     *  draws (so it reads as a gauge) with a dashed centre readout. */
+    fun drawPowerDial(c: Canvas, cell: RectF, d: ClusterData) {
+        val R = min(cell.width(), cell.height()) * 0.46f
+        val cx = cell.centerX()
+        val cy = cell.centerY()
+        val f = Fonts(R)
+        dialHousing(c, cx, cy, R)
+        scaleTicks(c, cx, cy, R * 0.92f, R * 0.10f, R * 0.72f, R, f.tick, powerStops(), POWER_KNEES, !d.obd, ::dialAng)
+        val kw = d.kw
+        if (kw != null) {
+            fillArc(c, cx, cy, R * 0.92f, dialAng(powerFrac(0.0)), dialAng(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, R * 0.05f)
+            d.peakKw?.let { peakMark(c, cx, cy, R * 0.92f, dialAng(powerFrac(it)), R) }
+            outsideTip(c, cx, cy, R * 0.92f, dialAng(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, R * 0.10f)
+            powerReadout(c, cx, cy + f.digit * 0.1f, f, d, inlineUnit = true)
+        } else {
+            mono.textAlign = Paint.Align.CENTER
+            mono.color = MUTED; mono.isFakeBoldText = true; mono.textSize = f.digit
+            c.drawText("––", cx, cy + f.digit * 0.35f, mono)
+            mono.isFakeBoldText = false; mono.textSize = f.unit
+            c.drawText("kW", cx, cy + f.digit * 0.95f, mono)
+        }
+    }
+
+    /** Self-contained compass + G-meter dial (the merged dynamics dial). */
+    fun drawCompassDial(c: Canvas, cell: RectF, d: ClusterData) {
+        val R = min(cell.width(), cell.height()) * 0.48f
+        combinedCentre(c, cell.centerX(), cell.centerY(), R, d)
+    }
+
     // ── Piecewise, equal-spaced "stop list" scales ──────────────────
 
     private class Band(val to: Double, val step: Double)

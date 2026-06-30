@@ -60,8 +60,7 @@ import be.appmire.gpsinfo.data.UnitSystem
 import be.appmire.gpsinfo.data.nav.NavigationController
 import be.appmire.gpsinfo.data.nav.TrafficController
 import be.appmire.gpsinfo.data.nav.TurnCommand
-import be.appmire.gpsinfo.ui.cluster.ClusterMode
-import be.appmire.gpsinfo.ui.cluster.GaugeCluster
+import be.appmire.gpsinfo.ui.cluster.ClusterGauges
 import be.appmire.gpsinfo.ui.livemap.MapLibreMapHost
 import be.appmire.gpsinfo.ui.overlay.LocalOverlayEdit
 import be.appmire.gpsinfo.ui.overlay.OverlayEditScope
@@ -175,31 +174,13 @@ fun NavScreen(
         when (val ns = navState) {
             is NavigationController.NavState.Navigating -> {
                 val onToggleVoice = { vm.setVoiceGuidanceEnabled(!voiceOn) }
-                // Landscape mirrors the car's cockpit edge-HUD: full-screen
-                // over the map, under the chrome, with the maneuver (top) and
-                // ETA (bottom) bands reserved so the speed scale tucks between
-                // them. Portrait keeps the compact integrated gauge.
+                // The cluster is now independent gauges (speed / energy /
+                // compass), each its own draggable+scalable overlay element.
+                // They self-arrange across the map; ClusterGauges handles the
+                // orientation defaults and per-element tagging.
                 val clusterUi: (@Composable androidx.compose.foundation.layout.BoxScope.() -> Unit)? =
                     if (clusterOn) {
-                        if (isLandscape) {
-                            {
-                                NavClusterOverlay(
-                                    vm, compassOn,
-                                    Modifier.fillMaxSize().overlayElement(PhoneOverlayElement.CLUSTER),
-                                    ClusterMode.COCKPIT,
-                                    cockpitArea = { w, h -> android.graphics.RectF(0f, h * 0.30f, w, h * 0.74f) },
-                                )
-                            }
-                        } else {
-                            {
-                                NavClusterOverlay(
-                                    vm, compassOn,
-                                    Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp).size(168.dp)
-                                        .overlayElement(PhoneOverlayElement.CLUSTER),
-                                    ClusterMode.INTEGRATED,
-                                )
-                            }
-                        }
+                        { NavClusterOverlay(vm, compassOn, Modifier.fillMaxSize()) }
                     } else null
                 val editScope = OverlayEditScope(
                     editing = editingLayout,
@@ -560,19 +541,17 @@ private fun NavEditControls(
     }
 }
 
-/** The Android-Auto instrument cluster (integrated layout) overlaid on the
- *  nav map. Collects the ~30 Hz cluster data here, in its own recomposition
- *  scope, so the map and chrome don't re-lay-out with every sensor tick. */
+/** The instrument cluster overlaid on the nav map as independent gauges.
+ *  Collects the ~30 Hz cluster data here, in its own recomposition scope, so
+ *  the map and chrome don't re-lay-out with every sensor tick. */
 @Composable
 private fun NavClusterOverlay(
     vm: DashboardViewModel,
     showCompass: Boolean,
     modifier: Modifier,
-    mode: ClusterMode,
-    cockpitArea: ((Float, Float) -> android.graphics.RectF)? = null,
 ) {
     val data by vm.clusterData.collectAsStateWithLifecycle()
-    GaugeCluster(data, modifier, showCompass = showCompass, mode = mode, cockpitArea = cockpitArea)
+    ClusterGauges(data, showCompass, modifier)
 }
 
 /** EU posted-limit roundel: white disc, red ring, black number. The limit
