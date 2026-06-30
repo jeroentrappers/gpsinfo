@@ -57,7 +57,9 @@ enum class PhoneOverlayContext(val key: String) {
     NAV_PORTRAIT("nav_p"),
     NAV_LANDSCAPE("nav_l"),
     CLUSTER_PORTRAIT("cl_p"),
-    CLUSTER_LANDSCAPE("cl_l");
+    CLUSTER_LANDSCAPE("cl_l"),
+    LIVEMAP_PORTRAIT("lm_p"),
+    LIVEMAP_LANDSCAPE("lm_l");
 
     companion object {
         fun fromKey(k: String): PhoneOverlayContext? = entries.firstOrNull { it.key == k }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -148,6 +149,21 @@ fun LiveMapScreen(
         ThemeOverride.System -> androidx.compose.foundation.isSystemInDarkTheme()
     }
     val navigating = navState is NavigationController.NavState.Navigating
+
+    // Combined view: the gauge cluster overlaid on the live map (opt-in via
+    // the shared cluster setting). When on, it replaces the simple speed dial
+    // and is editable in place, per orientation, independently of the other
+    // overlay surfaces.
+    val clusterOn by vm.carOverlayCluster.collectAsStateWithLifecycle()
+    val compassOn by vm.carOverlayCompass.collectAsStateWithLifecycle()
+    val phoneLayout by vm.phoneOverlayLayout.collectAsStateWithLifecycle()
+    val overlayCtx = if (androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
+        android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    ) {
+        be.appmire.gpsinfo.ui.overlay.PhoneOverlayContext.LIVEMAP_LANDSCAPE
+    } else {
+        be.appmire.gpsinfo.ui.overlay.PhoneOverlayContext.LIVEMAP_PORTRAIT
+    }
 
     var follow by remember { mutableStateOf(true) }
     // Map presentation, cycled by the view-mode button (mirrors the car):
@@ -340,17 +356,37 @@ fun LiveMapScreen(
             }
 
             // Speed gauge — current speed dial + posted-limit roundel —
-            // pinned to the bottom-left. Always shown; the limit roundel
-            // falls back to a dash when no posted limit is known.
-            SpeedGauge(
-                speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
-                limitKmh = (navState as? NavigationController.NavState.Navigating)
-                    ?.speedLimitKmh,
-                unit = unit,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 12.dp, bottom = 12.dp),
-            )
+            // pinned to the bottom-left. Hidden when the full gauge cluster
+            // is shown (the cluster has its own speed dial).
+            if (!clusterOn) {
+                SpeedGauge(
+                    speedKmh = loc?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
+                    limitKmh = (navState as? NavigationController.NavState.Navigating)
+                        ?.speedLimitKmh,
+                    unit = unit,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 12.dp, bottom = 12.dp),
+                )
+            }
+
+            // Combined view: full gauge cluster overlaid on the map, editable
+            // in place. Insets keep it clear of the maneuver banner (top) and
+            // the status strip (bottom); empty areas don't grab map gestures.
+            if (clusterOn) {
+                be.appmire.gpsinfo.ui.overlay.OverlayEditBox(
+                    persisted = phoneLayout,
+                    onSave = { vm.savePhoneOverlayLayout(it) },
+                    context = overlayCtx,
+                    controlsAlignment = Alignment.CenterStart,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(top = 76.dp, bottom = 76.dp),
+                ) {
+                    LiveMapClusterOverlay(vm, compassOn, Modifier.fillMaxSize())
+                }
+            }
 
             // Bottom overlay — fix status + accuracy + sats. When a
             // navigation target is active, a dedicated NavOverlay sits
@@ -614,6 +650,18 @@ private fun FailedBanner(message: String) {
             color = MaterialTheme.colorScheme.onErrorContainer,
         )
     }
+}
+
+/** The gauge cluster overlaid on the live map. Collects the ~30 Hz cluster
+ *  data in its own scope so the map and chrome don't recompose per tick. */
+@androidx.compose.runtime.Composable
+private fun LiveMapClusterOverlay(
+    vm: DashboardViewModel,
+    showCompass: Boolean,
+    modifier: Modifier,
+) {
+    val data by vm.clusterData.collectAsStateWithLifecycle()
+    be.appmire.gpsinfo.ui.cluster.ClusterGauges(data, showCompass, modifier)
 }
 
 /** Turn-by-turn maneuver banner: distance to the next turn + the cue. */
