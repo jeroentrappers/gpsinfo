@@ -31,10 +31,10 @@ private val ClusterBackground = Color(0xFF0B0B0B)
 
 /**
  * Full-screen instrument cluster — the phone's standalone analogue of the
- * Android Auto cluster. Shows the integrated single gauge (speed, compass +
- * G-meter, posted limit; no power without OBD), the layout that adapts to
- * both a tall portrait phone and a wide landscape one. Works idle and while
- * driving; no route required.
+ * Android Auto cluster. Picks the layout by orientation exactly like the car
+ * surface does: the cockpit edge-HUD in landscape, the integrated single
+ * gauge in portrait (speed, compass + G-meter, posted limit; no power without
+ * OBD). Works idle and while driving; no route required.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +76,7 @@ fun ClusterScreen(
                 data = data,
                 modifier = Modifier.fillMaxSize().padding(8.dp),
                 showCompass = true,
-                mode = ClusterMode.INTEGRATED,
+                mode = ClusterMode.AUTO,
             )
         }
     }

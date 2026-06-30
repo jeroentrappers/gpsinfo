@@ -153,9 +153,29 @@ fun NavScreen(
         when (val ns = navState) {
             is NavigationController.NavState.Navigating -> {
                 val onToggleVoice = { vm.setVoiceGuidanceEnabled(!voiceOn) }
-                val clusterUi: (@Composable (Modifier) -> Unit)? = if (clusterOn) {
-                    { m -> NavClusterOverlay(vm, compassOn, m) }
-                } else null
+                // Landscape mirrors the car's cockpit edge-HUD: full-screen
+                // over the map, under the chrome, with the maneuver (top) and
+                // ETA (bottom) bands reserved so the speed scale tucks between
+                // them. Portrait keeps the compact integrated gauge.
+                val clusterUi: (@Composable androidx.compose.foundation.layout.BoxScope.() -> Unit)? =
+                    if (clusterOn) {
+                        if (isLandscape) {
+                            {
+                                NavClusterOverlay(
+                                    vm, compassOn, Modifier.fillMaxSize(), ClusterMode.COCKPIT,
+                                    cockpitArea = { w, h -> android.graphics.RectF(0f, h * 0.30f, w, h * 0.74f) },
+                                )
+                            }
+                        } else {
+                            {
+                                NavClusterOverlay(
+                                    vm, compassOn,
+                                    Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp).size(168.dp),
+                                    ClusterMode.INTEGRATED,
+                                )
+                            }
+                        }
+                    } else null
                 if (isLandscape) {
                     NavLandscape(ns, unit, loc, voiceOn, content, { recenter++ }, onToggleVoice, clusterUi) { exit(onExit) }
                 } else {
@@ -201,10 +221,12 @@ private fun NavLandscape(
     modifier: Modifier,
     onRecenter: () -> Unit,
     onToggleVoice: () -> Unit,
-    cluster: (@Composable (Modifier) -> Unit)?,
+    cluster: (@Composable androidx.compose.foundation.layout.BoxScope.() -> Unit)?,
     onExit: () -> Unit,
 ) {
     Box(modifier) {
+        // Cockpit edge-HUD under the chrome (it reserves the rail bands itself).
+        cluster?.invoke(this)
         // Left rail: maneuver + lanes on top, ETA at the bottom.
         Column(
             modifier = Modifier
@@ -233,8 +255,8 @@ private fun NavLandscape(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             RecenterButton(onRecenter)
-            if (cluster != null) cluster(Modifier.size(200.dp))
-            else SpeedAndLimit(loc, unit, n.speedLimitKmh)
+            // Cockpit shows the speed itself, so drop the plain badge then.
+            if (cluster == null) SpeedAndLimit(loc, unit, n.speedLimitKmh)
         }
     }
 }
@@ -248,7 +270,7 @@ private fun NavPortrait(
     modifier: Modifier,
     onRecenter: () -> Unit,
     onToggleVoice: () -> Unit,
-    cluster: (@Composable (Modifier) -> Unit)?,
+    cluster: (@Composable androidx.compose.foundation.layout.BoxScope.() -> Unit)?,
     onExit: () -> Unit,
 ) {
     Box(modifier) {
@@ -264,7 +286,7 @@ private fun NavPortrait(
             LaneGuidance(n.nextTurn?.lanes, Modifier.padding(start = 4.dp))
         }
         if (cluster != null) {
-            cluster(Modifier.align(Alignment.BottomStart).padding(bottom = 84.dp).size(168.dp))
+            cluster.invoke(this)
         } else {
             SpeedAndLimit(
                 loc, unit, n.speedLimitKmh,
@@ -432,9 +454,11 @@ private fun NavClusterOverlay(
     vm: DashboardViewModel,
     showCompass: Boolean,
     modifier: Modifier,
+    mode: ClusterMode,
+    cockpitArea: ((Float, Float) -> android.graphics.RectF)? = null,
 ) {
     val data by vm.clusterData.collectAsStateWithLifecycle()
-    GaugeCluster(data, modifier, showCompass = showCompass, mode = ClusterMode.INTEGRATED)
+    GaugeCluster(data, modifier, showCompass = showCompass, mode = mode, cockpitArea = cockpitArea)
 }
 
 /** EU posted-limit roundel: white disc, red ring, black number. The limit

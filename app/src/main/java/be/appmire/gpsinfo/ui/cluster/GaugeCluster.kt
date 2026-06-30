@@ -41,6 +41,10 @@ fun GaugeCluster(
     modifier: Modifier = Modifier,
     showCompass: Boolean = true,
     mode: ClusterMode = ClusterMode.AUTO,
+    /** Cockpit only: the safe rectangle (in px) the gauges lay out inside, so
+     *  they dodge surrounding chrome — exactly how the car passes the host's
+     *  safe area. Null means the whole surface. */
+    cockpitArea: ((w: Float, h: Float) -> RectF)? = null,
 ) {
     val instruments = remember { CarInstruments() }
     Canvas(modifier) {
@@ -55,7 +59,8 @@ fun GaugeCluster(
         drawIntoCanvas { canvas ->
             val nc = canvas.nativeCanvas
             if (cockpit) {
-                instruments.drawCockpit(nc, w.toInt(), h.toInt(), data, RectF(0f, 0f, w, h), showCompass)
+                val safe = cockpitArea?.invoke(w, h) ?: RectF(0f, 0f, w, h)
+                instruments.drawCockpit(nc, w.toInt(), h.toInt(), data, safe, showCompass)
             } else {
                 val s = min(w, h) * 0.98f
                 val cx = w / 2f
