@@ -350,6 +350,8 @@
     <string name="car_nav_roundabout" tools:ignore="MissingTranslation">Enter the roundabout</string>
     <string name="car_nav_roundabout_exit" tools:ignore="MissingTranslation">Roundabout, exit %1$d</string>
     <string name="car_nav_continue" tools:ignore="MissingTranslation">Continue</string>
+    <!-- Joins a maneuver cue with the road it leads onto: "Turn right onto Grote Markt". -->
+    <string name="car_nav_onto" tools:ignore="MissingTranslation">%1$s onto %2$s</string>
     <string name="nav_pick_drive" tools:ignore="MissingTranslation">Drive route (offline)</string>
     <string name="nav_pick_tab_address" tools:ignore="MissingTranslation">Address</string>
     <string name="nav_address_label" tools:ignore="MissingTranslation">Search address or place</string>

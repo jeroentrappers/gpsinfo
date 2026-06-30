@@ -9,6 +9,7 @@ import androidx.car.app.navigation.model.Step
 import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.data.nav.TurnCommand
 import be.appmire.gpsinfo.data.nav.TurnHint
+import kotlin.math.roundToInt
 
 /**
  * Single source of truth for turning a routing [TurnHint] into Car App
@@ -87,7 +88,17 @@ internal object CarManeuvers {
         else -> LaneDirection.SHAPE_UNKNOWN
     }
 
-    fun cueFor(context: CarContext, turn: TurnHint): String = when (turn.command) {
+    /** The maneuver cue, Waze-style: the turn verb plus the road it leads
+     *  onto when the engine supplies one ("Turn right onto Grote Markt").
+     *  The road name comes from Valhalla; BRouter routes have none, so the
+     *  cue stays the bare verb. */
+    fun cueFor(context: CarContext, turn: TurnHint): String {
+        val verb = verbFor(context, turn)
+        val road = turn.roadName?.takeIf { it.isNotBlank() } ?: return verb
+        return context.getString(R.string.car_nav_onto, verb, road)
+    }
+
+    private fun verbFor(context: CarContext, turn: TurnHint): String = when (turn.command) {
         TurnCommand.TURN_LEFT -> context.getString(R.string.car_nav_turn_left)
         TurnCommand.TURN_SLIGHT_LEFT -> context.getString(R.string.car_nav_slight_left)
         TurnCommand.TURN_SHARP_LEFT -> context.getString(R.string.car_nav_sharp_left)
@@ -104,11 +115,18 @@ internal object CarManeuvers {
         else -> context.getString(R.string.car_nav_continue)
     }
 
-    /** Round to a glanceable unit: km above 1 km, else metres in 10 m steps. */
-    fun carDistance(meters: Double): Distance =
-        if (meters >= 1000) {
-            Distance.create(meters / 1000.0, Distance.UNIT_KILOMETERS)
-        } else {
-            Distance.create((meters / 10).toInt() * 10.0, Distance.UNIT_METERS)
-        }
+    /** Round to a glanceable, host-displayable unit, matching Waze/Maps:
+     *  whole km from 10 km up ("23 km"), one decimal from 1 km ("5.3 km"),
+     *  else metres to the nearest 10 m ("250 m"). The host appends the unit
+     *  label and applies the head unit's locale; the `Distance` contract
+     *  wants the value already rounded for display, so we round here rather
+     *  than handing the host a full-precision double. */
+    fun carDistance(meters: Double): Distance = when {
+        meters >= 10_000 ->
+            Distance.create((meters / 1000.0).roundToInt().toDouble(), Distance.UNIT_KILOMETERS)
+        meters >= 1_000 ->
+            Distance.create((meters / 100.0).roundToInt() / 10.0, Distance.UNIT_KILOMETERS)
+        else ->
+            Distance.create((meters / 10.0).roundToInt() * 10.0, Distance.UNIT_METERS)
+    }
 }

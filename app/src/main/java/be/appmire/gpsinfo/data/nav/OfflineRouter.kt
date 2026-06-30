@@ -183,6 +183,11 @@ data class TurnHint(
     /** Lane guidance for this maneuver, or null when the engine has none
      *  (BRouter). Populated by Valhalla — see [Lane]. */
     val lanes: List<Lane>? = null,
+    /** Name of the road the maneuver leads *onto* (the upcoming street),
+     *  for a Waze-style cue ("Turn right onto Grote Markt"). Populated by
+     *  Valhalla from the OSRM step `name`; null for BRouter (voice hints
+     *  carry no street name) or when the road is unnamed. */
+    val roadName: String? = null,
 )
 
 /** BRouter command ids mapped to a stable app-side vocabulary. */

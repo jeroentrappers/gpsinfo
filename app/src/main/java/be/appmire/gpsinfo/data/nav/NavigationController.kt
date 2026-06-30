@@ -115,6 +115,15 @@ object NavigationController {
     private var reRouting = false
     private var lastLocation: Location? = null
 
+    /** Live, traffic-aware pace (seconds per metre) for the remaining route,
+     *  refreshed by the alternatives loop from Valhalla's current-time
+     *  duration of the path we're actually on. Null until the first online
+     *  recompute and after every re-route, where the ETA falls back to the
+     *  route's static average pace. Keeps the ETA honest when a jam builds
+     *  up mid-trip without touching the route geometry or [segmentIndex]. */
+    @Volatile
+    private var livePaceSecPerM: Double? = null
+
     /** Destination label of the active route — carried into
      *  [NavState.Navigating] (and reused across silent re-routes, which
      *  keep the same destination) so the cluster can name it. */
@@ -348,6 +357,7 @@ object NavigationController {
         // new navigateTo (or process death) supersedes it.
         offRouteCount = 0
         reRouting = false
+        livePaceSecPerM = null
         _state.value = NavState.Idle
     }
 
@@ -434,8 +444,11 @@ object NavigationController {
             offRouteCount = 0
         }
 
-        // ETA scales the route's own pace over what's left.
-        val pace = if (s.route.distanceMeters > 0)
+        // ETA scales a pace over what's left. Prefer the live traffic-aware
+        // pace (refreshed by the alternatives loop from the server's
+        // current-time duration); fall back to the route's static average
+        // until that first recompute lands.
+        val pace = livePaceSecPerM ?: if (s.route.distanceMeters > 0)
             s.route.durationSeconds.toDouble() / s.route.distanceMeters else 0.0
 
         if (BuildConfig.DEBUG) android.util.Log.d(
@@ -459,6 +472,10 @@ object NavigationController {
 
     @Synchronized
     private fun installRoute(route: OfflineRoute, destLat: Double, destLon: Double) {
+        // New geometry → the old live pace no longer describes this path. The
+        // fresh route's own (traffic-aware) duration carries the ETA until the
+        // alternatives loop recomputes a live pace for it.
+        livePaceSecPerM = null
         cumDist = DoubleArray(route.points.size)
         var acc = 0.0
         for (i in 1 until route.points.size) {
@@ -539,6 +556,7 @@ object NavigationController {
                 valhalla.routeAlternatives(loc.latitude, loc.longitude, destLat, destLon, lastProfile, 2)
             }.getOrDefault(emptyList())
             val ranked = rankAlternatives(alts, s)
+            updateLivePace(alts, s)
             synchronized(this@NavigationController) {
                 val cur = _state.value as? NavState.Navigating ?: return@synchronized
                 if (cur.alternatives != ranked) _state.value = cur.copy(alternatives = ranked)
@@ -546,6 +564,24 @@ object NavigationController {
         } finally {
             refreshingAlts = false
         }
+    }
+
+    /** Adopt a live, traffic-aware pace from the recompute that stays on our
+     *  current path. Valhalla's alternates are current-time routes from the
+     *  vehicle to the destination; the one that doesn't fork away from the
+     *  road ahead ([forkDistance] null) is a fresh estimate of the remaining
+     *  route under live traffic, so its duration/distance is the honest pace.
+     *  When none follows our path (we've drifted onto a slower line the server
+     *  no longer offers), leave the pace null so the ETA keeps the static
+     *  average rather than borrowing a faster path's timing. */
+    private fun updateLivePace(alts: List<OfflineRoute>, s: NavState.Navigating) {
+        val from = s.segmentIndex.coerceIn(0, (s.route.points.size - 1).coerceAtLeast(0))
+        val currentAhead = s.route.points.subList(from, s.route.points.size)
+        val onPath = alts.firstOrNull {
+            it.points.size >= 2 && it.distanceMeters > 0 &&
+                forkDistance(it.points, currentAhead) == null
+        }
+        livePaceSecPerM = onPath?.let { it.durationSeconds.toDouble() / it.distanceMeters }
     }
 
     /** Keep alternatives that diverge at a near fork and save time or

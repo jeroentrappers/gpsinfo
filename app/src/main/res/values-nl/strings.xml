@@ -609,6 +609,7 @@
     <string name="car_nav_roundabout">Rijd de rotonde op</string>
     <string name="car_nav_roundabout_exit">Rotonde, afslag %1$d</string>
     <string name="car_nav_continue">Volg de weg</string>
+    <string name="car_nav_onto">%1$s naar %2$s</string>
 
     <!-- Navigation destination picker -->
     <string name="nav_pick_drive">Autoroute (offline)</string>

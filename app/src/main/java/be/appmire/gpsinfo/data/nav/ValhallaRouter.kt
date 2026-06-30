@@ -226,6 +226,7 @@ class ValhallaRouter : Router {
                         distanceToNextMeters = step.optDouble("distance", 0.0),
                         trackIndex = startIdx,
                         lanes = lanesForStep(step),
+                        roadName = step.optString("name").takeIf { it.isNotBlank() },
                     ),
                 )
             }
