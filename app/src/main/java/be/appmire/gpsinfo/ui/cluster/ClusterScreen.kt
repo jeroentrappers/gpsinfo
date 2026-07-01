@@ -144,10 +144,11 @@ fun ClusterScreen(
                 onSelect = { selected = it },
             )
             CompositionLocalProvider(LocalOverlayEdit provides scope) {
-                ClusterGauges(
+                GaugeCluster(
                     data = data,
-                    showCompass = true,
                     modifier = Modifier.fillMaxSize().padding(8.dp),
+                    showCompass = true,
+                    mode = ClusterMode.AUTO,
                 )
             }
         }

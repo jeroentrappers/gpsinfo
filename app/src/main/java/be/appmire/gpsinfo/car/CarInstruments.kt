@@ -207,6 +207,96 @@ class CarInstruments {
         if (d.obd) unit(canvas, cx + IN_PWU_X * R, cy + IN_PWU_Y * R, "kW", f)
     }
 
+    /**
+     * Bespoke **portrait** cockpit for the phone: a map-centric HUD with the
+     * energy scale on top and the speed scale on the bottom (both horizontal,
+     * spanning the width), the big speed read-out above the bottom scale, the
+     * speed-limit roundel bottom-left and the compass/G dial bottom-right, over
+     * top+bottom black gradients that let the map read through the middle. All
+     * positions/scales are fractions of [cell] (x/size = width, y/height =
+     * height) — the [PORT] values tuned in the design mock.
+     */
+    fun drawCockpitPortrait(canvas: Canvas, cell: RectF, d: ClusterData, showCompass: Boolean = true) {
+        val W = cell.width()
+        val H = cell.height()
+        fun wx(f: Float) = cell.left + W * f
+        fun hy(f: Float) = cell.top + H * f
+        fun ws(f: Float) = W * f
+        val ref = ws(PORT_SCALE_TICK)
+
+        // top + bottom black gradients (map shows through the middle)
+        scrim.shader = LinearGradient(0f, cell.top, 0f, cell.top + H * PORT_TOP_H, blackA(PORT_TOP_A), 0x00000000, Shader.TileMode.CLAMP)
+        canvas.drawRect(cell.left, cell.top, cell.right, cell.top + H * PORT_TOP_H, scrim)
+        scrim.shader = LinearGradient(0f, cell.bottom, 0f, cell.bottom - H * PORT_BOT_H, blackA(PORT_BOT_A), 0x00000000, Shader.TileMode.CLAMP)
+        canvas.drawRect(cell.left, cell.bottom - H * PORT_BOT_H, cell.right, cell.bottom, scrim)
+        scrim.shader = null
+
+        clockTemp(canvas, cell.centerX(), hy(PORT_CLOCK_Y), Fonts(ws(PORT_CLOCK_SIZE)), d)
+
+        val xL = wx(PORT_SCALE_INSET)
+        val xR = wx(1f - PORT_SCALE_INSET)
+
+        // ── POWER / energy — top, horizontal (OBD only) ──
+        if (d.obd) {
+            val kw = d.kw ?: 0.0
+            val pcol = if (kw >= 0) ACCENT else REGEN
+            mono.textAlign = Paint.Align.CENTER; mono.isFakeBoldText = true
+            mono.color = pcol; mono.textSize = ws(PORT_PWR_VAL_SIZE)
+            canvas.drawText("${if (kw > 0) "+" else ""}${kw.roundToInt()} kW", cell.centerX(), hy(PORT_PWR_VAL_Y), mono)
+            hScale(canvas, xL, xR, hy(PORT_PWR_SCALE_Y), powerStops(), POWER_KNEES, kw, 0.0, pcol, ref)
+            mono.isFakeBoldText = false; mono.color = LCD_DIM; mono.textSize = ws(PORT_PWR_SUB_SIZE)
+            val soc = d.socPct?.let { "${it.roundToInt()}%" } ?: "–%"
+            val range = d.rangeKm?.let { "${it.roundToInt()} km" } ?: "– km"
+            canvas.drawText("$soc   ·   $range", cell.centerX(), hy(PORT_PWR_SUB_Y) + ws(PORT_PWR_SUB_SIZE) * 0.9f, mono)
+        }
+
+        // ── SPEED — bottom, horizontal ──
+        mono.textAlign = Paint.Align.CENTER; mono.isFakeBoldText = true
+        mono.color = TEXT; mono.textSize = ws(PORT_SPD_NUM_SIZE)
+        canvas.drawText(if (d.hasSpeed) "%.1f".format(Locale.ROOT, d.kmh) else "––", cell.centerX(), hy(PORT_SPD_NUM_Y), mono)
+        mono.isFakeBoldText = false; mono.color = MUTED; mono.textSize = ws(PORT_SPD_UNIT_SIZE)
+        canvas.drawText("km/h", cell.centerX(), hy(PORT_SPD_UNIT_Y), mono)
+        hScale(canvas, xL, xR, hy(PORT_SPD_SCALE_Y), speedStops(), SPEED_KNEES, d.kmh, 0.0, LCD, ref)
+
+        // ── corners ──
+        if (d.speedLimitKmh != null) limitSign(canvas, wx(PORT_LIM_X), hy(PORT_LIM_Y), ws(PORT_LIM_R), d.speedLimitKmh)
+        if (showCompass) combinedCentre(canvas, wx(PORT_COMP_X), hy(PORT_COMP_Y), ws(PORT_COMP_R), d)
+    }
+
+    /** Black with the given 0..1 alpha (for the portrait gradients). */
+    private fun blackA(a: Float): Int = ((a.coerceIn(0f, 1f) * 255f).toInt() shl 24)
+
+    /** Horizontal scale: rail + ticks/labels (above), a glowing fill from the
+     *  zero stop to the value, and a downward value tip. */
+    private fun hScale(
+        c: Canvas, xL: Float, xR: Float, y: Float, stops: DoubleArray, knees: DoubleArray,
+        value: Double, zeroVal: Double, color: Int, ref: Float,
+    ) {
+        val n = stops.size
+        val span = xR - xL
+        val xOf = { t: Float -> xL + span * t }
+        ring.color = fade(MUTED, 0.3f); ring.strokeWidth = ref * 0.45f
+        c.drawLine(xL, y, xR, y, ring)
+        val tickLen = ref * 1.1f
+        labelPaint.textAlign = Paint.Align.CENTER; labelPaint.isFakeBoldText = true; labelPaint.textSize = ref * 1.7f
+        for (i in 0 until n) {
+            val x = xOf(i.toFloat() / (n - 1))
+            val knee = knees.any { abs(stops[i] - it) < 1e-6 }
+            tickPaint.color = if (knee) ACCENT else TEXT
+            tickPaint.strokeWidth = ref * if (knee) 0.4f else 0.2f
+            c.drawLine(x, y, x, y - tickLen, tickPaint)
+            labelPaint.color = if (knee) ACCENT else MUTED
+            c.drawText(abs(stops[i].roundToInt()).toString(), x, y - tickLen - ref * 0.4f, labelPaint)
+        }
+        labelPaint.isFakeBoldText = false
+        arc.color = color; arc.strokeWidth = ref * 1.5f
+        c.drawLine(xOf(fracFromStops(zeroVal, stops)), y, xOf(fracFromStops(value, stops)), y, arc)
+        val tw = ref * 1.9f
+        val xv = xOf(fracFromStops(value, stops))
+        fill.color = color
+        c.drawPath(Path().apply { moveTo(xv, y + tw); lineTo(xv - tw * 0.7f, y); lineTo(xv + tw * 0.7f, y); close() }, fill)
+    }
+
     // ── Standalone single-gauge dials ───────────────────────────────
     // Each draws ONE self-contained round gauge filling [cell], in the same
     // visual language as the cluster, so the phone can lay them out as
@@ -664,6 +754,33 @@ class CarInstruments {
         const val IN_SPU_Y = 0f
         const val IN_PWU_X = 0.50f
         const val IN_PWU_Y = 0f
+
+        // Portrait map-HUD (phone). x/size/inset/radius = fraction of width,
+        // y/height = fraction of height, alpha 0..1. Tuned in the design mock.
+        const val PORT_CLOCK_Y = 0.030f
+        const val PORT_CLOCK_SIZE = 0.34f
+        const val PORT_PWR_VAL_Y = 0.100f
+        const val PORT_PWR_VAL_SIZE = 0.080f
+        const val PORT_PWR_SCALE_Y = 0.150f
+        const val PORT_PWR_SUB_Y = 0.175f
+        const val PORT_PWR_SUB_SIZE = 0.042f
+        const val PORT_SCALE_INSET = 0.055f
+        const val PORT_SCALE_TICK = 0.017f
+        const val PORT_SPD_NUM_Y = 0.875f
+        const val PORT_SPD_NUM_SIZE = 0.110f
+        const val PORT_SPD_UNIT_Y = 0.900f
+        const val PORT_SPD_UNIT_SIZE = 0.032f
+        const val PORT_SPD_SCALE_Y = 0.940f
+        const val PORT_COMP_X = 0.860f
+        const val PORT_COMP_Y = 0.820f
+        const val PORT_COMP_R = 0.130f
+        const val PORT_LIM_X = 0.150f
+        const val PORT_LIM_Y = 0.860f
+        const val PORT_LIM_R = 0.082f
+        const val PORT_TOP_H = 0.22f
+        const val PORT_TOP_A = 0.90f
+        const val PORT_BOT_H = 0.42f
+        const val PORT_BOT_A = 0.93f
 
         const val GM_MAX_G = 1.0f
         const val GM_LOG_K = 12.0

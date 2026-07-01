@@ -62,12 +62,9 @@ fun GaugeCluster(
                 val safe = cockpitArea?.invoke(w, h) ?: RectF(0f, 0f, w, h)
                 instruments.drawCockpit(nc, w.toInt(), h.toInt(), data, safe, showCompass)
             } else {
-                val s = min(w, h) * 0.98f
-                val cx = w / 2f
-                val cy = h / 2f
-                instruments.drawIntegrated(
-                    nc, RectF(cx - s / 2f, cy - s / 2f, cx + s / 2f, cy + s / 2f), data, showCompass,
-                )
+                // Portrait: the bespoke map-HUD (power top, speed bottom, limit +
+                // compass corners) — not the old centred integrated dial.
+                instruments.drawCockpitPortrait(nc, RectF(0f, 0f, w, h), data, showCompass)
             }
         }
     }

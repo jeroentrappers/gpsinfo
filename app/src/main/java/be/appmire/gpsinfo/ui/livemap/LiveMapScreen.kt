@@ -661,7 +661,9 @@ private fun LiveMapClusterOverlay(
     modifier: Modifier,
 ) {
     val data by vm.clusterData.collectAsStateWithLifecycle()
-    be.appmire.gpsinfo.ui.cluster.ClusterGauges(data, showCompass, modifier)
+    be.appmire.gpsinfo.ui.cluster.GaugeCluster(
+        data, modifier, showCompass = showCompass, mode = be.appmire.gpsinfo.ui.cluster.ClusterMode.AUTO,
+    )
 }
 
 /** Turn-by-turn maneuver banner: distance to the next turn + the cue. */
