@@ -1,0 +1,2 @@
+• El cuadro de instrumentos del teléfono ahora refleja la cabina de Android Auto: escala de velocidad en un borde, de energía en el otro, con la brújula/medidor de G.
+• Nuevo diseño vertical: energía arriba, velocidad abajo, el mapa en el centro, brújula abajo a la derecha y la señal de límite abajo a la izquierda.

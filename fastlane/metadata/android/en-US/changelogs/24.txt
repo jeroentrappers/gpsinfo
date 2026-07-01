@@ -1,0 +1,2 @@
+• The phone instrument cluster now mirrors the Android Auto cockpit: speed scale tucked to one edge, energy scale to the other, with the compass/G dial.
+• New portrait layout: energy scale on top, speed on the bottom, the map in the middle, compass bottom-right and the speed-limit sign bottom-left.

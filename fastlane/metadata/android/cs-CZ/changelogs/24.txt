@@ -1,0 +1,2 @@
+• Přístrojový panel v telefonu nyní kopíruje kokpit Android Auto: stupnice rychlosti u jednoho okraje, energie u druhého, s kompasem/měřičem G.
+• Nové rozvržení na výšku: energie nahoře, rychlost dole, mapa uprostřed, kompas vpravo dole a značka omezení vlevo dole.

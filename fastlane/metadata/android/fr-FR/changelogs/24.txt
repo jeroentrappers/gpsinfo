@@ -1,0 +1,2 @@
+• Le combiné d'instruments du téléphone reprend le cockpit Android Auto : échelle de vitesse sur un bord, échelle d'énergie sur l'autre, avec la boussole/jauge G.
+• Nouvelle disposition portrait : énergie en haut, vitesse en bas, la carte au centre, boussole en bas à droite et le panneau de limitation en bas à gauche.

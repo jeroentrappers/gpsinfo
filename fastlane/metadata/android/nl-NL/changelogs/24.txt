@@ -1,0 +1,2 @@
+• De instrumentencluster op de telefoon volgt nu de Android Auto-cockpit: snelheidsschaal tegen de ene rand, energieschaal tegen de andere, met de kompas/G-meter.
+• Nieuwe staande indeling: energieschaal bovenaan, snelheid onderaan, de kaart in het midden, kompas rechtsonder en het snelheidsbord linksonder.

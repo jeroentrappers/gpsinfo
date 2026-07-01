@@ -1,0 +1,2 @@
+• Il quadro strumenti del telefono ora rispecchia il cockpit di Android Auto: scala della velocità su un bordo, dell'energia sull'altro, con la bussola/misuratore G.
+• Nuovo layout verticale: energia in alto, velocità in basso, la mappa al centro, bussola in basso a destra e il segnale del limite in basso a sinistra.

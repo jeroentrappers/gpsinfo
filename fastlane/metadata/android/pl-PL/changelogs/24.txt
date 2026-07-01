@@ -1,0 +1,2 @@
+• Zestaw wskaźników na telefonie odzwierciedla teraz kokpit Android Auto: skala prędkości przy jednej krawędzi, energii przy drugiej, z kompasem/miernikiem G.
+• Nowy układ pionowy: energia u góry, prędkość na dole, mapa na środku, kompas w prawym dolnym rogu i znak ograniczenia w lewym dolnym rogu.

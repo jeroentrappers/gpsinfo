@@ -1,0 +1,2 @@
+• Telefondaki gösterge paneli artık Android Auto kokpitini yansıtıyor: hız ölçeği bir kenarda, enerji ölçeği diğerinde, pusula/G göstergesiyle.
+• Yeni dikey düzen: üstte enerji, altta hız, ortada harita, sağ altta pusula ve sol altta hız limiti işareti.

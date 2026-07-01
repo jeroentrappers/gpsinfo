@@ -1,0 +1,2 @@
+• Das Kombiinstrument am Telefon spiegelt jetzt das Android-Auto-Cockpit: Geschwindigkeitsskala an der einen Kante, Energieskala an der anderen, mit Kompass/G-Anzeige.
+• Neues Hochformat: Energieskala oben, Geschwindigkeit unten, Karte in der Mitte, Kompass unten rechts und das Tempolimit-Schild unten links.

@@ -1,0 +1,2 @@
+• O painel de instrumentos do telefone agora espelha o cockpit do Android Auto: escala de velocidade em uma borda, de energia na outra, com a bússola/medidor de G.
+• Novo layout retrato: energia no topo, velocidade embaixo, o mapa no centro, bússola no canto inferior direito e a placa de limite no canto inferior esquerdo.
