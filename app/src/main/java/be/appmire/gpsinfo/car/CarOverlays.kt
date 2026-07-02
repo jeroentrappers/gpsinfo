@@ -39,7 +39,14 @@ enum class OverlayElement(val key: String) {
     SPEED_LIMIT("speed_limit"),
     RECORDING_STRIP("recording"),
     RALLY_PANEL("rally"),
-    NAV_BANNER("nav_banner");
+    NAV_BANNER("nav_banner"),
+    // Individually positionable pieces of the gauge cluster (cockpit).
+    CL_BG("cl_bg"),
+    CL_SPEED("cl_speed"),
+    CL_SPEED_TXT("cl_speed_txt"),
+    CL_ENERGY("cl_energy"),
+    CL_ENERGY_TXT("cl_energy_txt"),
+    CL_CLOCK("cl_clock");
 
     companion object {
         fun fromKey(k: String): OverlayElement? = entries.firstOrNull { it.key == k }
@@ -71,6 +78,10 @@ data class CarOverlayLayout(
 
     fun forState(state: OverlayState): Map<OverlayElement, LayoutOverride> =
         byState[state] ?: emptyMap()
+
+    /** Return a copy with every override for [state] cleared (reset). */
+    fun clear(state: OverlayState): CarOverlayLayout =
+        CarOverlayLayout(byState.toMutableMap().apply { remove(state) })
 
     /** Return a copy with one element's override replaced for [state]. */
     fun with(state: OverlayState, el: OverlayElement, ov: LayoutOverride): CarOverlayLayout {

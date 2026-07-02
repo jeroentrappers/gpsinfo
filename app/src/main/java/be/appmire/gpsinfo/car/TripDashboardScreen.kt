@@ -366,6 +366,11 @@ class TripDashboardScreen(
             overlayLayout = overlayLayout.with(state, element, override)
             lifecycleScope.launch { settings.setCarOverlayLayoutJson(overlayLayout.toJson()) }
         }
+        // Reset: clear the whole active preset's overrides and re-save.
+        renderer.onLayoutReset = { state ->
+            overlayLayout = overlayLayout.clear(state)
+            lifecycleScope.launch { settings.setCarOverlayLayoutJson(overlayLayout.toJson()) }
+        }
 
         // G-meter feed, on its own job. The fused accelerometer stream
         // runs at the game sensor rate (~50 Hz); sample it down to a
@@ -508,10 +513,10 @@ class TripDashboardScreen(
                 // reports "driving" even at a standstill over projection,
                 // which is exactly the "not allowed while driving" toast.
                 // Editing auto-exits the moment the car starts moving again.
-                if (stopped &&
-                    nav !is NavigationController.NavState.Navigating &&
-                    nav !is NavigationController.NavState.Preparing
-                ) {
+                // Editing is allowed at any standstill — including while
+                // navigating, so the NAV preset (a separate layout from the
+                // idle one) can be tuned too. It auto-exits when the car moves.
+                if (stopped) {
                     addAction(
                         Action.Builder()
                             .setTitle(
@@ -526,6 +531,17 @@ class TripDashboardScreen(
                             }
                             .build()
                     )
+                    if (renderer.isEditMode()) {
+                        addAction(
+                            Action.Builder()
+                                .setTitle(carContext.getString(R.string.car_action_reset))
+                                .setOnClickListener {
+                                    renderer.resetLayout()
+                                    invalidate()
+                                }
+                                .build()
+                        )
+                    }
                 }
             }.build()
         }

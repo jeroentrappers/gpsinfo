@@ -49,47 +49,35 @@ class CarInstruments {
      *  left during turn-by-turn) the whole cluster shifts to the space that's
      *  left and never sits under the host chrome. */
     fun drawCockpit(canvas: Canvas, w: Int, h: Int, d: ClusterData, area: RectF, showCompass: Boolean = true) {
+        val g = cockpitGeom(w, h, area)
+        ckScrims(canvas, g, d)
+        ckClock(canvas, g, d)
+        ckSpeedGauge(canvas, g, d)
+        ckSpeedText(canvas, g, d)
+        if (d.obd) {
+            ckEnergyGauge(canvas, g, d)
+            ckEnergyText(canvas, g, d)
+        }
+        if (showCompass) ckCompass(canvas, g, d)
+    }
+
+    /** Shared cockpit geometry + each piece's natural bounds, computed once so
+     *  the pieces (drawn separately, so each can be an independently editable
+     *  overlay) all agree. See [drawCockpit] for the assembled result. */
+    fun cockpitGeom(w: Int, h: Int, area: RectF): CockpitGeom {
         val W = w.toFloat()
         val H = h.toFloat()
-        // Gauges hug the physical left/right edges. The host stacks its turn card
-        // and destination card in a left rail during turn-by-turn — detected by a
-        // large left inset on the safe area — so the SPEED scale tucks into the
-        // vertical gap between those two cards then, and uses the full safe height
-        // otherwise. The power scale (right, no cards there) always uses the full
-        // safe height.
         val edge = W * CK_EDGE
         val aL = edge
         val aR = W - edge
         val aW = aR - aL
-        // Vertical band = the host's safe area top/bottom. A top inset is a top
-        // (turn) card, a bottom inset is a bottom (destination) card — so the
-        // scales tuck between exactly what THIS host draws, whether that's both
-        // cards or just the bottom one. (On hosts that stack both cards in a left
-        // rail instead, the rail shows as a left inset, handled below.)
         val aT = area.top.coerceIn(0f, H * 0.42f)
         val aB = area.bottom.coerceIn(H * 0.58f, H)
-
-        // Scrims blend the edge gauges into the map. The right scrim only
-        // shows with an OBD feed — without it there's no right (power) arc, so
-        // the right edge stays clean map instead of a vignette over nothing.
         val scrimW = aW * CK_SCRIM
-        scrim.shader = LinearGradient(aL, 0f, aL + scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, aL + scrimW, H, scrim)
-        if (d.obd) {
-            scrim.shader = LinearGradient(aR, 0f, aR - scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
-            canvas.drawRect(aR - scrimW, 0f, W, H, scrim)
-        }
-        scrim.shader = null
-
         val gr = H * 0.42f * SHARED_R
         val f = Fonts(gr)
         val sweep = CK_CURVE
         val sinSweep = sin(Math.toRadians(sweep.toDouble())).toFloat()
-        // When the host stacks its cards in a LEFT rail (large left inset), tuck
-        // the speed scale into the rail's vertical middle — the gap between the
-        // turn card (top) and the destination card (bottom). Hosts that lay the
-        // cards out as top/bottom bands already express that gap through the
-        // aT/aB insets, so there the left band is simply the full safe height.
         val leftRail = area.left > W * 0.12f
         val railH = aB - aT
         val lTop = if (leftRail) aT + railH * CK_RAIL_GAP else aT
@@ -98,64 +86,93 @@ class CarInstruments {
         val rLL = ((lBot - lTop) / 2f).coerceAtLeast(H * 0.07f) / sinSweep
         val yMid = (aT + aB) / 2f
         val rL = ((aB - aT) / 2f).coerceAtLeast(H * 0.10f) / sinSweep
-        // When the speed scale is tucked smaller than the full (power) scale,
-        // shrink its tick labels / marks / insets by the same ratio so they don't
-        // look oversized on the compact dial.
         val sL = (rLL / rL).coerceIn(0.5f, 1f)
-        val cxL = aL + rLL          // arc's near edge hugs the left screen edge
-        val cxR = aR - rL           // …and the right screen edge
-        val spA = { t: Float -> 180f - sweep + 2f * sweep * t }   // left: bottom → top
-        val pwA = { t: Float -> sweep - 2f * sweep * t }          // right: bottom → top
+        val cxL = aL + rLL
+        val cxR = aR - rL
         val tickLen = gr * 0.16f
         val tipLen = (gr * 0.14f).coerceAtMost((edge * 0.9f).coerceAtLeast(8f))
         val fillW = gr * 0.05f
         val lx = aL + aW * CK_NUMINSET
         val rx = aR - aW * CK_NUMINSET
+        val dialR = H * CK_DIALSCALE
+        val dialCx = aL + aW * CK_DIALX
+        val dialCy = (aB - dialR - (aB - aT) * 0.04f).coerceAtLeast(yMid)
+        val clockX = (aL + aR) / 2f
+        val clockY = aT + f.clock * 0.2f
+        return CockpitGeom(
+            gr = gr, sweep = sweep, cxL = cxL, yL = yL, rLL = rLL, sL = sL,
+            cxR = cxR, yMid = yMid, rL = rL, lx = lx, rx = rx,
+            tickLen = tickLen, tipLen = tipLen, fillW = fillW,
+            aL = aL, aR = aR, aT = aT, aB = aB, w = W, h = H, scrimW = scrimW,
+            dialCx = dialCx, dialCy = dialCy, dialR = dialR, clockX = clockX, clockY = clockY,
+            bgRect = RectF(0f, aT, W, aB),
+            speedRect = RectF(0f, lTop, aL + aW * 0.22f, lBot),
+            speedTextRect = RectF(lx - aW * 0.12f, yL - gr * 0.35f, lx + aW * 0.12f, yL + gr * 0.6f),
+            energyRect = RectF(aR - aW * 0.22f, aT, W, aB),
+            energyTextRect = RectF(rx - aW * 0.12f, yMid - gr * 0.35f, rx + aW * 0.12f, yMid + gr * 0.6f),
+            compassRect = RectF(dialCx - dialR, dialCy - dialR, dialCx + dialR, dialCy + dialR),
+            clockRect = RectF(clockX - gr * 0.7f, clockY - gr * 0.05f, clockX + gr * 0.7f, clockY + f.clock * 1.3f),
+        )
+    }
 
-        // Clock + temp top-centre (between the host's top-left turn card and the
-        // top-right action strip).
-        clockTemp(canvas, (aL + aR) / 2f, aT + f.clock * 0.2f, f, d)
+    // ── Cockpit pieces (each an independently positionable overlay) ──
 
-        val sStops = speedStops()
-        val pStops = powerStops()
-
-        // ── LEFT — speed scale + level fill + limit dot + value tip ──
-        scaleTicks(canvas, cxL, yL, rLL, tickLen * sL, rLL - gr * 0.36f * sL, gr * sL, f.tick * sL, sStops, SPEED_KNEES, false, spA)
-        fillArc(canvas, cxL, yL, rLL, spA(0f), spA(speedFrac(d.kmh)), LCD, fillW * sL)
-        if (d.speedLimitKmh != null) {
-            limitDot(canvas, cxL, yL, rLL - gr * CK_LIMINSET * sL, spA(speedFrac(d.speedLimitKmh.toDouble())), gr * CK_LIMDOT * sL)
+    /** Edge scrims that blend the gauges into the map (the "background"). */
+    fun ckScrims(canvas: Canvas, g: CockpitGeom, d: ClusterData) {
+        scrim.shader = LinearGradient(g.aL, 0f, g.aL + g.scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, 0f, g.aL + g.scrimW, g.h, scrim)
+        if (d.obd) {
+            scrim.shader = LinearGradient(g.aR, 0f, g.aR - g.scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+            canvas.drawRect(g.aR - g.scrimW, 0f, g.w, g.h, scrim)
         }
-        outsideTip(canvas, cxL, yL, rLL, spA(speedFrac(d.kmh)), LCD, tipLen * sL)
-        // Readout (number · km/h · ±acc/odo), centred at the inner column.
+        scrim.shader = null
+    }
+
+    fun ckClock(canvas: Canvas, g: CockpitGeom, d: ClusterData) =
+        clockTemp(canvas, g.clockX, g.clockY, Fonts(g.gr), d)
+
+    /** Left speed scale + level fill + limit dot + value tip. */
+    fun ckSpeedGauge(canvas: Canvas, g: CockpitGeom, d: ClusterData) {
+        val f = Fonts(g.gr)
+        val spA = { t: Float -> 180f - g.sweep + 2f * g.sweep * t }
+        scaleTicks(canvas, g.cxL, g.yL, g.rLL, g.tickLen * g.sL, g.rLL - g.gr * 0.36f * g.sL, g.gr * g.sL, f.tick * g.sL, speedStops(), SPEED_KNEES, false, spA)
+        fillArc(canvas, g.cxL, g.yL, g.rLL, spA(0f), spA(speedFrac(d.kmh)), LCD, g.fillW * g.sL)
+        if (d.speedLimitKmh != null) {
+            limitDot(canvas, g.cxL, g.yL, g.rLL - g.gr * CK_LIMINSET * g.sL, spA(speedFrac(d.speedLimitKmh.toDouble())), g.gr * CK_LIMDOT * g.sL)
+        }
+        outsideTip(canvas, g.cxL, g.yL, g.rLL, spA(speedFrac(d.kmh)), LCD, g.tipLen * g.sL)
+    }
+
+    /** Speed read-out (number · km/h · ±acc/odo). */
+    fun ckSpeedText(canvas: Canvas, g: CockpitGeom, d: ClusterData) {
+        val f = Fonts(g.gr)
         mono.textAlign = Paint.Align.CENTER
         mono.color = TEXT; mono.isFakeBoldText = true; mono.textSize = f.digit
-        canvas.drawText(if (d.hasSpeed) "%.1f".format(Locale.ROOT, d.kmh) else "––", lx, yL, mono)
+        canvas.drawText(if (d.hasSpeed) "%.1f".format(Locale.ROOT, d.kmh) else "––", g.lx, g.yL, mono)
         mono.color = MUTED; mono.textSize = f.unit
-        canvas.drawText("km/h", lx, yL + f.unit * 1.6f, mono)
+        canvas.drawText("km/h", g.lx, g.yL + f.unit * 1.6f, mono)
         mono.color = LCD_DIM; mono.textSize = f.sub; mono.isFakeBoldText = false
-        canvas.drawText(subLine(d), lx, yL + f.unit * 1.6f + f.sub * 1.6f, mono)
-
-        // ── RIGHT — power scale + level fill + peak + value tip. Only drawn
-        // with an OBD feed; without it the right arc would be an empty dimmed
-        // twin of the speed arc, so the right side is left to the map. ──
-        if (d.obd) {
-            scaleTicks(canvas, cxR, yMid, rL, tickLen, rL - gr * 0.36f, gr, f.tick, pStops, POWER_KNEES, false, pwA)
-            val kw = d.kw ?: 0.0
-            fillArc(canvas, cxR, yMid, rL, pwA(powerFrac(0.0)), pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, fillW)
-            d.peakKw?.let { peakMark(canvas, cxR, yMid, rL, pwA(powerFrac(it)), gr) }
-            outsideTip(canvas, cxR, yMid, rL, pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, tipLen)
-            powerReadout(canvas, rx, yMid, f, d, inlineUnit = true)
-        }
-
-        // ── Merged compass + G-meter, anchored a fixed margin above the safe
-        // bottom (no longer sunk to a fixed Y). Opt-in: a compass/G-meter
-        // isn't navigation guidance, so it's only drawn when enabled. ──
-        if (showCompass) {
-            val dialR = H * CK_DIALSCALE
-            val dialCy = (aB - dialR - (aB - aT) * 0.04f).coerceAtLeast(yMid)
-            combinedCentre(canvas, aL + aW * CK_DIALX, dialCy, dialR, d)
-        }
+        canvas.drawText(subLine(d), g.lx, g.yL + f.unit * 1.6f + f.sub * 1.6f, mono)
     }
+
+    /** Right power scale + level fill + peak + value tip. */
+    fun ckEnergyGauge(canvas: Canvas, g: CockpitGeom, d: ClusterData) {
+        val f = Fonts(g.gr)
+        val pwA = { t: Float -> g.sweep - 2f * g.sweep * t }
+        scaleTicks(canvas, g.cxR, g.yMid, g.rL, g.tickLen, g.rL - g.gr * 0.36f, g.gr, f.tick, powerStops(), POWER_KNEES, false, pwA)
+        val kw = d.kw ?: 0.0
+        fillArc(canvas, g.cxR, g.yMid, g.rL, pwA(powerFrac(0.0)), pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, g.fillW)
+        d.peakKw?.let { peakMark(canvas, g.cxR, g.yMid, g.rL, pwA(powerFrac(it)), g.gr) }
+        outsideTip(canvas, g.cxR, g.yMid, g.rL, pwA(powerFrac(kw)), if (kw >= 0) ACCENT else REGEN, g.tipLen)
+    }
+
+    /** Power read-out (kW · kWh/100 · SoC/range). */
+    fun ckEnergyText(canvas: Canvas, g: CockpitGeom, d: ClusterData) =
+        powerReadout(canvas, g.rx, g.yMid, Fonts(g.gr), d, inlineUnit = true)
+
+    /** Merged compass + G-meter dial. */
+    fun ckCompass(canvas: Canvas, g: CockpitGeom, d: ClusterData) =
+        combinedCentre(canvas, g.dialCx, g.dialCy, g.dialR, d)
 
     /** Integrated single gauge filling [cell] (narrow/portrait surfaces). */
     fun drawIntegrated(canvas: Canvas, cell: RectF, d: ClusterData, showCompass: Boolean = true) {
@@ -824,4 +841,22 @@ data class ClusterData(
     val ambientTempC: Double?,
     val clock: String,
     val obd: Boolean,
+)
+
+/** Shared cockpit geometry + each piece's natural bounds (its designed screen
+ *  rect, used as the pivot/hit-box when the piece is an editable overlay).
+ *  Produced by [CarInstruments.cockpitGeom]. */
+class CockpitGeom(
+    val gr: Float, val sweep: Float,
+    val cxL: Float, val yL: Float, val rLL: Float, val sL: Float,
+    val cxR: Float, val yMid: Float, val rL: Float,
+    val lx: Float, val rx: Float,
+    val tickLen: Float, val tipLen: Float, val fillW: Float,
+    val aL: Float, val aR: Float, val aT: Float, val aB: Float,
+    val w: Float, val h: Float, val scrimW: Float,
+    val dialCx: Float, val dialCy: Float, val dialR: Float,
+    val clockX: Float, val clockY: Float,
+    val bgRect: RectF, val speedRect: RectF, val speedTextRect: RectF,
+    val energyRect: RectF, val energyTextRect: RectF,
+    val compassRect: RectF, val clockRect: RectF,
 )

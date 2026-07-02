@@ -304,6 +304,9 @@ class CarMapRenderer(
      *  right state bucket. Set by the owner. */
     var onLayoutChanged: ((OverlayState, OverlayElement, LayoutOverride) -> Unit)? = null
 
+    /** Reset callback — the screen clears the whole state bucket in DataStore. */
+    var onLayoutReset: ((OverlayState) -> Unit)? = null
+
     fun updateOverlayLayout(state: OverlayState, layout: Map<OverlayElement, LayoutOverride>) {
         // Don't let a persisted value flowing back clobber a live drag.
         if (editMode) return
@@ -329,6 +332,16 @@ class CarMapRenderer(
     }
 
     fun isEditMode(): Boolean = editMode
+
+    /** Reset the current state's layout to defaults (clears all overrides for
+     *  the active NAV/IDLE preset). Only meaningful in edit mode. */
+    fun resetLayout() {
+        overlayLayout = emptyMap()
+        dirtyElements.clear()
+        selectedElement = null
+        scheduleRender()
+        onLayoutReset?.invoke(overlayState)
+    }
 
     /** Apply [transform] to the selected element's override and repaint. */
     private fun mutateSelected(transform: (LayoutOverride) -> LayoutOverride) {
@@ -715,10 +728,9 @@ class CarMapRenderer(
         // already shows speed + limit, so the minimal badge is the
         // navigation-only fallback shown when the cluster is hidden.
         if (overlayConfig.cluster) {
-            val clusterSafe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
-            overlay(canvas, OverlayElement.CLUSTER, RectF(clusterSafe)) {
-                drawCluster(canvas, w, h, loc)
-            }
+            // drawCluster wraps each piece (background / gauges / text / compass)
+            // in its own overlay() so they're individually editable.
+            drawCluster(canvas, w, h, loc)
         } else {
             drawSpeedBadge(canvas, w, h, loc, dark)
         }
@@ -803,18 +815,30 @@ class CarMapRenderer(
         val d = buildClusterData(loc)
         val showCompass = overlayConfig.compass
         if (w >= h * COCKPIT_MIN_ASPECT) {
-            // Lay the cluster out inside the host's safe rectangle. During
-            // turn-by-turn the host claims a left rail (turn card + ETA), which
-            // shrinks the safe area from the left — the gauges then shift right
-            // of it rather than hiding underneath. Falls back to the full surface.
+            // Wide surface → cockpit, drawn as separate pieces so each is an
+            // independently draggable/scalable overlay (background, left gauge,
+            // speed text, right gauge, energy text, compass, clock). Laid out
+            // inside the host's safe rectangle so it dodges the turn/ETA cards.
             val safe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
-            instruments.drawCockpit(canvas, w, h, d, RectF(safe), showCompass)
+            val g = instruments.cockpitGeom(w, h, RectF(safe))
+            overlay(canvas, OverlayElement.CL_BG, g.bgRect) { instruments.ckScrims(canvas, g, d) }
+            overlay(canvas, OverlayElement.CL_CLOCK, g.clockRect) { instruments.ckClock(canvas, g, d) }
+            overlay(canvas, OverlayElement.CL_SPEED, g.speedRect) { instruments.ckSpeedGauge(canvas, g, d) }
+            overlay(canvas, OverlayElement.CL_SPEED_TXT, g.speedTextRect) { instruments.ckSpeedText(canvas, g, d) }
+            if (d.obd) {
+                overlay(canvas, OverlayElement.CL_ENERGY, g.energyRect) { instruments.ckEnergyGauge(canvas, g, d) }
+                overlay(canvas, OverlayElement.CL_ENERGY_TXT, g.energyTextRect) { instruments.ckEnergyText(canvas, g, d) }
+            }
+            if (showCompass) overlay(canvas, OverlayElement.COMPASS, g.compassRect) { instruments.ckCompass(canvas, g, d) }
         } else {
-            // Centred square housing; the map shows above and below it.
+            // Narrow surface → the single integrated gauge, as one element.
             val s = min(w.toFloat(), h.toFloat()) * 0.98f
             val cx = w / 2f
             val cy = h / 2f
-            instruments.drawIntegrated(canvas, RectF(cx - s / 2f, cy - s / 2f, cx + s / 2f, cy + s / 2f), d, showCompass)
+            val cell = RectF(cx - s / 2f, cy - s / 2f, cx + s / 2f, cy + s / 2f)
+            overlay(canvas, OverlayElement.CLUSTER, cell) {
+                instruments.drawIntegrated(canvas, cell, d, showCompass)
+            }
         }
     }
 
