@@ -196,6 +196,10 @@ fun LiveMapScreen(
     // is bumped on each touch to (re)start the hide countdown.
     var chromeVisible by remember { mutableStateOf(true) }
     var revealTick by remember { mutableStateOf(0) }
+    // While editing the cluster layout, the chrome (and the shell's bottom nav)
+    // must stay hidden — otherwise touching an element reveals it, which
+    // resizes the content area and makes the dragged element jump. Freeze it.
+    var clusterEditing by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(chromeVisible) {
         onChromeVisibilityChanged(chromeVisible)
     }
@@ -203,9 +207,14 @@ fun LiveMapScreen(
         kotlinx.coroutines.delay(3500L)
         chromeVisible = false
     }
+    androidx.compose.runtime.LaunchedEffect(clusterEditing) {
+        if (clusterEditing) chromeVisible = false
+    }
     val revealChrome = {
-        chromeVisible = true
-        revealTick++
+        if (!clusterEditing) {
+            chromeVisible = true
+            revealTick++
+        }
     }
 
     Scaffold(
@@ -378,6 +387,7 @@ fun LiveMapScreen(
                     persisted = phoneLayout,
                     onSave = { vm.savePhoneOverlayLayout(it) },
                     context = overlayCtx,
+                    onEditingChange = { clusterEditing = it },
                     controlsAlignment = Alignment.CenterStart,
                     modifier = Modifier
                         .fillMaxSize()

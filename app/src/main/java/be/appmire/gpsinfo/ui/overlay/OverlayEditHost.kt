@@ -46,6 +46,9 @@ fun OverlayEditBox(
     context: PhoneOverlayContext,
     modifier: Modifier = Modifier,
     controlsAlignment: Alignment = Alignment.CenterEnd,
+    /** Fires when edit mode toggles, so the host can e.g. freeze reveal-on-touch
+     *  chrome that would otherwise resize the content while dragging. */
+    onEditingChange: (Boolean) -> Unit = {},
     content: @Composable BoxScope.() -> Unit,
 ) {
     var editing by remember { mutableStateOf(false) }
@@ -53,6 +56,7 @@ fun OverlayEditBox(
     var parentPx by remember { mutableStateOf(IntSize.Zero) }
     var working by remember { mutableStateOf(persisted) }
     LaunchedEffect(persisted) { if (!editing) working = persisted }
+    LaunchedEffect(editing) { onEditingChange(editing) }
 
     Box(modifier.onSizeChanged { parentPx = it }) {
         val scope = OverlayEditScope(
