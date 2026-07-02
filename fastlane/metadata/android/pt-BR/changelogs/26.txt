@@ -1,0 +1,1 @@
+• Corrigida a edição do layout do painel na aba Mapa: a tela não redimensiona mais ao tocar, então os medidores ficam no lugar enquanto você os arrasta.

@@ -1,0 +1,1 @@
+• Bewerken van de clusterindeling op het kaarttabblad hersteld: het scherm verandert niet meer van grootte bij aanraking, zodat meters op hun plek blijven tijdens het slepen.

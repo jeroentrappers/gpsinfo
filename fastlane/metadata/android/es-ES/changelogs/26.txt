@@ -1,0 +1,1 @@
+• Corregida la edición del diseño del cuadro en la pestaña Mapa: la pantalla ya no cambia de tamaño al tocar, así los indicadores se quedan en su sitio al arrastrarlos.

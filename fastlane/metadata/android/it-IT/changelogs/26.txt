@@ -1,0 +1,1 @@
+• Corretta la modifica del layout del quadro nella scheda Mappa: lo schermo non si ridimensiona più al tocco, così gli indicatori restano fermi mentre li trascini.

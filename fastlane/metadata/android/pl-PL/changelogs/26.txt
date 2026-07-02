@@ -1,0 +1,1 @@
+• Naprawiono edycję układu zestawu na karcie Mapa: ekran nie zmienia już rozmiaru przy dotknięciu, więc wskaźniki pozostają na miejscu podczas przeciągania.

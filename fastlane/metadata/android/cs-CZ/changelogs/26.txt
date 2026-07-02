@@ -1,0 +1,1 @@
+• Opravena úprava rozvržení panelu na kartě Mapa: obrazovka se při dotyku už nemění, takže ukazatele zůstávají na místě, když je přetahujete.

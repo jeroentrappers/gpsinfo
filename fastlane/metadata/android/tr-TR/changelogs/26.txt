@@ -1,0 +1,1 @@
+• Harita sekmesinde gösterge paneli düzeni düzenleme düzeltildi: ekran artık dokununca yeniden boyutlanmıyor, böylece göstergeler sürüklerken yerinde kalıyor.

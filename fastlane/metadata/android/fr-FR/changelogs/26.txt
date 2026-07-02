@@ -1,0 +1,1 @@
+• Correction de l'édition de la disposition du combiné dans l'onglet Carte : l'écran ne se redimensionne plus au toucher, les jauges restent en place pendant le déplacement.

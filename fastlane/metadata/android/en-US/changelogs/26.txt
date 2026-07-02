@@ -1,0 +1,1 @@
+• Fixed cluster layout editing on the Map tab: the screen no longer resizes when you touch an element, so gauges stay put while you drag them.

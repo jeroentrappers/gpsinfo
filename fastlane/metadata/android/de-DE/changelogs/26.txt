@@ -1,0 +1,1 @@
+• Bearbeiten des Kombiinstrument-Layouts im Karten-Tab korrigiert: Der Bildschirm ändert beim Berühren nicht mehr die Größe, sodass Anzeigen beim Ziehen an ihrem Platz bleiben.
