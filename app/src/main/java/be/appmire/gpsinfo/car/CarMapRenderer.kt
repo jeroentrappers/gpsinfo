@@ -821,7 +821,10 @@ class CarMapRenderer(
             // inside the host's safe rectangle so it dodges the turn/ETA cards.
             val safe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
             val g = instruments.cockpitGeom(w, h, RectF(safe))
-            overlay(canvas, OverlayElement.CL_BG, g.bgRect) { instruments.ckScrims(canvas, g, d) }
+            // Scrims are drawn plainly (not an editable element): they're the
+            // near-invisible full-bleed background, and wrapping them made a
+            // screen-covering hit-box that swallowed taps meant for the gauges.
+            instruments.ckScrims(canvas, g, d)
             overlay(canvas, OverlayElement.CL_CLOCK, g.clockRect) { instruments.ckClock(canvas, g, d) }
             overlay(canvas, OverlayElement.CL_SPEED, g.speedRect) { instruments.ckSpeedGauge(canvas, g, d) }
             overlay(canvas, OverlayElement.CL_SPEED_TXT, g.speedTextRect) { instruments.ckSpeedText(canvas, g, d) }
@@ -955,30 +958,40 @@ class CarMapRenderer(
             return
         }
         val bmp = snap.bitmap
+        val following = hasBearing && !panMode
+        // Where the current (dead-reckoned) vehicle projects on this — possibly
+        // stale — snapshot. While following, shift the whole map so that point
+        // sits under the fixed puck anchor: the puck lands on the road, and the
+        // shift growing between snapshots pans the map smoothly (less jank).
+        val vehPf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude))
+        val puckProjected = android.graphics.PointF(mapLeft + vehPf.x, vehPf.y)
+        var shiftX = 0f
+        var shiftY = 0f
+        if (following) {
+            val anchorX = mapLeft + mapW / 2f
+            val anchorY = h * PUCK_SCREEN_FRACTION
+            shiftX = (anchorX - puckProjected.x).coerceIn(-mapW * MAX_MAP_SHIFT, mapW * MAX_MAP_SHIFT)
+            shiftY = (anchorY - puckProjected.y).coerceIn(-h * MAX_MAP_SHIFT, h * MAX_MAP_SHIFT)
+        }
+        canvas.save()
+        canvas.translate(shiftX, shiftY)
         if (bmp.width == mapW && bmp.height == h) {
             canvas.drawBitmap(bmp, mapLeft, 0f, layerPaint)
         } else {
-            // The surface resized since this snapshot was taken (a fresh,
-            // correctly-sized one is already requested above). Stretch the
-            // current bitmap to fill the new area for this one transitional
-            // frame so the map tracks the available space immediately instead
-            // of leaving a gap or overflowing.
-            val dst = RectF(mapLeft, 0f, mapLeft + mapW, h.toFloat())
-            canvas.drawBitmap(bmp, null, dst, layerPaint)
+            // Surface resized since this snapshot (a correctly-sized one is
+            // already requested). Stretch this one to fill for the transition.
+            canvas.drawBitmap(bmp, null, RectF(mapLeft, 0f, mapLeft + mapW, h.toFloat()), layerPaint)
         }
-        if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
-
-        // Overlays projected through the snapshot. While following, the
-        // puck is pinned to a fixed on-screen anchor (the map scrolls
-        // under it) so it never jitters against a snapshot that lags the
-        // moving camera.
-        val following = hasBearing && !panMode
-        val puck = puckScreenPoint(snap, mapLeft, loc, following)
+        // Overlays share the shift so they stay glued to the map; the puck is
+        // drawn at the projected vehicle position, which the shift places back
+        // at the fixed anchor.
         drawAlternatives(canvas, snap, mapLeft)
-        drawProjectedRoute(canvas, snap, mapLeft, loc, puck)
+        drawProjectedRoute(canvas, snap, mapLeft, loc, puckProjected)
         drawTraffic(canvas, snap, mapLeft)
         drawProjectedBreadcrumb(canvas, snap, mapLeft)
-        drawProjectedMarker(canvas, puck)
+        drawProjectedMarker(canvas, puckProjected)
+        canvas.restore()
+        if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
     }
 
     /** The vehicle puck's drawn position this frame: a fixed low-centre
@@ -1610,6 +1623,10 @@ class CarMapRenderer(
          *  of surface height from the top (~78% down). Keep roughly in
          *  step with LOOK_AHEAD_FRACTION so puck and map agree. */
         const val PUCK_SCREEN_FRACTION = 0.78f
+        /** Max fraction of the surface the map is shifted to keep the puck on
+         *  the road between snapshots (bounds the edge gap when the snapshot
+         *  lags a fast-moving camera). */
+        const val MAX_MAP_SHIFT = 0.18f
         /** Consecutive route points drawn ahead of the vehicle, full
          *  fidelity (no decimation). ~90 ≈ the next several km at BRouter's
          *  ~100 m node spacing — more than the zoomed nav view shows. */
