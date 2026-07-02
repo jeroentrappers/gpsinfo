@@ -1,0 +1,3 @@
+• Die Routenauswahl erscheint jetzt zuverlässig, wenn du die Navigation über Suche oder einen gespeicherten Ort startest: Schnellste, Kürzeste oder Optimale wählen (auch offline).
+• Android Auto: Die Kombiinstrument-Elemente sind wieder einzeln bearbeitbar (der unsichtbare Hintergrund schluckt keine Berührungen mehr).
+• Flüssigere Karte in Android Auto, mit dem Puck auf der Straße.

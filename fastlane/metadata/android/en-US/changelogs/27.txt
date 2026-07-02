@@ -1,0 +1,3 @@
+• Route chooser now reliably appears when you start navigation from search or a saved place: pick Fastest, Shortest or Optimal (works offline too).
+• Android Auto: the gauge cluster elements are individually editable again (the invisible background no longer swallows taps).
+• Smoother map on Android Auto, with the puck sitting on the road.

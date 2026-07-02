@@ -1,0 +1,3 @@
+• El selector de rutas ahora aparece de forma fiable al iniciar la navegación desde la búsqueda o un lugar guardado: elige Más rápida, Más corta u Óptima (también sin conexión).
+• Android Auto: los elementos del cuadro vuelven a ser editables por separado (el fondo invisible ya no captura los toques).
+• Mapa más fluido en Android Auto, con el marcador sobre la carretera.

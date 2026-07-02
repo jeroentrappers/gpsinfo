@@ -1,0 +1,3 @@
+• Rota seçici artık aramadan veya kayıtlı bir yerden navigasyonu başlattığınızda güvenilir şekilde görünüyor: En hızlı, En kısa veya En uygun'u seçin (çevrimdışı da çalışır).
+• Android Auto: gösterge paneli öğeleri yeniden tek tek düzenlenebiliyor (görünmez arka plan artık dokunuşları yutmuyor).
+• Android Auto'da daha akıcı harita, işaret yol üzerinde.

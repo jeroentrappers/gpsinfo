@@ -1,0 +1,3 @@
+• Le sélecteur d'itinéraire apparaît désormais de façon fiable au démarrage de la navigation depuis la recherche ou un lieu enregistré : choisissez Le plus rapide, Le plus court ou Optimal (fonctionne hors ligne aussi).
+• Android Auto : les éléments du combiné sont de nouveau modifiables individuellement (le fond invisible n'intercepte plus les touchers).
+• Carte plus fluide sur Android Auto, avec le repère sur la route.

@@ -1,0 +1,3 @@
+• Wybór trasy pojawia się teraz niezawodnie po rozpoczęciu nawigacji z wyszukiwania lub zapisanego miejsca: wybierz Najszybszą, Najkrótszą lub Optymalną (działa też offline).
+• Android Auto: elementy zestawu wskaźników znów można edytować pojedynczo (niewidoczne tło nie przechwytuje już dotknięć).
+• Płynniejsza mapa w Android Auto, ze wskaźnikiem na drodze.

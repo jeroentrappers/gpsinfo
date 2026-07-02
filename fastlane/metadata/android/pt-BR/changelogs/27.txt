@@ -1,0 +1,3 @@
+• O seletor de rotas agora aparece de forma confiável ao iniciar a navegação pela busca ou por um lugar salvo: escolha Mais rápida, Mais curta ou Ótima (também offline).
+• Android Auto: os elementos do painel são editáveis individualmente de novo (o fundo invisível não captura mais os toques).
+• Mapa mais fluido no Android Auto, com o marcador sobre a estrada.

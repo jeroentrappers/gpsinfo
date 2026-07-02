@@ -1,0 +1,3 @@
+• Výběr trasy se nyní spolehlivě zobrazí při spuštění navigace z hledání nebo uloženého místa: zvolte Nejrychlejší, Nejkratší nebo Optimální (funguje i offline).
+• Android Auto: prvky panelu lze opět upravovat jednotlivě (neviditelné pozadí už nepohlcuje dotyky).
+• Plynulejší mapa v Android Auto, s ukazatelem na silnici.

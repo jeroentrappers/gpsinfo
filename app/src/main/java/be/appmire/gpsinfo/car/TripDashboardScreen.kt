@@ -692,6 +692,13 @@ class TripDashboardScreen(
     private fun routingInfo(
         n: NavigationController.NavState.Navigating,
     ): androidx.car.app.navigation.model.RoutingInfo {
+        // Diagnostic (temporary): pinpoints whether the top-left turn card is
+        // empty because there's no maneuver (nextTurn null → loading) vs. a
+        // host/step issue. Grep logcat for "NavCard".
+        android.util.Log.w(
+            "NavCard",
+            "routingInfo nextTurn=${n.nextTurn?.command} turns=${n.route.turns.size} distToTurnM=${n.distanceToTurnM.toInt()}",
+        )
         val turn = n.nextTurn
             ?: return androidx.car.app.navigation.model.RoutingInfo.Builder()
                 .setLoading(true).build()

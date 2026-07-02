@@ -1,0 +1,3 @@
+• De routekiezer verschijnt nu betrouwbaar wanneer je navigatie start via zoeken of een opgeslagen plaats: kies Snelste, Kortste of Optimaal (werkt ook offline).
+• Android Auto: de clusterelementen zijn weer afzonderlijk bewerkbaar (de onzichtbare achtergrond onderschept geen aanrakingen meer).
+• Vloeiendere kaart op Android Auto, met de puck op de weg.

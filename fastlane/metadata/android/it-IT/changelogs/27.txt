@@ -1,0 +1,3 @@
+• Il selettore di percorso ora appare in modo affidabile quando avvii la navigazione dalla ricerca o da un luogo salvato: scegli Più veloce, Più corto o Ottimale (anche offline).
+• Android Auto: gli elementi del quadro sono di nuovo modificabili singolarmente (lo sfondo invisibile non intercetta più i tocchi).
+• Mappa più fluida su Android Auto, con il segnalino sulla strada.
