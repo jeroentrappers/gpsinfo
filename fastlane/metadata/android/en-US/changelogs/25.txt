@@ -1,0 +1,3 @@
+• Android Auto: you can now move and resize each cluster part on its own — background, left gauge, speed text, right gauge, energy text, compass and clock — with a Reset button.
+• Separate layouts for navigating vs not: edit at a standstill (including during navigation) and each is saved on its own.
+• Smoother cluster edge shading (no more banding).

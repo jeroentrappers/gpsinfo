@@ -1,0 +1,3 @@
+• Android Auto : vous pouvez désormais déplacer et redimensionner chaque partie du combiné — fond, jauge gauche, texte de vitesse, jauge droite, texte d'énergie, boussole et horloge — avec un bouton Réinitialiser.
+• Dispositions distinctes navigation activée/désactivée : modifiez à l'arrêt (même en navigation) ; chacune est enregistrée séparément.
+• Ombrage des bords plus doux (fini le banding).

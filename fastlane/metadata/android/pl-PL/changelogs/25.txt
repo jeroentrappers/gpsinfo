@@ -1,0 +1,3 @@
+• Android Auto: możesz teraz osobno przesuwać i skalować każdą część zestawu — tło, lewy wskaźnik, tekst prędkości, prawy wskaźnik, tekst energii, kompas i zegar — z przyciskiem Resetuj.
+• Osobne układy dla nawigacji wł./wył.: edytuj na postoju (także podczas nawigacji); każdy zapisywany oddzielnie.
+• Gładsze cieniowanie krawędzi (koniec z banding).

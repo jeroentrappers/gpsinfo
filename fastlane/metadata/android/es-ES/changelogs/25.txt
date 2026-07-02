@@ -1,0 +1,3 @@
+• Android Auto: ahora puedes mover y redimensionar cada parte del cuadro por separado — fondo, indicador izquierdo, texto de velocidad, indicador derecho, texto de energía, brújula y reloj — con un botón Restablecer.
+• Diseños separados con navegación activada/desactivada: edita detenido (incluso navegando); cada uno se guarda por separado.
+• Sombreado de bordes más suave (sin bandas).

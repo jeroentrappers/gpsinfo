@@ -1,0 +1,3 @@
+• Android Auto: každou část panelu lze nyní přesouvat a měnit její velikost samostatně — pozadí, levý ukazatel, text rychlosti, pravý ukazatel, text energie, kompas a hodiny — s tlačítkem Obnovit.
+• Samostatná rozvržení pro navigaci zap./vyp.: upravujte za klidu (i během navigace); každé se ukládá zvlášť.
+• Jemnější stínování okrajů (bez banding).

@@ -1,0 +1,3 @@
+• Android Auto: Jedes Kombiinstrument-Teil lässt sich jetzt einzeln verschieben und skalieren — Hintergrund, linke Anzeige, Tempo-Text, rechte Anzeige, Energie-Text, Kompass und Uhr — mit Zurücksetzen-Taste.
+• Getrennte Layouts für Navigation an/aus: im Stand bearbeiten (auch während der Navigation); jedes wird separat gespeichert.
+• Weichere Randabschattung (kein Banding mehr).

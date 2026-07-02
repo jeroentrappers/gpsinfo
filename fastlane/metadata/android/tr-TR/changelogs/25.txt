@@ -1,0 +1,3 @@
+• Android Auto: artık gösterge panelinin her parçasını ayrı ayrı taşıyıp boyutlandırabilirsiniz — arka plan, sol gösterge, hız metni, sağ gösterge, enerji metni, pusula ve saat — Sıfırla düğmesiyle.
+• Navigasyon açık/kapalı için ayrı düzenler: dururken (navigasyon sırasında dahil) düzenleyin; her biri ayrı kaydedilir.
+• Daha yumuşak kenar gölgelendirmesi (banding yok).

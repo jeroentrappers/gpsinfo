@@ -1,0 +1,3 @@
+• Android Auto: agora você pode mover e redimensionar cada parte do painel separadamente — fundo, medidor esquerdo, texto de velocidade, medidor direito, texto de energia, bússola e relógio — com um botão Redefinir.
+• Layouts separados com navegação ligada/desligada: edite parado (inclusive navegando); cada um é salvo à parte.
+• Sombreado das bordas mais suave (sem banding).

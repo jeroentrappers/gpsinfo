@@ -1,0 +1,3 @@
+• Android Auto: je kunt nu elk clusteronderdeel apart verplaatsen en schalen — achtergrond, linkermeter, snelheidstekst, rechtermeter, energietekst, kompas en klok — met een resetknop.
+• Aparte indelingen voor navigeren vs. niet: bewerk stilstaand (ook tijdens navigatie); elk wordt apart bewaard.
+• Vloeiendere randschaduw van het cluster (geen banding meer).

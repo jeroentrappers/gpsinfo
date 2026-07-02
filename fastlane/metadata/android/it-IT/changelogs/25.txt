@@ -1,0 +1,3 @@
+• Android Auto: ora puoi spostare e ridimensionare ogni parte del quadro singolarmente — sfondo, indicatore sinistro, testo velocità, indicatore destro, testo energia, bussola e orologio — con un pulsante Ripristina.
+• Layout separati con navigazione attiva/non attiva: modifica da fermo (anche durante la navigazione); ognuno è salvato a parte.
+• Ombreggiatura dei bordi più morbida (niente più banding).
