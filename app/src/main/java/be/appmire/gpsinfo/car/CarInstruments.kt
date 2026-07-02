@@ -117,12 +117,14 @@ class CarInstruments {
 
     // ── Cockpit pieces (each an independently positionable overlay) ──
 
-    /** Edge scrims that blend the gauges into the map (the "background"). */
+    /** Edge scrims that blend the gauges into the map (the "background").
+     *  Multi-stop, eased falloff + dithered paint so the wide gradient reads
+     *  smooth instead of banding into steps. */
     fun ckScrims(canvas: Canvas, g: CockpitGeom, d: ClusterData) {
-        scrim.shader = LinearGradient(g.aL, 0f, g.aL + g.scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+        scrim.shader = LinearGradient(g.aL, 0f, g.aL + g.scrimW, 0f, SCRIM_COLS, SCRIM_POS, Shader.TileMode.CLAMP)
         canvas.drawRect(0f, 0f, g.aL + g.scrimW, g.h, scrim)
         if (d.obd) {
-            scrim.shader = LinearGradient(g.aR, 0f, g.aR - g.scrimW, 0f, SCRIM_ON, SCRIM_OFF, Shader.TileMode.CLAMP)
+            scrim.shader = LinearGradient(g.aR, 0f, g.aR - g.scrimW, 0f, SCRIM_COLS, SCRIM_POS, Shader.TileMode.CLAMP)
             canvas.drawRect(g.aR - g.scrimW, 0f, g.w, g.h, scrim)
         }
         scrim.shader = null
@@ -713,7 +715,9 @@ class CarInstruments {
     private val zone = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
     private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f }
-    private val scrim = Paint()
+    // Dither smooths the black→transparent alpha ramp; without it the wide,
+    // low-gradient scrim bands badly on the car surface (often RGB_565).
+    private val scrim = Paint(Paint.FILTER_BITMAP_FLAG).apply { isDither = true }
     private val mono = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER; typeface = Typeface.MONOSPACE
     }
@@ -816,8 +820,12 @@ class CarInstruments {
         const val SIGN_RED = 0xFFD32F2F.toInt()
         const val NEEDLE = 0xEBFFFFFF.toInt()
         const val ACCURACY_GREY = 0xFF8AA0AA.toInt()
-        const val SCRIM_ON = 0xEB000000.toInt()
-        const val SCRIM_OFF = 0x00000000
+        // Eased, multi-stop black→transparent falloff for the edge scrims
+        // (smoother than a 2-stop linear ramp; paired with a dithered paint).
+        val SCRIM_POS = floatArrayOf(0f, 0.25f, 0.5f, 0.75f, 1f)
+        val SCRIM_COLS = intArrayOf(
+            0xEB000000.toInt(), 0xC8000000.toInt(), 0x8C000000.toInt(), 0x46000000.toInt(), 0x00000000,
+        )
     }
 }
 
