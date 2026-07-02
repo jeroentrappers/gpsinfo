@@ -1,0 +1,1 @@
+• Veel sneller opnieuw berekenen wanneer je de route verlaat: de online- en offline-engine draaien nu tegelijk en de snelste wint, zodat een nieuwe route vrijwel meteen verschijnt.

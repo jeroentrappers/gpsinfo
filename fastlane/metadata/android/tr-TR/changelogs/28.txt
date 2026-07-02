@@ -1,0 +1,1 @@
+• Rotadan çıktığınızda çok daha hızlı yeniden hesaplama: çevrimiçi ve çevrimdışı motorlar artık aynı anda çalışıyor ve hızlı olan kazanıyor, böylece yeni rota neredeyse anında görünüyor.

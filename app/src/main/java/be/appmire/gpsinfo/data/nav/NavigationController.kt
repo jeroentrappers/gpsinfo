@@ -311,6 +311,35 @@ object NavigationController {
         }
     }
 
+    /** Route via every available engine at once and return the first VALID
+     *  result — the online engine (traffic-aware, but a network round-trip)
+     *  races the offline one (BRouter: local and near-instant). The loser is
+     *  cancelled. Used for fast reroutes when the driver leaves the route. */
+    private suspend fun raceRoute(
+        fromLat: Double, fromLon: Double, toLat: Double, toLon: Double, profile: RouteProfile,
+    ): OfflineRoute? = coroutineScope {
+        val srcs: List<Router> = listOfNotNull(onlineRouter, router)
+        if (srcs.isEmpty()) return@coroutineScope null
+        val results = kotlinx.coroutines.channels.Channel<OfflineRoute?>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+        val jobs = srcs.map { r ->
+            launch {
+                results.send(
+                    runCatching { r.route(fromLat, fromLon, toLat, toLon, profile) }
+                        .getOrNull()?.takeIf { it.points.size >= 2 },
+                )
+            }
+        }
+        var winner: OfflineRoute? = null
+        repeat(srcs.size) {
+            if (winner == null) {
+                val r = results.receive()
+                if (r != null) winner = r
+            }
+        }
+        jobs.forEach { it.cancel() } // stop the slower engine still running
+        winner
+    }
+
     /**
      * Best-effort offline-cache of the OpenFreeMap vector tiles over
      * the route's bounding box, so the map renders without a
@@ -436,14 +465,12 @@ object NavigationController {
             }
             if (offRouteCount >= needed && !reRouting) {
                 reRouting = true
-                val ctxRouter = router
                 scope.launch {
-                    // Online reroute first (fast, profile-aware); BRouter if offline.
-                    val fresh = onlineRouter.route(
-                        loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
-                    ) ?: ctxRouter?.route(
-                        loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile,
-                    )
+                    // Race online (traffic-aware) and offline (BRouter, local +
+                    // instant) and take whichever returns a valid route first —
+                    // the reroute lands right away instead of waiting out the
+                    // online round-trip before even trying offline.
+                    val fresh = raceRoute(loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile)
                     synchronized(this@NavigationController) {
                         reRouting = false
                         offRouteCount = 0

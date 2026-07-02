@@ -1,0 +1,1 @@
+• Recalcul bien plus rapide quand vous quittez l'itinéraire : les moteurs en ligne et hors ligne tournent désormais en même temps et le plus rapide l'emporte, donc un nouvel itinéraire apparaît presque instantanément.

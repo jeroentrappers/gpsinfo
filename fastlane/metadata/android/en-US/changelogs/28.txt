@@ -1,0 +1,1 @@
+• Much faster rerouting when you leave the route: the online and offline engines now run at the same time and whichever answers first is used, so a new route appears almost instantly.

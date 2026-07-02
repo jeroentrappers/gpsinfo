@@ -1,0 +1,1 @@
+• Ricalcolo molto più rapido quando lasci il percorso: i motori online e offline ora vengono eseguiti insieme e vince il più veloce, così un nuovo percorso appare quasi subito.

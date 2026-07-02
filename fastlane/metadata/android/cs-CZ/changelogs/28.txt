@@ -1,0 +1,1 @@
+• Mnohem rychlejší přepočet, když opustíte trasu: online i offline engine nyní běží současně a vyhrává rychlejší, takže nová trasa se objeví téměř okamžitě.

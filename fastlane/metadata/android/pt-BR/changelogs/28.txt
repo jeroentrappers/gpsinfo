@@ -1,0 +1,1 @@
+• Recálculo muito mais rápido ao sair da rota: os motores online e offline agora rodam ao mesmo tempo e o mais rápido vence, então uma nova rota aparece quase instantaneamente.

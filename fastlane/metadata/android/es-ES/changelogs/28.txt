@@ -1,0 +1,1 @@
+• Recálculo mucho más rápido al salir de la ruta: los motores en línea y sin conexión ahora se ejecutan a la vez y gana el más rápido, así que aparece una nueva ruta casi al instante.
