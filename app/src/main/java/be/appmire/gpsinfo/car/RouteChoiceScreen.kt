@@ -43,7 +43,7 @@ class RouteChoiceScreen(
 
     init {
         lifecycleScope.launch {
-            val opts = NavigationController.previewOptions(destLat, destLon)
+            val opts = NavigationController.previewOptions(carContext, destLat, destLon)
             if (opts.isEmpty()) {
                 // No online alternatives (offline / no fix yet) — go straight
                 // to navigation; BRouter routes offline.

@@ -276,17 +276,33 @@ object NavigationController {
      * that collapse to the same route are deduped, so identical options
      * don't clutter the list.
      */
-    suspend fun previewOptions(destLat: Double, destLon: Double): List<RouteOption> {
-        val from = currentOrigin() ?: return emptyList()
-        val computed = coroutineScope {
-            listOf(RouteProfile.FASTEST, RouteProfile.SHORTEST, RouteProfile.ECONOMIC).map { p ->
+    suspend fun previewOptions(context: Context, destLat: Double, destLon: Double): List<RouteOption> {
+        // Wait for an origin fix (same as navigateTo) so the chooser isn't
+        // skipped just because it ran before the first GNSS lock.
+        val from = awaitOrigin() ?: return emptyList()
+        val appContext = context.applicationContext
+        val profiles = listOf(RouteProfile.FASTEST, RouteProfile.SHORTEST, RouteProfile.ECONOMIC)
+
+        suspend fun computeWith(r: Router): List<RouteOption> = coroutineScope {
+            profiles.map { p ->
                 async {
                     runCatching {
-                        onlineRouter.route(from.latitude, from.longitude, destLat, destLon, p)
+                        r.route(from.latitude, from.longitude, destLat, destLon, p)
                     }.getOrNull()?.takeIf { it.points.size >= 2 }?.let { RouteOption(p, it) }
                 }
             }.awaitAll().filterNotNull()
         }
+
+        // Online (Valhalla) first — fast, parallel, profile-aware. Fall back to
+        // the offline router (BRouter) when the server gives nothing, so the
+        // chooser still appears without connectivity (best-effort: it only
+        // returns options where the local rd5 tiles are already present).
+        var computed = computeWith(onlineRouter)
+        if (computed.isEmpty()) {
+            val theRouter = router ?: OfflineRouter(appContext).also { router = it }
+            computed = computeWith(theRouter)
+        }
+
         // Dedup near-identical routes (rounded distance + duration), keeping
         // the first profile that produced each — FASTEST/SHORTEST/ECONOMIC.
         val seen = HashSet<Pair<Int, Int>>()
