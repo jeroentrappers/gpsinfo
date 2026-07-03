@@ -1,0 +1,1 @@
+• Přepočet se nyní spustí ihned, jakmile opustíte trasu: přepočítá okamžitě, pokud zjevně sjedete ze silnice nebo minete nejbližší odbočku, místo čekání několik sekund.

@@ -1,0 +1,1 @@
+• O recálculo agora começa na hora quando você sai da rota: recalcula imediatamente se você claramente sai da via ou perde a próxima conversão, em vez de esperar alguns segundos.

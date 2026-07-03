@@ -1,0 +1,1 @@
+• Przeliczanie uruchamia się teraz od razu, gdy zjedziesz z trasy: przelicza natychmiast, jeśli wyraźnie zjedziesz z drogi lub przegapisz najbliższy zjazd, zamiast czekać kilka sekund.

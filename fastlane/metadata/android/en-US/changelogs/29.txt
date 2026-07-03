@@ -1,0 +1,1 @@
+• Rerouting now kicks in right away when you leave the route: it recalculates on the spot if you clearly leave the road or miss the upcoming turn, instead of waiting several seconds.

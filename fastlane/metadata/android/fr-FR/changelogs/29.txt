@@ -1,0 +1,1 @@
+• Le recalcul démarre maintenant tout de suite quand vous quittez l'itinéraire : il recalcule sur-le-champ si vous quittez clairement la route ou manquez le prochain virage, au lieu d'attendre plusieurs secondes.

@@ -1,0 +1,1 @@
+• Opnieuw berekenen begint nu meteen wanneer je de route verlaat: het herberekent direct als je duidelijk van de weg afgaat of de komende afslag mist, in plaats van enkele seconden te wachten.

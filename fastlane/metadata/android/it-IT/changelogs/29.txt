@@ -1,0 +1,1 @@
+• Il ricalcolo ora parte subito quando lasci il percorso: ricalcola all'istante se esci chiaramente dalla strada o manchi la prossima svolta, invece di aspettare alcuni secondi.

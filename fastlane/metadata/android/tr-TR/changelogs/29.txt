@@ -1,0 +1,1 @@
+• Rotadan çıktığınızda yeniden hesaplama artık hemen başlıyor: yoldan belirgin şekilde çıktığınızda veya yaklaşan dönüşü kaçırdığınızda birkaç saniye beklemek yerine anında yeniden hesaplar.

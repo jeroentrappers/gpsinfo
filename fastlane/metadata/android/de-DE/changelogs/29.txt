@@ -1,0 +1,1 @@
+• Die Neuberechnung startet jetzt sofort, wenn du die Route verlässt: Sie berechnet umgehend neu, wenn du die Straße klar verlässt oder die nächste Abbiegung verpasst, statt einige Sekunden zu warten.

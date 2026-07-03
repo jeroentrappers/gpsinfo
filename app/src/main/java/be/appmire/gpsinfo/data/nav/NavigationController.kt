@@ -459,8 +459,13 @@ object NavigationController {
             offRouteCount++
             val nearTurn = distToTurn < MISSED_TURN_ZONE_M
             val needed = when {
-                nearTurn && snap.crossTrackM > OFF_ROUTE_M * 2 -> 1
-                nearTurn -> MISSED_TURN_CONSECUTIVE
+                // Clearly off the road, or we've just blown the upcoming turn —
+                // reroute on this very fix (no wait). These are the cases that
+                // used to feel sluggish before recalculation kicked in.
+                snap.crossTrackM > OFF_ROUTE_M * 2 -> 1
+                nearTurn -> 1
+                // Open-road drift: still confirm over a couple of fixes so GPS
+                // noise on a wide road doesn't trigger a spurious recalculation.
                 else -> OFF_ROUTE_CONSECUTIVE
             }
             if (offRouteCount >= needed && !reRouting) {
@@ -778,14 +783,11 @@ object NavigationController {
     }
 
     private const val TAG = "NavCtl"
-    private const val OFF_ROUTE_M = 50.0
-    private const val OFF_ROUTE_CONSECUTIVE = 3
+    private const val OFF_ROUTE_M = 40.0
+    private const val OFF_ROUTE_CONSECUTIVE = 2
     /** Within this distance of the next maneuver, an off-route reading is
-     *  treated as a missed turn and rerouted on the fast path. */
-    private const val MISSED_TURN_ZONE_M = 60.0
-    /** Consecutive off-route fixes that trigger a reroute inside the turn
-     *  zone (vs [OFF_ROUTE_CONSECUTIVE] for generic open-road drift). */
-    private const val MISSED_TURN_CONSECUTIVE = 2
+     *  treated as a missed turn and rerouted immediately (no confirm wait). */
+    private const val MISSED_TURN_ZONE_M = 90.0
     // ── En-route alternatives ("fork in the road") ──
     private const val ALT_INTERVAL_MS = 60_000L
     /** A fork must be at least this far ahead (not on top of us) and no
