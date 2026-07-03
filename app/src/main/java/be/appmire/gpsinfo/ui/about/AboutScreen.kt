@@ -124,6 +124,7 @@ fun AboutScreen(
         val carOverlayCompass by vm.carOverlayCompass.collectAsStateWithLifecycle()
         val carOverlayRecordingStrip by vm.carOverlayRecordingStrip.collectAsStateWithLifecycle()
         val carOverlayRallyPanel by vm.carOverlayRallyPanel.collectAsStateWithLifecycle()
+        val carLiveGlMap by vm.carLiveGlMap.collectAsStateWithLifecycle()
         val carOverlay = CarOverlayControls(
             speed = carOverlaySpeed, onSpeed = vm::setCarOverlaySpeed,
             speedLimit = carOverlaySpeedLimit, onSpeedLimit = vm::setCarOverlaySpeedLimit,
@@ -131,6 +132,7 @@ fun AboutScreen(
             compass = carOverlayCompass, onCompass = vm::setCarOverlayCompass,
             recordingStrip = carOverlayRecordingStrip, onRecordingStrip = vm::setCarOverlayRecordingStrip,
             rallyPanel = carOverlayRallyPanel, onRallyPanel = vm::setCarOverlayRallyPanel,
+            liveGlMap = carLiveGlMap, onLiveGlMap = vm::setCarLiveGlMap,
         )
         if (isLandscape) {
             AboutLandscape(
@@ -215,6 +217,7 @@ private class CarOverlayControls(
     val compass: Boolean, val onCompass: (Boolean) -> Unit,
     val recordingStrip: Boolean, val onRecordingStrip: (Boolean) -> Unit,
     val rallyPanel: Boolean, val onRallyPanel: (Boolean) -> Unit,
+    val liveGlMap: Boolean, val onLiveGlMap: (Boolean) -> Unit,
 )
 
 @Composable
@@ -311,6 +314,8 @@ private fun AboutPortrait(
             onCarOverlayRecordingStripChange = carOverlay.onRecordingStrip,
             carOverlayRallyPanel = carOverlay.rallyPanel,
             onCarOverlayRallyPanelChange = carOverlay.onRallyPanel,
+            carLiveGlMap = carOverlay.liveGlMap,
+            onCarLiveGlMapChange = carOverlay.onLiveGlMap,
         )
         Spacer(Modifier.height(16.dp))
         LicenseCard()
@@ -426,6 +431,8 @@ private fun AboutLandscape(
             onCarOverlayRecordingStripChange = carOverlay.onRecordingStrip,
             carOverlayRallyPanel = carOverlay.rallyPanel,
             onCarOverlayRallyPanelChange = carOverlay.onRallyPanel,
+            carLiveGlMap = carOverlay.liveGlMap,
+            onCarLiveGlMapChange = carOverlay.onLiveGlMap,
         )
             Spacer(Modifier.height(16.dp))
             LicenseCard()

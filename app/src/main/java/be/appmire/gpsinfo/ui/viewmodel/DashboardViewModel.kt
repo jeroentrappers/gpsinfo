@@ -333,6 +333,7 @@ class DashboardViewModel(
     val carOverlayRecordingStrip: StateFlow<Boolean> =
         carOverlayFlow({ it.carOverlayRecordingStrip }, false)
     val carOverlayRallyPanel: StateFlow<Boolean> = carOverlayFlow({ it.carOverlayRallyPanel }, false)
+    val carLiveGlMap: StateFlow<Boolean> = carOverlayFlow({ it.carLiveGlMap }, false)
 
     fun setCarOverlaySpeed(value: Boolean) = persistCarOverlay { it.setCarOverlaySpeed(value) }
     fun setCarOverlaySpeedLimit(value: Boolean) = persistCarOverlay { it.setCarOverlaySpeedLimit(value) }
@@ -341,6 +342,7 @@ class DashboardViewModel(
     fun setCarOverlayRecordingStrip(value: Boolean) =
         persistCarOverlay { it.setCarOverlayRecordingStrip(value) }
     fun setCarOverlayRallyPanel(value: Boolean) = persistCarOverlay { it.setCarOverlayRallyPanel(value) }
+    fun setCarLiveGlMap(value: Boolean) = persistCarOverlay { it.setCarLiveGlMap(value) }
 
     private fun persistCarOverlay(block: suspend (SettingsRepository) -> Unit) {
         viewModelScope.launch { (settings as? SettingsRepository)?.let { block(it) } }

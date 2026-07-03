@@ -1,0 +1,1 @@
+Experimentálně: nová mapa vykreslovaná GPU pro Android Auto — plynulejší, souvislý pohyb mapy. Volitelné v Nastavení › Android Auto; klasické vykreslování zůstává výchozí. Plus drobné opravy stability.

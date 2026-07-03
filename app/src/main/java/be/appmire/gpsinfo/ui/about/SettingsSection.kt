@@ -81,6 +81,8 @@ fun SettingsSection(
     onCarOverlayRecordingStripChange: (Boolean) -> Unit = {},
     carOverlayRallyPanel: Boolean = false,
     onCarOverlayRallyPanelChange: (Boolean) -> Unit = {},
+    carLiveGlMap: Boolean = false,
+    onCarLiveGlMapChange: (Boolean) -> Unit = {},
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -210,6 +212,12 @@ fun SettingsSection(
                 R.string.settings_car_overlay_rally,
                 R.string.settings_car_overlay_rally_body,
                 carOverlayRallyPanel, onCarOverlayRallyPanelChange,
+            )
+            Spacer(Modifier.padding(top = 8.dp))
+            ToggleRow(
+                R.string.settings_car_live_gl_map,
+                R.string.settings_car_live_gl_map_body,
+                carLiveGlMap, onCarLiveGlMapChange,
             )
 
             Spacer(Modifier.padding(top = 16.dp))

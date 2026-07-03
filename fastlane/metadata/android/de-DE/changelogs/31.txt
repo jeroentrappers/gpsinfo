@@ -1,0 +1,1 @@
+Experimentell: eine neue GPU-gerenderte Karte für Android Auto — flüssigere, kontinuierliche Kartenbewegung. Optional unter Einstellungen › Android Auto; die klassische Darstellung bleibt Standard. Dazu kleine Stabilitätskorrekturen.

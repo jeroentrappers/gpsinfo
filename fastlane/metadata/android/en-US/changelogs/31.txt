@@ -1,0 +1,1 @@
+Experimental: a new GPU-rendered map for Android Auto — smoother, continuous map movement. Opt-in under Settings › Android Auto; the classic renderer stays the default. Plus minor stability fixes.

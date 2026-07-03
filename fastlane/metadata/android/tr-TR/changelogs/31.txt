@@ -1,0 +1,1 @@
+Deneysel: Android Auto için GPU ile işlenen yeni harita — daha akıcı, kesintisiz harita hareketi. Ayarlar › Android Auto altından açılır; klasik işleyici varsayılan kalır. Ayrıca kararlılık düzeltmeleri.

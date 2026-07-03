@@ -1,0 +1,1 @@
+Experimenteel: een nieuwe GPU-kaart voor Android Auto — vloeiendere, continue kaartbeweging. Optioneel via Instellingen › Android Auto; de klassieke weergave blijft standaard. Plus kleine stabiliteitsverbeteringen.

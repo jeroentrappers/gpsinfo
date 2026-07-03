@@ -160,6 +160,7 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         /** JSON blob of per-state, per-element drag/scale overrides for the
          *  car surface; decoded by the car layer (CarOverlayLayout). */
         val CarOverlayLayout = stringPreferencesKey("car_overlay_layout")
+        val CarLiveGlMap = booleanPreferencesKey("car_live_gl_map")
         /** JSON blob of per-context (surface × orientation), per-element
          *  drag/scale overrides for the PHONE overlays (nav screen + cluster
          *  screen); decoded by the UI layer (PhoneOverlayLayout). Separate
@@ -492,6 +493,17 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setCarOverlayRallyPanel(value: Boolean) {
         context.dataStore.edit { it[Keys.CarOverlayRallyPanel] = value }
+    }
+
+    /** Live GL map on Android Auto: MapLibre renders straight onto the car
+     *  surface (EGL) instead of the off-screen snapshotter. Default off —
+     *  opt-in until validated on head units; the snapshotter stays the
+     *  instant fallback. */
+    val carLiveGlMap: Flow<Boolean> = context.dataStore.data
+        .map { it[Keys.CarLiveGlMap] ?: false }
+
+    suspend fun setCarLiveGlMap(value: Boolean) {
+        context.dataStore.edit { it[Keys.CarLiveGlMap] = value }
     }
 
     /** Raw JSON of the car overlay drag/scale layout; decoded by the car

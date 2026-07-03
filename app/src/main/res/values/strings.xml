@@ -470,6 +470,8 @@
     <string name="settings_car_overlay_recording_body" tools:ignore="MissingTranslation">Show distance and duration while a track recording is active.</string>
     <string name="settings_car_overlay_rally" tools:ignore="MissingTranslation">Rally panel</string>
     <string name="settings_car_overlay_rally_body" tools:ignore="MissingTranslation">Show the regularity-test timing panel during a rally stage.</string>
+    <string name="settings_car_live_gl_map" tools:ignore="MissingTranslation">Live GL map (experimental)</string>
+    <string name="settings_car_live_gl_map_body" tools:ignore="MissingTranslation">Render the Android Auto map continuously on the GPU instead of the snapshot renderer. Smoother, but experimental — turn off if the map misbehaves.</string>
     <string name="nav_pick_coords_plus_label" tools:ignore="MissingTranslation">Plus Code (optional)</string>
     <string name="nav_pick_coords_alt_label" tools:ignore="MissingTranslation">Plus Code or Maidenhead (optional)</string>
     <string name="trail_recording_stats" tools:ignore="MissingTranslation">%1$d pts · %2$s</string>

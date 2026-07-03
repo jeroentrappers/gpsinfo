@@ -341,6 +341,11 @@ class TripDashboardScreen(
             .onEach { renderer.updateOverlayConfig(it) }
             .launchIn(lifecycleScope)
 
+        // Live-GL map backend (opt-in). Off → the snapshotter path renders.
+        settings.carLiveGlMap
+            .onEach { renderer.updateLiveGlMap(it) }
+            .launchIn(lifecycleScope)
+
         // Dynamic overlay layout (drag/scale per nav state). Push the active
         // state's overrides whenever the saved layout or the nav phase changes.
         combine(

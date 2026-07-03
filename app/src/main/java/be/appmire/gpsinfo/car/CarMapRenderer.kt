@@ -123,6 +123,53 @@ class CarMapRenderer(
      *  car surface. A new snapshot redraws the frame via [scheduleRender]. */
     private val snapshotter = CarMapSnapshotter(carContext) { scheduleRender() }
 
+    // ── Live-GL backend (opt-in, off by default) ────────────────────
+    // When enabled, MapLibre renders the base map straight onto the AA
+    // surface via EGL (org.maplibre.android.maps.CarGlMap); overlays are
+    // drawn to an off-screen bitmap and composited over each frame. The
+    // snapshotter above stays the fallback whenever this is off.
+    private var glEnabled = false
+    private var glMap: org.maplibre.android.maps.CarGlMap? = null
+    /** True while a frame is being drawn for the GL backend, so [drawFrame]
+     *  skips the opaque background fill and [drawVectorMap] skips the
+     *  bitmap blit — the overlay canvas must stay transparent over the map. */
+    private var glMode = false
+    /** Two overlay bitmaps ping-ponged so the render thread can read the
+     *  last frame while the main thread draws the next. */
+    private val overlayBuffers = arrayOfNulls<android.graphics.Bitmap>(2)
+    private var overlayBufIdx = 0
+
+    /** Toggle the live-GL backend (from the settings flow). */
+    fun updateLiveGlMap(enabled: Boolean) {
+        if (enabled == glEnabled) return
+        glEnabled = enabled
+        if (enabled) ensureGlBound() else teardownGl()
+        scheduleRender()
+    }
+
+    /** Create + bind the GL map to the current surface if we have one. */
+    private fun ensureGlBound() {
+        if (!glEnabled) return
+        val container = surfaceContainer ?: return
+        val surface = container.surface ?: return
+        val w = container.width
+        val h = container.height
+        if (w <= 0 || h <= 0) return
+        val gl = glMap ?: org.maplibre.android.maps.CarGlMap(
+            carContext,
+            be.appmire.gpsinfo.data.nav.MapLibreStyle.LIBERTY,
+            onStyleReady = { mainHandler.post { scheduleRender() } },
+            onNeedRepaint = { mainHandler.post { scheduleRender() } },
+        ).also { glMap = it }
+        gl.onSurfaceAvailable(surface, w, h)
+    }
+
+    private fun teardownGl() {
+        glMode = false
+        glMap?.destroy()
+        glMap = null
+    }
+
     /** Instantaneous drive power in kW for the energy meter — null
      *  until an OBD2 source feeds [updatePower]; the dial parks at 0
      *  with a dimmed readout meanwhile. */
@@ -360,6 +407,7 @@ class CarMapRenderer(
     override fun onDestroy(owner: LifecycleOwner) {
         mainHandler.removeCallbacks(frameRunnable)
         snapshotter.destroy()
+        teardownGl()
     }
 
     // ── Smooth animation loop ──────────────────────────────────────
@@ -568,12 +616,16 @@ class CarMapRenderer(
     override fun onSurfaceAvailable(surfaceContainer: SurfaceContainer) {
         mainHandler.post {
             this.surfaceContainer = surfaceContainer
+            if (glEnabled) ensureGlBound()
             scheduleRender()
         }
     }
 
     override fun onSurfaceDestroyed(surfaceContainer: SurfaceContainer) {
-        mainHandler.post { this.surfaceContainer = null }
+        mainHandler.post {
+            glMap?.onSurfaceDestroyed()
+            this.surfaceContainer = null
+        }
     }
 
     override fun onVisibleAreaChanged(visibleArea: Rect) {
@@ -639,9 +691,11 @@ class CarMapRenderer(
                 return@post
             }
             if (!panMode) return@post
-            val snap = snapshotter.latest ?: return@post
-            val w = snap.bitmap.width
-            val h = snap.bitmap.height
+            val snap: MapProjector = (if (glMode) glMap?.currentProjector() else null)
+                ?: snapshotter.latest?.let { SnapshotProjector(it) }
+                ?: return@post
+            val w = snap.width
+            val h = snap.height
             val cx = w / 2f
             val cy = h / 2f
             val from = snap.latLngForPixel(android.graphics.PointF(cx, cy))
@@ -668,6 +722,12 @@ class CarMapRenderer(
     }
 
     private fun renderFrame() {
+        val gl = glMap
+        if (glEnabled && gl != null) {
+            renderFrameGl(gl)
+            return
+        }
+        glMode = false
         val container = surfaceContainer ?: return
         val surface = container.surface ?: return
         if (!surface.isValid) return
@@ -698,10 +758,43 @@ class CarMapRenderer(
         }
     }
 
+    /** GL backend frame: MapLibre draws the base map onto the surface; we
+     *  draw the overlays (route/puck/traffic/cluster/HUD) onto a transparent
+     *  bitmap and hand it to the render thread to composite over the map. No
+     *  surface lock — the EGL thread owns the surface. */
+    private fun renderFrameGl(gl: org.maplibre.android.maps.CarGlMap) {
+        glMode = true
+        val container = surfaceContainer ?: return
+        val w = if (container.width > 0) container.width else surfaceW
+        val h = if (container.height > 0) container.height else surfaceH
+        if (w <= 0 || h <= 0) return
+        // Track surface-size changes to the GL map (resizeView + backend).
+        gl.onSurfaceResized(w, h)
+        val bmp = nextOverlayBuffer(w, h)
+        bmp.eraseColor(Color.TRANSPARENT)
+        drawFrame(Canvas(bmp), w, h)
+        gl.present(bmp)
+    }
+
+    /** Ping-pong the two overlay bitmaps so the GL thread reads one while we
+     *  draw the other. Reallocated (not recycled — the GL thread may still
+     *  hold the old one) when the surface size changes. */
+    private fun nextOverlayBuffer(w: Int, h: Int): android.graphics.Bitmap {
+        overlayBufIdx = overlayBufIdx xor 1
+        var b = overlayBuffers[overlayBufIdx]
+        if (b == null || b.width != w || b.height != h) {
+            b = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+            overlayBuffers[overlayBufIdx] = b
+        }
+        return b
+    }
+
     private fun drawFrame(canvas: Canvas, w: Int, h: Int) {
         val dark = carContext.isDarkMode
         val bg = if (dark) BG_DARK else BG_LIGHT
-        canvas.drawColor(bg)
+        // GL backend: the map fills the surface underneath; keep the overlay
+        // canvas transparent so it shows through. Snapshotter: opaque fill.
+        if (!glMode) canvas.drawColor(bg)
         surfaceW = w
         surfaceH = h
         elementBounds.clear()
@@ -938,6 +1031,29 @@ class CarMapRenderer(
         val camLon = loc.longitude + panLonOffset +
             lookAheadM * Math.sin(brRad) / (111_320.0 * cos(Math.toRadians(loc.latitude)))
         val pitch = if (tilted) CAR_PITCH_DEG else 0.0
+
+        // Live-GL backend: MapLibre renders the base map straight onto the
+        // surface, so here we only set the camera and draw the overlays via
+        // its projection. No bitmap blit, and no stale-snapshot shift — the
+        // camera is exact this frame, and the look-ahead already seats the
+        // puck low on screen.
+        val gl = glMap
+        if (glMode && gl != null) {
+            gl.setBuildings3d(viewMode == MapViewMode.TILTED_3D)
+            gl.setCamera(camLat, camLon, currentZoom, bearing, pitch)
+            val glProj = gl.currentProjector() ?: return
+            val vehPf = glProj.pixelForLatLng(
+                org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude),
+            )
+            val puckProjected = android.graphics.PointF(mapLeft + vehPf.x, vehPf.y)
+            drawAlternatives(canvas, glProj, mapLeft)
+            drawProjectedRoute(canvas, glProj, mapLeft, loc, puckProjected)
+            drawTraffic(canvas, glProj, mapLeft)
+            drawProjectedBreadcrumb(canvas, glProj, mapLeft)
+            drawProjectedMarker(canvas, puckProjected)
+            return
+        }
+
         // 3D building extrusions only in the dedicated 3D mode; the other
         // two show flat footprints (the snapshotter hides the
         // `building-3d` layer).
@@ -958,12 +1074,13 @@ class CarMapRenderer(
             return
         }
         val bmp = snap.bitmap
+        val proj: MapProjector = SnapshotProjector(snap)
         val following = hasBearing && !panMode
         // Where the current (dead-reckoned) vehicle projects on this — possibly
         // stale — snapshot. While following, shift the whole map so that point
         // sits under the fixed puck anchor: the puck lands on the road, and the
         // shift growing between snapshots pans the map smoothly (less jank).
-        val vehPf = snap.pixelForLatLng(org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude))
+        val vehPf = proj.pixelForLatLng(org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude))
         val puckProjected = android.graphics.PointF(mapLeft + vehPf.x, vehPf.y)
         var shiftX = 0f
         var shiftY = 0f
@@ -985,10 +1102,10 @@ class CarMapRenderer(
         // Overlays share the shift so they stay glued to the map; the puck is
         // drawn at the projected vehicle position, which the shift places back
         // at the fixed anchor.
-        drawAlternatives(canvas, snap, mapLeft)
-        drawProjectedRoute(canvas, snap, mapLeft, loc, puckProjected)
-        drawTraffic(canvas, snap, mapLeft)
-        drawProjectedBreadcrumb(canvas, snap, mapLeft)
+        drawAlternatives(canvas, proj, mapLeft)
+        drawProjectedRoute(canvas, proj, mapLeft, loc, puckProjected)
+        drawTraffic(canvas, proj, mapLeft)
+        drawProjectedBreadcrumb(canvas, proj, mapLeft)
         drawProjectedMarker(canvas, puckProjected)
         canvas.restore()
         if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
@@ -999,15 +1116,15 @@ class CarMapRenderer(
      *  projected location when panning. Shared by the marker and the route
      *  line so the line always emanates from the puck — no gap. */
     private fun puckScreenPoint(
-        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        snap: MapProjector,
         mapLeft: Float,
         loc: Location,
         following: Boolean,
     ): android.graphics.PointF {
         return if (following) {
             android.graphics.PointF(
-                mapLeft + snap.bitmap.width / 2f,
-                snap.bitmap.height * PUCK_SCREEN_FRACTION,
+                mapLeft + snap.width / 2f,
+                snap.height * PUCK_SCREEN_FRACTION,
             )
         } else {
             val pf = snap.pixelForLatLng(
@@ -1021,11 +1138,11 @@ class CarMapRenderer(
      *  active route so the upcoming fork reads at a glance. */
     private fun drawAlternatives(
         canvas: Canvas,
-        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        snap: MapProjector,
         mapLeft: Float,
     ) {
         if (alternatives.isEmpty()) return
-        val maxJump = snap.bitmap.height * 4f
+        val maxJump = snap.height * 4f
         altPaint.color = ALT_ROUTE_COLOR
         altPaint.strokeWidth = 12f
         for (alt in alternatives) {
@@ -1101,7 +1218,7 @@ class CarMapRenderer(
 
     private fun drawProjectedRoute(
         canvas: Canvas,
-        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        snap: MapProjector,
         mapLeft: Float,
         loc: Location,
         puck: android.graphics.PointF,
@@ -1122,7 +1239,7 @@ class CarMapRenderer(
      *  route to 120 points was what made it cut corners). */
     private fun routeAheadPath(
         pts: List<DoubleArray>?,
-        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        snap: MapProjector,
         mapLeft: Float,
         loc: Location,
         puck: android.graphics.PointF,
@@ -1143,7 +1260,7 @@ class CarMapRenderer(
         // line is meant to close.
         val firstAhead = (startIdx + 1).coerceAtMost(pts.size)
         val end = (firstAhead + ROUTE_DRAW_POINTS).coerceAtMost(pts.size)
-        val maxJump = snap.bitmap.height * 4f
+        val maxJump = snap.height * 4f
         val path = Path()
         path.moveTo(puck.x, puck.y)
         var lastX = puck.x
@@ -1168,12 +1285,12 @@ class CarMapRenderer(
      *  busy feed can't flood the per-frame JNI projection cost. */
     private fun drawTraffic(
         canvas: Canvas,
-        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        snap: MapProjector,
         mapLeft: Float,
     ) {
         if (traffic.isEmpty()) return
         var budget = MAX_PROJECTED_POINTS * 4
-        val maxJump = snap.bitmap.height * 4f
+        val maxJump = snap.height * 4f
         for (inc in traffic) {
             if (budget <= 0) break
             val geo = inc.geometry
@@ -1219,7 +1336,7 @@ class CarMapRenderer(
 
     private fun drawProjectedBreadcrumb(
         canvas: Canvas,
-        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        snap: MapProjector,
         mapLeft: Float,
     ) {
         val pts = breadcrumb.map { doubleArrayOf(it[0], it[1]) }
@@ -1237,7 +1354,7 @@ class CarMapRenderer(
      *  The last point is always included so the line meets the marker. */
     private fun projectedPath(
         pts: List<DoubleArray>?,
-        snap: org.maplibre.android.snapshotter.MapSnapshot,
+        snap: MapProjector,
         mapLeft: Float,
     ): Path? {
         if (pts == null || pts.size < 2) return null
@@ -1247,7 +1364,7 @@ class CarMapRenderer(
         // project to a wild pixel; a lineTo to it streaks a nonsensical
         // line across the surface. Break the path on any jump larger than
         // this many surface-heights and resume with a moveTo.
-        val maxJump = snap.bitmap.height * 4f
+        val maxJump = snap.height * 4f
         var started = false
         var lastX = 0f
         var lastY = 0f

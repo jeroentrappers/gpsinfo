@@ -1,0 +1,1 @@
+Eksperymentalnie: nowa mapa renderowana przez GPU w Android Auto — płynniejszy, ciągły ruch mapy. Opcjonalnie w Ustawienia › Android Auto; klasyczny renderer pozostaje domyślny. Do tego drobne poprawki stabilności.

@@ -1,0 +1,1 @@
+Experimental: um novo mapa renderizado por GPU no Android Auto, com movimento mais suave e contínuo. Opcional em Configurações › Android Auto; o renderizador clássico continua padrão. Além de correções de estabilidade.

@@ -1,0 +1,1 @@
+Expérimental : une nouvelle carte rendue par GPU pour Android Auto — défilement plus fluide et continu. Activable dans Paramètres › Android Auto ; le rendu classique reste par défaut. Plus des corrections de stabilité.

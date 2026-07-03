@@ -1,0 +1,1 @@
+Sperimentale: una nuova mappa renderizzata da GPU per Android Auto, con movimento più fluido e continuo. Attivabile in Impostazioni › Android Auto; il renderer classico resta predefinito. Più correzioni di stabilità.
