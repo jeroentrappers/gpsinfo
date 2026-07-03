@@ -1,0 +1,1 @@
+• Inteligentniejsze przeliczanie: przelicza natychmiast silnikiem offline, aby nawigacja nigdy się nie zacinała, a następnie automatycznie przełącza się na trasę online uwzględniającą ruch, gdy tylko będzie gotowa — szybkość i najlepsza trasa.

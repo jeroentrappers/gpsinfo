@@ -1,0 +1,1 @@
+• Ricalcolo più intelligente: ricalcola all'istante con il motore offline così la guida non si blocca mai, poi passa automaticamente al percorso online basato sul traffico appena è pronto — velocità e percorso migliore insieme.

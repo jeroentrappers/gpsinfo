@@ -1,0 +1,1 @@
+• Recálculo mais inteligente: recalcula na hora com o motor offline para que a orientação nunca pare e depois muda automaticamente para a rota online que considera o trânsito assim que estiver pronta — rapidez e a melhor rota.

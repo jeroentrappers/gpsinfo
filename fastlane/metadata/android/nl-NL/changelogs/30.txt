@@ -1,0 +1,1 @@
+• Slimmer opnieuw berekenen: het herberekent meteen met de offline-engine zodat de begeleiding nooit hapert, en schakelt daarna automatisch over op de online, verkeersbewuste route zodra die klaar is — snelheid én de beste route.

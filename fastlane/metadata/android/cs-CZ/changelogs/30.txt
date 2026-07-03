@@ -1,0 +1,1 @@
+• Chytřejší přepočet: přepočítá okamžitě offline enginem, aby navigace nikdy nevázla, a poté automaticky přejde na online trasu zohledňující dopravu, jakmile je připravená — rychlost i nejlepší trasa.

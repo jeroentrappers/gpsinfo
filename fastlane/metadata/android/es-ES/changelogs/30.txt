@@ -1,0 +1,1 @@
+• Recálculo más inteligente: recalcula al instante con el motor sin conexión para que la guía nunca se detenga y luego cambia automáticamente a la ruta en línea según el tráfico en cuanto está lista: rapidez y la mejor ruta.

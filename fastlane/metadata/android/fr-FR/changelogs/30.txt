@@ -1,0 +1,1 @@
+• Recalcul plus intelligent : il recalcule instantanément avec le moteur hors ligne pour que le guidage ne s'interrompe jamais, puis passe automatiquement à l'itinéraire en ligne tenant compte du trafic dès qu'il est prêt — rapidité et meilleur itinéraire.

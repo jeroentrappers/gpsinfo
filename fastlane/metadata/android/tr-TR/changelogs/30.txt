@@ -1,0 +1,1 @@
+• Daha akıllı yeniden hesaplama: yönlendirme hiç kesilmesin diye çevrimdışı motorla anında yeniden hesaplar, ardından hazır olur olmaz trafiği dikkate alan çevrimiçi rotaya otomatik geçer — hem hız hem en iyi rota.

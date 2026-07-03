@@ -1,0 +1,1 @@
+• Intelligentere Neuberechnung: Sie berechnet sofort mit der Offline-Engine neu, damit die Führung nie stockt, und wechselt dann automatisch zur online berechneten, verkehrsbewussten Route, sobald diese bereit ist — Tempo und beste Route zugleich.

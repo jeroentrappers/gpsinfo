@@ -311,33 +311,51 @@ object NavigationController {
         }
     }
 
-    /** Route via every available engine at once and return the first VALID
-     *  result — the online engine (traffic-aware, but a network round-trip)
-     *  races the offline one (BRouter: local and near-instant). The loser is
-     *  cancelled. Used for fast reroutes when the driver leaves the route. */
-    private suspend fun raceRoute(
-        fromLat: Double, fromLon: Double, toLat: Double, toLon: Double, profile: RouteProfile,
-    ): OfflineRoute? = coroutineScope {
-        val srcs: List<Router> = listOfNotNull(onlineRouter, router)
-        if (srcs.isEmpty()) return@coroutineScope null
-        val results = kotlinx.coroutines.channels.Channel<OfflineRoute?>(kotlinx.coroutines.channels.Channel.UNLIMITED)
-        val jobs = srcs.map { r ->
-            launch {
-                results.send(
-                    runCatching { r.route(fromLat, fromLon, toLat, toLon, profile) }
-                        .getOrNull()?.takeIf { it.points.size >= 2 },
-                )
+    /**
+     * Reroute with an instant-then-best strategy: fire the online
+     * (traffic-aware, network round-trip) and offline (BRouter, local and
+     * near-instant) engines together. Install whichever answers first so
+     * guidance continues immediately, then — if the offline one won the
+     * race — automatically upgrade to the online, traffic-aware route when it
+     * arrives. The online result is always preferred as the final route.
+     */
+    private suspend fun rerouteAndUpgrade(
+        fromLat: Double, fromLon: Double, destLat: Double, destLon: Double,
+    ) = coroutineScope {
+        fun compute(r: Router) = async {
+            runCatching { r.route(fromLat, fromLon, destLat, destLon, lastProfile) }
+                .getOrNull()?.takeIf { it.points.size >= 2 }
+        }
+        fun apply(route: OfflineRoute, announce: Boolean) = synchronized(this@NavigationController) {
+            if (_state.value is NavState.Navigating) {
+                installRoute(route, destLat, destLon)
+                if (announce) voice?.announceReroute()
             }
         }
-        var winner: OfflineRoute? = null
-        repeat(srcs.size) {
-            if (winner == null) {
-                val r = results.receive()
-                if (r != null) winner = r
-            }
+
+        val onlineD = compute(onlineRouter)
+        val offlineD = router?.let { compute(it) }
+        if (offlineD == null) { // no offline engine — just use online
+            onlineD.await()?.let { apply(it, announce = true) }
+            return@coroutineScope
         }
-        jobs.forEach { it.cancel() } // stop the slower engine still running
-        winner
+
+        val onlineFirst = kotlinx.coroutines.selects.select {
+            onlineD.onAwait { true }
+            offlineD.onAwait { false }
+        }
+        if (onlineFirst) {
+            val on = onlineD.await()
+            if (on != null) { apply(on, announce = true); offlineD.cancel() }
+            else offlineD.await()?.let { apply(it, announce = true) } // online failed → offline
+        } else {
+            // Offline won the race → instant reroute, then upgrade to the
+            // traffic-aware online route (silently, since we already announced).
+            val off = offlineD.await()
+            if (off != null) apply(off, announce = true)
+            val on = onlineD.await()
+            if (on != null) apply(on, announce = off == null)
+        }
     }
 
     /**
@@ -471,20 +489,14 @@ object NavigationController {
             if (offRouteCount >= needed && !reRouting) {
                 reRouting = true
                 scope.launch {
-                    // Race online (traffic-aware) and offline (BRouter, local +
-                    // instant) and take whichever returns a valid route first —
-                    // the reroute lands right away instead of waiting out the
-                    // online round-trip before even trying offline.
-                    val fresh = raceRoute(loc.latitude, loc.longitude, s.destLat, s.destLon, lastProfile)
+                    // Reroute NOW with whichever engine answers first (usually
+                    // offline BRouter, local + instant) so guidance continues,
+                    // then automatically upgrade to the online, traffic-aware
+                    // route the moment it arrives.
+                    rerouteAndUpgrade(loc.latitude, loc.longitude, s.destLat, s.destLon)
                     synchronized(this@NavigationController) {
                         reRouting = false
                         offRouteCount = 0
-                        if (fresh != null && fresh.points.size >= 2 &&
-                            _state.value is NavState.Navigating
-                        ) {
-                            installRoute(fresh, s.destLat, s.destLon)
-                            voice?.announceReroute()
-                        }
                     }
                 }
             }

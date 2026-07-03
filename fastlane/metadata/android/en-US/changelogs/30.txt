@@ -1,0 +1,1 @@
+• Smarter rerouting: it reroutes instantly with the offline engine so guidance never stalls, then automatically upgrades to the online, traffic-aware route as soon as it's ready — so you get both speed and the best route.
