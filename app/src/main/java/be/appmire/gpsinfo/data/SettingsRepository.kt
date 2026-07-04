@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import be.appmire.gpsinfo.data.charging.EvVehicleProfile
 import be.appmire.gpsinfo.data.model.HrZoneConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -161,6 +162,15 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
          *  car surface; decoded by the car layer (CarOverlayLayout). */
         val CarOverlayLayout = stringPreferencesKey("car_overlay_layout")
         val CarLiveGlMap = booleanPreferencesKey("car_live_gl_map")
+
+        // EV vehicle profile — feeds live-priced charging queries + the
+        // charging-stop planner (reachability + how much to charge).
+        val EvUsableKwh = floatPreferencesKey("ev_usable_kwh")
+        val EvConsumptionKwh100 = floatPreferencesKey("ev_consumption_kwh100")
+        val EvMinArrivalSoc = intPreferencesKey("ev_min_arrival_soc")     // % to keep as buffer
+        val EvChargeToSoc = intPreferencesKey("ev_charge_to_soc")         // % cap per DC stop
+        val EvPlugType = stringPreferencesKey("ev_plug_type")             // OCPI standard; "" = any
+        val EvMaxDcKw = floatPreferencesKey("ev_max_dc_kw")               // car's DC charge ceiling
         /** JSON blob of per-context (surface × orientation), per-element
          *  drag/scale overrides for the PHONE overlays (nav screen + cluster
          *  screen); decoded by the UI layer (PhoneOverlayLayout). Separate
@@ -504,6 +514,32 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setCarLiveGlMap(value: Boolean) {
         context.dataStore.edit { it[Keys.CarLiveGlMap] = value }
+    }
+
+    /** The EV vehicle profile used for live-priced charger queries and the
+     *  charging-stop planner. Defaults are a mid-size EV so the feature works
+     *  before the user customises it. */
+    val evVehicleProfile: Flow<EvVehicleProfile> = context.dataStore.data.map { p ->
+        EvVehicleProfile(
+            usableKwh = p[Keys.EvUsableKwh]?.toDouble() ?: EvVehicleProfile.DEFAULT.usableKwh,
+            consumptionKwh100 = p[Keys.EvConsumptionKwh100]?.toDouble()
+                ?: EvVehicleProfile.DEFAULT.consumptionKwh100,
+            minArrivalSocPercent = p[Keys.EvMinArrivalSoc] ?: EvVehicleProfile.DEFAULT.minArrivalSocPercent,
+            chargeToSocPercent = p[Keys.EvChargeToSoc] ?: EvVehicleProfile.DEFAULT.chargeToSocPercent,
+            plugType = p[Keys.EvPlugType] ?: EvVehicleProfile.DEFAULT.plugType,
+            maxDcKw = p[Keys.EvMaxDcKw]?.toDouble() ?: EvVehicleProfile.DEFAULT.maxDcKw,
+        )
+    }
+
+    suspend fun setEvVehicleProfile(profile: EvVehicleProfile) {
+        context.dataStore.edit {
+            it[Keys.EvUsableKwh] = profile.usableKwh.toFloat()
+            it[Keys.EvConsumptionKwh100] = profile.consumptionKwh100.toFloat()
+            it[Keys.EvMinArrivalSoc] = profile.minArrivalSocPercent
+            it[Keys.EvChargeToSoc] = profile.chargeToSocPercent
+            it[Keys.EvPlugType] = profile.plugType
+            it[Keys.EvMaxDcKw] = profile.maxDcKw.toFloat()
+        }
     }
 
     /** Raw JSON of the car overlay drag/scale layout; decoded by the car

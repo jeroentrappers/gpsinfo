@@ -52,6 +52,12 @@ val routingBaseUrl = keystoreProps.getProperty("routingBaseUrl")
 //   trafficBaseUrl / GPSINFO_TRAFFIC_BASE_URL   e.g. https://traffic.appmire.be
 val trafficBaseUrl = keystoreProps.getProperty("trafficBaseUrl")
     ?: System.getenv("GPSINFO_TRAFFIC_BASE_URL") ?: "https://traffic.appmire.be"
+// EV charging backend (charger locations + live availability + live pricing;
+// AFIR/Monta + OCPI aggregation). The `/api` base path is where the huma REST
+// API is served (see the charging service). Empty → charging features off.
+//   chargingBaseUrl / GPSINFO_CHARGING_BASE_URL   e.g. https://charging.appmire.be/api
+val chargingBaseUrl = keystoreProps.getProperty("chargingBaseUrl")
+    ?: System.getenv("GPSINFO_CHARGING_BASE_URL") ?: "https://charging.appmire.be/api"
 
 android {
     namespace = "be.appmire.gpsinfo"
@@ -70,6 +76,7 @@ android {
         buildConfigField("String", "TILES_API_KEY", "\"$tilesApiKey\"")
         buildConfigField("String", "ROUTING_BASE_URL", "\"$routingBaseUrl\"")
         buildConfigField("String", "TRAFFIC_BASE_URL", "\"$trafficBaseUrl\"")
+        buildConfigField("String", "CHARGING_BASE_URL", "\"$chargingBaseUrl\"")
     }
 
     // Strip everything except the languages we actually ship resources for.
