@@ -671,8 +671,8 @@ private fun LiveMapClusterOverlay(
     modifier: Modifier,
 ) {
     val data by vm.clusterData.collectAsStateWithLifecycle()
-    be.appmire.gpsinfo.ui.cluster.GaugeCluster(
-        data, modifier, showCompass = showCompass, mode = be.appmire.gpsinfo.ui.cluster.ClusterMode.AUTO,
+    be.appmire.gpsinfo.ui.cluster.CockpitClusterPhone(
+        data, showCompass = showCompass, modifier = modifier,
     )
 }
 

@@ -1,0 +1,1 @@
+Cluster de jauges sur téléphone : chaque jauge (vitesse, énergie, boussole) se déplace et se redimensionne individuellement en mode édition — fini le bloc entier. Nouveau profil VE et recharge (batterie, consommation, connecteur, limites de charge) avec saisie de l'état de charge actuel, base de la planification des arrêts de recharge.

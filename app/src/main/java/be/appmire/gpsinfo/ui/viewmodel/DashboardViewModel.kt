@@ -963,6 +963,32 @@ class DashboardViewModel(
         viewModelScope.launch { repo.setPhoneOverlayLayoutJson(layout.toJson()) }
     }
 
+    // ── EV profile + charging ───────────────────────────────────────
+    val evVehicleProfile: StateFlow<be.appmire.gpsinfo.data.charging.EvVehicleProfile> =
+        ((settings as? SettingsRepository)?.evVehicleProfile
+            ?: kotlinx.coroutines.flow.flowOf(be.appmire.gpsinfo.data.charging.EvVehicleProfile.DEFAULT))
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), be.appmire.gpsinfo.data.charging.EvVehicleProfile.DEFAULT)
+
+    val evManualSoc: StateFlow<Int> =
+        ((settings as? SettingsRepository)?.evManualSoc ?: kotlinx.coroutines.flow.flowOf(80))
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 80)
+
+    /** The SoC to plan/estimate with: live OBD if we have it, else the user's
+     *  manually entered value. */
+    val effectiveSocPercent: StateFlow<Double> =
+        combine(clusterData, evManualSoc) { d, manual -> d.socPct?.toDouble() ?: manual.toDouble() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 80.0)
+
+    fun setEvVehicleProfile(profile: be.appmire.gpsinfo.data.charging.EvVehicleProfile) {
+        val repo = settings as? SettingsRepository ?: return
+        viewModelScope.launch { repo.setEvVehicleProfile(profile) }
+    }
+
+    fun setEvManualSoc(value: Int) {
+        val repo = settings as? SettingsRepository ?: return
+        viewModelScope.launch { repo.setEvManualSoc(value) }
+    }
+
     /** Live list of saved trails for the trails list screen. */
     val trails: StateFlow<List<TrailSummary>> = trailRepo.trails
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

@@ -472,6 +472,26 @@
     <string name="settings_car_overlay_rally_body" tools:ignore="MissingTranslation">Show the regularity-test timing panel during a rally stage.</string>
     <string name="settings_car_live_gl_map" tools:ignore="MissingTranslation">Live GL map (experimental)</string>
     <string name="settings_car_live_gl_map_body" tools:ignore="MissingTranslation">Render the Android Auto map continuously on the GPU instead of the snapshot renderer. Smoother, but experimental — turn off if the map misbehaves.</string>
+
+    <!-- EV profile + charging planner -->
+    <string name="ev_profile_title" tools:ignore="MissingTranslation">EV &amp; charging</string>
+    <string name="ev_current_charge" tools:ignore="MissingTranslation">Current charge</string>
+    <string name="ev_soc_manual" tools:ignore="MissingTranslation">State of charge: %1$d%%</string>
+    <string name="ev_soc_live_note" tools:ignore="MissingTranslation">Live OBD reading overrides this while connected.</string>
+    <string name="ev_soc_live_fmt" tools:ignore="MissingTranslation">Live: %1$d%%</string>
+    <string name="ev_battery_section" tools:ignore="MissingTranslation">Battery</string>
+    <string name="ev_battery_kwh" tools:ignore="MissingTranslation">Usable battery (kWh)</string>
+    <string name="ev_consumption" tools:ignore="MissingTranslation">Consumption (kWh/100 km)</string>
+    <string name="ev_max_dc" tools:ignore="MissingTranslation">Max DC charge power (kW)</string>
+    <string name="ev_charging_section" tools:ignore="MissingTranslation">Charging</string>
+    <string name="ev_arrival_buffer" tools:ignore="MissingTranslation">Arrival buffer: %1$d%%</string>
+    <string name="ev_charge_cap" tools:ignore="MissingTranslation">Charge up to: %1$d%%</string>
+    <string name="ev_plug" tools:ignore="MissingTranslation">Preferred connector</string>
+    <string name="ev_plug_any" tools:ignore="MissingTranslation">Any</string>
+    <string name="ev_plug_ccs" tools:ignore="MissingTranslation">CCS</string>
+    <string name="ev_plug_type2" tools:ignore="MissingTranslation">Type 2</string>
+    <string name="ev_plug_chademo" tools:ignore="MissingTranslation">CHAdeMO</string>
+    <string name="ev_save" tools:ignore="MissingTranslation">Save</string>
     <string name="nav_pick_coords_plus_label" tools:ignore="MissingTranslation">Plus Code (optional)</string>
     <string name="nav_pick_coords_alt_label" tools:ignore="MissingTranslation">Plus Code or Maidenhead (optional)</string>
     <string name="trail_recording_stats" tools:ignore="MissingTranslation">%1$d pts · %2$s</string>

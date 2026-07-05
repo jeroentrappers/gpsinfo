@@ -1,0 +1,1 @@
+Cluster de medidores no telefone: cada medidor (velocidade, energia, bússola) agora move e redimensiona individualmente no modo de edição, não mais o bloco inteiro. Novo perfil de VE e recarga (bateria, consumo, conector, limites de carga) com entrada do estado de carga atual, base para o planejamento de paradas de recarga.

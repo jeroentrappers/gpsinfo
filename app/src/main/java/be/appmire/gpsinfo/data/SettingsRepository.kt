@@ -171,6 +171,7 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
         val EvChargeToSoc = intPreferencesKey("ev_charge_to_soc")         // % cap per DC stop
         val EvPlugType = stringPreferencesKey("ev_plug_type")             // OCPI standard; "" = any
         val EvMaxDcKw = floatPreferencesKey("ev_max_dc_kw")               // car's DC charge ceiling
+        val EvManualSoc = intPreferencesKey("ev_manual_soc")             // user-entered SoC %, used when OBD absent
         /** JSON blob of per-context (surface × orientation), per-element
          *  drag/scale overrides for the PHONE overlays (nav screen + cluster
          *  screen); decoded by the UI layer (PhoneOverlayLayout). Separate
@@ -540,6 +541,14 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
             it[Keys.EvPlugType] = profile.plugType
             it[Keys.EvMaxDcKw] = profile.maxDcKw.toFloat()
         }
+    }
+
+    /** User-entered current state of charge (%), used to estimate range and
+     *  seed the charging planner when live OBD SoC isn't available. */
+    val evManualSoc: Flow<Int> = context.dataStore.data.map { it[Keys.EvManualSoc] ?: 80 }
+
+    suspend fun setEvManualSoc(value: Int) {
+        context.dataStore.edit { it[Keys.EvManualSoc] = value.coerceIn(0, 100) }
     }
 
     /** Raw JSON of the car overlay drag/scale layout; decoded by the car

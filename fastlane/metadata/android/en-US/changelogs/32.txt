@@ -1,0 +1,1 @@
+Phone gauge cluster: each gauge (speed, energy, compass) is now individually draggable and resizable in edit mode — no more moving the whole block. New EV & charging profile (battery, consumption, connector, charge limits) with a current state-of-charge entry, laying the groundwork for charging-stop planning.

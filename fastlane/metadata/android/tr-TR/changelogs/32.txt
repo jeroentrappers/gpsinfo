@@ -1,0 +1,1 @@
+Telefon gösterge kümesi: her gösterge (hız, enerji, pusula) artık düzenleme modunda tek tek taşınıp yeniden boyutlandırılabiliyor — tüm blok birlikte değil. Yeni EV ve şarj profili (batarya, tüketim, konnektör, şarj sınırları) ve mevcut şarj durumu girişi; şarj durağı planlamasının temeli.

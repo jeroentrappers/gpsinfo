@@ -96,6 +96,7 @@ private object Routes {
     const val WheelPair = "wheel-pair"
     const val GForce = "gforce"
     const val ObdLab = "obd-lab"
+    const val EvProfile = "ev-profile"
     const val VoiceGuidance = "voice-guidance"
     const val Cluster = "cluster"
     const val Tools = "tools"
@@ -379,6 +380,12 @@ class MainActivity : ComponentActivity() {
                         composable(Routes.ObdLab) {
                             be.appmire.gpsinfo.ui.obd.ObdLabScreen(onBack = { nav.popBackStack() })
                         }
+                        composable(Routes.EvProfile) {
+                            be.appmire.gpsinfo.ui.charging.EvProfileScreen(
+                                vm = vm,
+                                onBack = { nav.popBackStack() },
+                            )
+                        }
                         composable(Routes.VoiceGuidance) {
                             be.appmire.gpsinfo.ui.navigation.VoiceGuidanceScreen(
                                 vm = vm,
@@ -502,6 +509,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenNmea = { nav.navigate(Routes.Nmea) },
                                 onOpenRally = { nav.navigate(Routes.Rally) },
                                 onOpenObdLab = { nav.navigate(Routes.ObdLab) },
+                                onOpenEvProfile = { nav.navigate(Routes.EvProfile) },
                                 onOpenGhost = { nav.navigate(Routes.Ghost) },
                                 onOpenNavigate = { nav.navigate(Routes.NavPicker) },
                                 onOpenCluster = { nav.navigate(Routes.Cluster) },

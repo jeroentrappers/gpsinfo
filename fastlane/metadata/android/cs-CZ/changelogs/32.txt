@@ -1,0 +1,1 @@
+Přístrojový cluster v telefonu: každý ukazatel (rychlost, energie, kompas) lze nyní v režimu úprav posouvat a měnit velikost samostatně — už ne celý blok. Nový profil EV a nabíjení (baterie, spotřeba, konektor, limity nabíjení) se zadáním aktuálního stavu nabití, základ pro plánování zastávek na nabíjení.

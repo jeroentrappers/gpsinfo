@@ -1,0 +1,1 @@
+Telefon-Instrumentencluster: Jede Anzeige (Geschwindigkeit, Energie, Kompass) lässt sich im Bearbeitungsmodus einzeln verschieben und skalieren — nicht mehr nur der ganze Block. Neues EV- und Ladeprofil (Batterie, Verbrauch, Stecker, Ladegrenzen) mit Eingabe des aktuellen Ladestands, als Grundlage für die Ladestopp-Planung.

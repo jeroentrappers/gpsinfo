@@ -1,0 +1,1 @@
+Cluster strumenti su telefono: ogni indicatore (velocità, energia, bussola) ora si sposta e ridimensiona singolarmente in modalità modifica, non più l'intero blocco. Nuovo profilo EV e ricarica (batteria, consumo, connettore, limiti di ricarica) con inserimento dello stato di carica attuale, base per la pianificazione delle soste di ricarica.

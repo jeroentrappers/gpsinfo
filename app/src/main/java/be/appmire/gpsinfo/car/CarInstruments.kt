@@ -236,50 +236,94 @@ class CarInstruments {
      * height) — the [PORT] values tuned in the design mock.
      */
     fun drawCockpitPortrait(canvas: Canvas, cell: RectF, d: ClusterData, showCompass: Boolean = true) {
-        val W = cell.width()
-        val H = cell.height()
-        fun wx(f: Float) = cell.left + W * f
-        fun hy(f: Float) = cell.top + H * f
-        fun ws(f: Float) = W * f
-        val ref = ws(PORT_SCALE_TICK)
+        // Assembled from the same pieces the phone lays out as independently
+        // editable overlays (see CockpitClusterPhone) — one drawing path.
+        ckPortScrims(canvas, cell, d)
+        ckPortClock(canvas, cell, d)
+        if (d.obd) ckPortPower(canvas, cell, d)
+        ckPortSpeed(canvas, cell, d)
+        ckPortLimit(canvas, cell, d)
+        if (showCompass) ckPortCompass(canvas, cell, d)
+    }
 
-        // top + bottom black gradients (map shows through the middle)
+    // ── Portrait map-HUD pieces (each an independently positionable overlay) ──
+    // Coordinates are absolute within [cell], like the landscape ck* pieces, so
+    // the phone can draw one piece at a time and transform it on its own.
+
+    /** Top + bottom black gradients (the map shows through the middle). */
+    fun ckPortScrims(canvas: Canvas, cell: RectF, d: ClusterData) {
+        val H = cell.height()
         scrim.shader = LinearGradient(0f, cell.top, 0f, cell.top + H * PORT_TOP_H, blackA(PORT_TOP_A), 0x00000000, Shader.TileMode.CLAMP)
         canvas.drawRect(cell.left, cell.top, cell.right, cell.top + H * PORT_TOP_H, scrim)
         scrim.shader = LinearGradient(0f, cell.bottom, 0f, cell.bottom - H * PORT_BOT_H, blackA(PORT_BOT_A), 0x00000000, Shader.TileMode.CLAMP)
         canvas.drawRect(cell.left, cell.bottom - H * PORT_BOT_H, cell.right, cell.bottom, scrim)
         scrim.shader = null
+    }
 
-        clockTemp(canvas, cell.centerX(), hy(PORT_CLOCK_Y), Fonts(ws(PORT_CLOCK_SIZE)), d)
+    fun ckPortClock(canvas: Canvas, cell: RectF, d: ClusterData) =
+        clockTemp(canvas, cell.centerX(), cell.top + cell.height() * PORT_CLOCK_Y, Fonts(cell.width() * PORT_CLOCK_SIZE), d)
 
-        val xL = wx(PORT_SCALE_INSET)
-        val xR = wx(1f - PORT_SCALE_INSET)
-
-        // ── POWER / energy — top, horizontal (OBD only) ──
-        if (d.obd) {
-            val kw = d.kw ?: 0.0
-            val pcol = if (kw >= 0) ACCENT else REGEN
-            mono.textAlign = Paint.Align.CENTER; mono.isFakeBoldText = true
-            mono.color = pcol; mono.textSize = ws(PORT_PWR_VAL_SIZE)
-            canvas.drawText("${if (kw > 0) "+" else ""}${kw.roundToInt()} kW", cell.centerX(), hy(PORT_PWR_VAL_Y), mono)
-            hScale(canvas, xL, xR, hy(PORT_PWR_SCALE_Y), powerStops(), POWER_KNEES, kw, 0.0, pcol, ref)
-            mono.isFakeBoldText = false; mono.color = LCD_DIM; mono.textSize = ws(PORT_PWR_SUB_SIZE)
-            val soc = d.socPct?.let { "${it.roundToInt()}%" } ?: "–%"
-            val range = d.rangeKm?.let { "${it.roundToInt()} km" } ?: "– km"
-            canvas.drawText("$soc   ·   $range", cell.centerX(), hy(PORT_PWR_SUB_Y) + ws(PORT_PWR_SUB_SIZE) * 0.9f, mono)
-        }
-
-        // ── SPEED — bottom, horizontal ──
+    fun ckPortPower(canvas: Canvas, cell: RectF, d: ClusterData) {
+        val W = cell.width(); val H = cell.height()
+        val ref = W * PORT_SCALE_TICK
+        val xL = cell.left + W * PORT_SCALE_INSET
+        val xR = cell.left + W * (1f - PORT_SCALE_INSET)
+        val kw = d.kw ?: 0.0
+        val pcol = if (kw >= 0) ACCENT else REGEN
         mono.textAlign = Paint.Align.CENTER; mono.isFakeBoldText = true
-        mono.color = TEXT; mono.textSize = ws(PORT_SPD_NUM_SIZE)
-        canvas.drawText(if (d.hasSpeed) "%.1f".format(Locale.ROOT, d.kmh) else "––", cell.centerX(), hy(PORT_SPD_NUM_Y), mono)
-        mono.isFakeBoldText = false; mono.color = MUTED; mono.textSize = ws(PORT_SPD_UNIT_SIZE)
-        canvas.drawText("km/h", cell.centerX(), hy(PORT_SPD_UNIT_Y), mono)
-        hScale(canvas, xL, xR, hy(PORT_SPD_SCALE_Y), speedStops(), SPEED_KNEES, d.kmh, 0.0, LCD, ref)
+        mono.color = pcol; mono.textSize = W * PORT_PWR_VAL_SIZE
+        canvas.drawText("${if (kw > 0) "+" else ""}${kw.roundToInt()} kW", cell.centerX(), cell.top + H * PORT_PWR_VAL_Y, mono)
+        hScale(canvas, xL, xR, cell.top + H * PORT_PWR_SCALE_Y, powerStops(), POWER_KNEES, kw, 0.0, pcol, ref)
+        mono.isFakeBoldText = false; mono.color = LCD_DIM; mono.textSize = W * PORT_PWR_SUB_SIZE
+        val soc = d.socPct?.let { "${it.roundToInt()}%" } ?: "–%"
+        val range = d.rangeKm?.let { "${it.roundToInt()} km" } ?: "– km"
+        canvas.drawText("$soc   ·   $range", cell.centerX(), cell.top + H * PORT_PWR_SUB_Y + W * PORT_PWR_SUB_SIZE * 0.9f, mono)
+    }
 
-        // ── corners ──
-        if (d.speedLimitKmh != null) limitSign(canvas, wx(PORT_LIM_X), hy(PORT_LIM_Y), ws(PORT_LIM_R), d.speedLimitKmh)
-        if (showCompass) combinedCentre(canvas, wx(PORT_COMP_X), hy(PORT_COMP_Y), ws(PORT_COMP_R), d)
+    fun ckPortSpeed(canvas: Canvas, cell: RectF, d: ClusterData) {
+        val W = cell.width(); val H = cell.height()
+        val ref = W * PORT_SCALE_TICK
+        val xL = cell.left + W * PORT_SCALE_INSET
+        val xR = cell.left + W * (1f - PORT_SCALE_INSET)
+        mono.textAlign = Paint.Align.CENTER; mono.isFakeBoldText = true
+        mono.color = TEXT; mono.textSize = W * PORT_SPD_NUM_SIZE
+        canvas.drawText(if (d.hasSpeed) "%.1f".format(Locale.ROOT, d.kmh) else "––", cell.centerX(), cell.top + H * PORT_SPD_NUM_Y, mono)
+        mono.isFakeBoldText = false; mono.color = MUTED; mono.textSize = W * PORT_SPD_UNIT_SIZE
+        canvas.drawText("km/h", cell.centerX(), cell.top + H * PORT_SPD_UNIT_Y, mono)
+        hScale(canvas, xL, xR, cell.top + H * PORT_SPD_SCALE_Y, speedStops(), SPEED_KNEES, d.kmh, 0.0, LCD, ref)
+    }
+
+    fun ckPortLimit(canvas: Canvas, cell: RectF, d: ClusterData) {
+        if (d.speedLimitKmh == null) return
+        limitSign(canvas, cell.left + cell.width() * PORT_LIM_X, cell.top + cell.height() * PORT_LIM_Y, cell.width() * PORT_LIM_R, d.speedLimitKmh)
+    }
+
+    fun ckPortCompass(canvas: Canvas, cell: RectF, d: ClusterData) =
+        combinedCentre(canvas, cell.left + cell.width() * PORT_COMP_X, cell.top + cell.height() * PORT_COMP_Y, cell.width() * PORT_COMP_R, d)
+
+    /** The power block's natural bounds (value + scale + sub) for edit hit-testing. */
+    fun portPowerRect(cell: RectF): RectF {
+        val W = cell.width(); val H = cell.height()
+        return RectF(
+            cell.left + W * PORT_SCALE_INSET, cell.top + H * PORT_PWR_VAL_Y - W * PORT_PWR_VAL_SIZE,
+            cell.left + W * (1f - PORT_SCALE_INSET), cell.top + H * PORT_PWR_SUB_Y + W * PORT_PWR_SUB_SIZE * 1.5f,
+        )
+    }
+
+    /** The speed block's natural bounds (number + unit + scale). */
+    fun portSpeedRect(cell: RectF): RectF {
+        val W = cell.width(); val H = cell.height()
+        return RectF(
+            cell.left + W * PORT_SCALE_INSET, cell.top + H * PORT_SPD_NUM_Y - W * PORT_SPD_NUM_SIZE,
+            cell.left + W * (1f - PORT_SCALE_INSET), cell.top + H * PORT_SPD_SCALE_Y + W * PORT_SCALE_TICK * 3f,
+        )
+    }
+
+    /** The compass/G-meter dial bounds. */
+    fun portCompassRect(cell: RectF): RectF {
+        val W = cell.width(); val H = cell.height()
+        val cx = cell.left + W * PORT_COMP_X; val cy = cell.top + H * PORT_COMP_Y; val r = W * PORT_COMP_R
+        return RectF(cx - r, cy - r, cx + r, cy + r)
     }
 
     /** Black with the given 0..1 alpha (for the portrait gradients). */

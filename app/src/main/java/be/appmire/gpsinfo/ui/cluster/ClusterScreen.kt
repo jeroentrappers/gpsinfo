@@ -144,11 +144,10 @@ fun ClusterScreen(
                 onSelect = { selected = it },
             )
             CompositionLocalProvider(LocalOverlayEdit provides scope) {
-                GaugeCluster(
+                CockpitClusterPhone(
                     data = data,
-                    modifier = Modifier.fillMaxSize().padding(8.dp),
                     showCompass = true,
-                    mode = ClusterMode.AUTO,
+                    modifier = Modifier.fillMaxSize().padding(8.dp),
                 )
             }
         }

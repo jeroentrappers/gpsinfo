@@ -61,8 +61,7 @@ import be.appmire.gpsinfo.data.UnitSystem
 import be.appmire.gpsinfo.data.nav.NavigationController
 import be.appmire.gpsinfo.data.nav.TrafficController
 import be.appmire.gpsinfo.data.nav.TurnCommand
-import be.appmire.gpsinfo.ui.cluster.ClusterMode
-import be.appmire.gpsinfo.ui.cluster.GaugeCluster
+import be.appmire.gpsinfo.ui.cluster.CockpitClusterPhone
 import be.appmire.gpsinfo.ui.livemap.MapLibreMapHost
 import be.appmire.gpsinfo.ui.overlay.LocalOverlayEdit
 import be.appmire.gpsinfo.ui.overlay.OverlayEditScope
@@ -586,7 +585,7 @@ private fun NavClusterOverlay(
     modifier: Modifier,
 ) {
     val data by vm.clusterData.collectAsStateWithLifecycle()
-    GaugeCluster(data, modifier, showCompass = showCompass, mode = ClusterMode.AUTO)
+    CockpitClusterPhone(data, showCompass = showCompass, modifier = modifier)
 }
 
 /** EU posted-limit roundel: white disc, red ring, black number. The limit

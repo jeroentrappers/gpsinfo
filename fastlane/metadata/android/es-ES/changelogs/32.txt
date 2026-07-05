@@ -1,0 +1,1 @@
+Cluster de indicadores en el teléfono: cada indicador (velocidad, energía, brújula) ahora se mueve y redimensiona por separado en el modo edición, ya no todo el bloque. Nuevo perfil de VE y carga (batería, consumo, conector, límites de carga) con entrada del estado de carga actual, base para la planificación de paradas de carga.

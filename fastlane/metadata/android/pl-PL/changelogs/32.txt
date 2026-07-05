@@ -1,0 +1,1 @@
+Klaster zegarów na telefonie: każdy wskaźnik (prędkość, energia, kompas) można teraz przesuwać i skalować osobno w trybie edycji — już nie cały blok naraz. Nowy profil EV i ładowania (bateria, zużycie, złącze, limity ładowania) z wpisem bieżącego stanu naładowania, podstawa planowania postojów na ładowanie.

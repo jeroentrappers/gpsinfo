@@ -1,0 +1,1 @@
+Telefoon-metercluster: elke meter (snelheid, energie, kompas) is nu apart te verslepen en te schalen in de bewerkmodus — niet langer het hele blok tegelijk. Nieuw EV- en laadprofiel (batterij, verbruik, connector, laadlimieten) met invoer van de huidige laadtoestand, als basis voor laadstopplanning.

@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.SatelliteAlt
@@ -50,6 +51,7 @@ fun ToolsScreen(
     onOpenNmea: () -> Unit,
     onOpenRally: () -> Unit,
     onOpenObdLab: () -> Unit,
+    onOpenEvProfile: () -> Unit,
     onOpenGhost: () -> Unit,
     onOpenNavigate: () -> Unit,
     onOpenCluster: () -> Unit,
@@ -64,6 +66,7 @@ fun ToolsScreen(
         ToolItem(Icons.Outlined.Navigation, R.string.nav_start, onOpenNavigate),
         ToolItem(Icons.Outlined.SportsScore, R.string.rally_title, onOpenRally),
         ToolItem(Icons.Outlined.Tune, R.string.settings_obd_lab, onOpenObdLab),
+        ToolItem(Icons.Outlined.Bolt, R.string.ev_profile_title, onOpenEvProfile),
         ToolItem(Icons.AutoMirrored.Outlined.DirectionsRun, R.string.ghost_picker_title, onOpenGhost),
         ToolItem(Icons.Outlined.Settings, R.string.screen_settings, onOpenSettings),
     )
