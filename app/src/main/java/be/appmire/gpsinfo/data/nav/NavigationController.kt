@@ -168,6 +168,53 @@ object NavigationController {
         }
     }
 
+    /**
+     * Start navigating through an ordered list of [stops] ([lat, lon] pairs —
+     * intermediate charging stops followed by the final destination); the
+     * origin is the live fix. One continuous route via [Router.routeVia], so
+     * turn-by-turn treats the whole charging trip as a single path. Online
+     * (Valhalla) first, BRouter offline as fallback.
+     */
+    fun navigateVia(
+        context: Context,
+        stops: List<DoubleArray>,
+        destName: String? = null,
+        profile: RouteProfile = RouteProfile.FASTEST,
+    ) {
+        if (stops.isEmpty()) return
+        val appContext = context.applicationContext
+        lastProfile = profile
+        lastDestName = destName?.takeIf { it.isNotBlank() }
+        routeJob?.cancel()
+        routeJob = scope.launch {
+            val from = awaitOrigin()
+            if (from == null) {
+                failTransient("No GPS fix yet")
+                return@launch
+            }
+            _state.value = NavState.Preparing("Computing route…")
+            if (voice == null) voice = VoiceGuide(appContext)
+            val full = ArrayList<DoubleArray>(stops.size + 1)
+            full.add(doubleArrayOf(from.latitude, from.longitude))
+            full.addAll(stops)
+            val dest = full.last()
+            val online = runCatching { onlineRouter.routeVia(full, lastProfile) }.getOrNull()
+            val route = if (online != null && online.points.size >= 2) {
+                online
+            } else {
+                val theRouter = router ?: OfflineRouter(appContext).also { router = it }
+                runCatching { theRouter.routeVia(full, lastProfile) }.getOrNull()
+            }
+            if (route == null || route.points.size < 2) {
+                failTransient("No route found")
+                return@launch
+            }
+            installRoute(route, dest[0], dest[1])
+            voice?.announceStart(route)
+            startCorridorDownload(appContext, route)
+        }
+    }
+
     /** Current origin fix, or wait up to [ORIGIN_WAIT_MS] for the first
      *  one — surfacing an "acquiring GPS" banner meanwhile so the surface
      *  visibly responds to the intent. Null only if no fix ever arrives. */

@@ -1,0 +1,1 @@
+Nowość: planowanie trasy z postojami na ładowanie. Wybierz cel i dotknij „Zaplanuj z ładowaniem", aby zobaczyć postoje po drodze — z ceną na żywo, mocą, poziomem po dojeździe, dodaną energią i czasem — i nawiguj prosto przez nie. Zapisuj trasy, by planować je ponownie w Narzędzia › Trasy. Używa realnego poziomu baterii (OBD lub wpisany) i realnych cen.

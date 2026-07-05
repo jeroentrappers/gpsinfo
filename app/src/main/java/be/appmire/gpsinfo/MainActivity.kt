@@ -97,6 +97,8 @@ private object Routes {
     const val GForce = "gforce"
     const val ObdLab = "obd-lab"
     const val EvProfile = "ev-profile"
+    const val Trips = "trips"
+    const val ChargingPlan = "charging-plan"
     const val VoiceGuidance = "voice-guidance"
     const val Cluster = "cluster"
     const val Tools = "tools"
@@ -301,6 +303,16 @@ class MainActivity : ComponentActivity() {
                                         popUpTo(Routes.NavPicker) { inclusive = true }
                                     }
                                 },
+                                onPlanCharging = { target ->
+                                    vm.setPlanTarget(
+                                        be.appmire.gpsinfo.data.charging.PlanTarget(
+                                            target.latDeg, target.lonDeg, target.name,
+                                        ),
+                                    )
+                                    nav.navigate(Routes.ChargingPlan) {
+                                        popUpTo(Routes.NavPicker) { inclusive = true }
+                                    }
+                                },
                             )
                         }
                         composable(Routes.Trails) {
@@ -384,6 +396,32 @@ class MainActivity : ComponentActivity() {
                             be.appmire.gpsinfo.ui.charging.EvProfileScreen(
                                 vm = vm,
                                 onBack = { nav.popBackStack() },
+                            )
+                        }
+                        composable(Routes.Trips) {
+                            be.appmire.gpsinfo.ui.charging.TripsScreen(
+                                vm = vm,
+                                onBack = { nav.popBackStack() },
+                                onPlanNew = { nav.navigate(Routes.NavPicker) },
+                                onOpenTrip = { trip ->
+                                    vm.setPlanTarget(
+                                        be.appmire.gpsinfo.data.charging.PlanTarget(
+                                            trip.destLat, trip.destLon, trip.destName,
+                                        ),
+                                    )
+                                    nav.navigate(Routes.ChargingPlan)
+                                },
+                            )
+                        }
+                        composable(Routes.ChargingPlan) {
+                            be.appmire.gpsinfo.ui.charging.ChargingPlanScreen(
+                                vm = vm,
+                                onBack = { nav.popBackStack() },
+                                onStartNavigation = {
+                                    nav.navigate(Routes.Nav) {
+                                        popUpTo(Routes.ChargingPlan) { inclusive = true }
+                                    }
+                                },
                             )
                         }
                         composable(Routes.VoiceGuidance) {
@@ -510,6 +548,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenRally = { nav.navigate(Routes.Rally) },
                                 onOpenObdLab = { nav.navigate(Routes.ObdLab) },
                                 onOpenEvProfile = { nav.navigate(Routes.EvProfile) },
+                                onOpenTrips = { nav.navigate(Routes.Trips) },
                                 onOpenGhost = { nav.navigate(Routes.Ghost) },
                                 onOpenNavigate = { nav.navigate(Routes.NavPicker) },
                                 onOpenCluster = { nav.navigate(Routes.Cluster) },

@@ -1,0 +1,1 @@
+Yeni: şarj duraklı seyahat planlama. Bir hedef seçin ve "Şarjla planla"ya dokunarak yol üzerindeki durakları görün — canlı fiyat, güç, varışta şarj, eklenen enerji ve süre ile — ve doğrudan içlerinden gidin. Seyahatleri kaydedip Araçlar › Seyahatler'den yeniden planlayın. Gerçek batarya şarjını (OBD veya girilen) ve gerçek fiyatları kullanır.

@@ -492,6 +492,26 @@
     <string name="ev_plug_type2" tools:ignore="MissingTranslation">Type 2</string>
     <string name="ev_plug_chademo" tools:ignore="MissingTranslation">CHAdeMO</string>
     <string name="ev_save" tools:ignore="MissingTranslation">Save</string>
+
+    <!-- Charging-stop plan + trips -->
+    <string name="plan_title" tools:ignore="MissingTranslation">Trip plan</string>
+    <string name="plan_no_destination" tools:ignore="MissingTranslation">No destination selected</string>
+    <string name="plan_infeasible" tools:ignore="MissingTranslation">Can\'t reach the destination with charging</string>
+    <string name="plan_no_stops" tools:ignore="MissingTranslation">No charging stop needed — you\'ll make it on the current charge.</string>
+    <string name="plan_stops_count" tools:ignore="MissingTranslation">%1$d charging stops</string>
+    <string name="plan_charge_time" tools:ignore="MissingTranslation">+%1$d min charging</string>
+    <string name="plan_total_cost" tools:ignore="MissingTranslation">€%1$s</string>
+    <string name="plan_offroute" tools:ignore="MissingTranslation">%1$s km off route</string>
+    <string name="plan_stop_detail" tools:ignore="MissingTranslation">%1$d%% → %2$d%% · +%3$s kWh · %4$d min</string>
+    <string name="plan_start" tools:ignore="MissingTranslation">Start navigation</string>
+    <string name="plan_save" tools:ignore="MissingTranslation">Save trip</string>
+    <string name="plan_save_title" tools:ignore="MissingTranslation">Save trip</string>
+    <string name="plan_save_hint" tools:ignore="MissingTranslation">Trip name</string>
+    <string name="plan_with_charging" tools:ignore="MissingTranslation">Plan with charging</string>
+    <string name="trips_title" tools:ignore="MissingTranslation">Trips</string>
+    <string name="trips_new" tools:ignore="MissingTranslation">Plan a new trip</string>
+    <string name="trips_empty" tools:ignore="MissingTranslation">No saved trips yet. Plan one and save it to activate later.</string>
+    <string name="trips_delete" tools:ignore="MissingTranslation">Delete trip</string>
     <string name="nav_pick_coords_plus_label" tools:ignore="MissingTranslation">Plus Code (optional)</string>
     <string name="nav_pick_coords_alt_label" tools:ignore="MissingTranslation">Plus Code or Maidenhead (optional)</string>
     <string name="trail_recording_stats" tools:ignore="MissingTranslation">%1$d pts · %2$s</string>

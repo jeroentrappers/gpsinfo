@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.SatelliteAlt
 import androidx.compose.material.icons.outlined.Settings
@@ -52,6 +53,7 @@ fun ToolsScreen(
     onOpenRally: () -> Unit,
     onOpenObdLab: () -> Unit,
     onOpenEvProfile: () -> Unit,
+    onOpenTrips: () -> Unit,
     onOpenGhost: () -> Unit,
     onOpenNavigate: () -> Unit,
     onOpenCluster: () -> Unit,
@@ -67,6 +69,7 @@ fun ToolsScreen(
         ToolItem(Icons.Outlined.SportsScore, R.string.rally_title, onOpenRally),
         ToolItem(Icons.Outlined.Tune, R.string.settings_obd_lab, onOpenObdLab),
         ToolItem(Icons.Outlined.Bolt, R.string.ev_profile_title, onOpenEvProfile),
+        ToolItem(Icons.Outlined.Route, R.string.trips_title, onOpenTrips),
         ToolItem(Icons.AutoMirrored.Outlined.DirectionsRun, R.string.ghost_picker_title, onOpenGhost),
         ToolItem(Icons.Outlined.Settings, R.string.screen_settings, onOpenSettings),
     )

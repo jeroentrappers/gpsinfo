@@ -1,0 +1,1 @@
+Nieuw: ritplanning met laadstops. Kies een bestemming en tik op "Plannen met laden" om de laadstops onderweg te zien — met live prijs, vermogen, laadniveau bij aankomst, toegevoegde energie en tijd — en navigeer er meteen doorheen. Bewaar ritten om later opnieuw te plannen via Extra › Ritten. Gebruikt je live accuniveau (OBD of ingevoerd) en echte laadprijzen.

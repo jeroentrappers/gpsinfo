@@ -1,0 +1,1 @@
+Nuevo: planificación de viajes con paradas de carga. Elige un destino y toca "Planificar con carga" para ver las paradas en ruta — con precio en vivo, potencia, carga a la llegada, energía añadida y tiempo — y navega directamente por ellas. Guarda viajes para replanificarlos desde Herramientas › Viajes. Usa tu carga real (OBD o introducida) y precios reales.

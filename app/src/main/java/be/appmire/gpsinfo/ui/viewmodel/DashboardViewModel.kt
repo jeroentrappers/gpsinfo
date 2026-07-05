@@ -989,6 +989,46 @@ class DashboardViewModel(
         viewModelScope.launch { repo.setEvManualSoc(value) }
     }
 
+    // ── Charging-stop trips ─────────────────────────────────────────
+    private val chargingService = be.appmire.gpsinfo.data.charging.ChargingService()
+    private val tripStore = be.appmire.gpsinfo.data.charging.TripStore(getApplication())
+
+    val savedTrips: StateFlow<List<be.appmire.gpsinfo.data.charging.SavedTrip>> = tripStore.trips
+
+    /** Destination the plan screen should plan for (set before navigating to it). */
+    private val _planTarget = kotlinx.coroutines.flow.MutableStateFlow<be.appmire.gpsinfo.data.charging.PlanTarget?>(null)
+    val planTarget: StateFlow<be.appmire.gpsinfo.data.charging.PlanTarget?> = _planTarget
+
+    fun setPlanTarget(target: be.appmire.gpsinfo.data.charging.PlanTarget?) { _planTarget.value = target }
+
+    fun loadTrips() { viewModelScope.launch { tripStore.load() } }
+
+    fun saveTrip(name: String, target: be.appmire.gpsinfo.data.charging.PlanTarget) {
+        viewModelScope.launch { tripStore.add(name, target.destLat, target.destLon, target.destName) }
+    }
+
+    fun deleteTrip(id: String) { viewModelScope.launch { tripStore.delete(id) } }
+
+    /** Compute the charging-stop plan for [target] from the live position and
+     *  effective SoC (OBD or manual) against the EV profile + live prices. */
+    suspend fun computeChargingPlan(
+        target: be.appmire.gpsinfo.data.charging.PlanTarget,
+    ): be.appmire.gpsinfo.data.charging.ChargingPlan {
+        val loc = state.value.gnss.location
+            ?: return be.appmire.gpsinfo.data.charging.ChargingPlan(
+                reachableWithoutCharging = false, stops = emptyList(),
+                feasible = false, message = "No GPS fix yet",
+            )
+        return chargingService.plan(
+            profile = evVehicleProfile.value,
+            startSocPercent = effectiveSocPercent.value,
+            fromLat = loc.latitude,
+            fromLon = loc.longitude,
+            toLat = target.destLat,
+            toLon = target.destLon,
+        )
+    }
+
     /** Live list of saved trails for the trails list screen. */
     val trails: StateFlow<List<TrailSummary>> = trailRepo.trails
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

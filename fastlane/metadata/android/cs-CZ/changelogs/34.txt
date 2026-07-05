@@ -1,0 +1,1 @@
+Novinka: plánování cesty se zastávkami na nabíjení. Zvolte cíl a klepněte na „Naplánovat s nabíjením" pro zobrazení zastávek cestou — s živou cenou, výkonem, nabitím při příjezdu, přidanou energií a časem — a navigujte přímo skrz ně. Uložte cesty pro pozdější přeplánování v Nástroje › Cesty. Používá reálné nabití (OBD nebo zadané) a reálné ceny.

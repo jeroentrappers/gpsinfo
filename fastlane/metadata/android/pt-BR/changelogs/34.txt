@@ -1,0 +1,1 @@
+Novo: planejamento de viagem com paradas de recarga. Escolha um destino e toque em "Planejar com recarga" para ver as paradas no caminho — com preço ao vivo, potência, carga na chegada, energia adicionada e tempo — e navegue direto por elas. Salve viagens para replanejar em Ferramentas › Viagens. Usa sua carga real (OBD ou inserida) e preços reais.

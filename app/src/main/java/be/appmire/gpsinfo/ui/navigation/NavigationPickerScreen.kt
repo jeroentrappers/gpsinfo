@@ -78,6 +78,7 @@ fun NavigationPickerScreen(
     /** Optional: start offline turn-by-turn driving to the target
      *  instead of the bearing-style waypoint navigation. */
     onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
+    onPlanCharging: ((NavigationTarget.Single) -> Unit)? = null,
 ) {
     var tab by remember { mutableStateOf(0) }
     Scaffold(
@@ -126,6 +127,7 @@ fun NavigationPickerScreen(
                     biasLonDeg = initialLonDeg,
                     onConfirm = onConfirm,
                     onDriveTo = onDriveTo,
+                    onPlanCharging = onPlanCharging,
                 )
                 1 -> MapPickPane(
                     modifier = Modifier.weight(1f),
@@ -133,11 +135,13 @@ fun NavigationPickerScreen(
                     initialLonDeg = initialLonDeg,
                     onConfirm = onConfirm,
                     onDriveTo = onDriveTo,
+                    onPlanCharging = onPlanCharging,
                 )
                 else -> CoordsPickPane(
                     modifier = Modifier.weight(1f),
                     onConfirm = onConfirm,
                     onDriveTo = onDriveTo,
+                    onPlanCharging = onPlanCharging,
                 )
             }
         }
@@ -158,6 +162,7 @@ private fun AddressPickPane(
     biasLonDeg: Double?,
     onConfirm: (NavigationTarget.Single) -> Unit,
     onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
+    onPlanCharging: ((NavigationTarget.Single) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val repo = remember { be.appmire.gpsinfo.data.nav.GeocodingRepository(context) }
@@ -318,6 +323,15 @@ private fun AddressPickPane(
                 Text(stringResource(R.string.nav_pick_drive))
             }
         }
+        if (onPlanCharging != null) {
+            OutlinedButton(
+                onClick = { sel?.let { onPlanCharging(NavigationTarget.Single(it.lat, it.lon, it.label)) } },
+                enabled = sel != null,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Text(stringResource(R.string.plan_with_charging))
+            }
+        }
     }
 }
 
@@ -441,6 +455,7 @@ private fun MapPickPane(
     initialLonDeg: Double?,
     onConfirm: (NavigationTarget.Single) -> Unit,
     onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
+    onPlanCharging: ((NavigationTarget.Single) -> Unit)? = null,
 ) {
     val defaultName = stringResource(R.string.nav_default_name)
     var picked by remember { mutableStateOf<GeoPoint?>(null) }
@@ -525,9 +540,24 @@ private fun MapPickPane(
                 enabled = p != null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp),
             ) {
                 Text(stringResource(R.string.nav_pick_drive))
+            }
+        }
+        if (onPlanCharging != null) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    if (p != null) {
+                        onPlanCharging(NavigationTarget.Single(p.latitude, p.longitude, defaultName))
+                    }
+                },
+                enabled = p != null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+            ) {
+                Text(stringResource(R.string.plan_with_charging))
             }
         }
     }
@@ -540,6 +570,7 @@ private fun CoordsPickPane(
     modifier: Modifier = Modifier,
     onConfirm: (NavigationTarget.Single) -> Unit,
     onDriveTo: ((NavigationTarget.Single) -> Unit)? = null,
+    onPlanCharging: ((NavigationTarget.Single) -> Unit)? = null,
 ) {
     val defaultName = stringResource(R.string.nav_default_name)
     var latText by remember { mutableStateOf("") }
@@ -631,6 +662,20 @@ private fun CoordsPickPane(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.nav_pick_drive))
+            }
+        }
+        if (onPlanCharging != null) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    if (lat != null && lon != null) {
+                        val name = nameText.trim().ifBlank { defaultName }
+                        onPlanCharging(NavigationTarget.Single(lat, lon, name))
+                    }
+                },
+                enabled = valid,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.plan_with_charging))
             }
         }
     }

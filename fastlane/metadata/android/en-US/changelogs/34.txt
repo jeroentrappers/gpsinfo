@@ -1,0 +1,1 @@
+New: charging-stop trip planning. Pick a destination and tap "Plan with charging" to see the stops along the way — each with live price, power, arrival charge, energy added and time — then start navigation straight through them. Save trips to re-plan and activate later from Tools › Trips. Uses your live battery charge (OBD or entered) and real charger prices.

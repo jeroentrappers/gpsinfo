@@ -1,0 +1,1 @@
+Novità: pianificazione del viaggio con soste di ricarica. Scegli una destinazione e tocca "Pianifica con ricarica" per vedere le soste lungo il percorso — con prezzo live, potenza, carica all'arrivo, energia aggiunta e tempo — poi naviga direttamente attraverso di esse. Salva i viaggi per ripianificarli da Strumenti › Viaggi. Usa la carica reale (OBD o inserita) e prezzi reali.

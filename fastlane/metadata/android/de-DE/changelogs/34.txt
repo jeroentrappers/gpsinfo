@@ -1,0 +1,1 @@
+Neu: Reiseplanung mit Ladestopps. Ziel wählen und auf "Mit Laden planen" tippen, um die Ladestopps unterwegs zu sehen — je mit Live-Preis, Leistung, Ladestand bei Ankunft, nachgeladener Energie und Zeit — und direkt hindurch navigieren. Reisen speichern und später unter Extras › Reisen neu planen. Nutzt den Live-Akkustand (OBD oder eingegeben) und echte Ladepreise.
