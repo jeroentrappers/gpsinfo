@@ -59,6 +59,35 @@ class ValhallaRouter : Router {
         }
     }
 
+    override suspend fun routeVia(points: List<DoubleArray>, profile: RouteProfile): OfflineRoute? =
+        withContext(Dispatchers.IO) {
+            if (points.size < 2) return@withContext null
+            val base = BuildConfig.ROUTING_BASE_URL.trimEnd('/')
+            if (base.isEmpty()) return@withContext null
+            val key = BuildConfig.TILES_API_KEY
+            val url = URL(base + "/route" + if (key.isNotEmpty()) "?key=$key" else "")
+            val locations = JSONArray()
+            points.forEach { locations.put(JSONObject().put("lat", it[0]).put("lon", it[1])) }
+            val body = requestJsonForLocations(locations, profile).toString()
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                doOutput = true
+                connectTimeout = 8_000
+                readTimeout = 20_000
+                setRequestProperty("Content-Type", "application/json")
+            }
+            try {
+                conn.outputStream.use { it.write(body.toByteArray()) }
+                if (conn.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+                parseOsrm(JSONObject(conn.inputStream.bufferedReader().readText()))
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "valhalla routeVia failed", e)
+                null
+            } finally {
+                conn.disconnect()
+            }
+        }
+
     /**
      * Map-match a short GPS [trace] ([lat, lon] points, oldest→newest) and
      * return the posted speed limit (km/h) of the road at the most recent point,
@@ -112,10 +141,16 @@ class ValhallaRouter : Router {
     private fun requestJson(
         fromLat: Double, fromLon: Double, toLat: Double, toLon: Double, profile: RouteProfile,
         alternates: Int = 0,
-    ): JSONObject {
-        val locations = JSONArray()
+    ): JSONObject = requestJsonForLocations(
+        JSONArray()
             .put(JSONObject().put("lat", fromLat).put("lon", fromLon))
-            .put(JSONObject().put("lat", toLat).put("lon", toLon))
+            .put(JSONObject().put("lat", toLat).put("lon", toLon)),
+        profile, alternates,
+    )
+
+    private fun requestJsonForLocations(
+        locations: JSONArray, profile: RouteProfile, alternates: Int = 0,
+    ): JSONObject {
         val autoOpts = JSONObject()
         when (profile) {
             RouteProfile.FASTEST -> {}

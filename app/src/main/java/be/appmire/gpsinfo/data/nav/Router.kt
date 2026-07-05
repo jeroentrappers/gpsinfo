@@ -16,6 +16,21 @@ interface Router {
         profile: RouteProfile,
     ): OfflineRoute?
 
+    /**
+     * Route through an ordered list of [points] ([lat, lon] pairs; first =
+     * origin, last = destination, any in between are intermediate stops — e.g.
+     * planned charging stops). Returns one continuous [OfflineRoute] through
+     * them all, so turn-by-turn treats it as a single path. The default only
+     * honours origin→destination (ignoring intermediates); engines that
+     * support waypoints override this.
+     */
+    suspend fun routeVia(points: List<DoubleArray>, profile: RouteProfile): OfflineRoute? {
+        if (points.size < 2) return null
+        val a = points.first()
+        val b = points.last()
+        return route(a[0], a[1], b[0], b[1], profile)
+    }
+
     /** Segment tiles needed for the route bbox that aren't on disk yet. */
     fun missingTiles(fromLat: Double, fromLon: Double, toLat: Double, toLon: Double): List<String>
 }

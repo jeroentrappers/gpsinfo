@@ -104,6 +104,45 @@ class OfflineRouter(context: Context) : Router {
         )
     }
 
+    override suspend fun routeVia(points: List<DoubleArray>, profile: RouteProfile): OfflineRoute? =
+        withContext(Dispatchers.IO) {
+            if (points.size < 2) return@withContext null
+            installProfilesIfNeeded()
+            val rc = RoutingContext()
+            rc.localFunction = File(profilesDir, profileFile(profile)).absolutePath
+            rc.turnInstructionMode = 1
+            // BRouter routes through the full ordered waypoint list in one pass.
+            val waypoints = points.mapIndexed { i, p -> namedNode("wp$i", p[0], p[1]) }
+            val engine = RoutingEngine(null, null, segmentsDir, waypoints, rc)
+            engine.quite = true
+            engine.doRun(MAX_ROUTING_MILLIS)
+            if (engine.errorMessage != null) return@withContext null
+            val track = engine.foundTrack ?: return@withContext null
+            val pts = track.nodes.map { n ->
+                RoutePoint(
+                    lat = n.iLat / 1e6 - 90.0,
+                    lon = n.iLon / 1e6 - 180.0,
+                    maxspeedKmh = n.maxspeedKmh,
+                )
+            }
+            val turns = track.voiceHints?.hints?.map { h ->
+                TurnHint(
+                    lat = h.iLat / 1e6 - 90.0,
+                    lon = h.iLon / 1e6 - 180.0,
+                    command = TurnCommand.fromBRouter(h.command),
+                    exitNumber = h.exitNumber,
+                    distanceToNextMeters = h.distanceToNextMeters,
+                    trackIndex = h.trackIndex,
+                )
+            } ?: emptyList()
+            OfflineRoute(
+                points = pts,
+                distanceMeters = track.distance,
+                durationSeconds = track.totalSeconds,
+                turns = turns,
+            )
+        }
+
     /** Which segment tiles a route between these points needs, and
      *  which of them are still missing locally. */
     override fun missingTiles(fromLat: Double, fromLon: Double, toLat: Double, toLon: Double): List<String> =
