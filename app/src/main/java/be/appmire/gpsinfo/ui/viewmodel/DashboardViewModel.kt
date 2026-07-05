@@ -333,7 +333,7 @@ class DashboardViewModel(
     val carOverlayRecordingStrip: StateFlow<Boolean> =
         carOverlayFlow({ it.carOverlayRecordingStrip }, false)
     val carOverlayRallyPanel: StateFlow<Boolean> = carOverlayFlow({ it.carOverlayRallyPanel }, false)
-    val carLiveGlMap: StateFlow<Boolean> = carOverlayFlow({ it.carLiveGlMap }, false)
+    val carLiveGlMap: StateFlow<Boolean> = carOverlayFlow({ it.carLiveGlMap }, true)
 
     fun setCarOverlaySpeed(value: Boolean) = persistCarOverlay { it.setCarOverlaySpeed(value) }
     fun setCarOverlaySpeedLimit(value: Boolean) = persistCarOverlay { it.setCarOverlaySpeedLimit(value) }

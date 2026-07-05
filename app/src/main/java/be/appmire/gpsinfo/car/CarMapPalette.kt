@@ -18,8 +18,12 @@ import org.maplibre.android.style.layers.PropertyFactory
 object CarMapPalette {
 
     /** Apply the palette using a caller-provided layer lookup (each backend
-     *  resolves layers its own way). Safe to call once the style is loaded. */
-    fun applyTo(getLayer: (String) -> Layer?) {
+     *  resolves layers its own way). Returns false when the style isn't ready
+     *  yet (no `background` layer) so the caller can retry — layers can be
+     *  absent for a few frames after the style URI is set. */
+    fun applyTo(getLayer: (String) -> Layer?): Boolean {
+        // Probe a layer that always exists; if absent, the style hasn't loaded.
+        runCatching { getLayer("background") }.getOrNull() ?: return false
         fun fill(id: String, color: String) = runCatching {
             getLayer(id)?.setProperties(PropertyFactory.fillColor(color))
         }
@@ -61,6 +65,7 @@ object CarMapPalette {
         listOf("road_minor_casing", "road_service_track_casing", "tunnel_service_track_casing",
             "tunnel_street_casing", "bridge_street_casing", "bridge_service_track_casing")
             .forEach { line(it, MINOR_CASING) }
+        return true
     }
 
     const val LAND = "#E7E4DB"

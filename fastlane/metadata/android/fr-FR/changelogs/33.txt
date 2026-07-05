@@ -1,0 +1,1 @@
+La carte Android Auto rendue par GPU est désormais activée par défaut : défilement plus fluide et continu, couleurs façon Waze retrouvées, surcouches d'info correctes et déplacement tactile fonctionnel. Vous pouvez revenir au rendu classique dans Paramètres › Android Auto.

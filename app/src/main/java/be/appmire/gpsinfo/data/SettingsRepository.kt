@@ -507,11 +507,10 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
     }
 
     /** Live GL map on Android Auto: MapLibre renders straight onto the car
-     *  surface (EGL) instead of the off-screen snapshotter. Default off —
-     *  opt-in until validated on head units; the snapshotter stays the
-     *  instant fallback. */
+     *  surface (EGL) instead of the off-screen snapshotter. Default on; the
+     *  snapshotter stays the fallback when this is turned off. */
     val carLiveGlMap: Flow<Boolean> = context.dataStore.data
-        .map { it[Keys.CarLiveGlMap] ?: false }
+        .map { it[Keys.CarLiveGlMap] ?: true }
 
     suspend fun setCarLiveGlMap(value: Boolean) {
         context.dataStore.edit { it[Keys.CarLiveGlMap] = value }

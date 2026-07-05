@@ -1,0 +1,1 @@
+Mapa Android Auto vykreslovaná GPU je nyní výchozí: plynulejší, souvislý pohyb, známé barvy ve stylu Waze, správné informační vrstvy a funkční posouvání tažením. Ke klasickému vykreslování se lze vrátit v Nastavení › Android Auto.

@@ -1,0 +1,1 @@
+Mapa Android Auto renderowana przez GPU jest teraz domyślna: płynniejszy, ciągły ruch, znajome kolory w stylu Waze, poprawne nakładki informacyjne i działające przesuwanie palcem. Do klasycznego renderowania można wrócić w Ustawienia › Android Auto.

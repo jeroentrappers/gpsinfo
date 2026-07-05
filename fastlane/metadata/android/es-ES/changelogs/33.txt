@@ -1,0 +1,1 @@
+El mapa de Android Auto renderizado por GPU ahora es el predeterminado: movimiento más fluido y continuo, colores estilo Waze, superposiciones de información correctas y desplazamiento táctil funcional. Puedes volver al renderizador clásico en Ajustes › Android Auto.

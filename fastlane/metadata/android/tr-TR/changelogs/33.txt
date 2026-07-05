@@ -1,0 +1,1 @@
+GPU ile işlenen Android Auto haritası artık varsayılan: daha akıcı, kesintisiz hareket, bilinen Waze tarzı renkler, doğru bilgi katmanları ve çalışan dokunarak sürükleme. Ayarlar › Android Auto altından klasik işleyiciye dönebilirsiniz.

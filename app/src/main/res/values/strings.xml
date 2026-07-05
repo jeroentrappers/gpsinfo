@@ -470,8 +470,8 @@
     <string name="settings_car_overlay_recording_body" tools:ignore="MissingTranslation">Show distance and duration while a track recording is active.</string>
     <string name="settings_car_overlay_rally" tools:ignore="MissingTranslation">Rally panel</string>
     <string name="settings_car_overlay_rally_body" tools:ignore="MissingTranslation">Show the regularity-test timing panel during a rally stage.</string>
-    <string name="settings_car_live_gl_map" tools:ignore="MissingTranslation">Live GL map (experimental)</string>
-    <string name="settings_car_live_gl_map_body" tools:ignore="MissingTranslation">Render the Android Auto map continuously on the GPU instead of the snapshot renderer. Smoother, but experimental — turn off if the map misbehaves.</string>
+    <string name="settings_car_live_gl_map" tools:ignore="MissingTranslation">Live GL map</string>
+    <string name="settings_car_live_gl_map_body" tools:ignore="MissingTranslation">Render the Android Auto map continuously on the GPU for smoother movement. On by default; turn off to fall back to the snapshot renderer.</string>
 
     <!-- EV profile + charging planner -->
     <string name="ev_profile_title" tools:ignore="MissingTranslation">EV &amp; charging</string>

@@ -122,6 +122,10 @@ class CarGlMap(
     /** Point the camera. Applied synchronously to the map transform, so a
      *  [currentProjector] taken right after reflects this exact camera. */
     fun setCamera(lat: Double, lon: Double, zoom: Double, bearingDeg: Double, pitchDeg: Double) {
+        // The style's layers may only become available a few frames after the
+        // URI is set, so keep trying to apply the day palette / 3D visibility
+        // until it takes (cheap once done).
+        if (styleLoaded && (!paletteApplied || applied3d != want3d)) applyStyleTweaks()
         val center = LatLng(lat, lon)
         nativeMap.setLatLng(center, 0)
         nativeMap.setZoom(zoom, PointF(width / 2f, height / 2f), 0)
@@ -166,8 +170,9 @@ class CarGlMap(
             applied3d = want3d
         }
         if (!paletteApplied) {
-            CarMapPalette.applyTo { id -> runCatching { nativeMap.getLayer(id) }.getOrNull() }
-            paletteApplied = true
+            // May report not-ready for a few frames after the style URI is set;
+            // retried from setCamera until it takes.
+            paletteApplied = CarMapPalette.applyTo { id -> runCatching { nativeMap.getLayer(id) }.getOrNull() }
         }
     }
 
@@ -597,8 +602,11 @@ internal class CarGlOverlay {
         GLES20.glDisable(GLES20.GL_DEPTH_TEST)
         GLES20.glDisable(GLES20.GL_CULL_FACE)
         GLES20.glEnable(GLES20.GL_BLEND)
-        // Straight-alpha bitmap.
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+        // Android Bitmaps are premultiplied-alpha, and GLUtils.texImage2D
+        // uploads them as-is, so composite with premultiplied blending
+        // (GL_ONE, not GL_SRC_ALPHA) — otherwise semi-transparent overlay
+        // pixels get double-darkened and edges halo.
+        GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
         GLES20.glUseProgram(program)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)

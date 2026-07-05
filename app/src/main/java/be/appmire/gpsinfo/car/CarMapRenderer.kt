@@ -691,8 +691,30 @@ class CarMapRenderer(
                 return@post
             }
             if (!panMode) return@post
-            val snap: MapProjector = (if (glMode) glMap?.currentProjector() else null)
-                ?: snapshotter.latest?.let { SnapshotProjector(it) }
+            // Live-GL: shift the camera analytically from the screen delta
+            // (metres-per-pixel at the current zoom, rotated by the map bearing
+            // for heading-up). Backend-independent — doesn't depend on a
+            // main-thread projection round-trip, which is why the projected
+            // path didn't move the GL camera.
+            if (glMode) {
+                val loc0 = lastDrawnLocation ?: return@post
+                val lat0 = loc0.latitude
+                val mpp = 156_543.03392 * cos(Math.toRadians(lat0)) / Math.pow(2.0, currentZoom)
+                val b = Math.toRadians(if (hasBearing) smoothedBearingDeg.toDouble() else 0.0)
+                // Match the projected path's semantics: to = point under
+                // (centre + delta), pan toward it. Screen +y is down.
+                val headingM = -distanceY * mpp
+                val rightM = distanceX * mpp
+                val north = headingM * cos(b) - rightM * Math.sin(b)
+                val east = headingM * Math.sin(b) + rightM * cos(b)
+                panLatOffset = (panLatOffset + north / 111_320.0)
+                    .coerceIn(-MAX_PAN_DEG, MAX_PAN_DEG)
+                panLonOffset = (panLonOffset + east / (111_320.0 * cos(Math.toRadians(lat0))))
+                    .coerceIn(-MAX_PAN_DEG, MAX_PAN_DEG)
+                scheduleRender()
+                return@post
+            }
+            val snap: MapProjector = snapshotter.latest?.let { SnapshotProjector(it) }
                 ?: return@post
             val w = snap.width
             val h = snap.height
@@ -1051,6 +1073,8 @@ class CarMapRenderer(
             drawTraffic(canvas, glProj, mapLeft)
             drawProjectedBreadcrumb(canvas, glProj, mapLeft)
             drawProjectedMarker(canvas, puckProjected)
+            // Match the snapshotter: dim the (light) map in dark mode.
+            if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
             return
         }
 

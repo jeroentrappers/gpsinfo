@@ -1,0 +1,1 @@
+Die GPU-gerenderte Android-Auto-Karte ist jetzt Standard: flüssigere, kontinuierliche Bewegung mit den gewohnten Waze-ähnlichen Farben, korrekten Info-Overlays und funktionierendem Verschieben per Fingerzug. Über Einstellungen › Android Auto lässt sich weiter zur klassischen Darstellung wechseln.
