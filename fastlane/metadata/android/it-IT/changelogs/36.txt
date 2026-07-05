@@ -1,0 +1,1 @@
+Personalizzazione Android Auto: la superficie si adatta alle dimensioni divise dell'unità (intera, ⅔, ⅓ di larghezza) e imposti il layout separatamente per ogni dimensione e per navigazione vs. inattivo. Velocità e limite sono elementi modificabili sempre disponibili (sposta, ridimensiona, rimuovi) e gli sfondi con gradiente nero si riposizionano singolarmente.

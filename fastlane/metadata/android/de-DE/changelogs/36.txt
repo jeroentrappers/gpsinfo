@@ -1,0 +1,1 @@
+Android-Auto-Layout anpassbar: Die Oberfläche passt sich jetzt den Split-Größen des Head-Units an (voll, ⅔, ⅓ Breite), und du richtest das Layout je Größe und für Navigation vs. Leerlauf getrennt ein. Tempo und Tempolimit sind stets verfügbare, bearbeitbare Elemente (verschieben, skalieren, entfernen), und die schwarzen Verlauf-Hintergründe lassen sich einzeln verschieben.

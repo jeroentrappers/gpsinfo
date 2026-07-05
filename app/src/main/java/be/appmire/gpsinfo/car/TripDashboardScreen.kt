@@ -361,19 +361,26 @@ class TripDashboardScreen(
             state to layout
         }
             .onEach { (state, layout) ->
-                renderer.updateOverlayLayout(state, layout.forState(state))
+                // The renderer picks the active (width-class × state) bucket
+                // itself, from the surface size.
+                renderer.updateOverlayLayout(layout, state)
             }
             .launchIn(lifecycleScope)
 
-        // Persist a finished edit: patch the one element in the right state
-        // bucket and re-save the whole layout blob.
-        renderer.onLayoutChanged = { state, element, override ->
-            overlayLayout = overlayLayout.with(state, element, override)
+        // Persist a finished edit: patch the one element in the right bucket
+        // (width-class × nav-state) and re-save the whole layout blob.
+        renderer.onLayoutChanged = { bucket, element, override ->
+            overlayLayout = overlayLayout.with(bucket, element, override)
             lifecycleScope.launch { settings.setCarOverlayLayoutJson(overlayLayout.toJson()) }
         }
-        // Reset: clear the whole active preset's overrides and re-save.
-        renderer.onLayoutReset = { state ->
-            overlayLayout = overlayLayout.clear(state)
+        // Remove: hide the element in this bucket.
+        renderer.onElementHidden = { bucket, element ->
+            overlayLayout = overlayLayout.hide(bucket, element)
+            lifecycleScope.launch { settings.setCarOverlayLayoutJson(overlayLayout.toJson()) }
+        }
+        // Reset: clear the active bucket (overrides + removals) and re-save.
+        renderer.onLayoutReset = { bucket ->
+            overlayLayout = overlayLayout.clear(bucket)
             lifecycleScope.launch { settings.setCarOverlayLayoutJson(overlayLayout.toJson()) }
         }
 
@@ -537,6 +544,15 @@ class TripDashboardScreen(
                             .build()
                     )
                     if (renderer.isEditMode()) {
+                        addAction(
+                            Action.Builder()
+                                .setTitle(carContext.getString(R.string.car_action_remove))
+                                .setOnClickListener {
+                                    renderer.removeSelected()
+                                    invalidate()
+                                }
+                                .build()
+                        )
                         addAction(
                             Action.Builder()
                                 .setTitle(carContext.getString(R.string.car_action_reset))

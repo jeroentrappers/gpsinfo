@@ -335,10 +335,14 @@ class CarMapRenderer(
     }
 
     // ── Dynamic overlay layout (drag / pinch, per nav state) ─────────
-    /** User drag/scale overrides for the CURRENT state, pushed by the screen
-     *  (which selects the nav vs idle bucket). */
-    private var overlayLayout: Map<OverlayElement, LayoutOverride> = emptyMap()
+    /** Full per-bucket (width-class × nav-state) layout, pushed by the screen;
+     *  the renderer picks the active bucket from its own width class + state. */
+    private var carLayout: CarOverlayLayout = CarOverlayLayout()
     private var overlayState: OverlayState = OverlayState.IDLE
+    /** Width class of the current frame (full / ⅔ / ⅓ split), from the surface
+     *  vs the widest we've seen; recomputed each frame. */
+    private var frameWidthClass: WidthClass = WidthClass.FULL
+    private var maxUsableW = 1
     /** Parked-only "edit layout" mode: gestures reposition/resize the
      *  selected overlay instead of panning/zooming the map. */
     private var editMode = false
@@ -351,30 +355,46 @@ class CarMapRenderer(
     private var surfaceH = 0
 
     /** Persist callback — the screen writes the override to DataStore in the
-     *  right state bucket. Set by the owner. */
-    var onLayoutChanged: ((OverlayState, OverlayElement, LayoutOverride) -> Unit)? = null
+     *  right (width × state) bucket. */
+    var onLayoutChanged: ((OverlayBucket, OverlayElement, LayoutOverride) -> Unit)? = null
 
-    /** Reset callback — the screen clears the whole state bucket in DataStore. */
-    var onLayoutReset: ((OverlayState) -> Unit)? = null
+    /** Hide callback — the screen marks the element removed in the bucket. */
+    var onElementHidden: ((OverlayBucket, OverlayElement) -> Unit)? = null
 
-    fun updateOverlayLayout(state: OverlayState, layout: Map<OverlayElement, LayoutOverride>) {
+    /** Reset callback — the screen clears the whole bucket in DataStore. */
+    var onLayoutReset: ((OverlayBucket) -> Unit)? = null
+
+    fun updateOverlayLayout(layout: CarOverlayLayout, state: OverlayState) {
         // Don't let a persisted value flowing back clobber a live drag.
         if (editMode) return
-        if (state == overlayState && layout == overlayLayout) return
+        if (state == overlayState && layout == carLayout) return
         overlayState = state
-        overlayLayout = layout
+        carLayout = layout
         scheduleRender()
     }
+
+    /** Classify the usable width (visible area, else surface) against the widest
+     *  seen, so a host split into ⅔ / ⅓ selects a different layout bucket. */
+    private fun classifyWidth(): WidthClass {
+        val usable = (visibleArea?.width() ?: surfaceW).coerceAtLeast(1)
+        if (usable > maxUsableW) maxUsableW = usable
+        return when (usable.toFloat() / maxUsableW) {
+            in 0.8f..Float.MAX_VALUE -> WidthClass.FULL
+            in 0.45f..0.8f -> WidthClass.TWO_THIRDS
+            else -> WidthClass.ONE_THIRD
+        }
+    }
+
+    private fun currentBucket(): OverlayBucket = OverlayBucket(frameWidthClass, overlayState)
 
     fun setEditMode(active: Boolean) {
         if (active == editMode) return
         editMode = active
         if (!active) {
-            // Persist everything touched this session.
+            // Persist everything touched this session, into the active bucket.
+            val bucket = currentBucket()
             val cb = onLayoutChanged
-            if (cb != null) {
-                for (el in dirtyElements) cb(overlayState, el, overlayLayout[el] ?: LayoutOverride())
-            }
+            if (cb != null) for (el in dirtyElements) cb(bucket, el, carLayout.get(bucket, el))
             dirtyElements.clear()
             selectedElement = null
         }
@@ -383,21 +403,36 @@ class CarMapRenderer(
 
     fun isEditMode(): Boolean = editMode
 
-    /** Reset the current state's layout to defaults (clears all overrides for
-     *  the active NAV/IDLE preset). Only meaningful in edit mode. */
+    /** Whether a removable element is selected (for the Remove action's state). */
+    fun hasRemovableSelection(): Boolean = selectedElement?.removable == true
+
+    /** Reset the active bucket to defaults (overrides + removals). */
     fun resetLayout() {
-        overlayLayout = emptyMap()
+        val bucket = currentBucket()
+        carLayout = carLayout.clear(bucket)
         dirtyElements.clear()
         selectedElement = null
         scheduleRender()
-        onLayoutReset?.invoke(overlayState)
+        onLayoutReset?.invoke(bucket)
+    }
+
+    /** Hide (remove) the selected element in the active bucket. */
+    fun removeSelected() {
+        val el = selectedElement ?: return
+        if (!el.removable) return
+        val bucket = currentBucket()
+        carLayout = carLayout.hide(bucket, el)
+        selectedElement = null
+        scheduleRender()
+        onElementHidden?.invoke(bucket, el)
     }
 
     /** Apply [transform] to the selected element's override and repaint. */
     private fun mutateSelected(transform: (LayoutOverride) -> LayoutOverride) {
         val el = selectedElement ?: return
-        val next = transform(overlayLayout[el] ?: LayoutOverride())
-        overlayLayout = overlayLayout.toMutableMap().apply { put(el, next) }
+        val bucket = currentBucket()
+        val next = transform(carLayout.get(bucket, el))
+        carLayout = carLayout.with(bucket, el, next)
         dirtyElements.add(el)
         scheduleRender()
     }
@@ -834,6 +869,7 @@ class CarMapRenderer(
         if (!glMode) canvas.drawColor(bg)
         surfaceW = w
         surfaceH = h
+        frameWidthClass = classifyWidth()
         elementBounds.clear()
 
         // The last fix dead-reckoned forward to this frame (see
@@ -858,12 +894,14 @@ class CarMapRenderer(
         // already shows speed + limit, so the minimal badge is the
         // navigation-only fallback shown when the cluster is hidden.
         if (overlayConfig.cluster) {
-            // drawCluster wraps each piece (background / gauges / text / compass)
+            // drawCluster wraps each piece (gauges / text / compass / scrims)
             // in its own overlay() so they're individually editable.
             drawCluster(canvas, w, h, loc)
-        } else {
-            drawSpeedBadge(canvas, w, h, loc, dark)
         }
+        // Speed + speed-limit are always-available driving info: drawn as their
+        // own editable elements regardless of the cluster, hideable per bucket
+        // via the edit-mode Remove action.
+        drawSpeedBadge(canvas, w, h, loc, dark)
         drawHud(canvas, w, h, dark, showRecordingStrip = overlayConfig.recordingStrip)
         // Centre the banners on the safe area, not the raw screen, so they
         // track the host's chrome layout instead of hiding under it.
@@ -886,7 +924,10 @@ class CarMapRenderer(
      *  renders at the natural position. Records the transformed bounds for
      *  tap hit-testing and, in edit mode, outlines the element. */
     private inline fun overlay(canvas: Canvas, element: OverlayElement, natRect: RectF, draw: () -> Unit) {
-        val ov = overlayLayout[element] ?: LayoutOverride()
+        val bucket = currentBucket()
+        // Hidden (removed) elements aren't drawn or hit-tested; Reset restores.
+        if (carLayout.isHidden(bucket, element)) return
+        val ov = carLayout.get(bucket, element)
         val dxPx = ov.dx * surfaceW
         val dyPx = ov.dy * surfaceH
         val cx = natRect.centerX()
@@ -951,10 +992,11 @@ class CarMapRenderer(
             // inside the host's safe rectangle so it dodges the turn/ETA cards.
             val safe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
             val g = instruments.cockpitGeom(w, h, RectF(safe))
-            // Scrims are drawn plainly (not an editable element): they're the
-            // near-invisible full-bleed background, and wrapping them made a
-            // screen-covering hit-box that swallowed taps meant for the gauges.
-            instruments.ckScrims(canvas, g, d)
+            // Edge scrims (the black-transparent gauge backgrounds) are their
+            // own positionable element. Drawn first so the gauges sit on top;
+            // its full-width bounds never steal a tap because hit-testing picks
+            // the smallest element under the finger.
+            overlay(canvas, OverlayElement.SCRIM_EDGES, g.bgRect) { instruments.ckScrims(canvas, g, d) }
             overlay(canvas, OverlayElement.CL_CLOCK, g.clockRect) { instruments.ckClock(canvas, g, d) }
             overlay(canvas, OverlayElement.CL_SPEED, g.speedRect) { instruments.ckSpeedGauge(canvas, g, d) }
             overlay(canvas, OverlayElement.CL_SPEED_TXT, g.speedTextRect) { instruments.ckSpeedText(canvas, g, d) }
@@ -1529,15 +1571,15 @@ class CarMapRenderer(
      *  toggleable; speed + posted limit are explicitly permitted driving
      *  information under the Auto nav-template policy. */
     private fun drawSpeedBadge(canvas: Canvas, w: Int, h: Int, loc: Location?, dark: Boolean) {
-        if (!overlayConfig.speed && !overlayConfig.speedLimit) return
         val safe = visibleArea ?: stableArea ?: Rect(0, 0, w, h)
         val pad = h * 0.03f
         val left = safe.left.toFloat().coerceIn(0f, w.toFloat()) + pad
         val bottom = safe.bottom.toFloat().coerceIn(0f, h.toFloat()) - pad
 
-        // Speed pill — big number + km/h unit, bottom-left. Designed bounds are
+        // Speed pill — big number + km/h unit, bottom-left. Always drawn (an
+        // editable element); hide via the edit-mode Remove. Designed bounds are
         // fixed (independent of the limit sign) so each can be dragged alone.
-        if (overlayConfig.speed) {
+        run {
             val numText = if (loc != null && loc.hasSpeed())
                 "%.1f".format(Locale.ROOT, dispSpeedMps * 3.6f) else "––"
             val unitText = " km/h"
@@ -1570,7 +1612,7 @@ class CarMapRenderer(
         // EU speed-limit roundel — white disc, red ring, black number — sits
         // above the speed pill's slot by default; draggable independently.
         val limit = speedLimitKmh
-        if (overlayConfig.speedLimit && limit != null) {
+        if (limit != null) {
             val r = h * 0.06f
             val cx = left + r
             val cy = bottom - h * 0.105f - pad * 0.8f - r

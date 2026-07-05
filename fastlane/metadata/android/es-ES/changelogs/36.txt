@@ -1,0 +1,1 @@
+Personalización de Android Auto: la pantalla se adapta a los tamaños divididos del sistema (completo, ⅔, ⅓ de ancho), y configuras la disposición por separado para cada tamaño y para navegación vs. inactivo. Velocidad y límite son elementos editables siempre disponibles (mover, redimensionar, quitar), y los fondos degradados negros se reposicionan por separado.

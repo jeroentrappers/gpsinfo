@@ -1,0 +1,1 @@
+Dostosowanie Android Auto: ekran dopasowuje się do rozmiarów podziału w systemie auta (pełny, ⅔, ⅓ szerokości), a układ ustawiasz osobno dla każdego rozmiaru oraz dla nawigacji i bezczynności. Prędkość i limit to zawsze dostępne edytowalne elementy (przesuń, skaluj, usuń), a czarne gradientowe tła można przesuwać osobno.

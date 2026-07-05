@@ -1,0 +1,1 @@
+Personalização do Android Auto: a tela se adapta aos tamanhos divididos da central (cheio, ⅔, ⅓ da largura), e você ajusta o layout separadamente por tamanho e para navegando vs. ocioso. Velocidade e limite são elementos editáveis sempre disponíveis (mover, redimensionar, remover), e os fundos em gradiente preto podem ser reposicionados sozinhos.

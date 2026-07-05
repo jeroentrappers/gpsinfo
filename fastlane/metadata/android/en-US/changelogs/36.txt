@@ -1,0 +1,1 @@
+Android Auto layout customization: the surface now adapts to the head unit's split sizes (full, ⅔, ⅓ width), and you can customize the layout separately for each size and for navigating vs idle. Speed and speed-limit are always available editable elements you can move, resize or remove, and the black gradient backgrounds can be repositioned on their own.

@@ -1,0 +1,1 @@
+Přizpůsobení Android Auto: plocha se přizpůsobuje velikostem rozdělení jednotky (celá, ⅔, ⅓ šířky) a rozložení nastavíte zvlášť pro každou velikost i pro navigaci vs. klid. Rychlost a limit jsou vždy dostupné upravitelné prvky (posun, změna velikosti, odebrání) a černá přechodová pozadí lze přesouvat samostatně.

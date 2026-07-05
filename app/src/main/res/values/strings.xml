@@ -327,6 +327,7 @@
     <string name="car_action_edit_layout" tools:ignore="MissingTranslation">Edit layout</string>
     <string name="car_action_done" tools:ignore="MissingTranslation">Done</string>
     <string name="car_action_reset" tools:ignore="MissingTranslation">Reset</string>
+    <string name="car_action_remove" tools:ignore="MissingTranslation">Remove</string>
     <string name="car_edit_hint_tap" tools:ignore="MissingTranslation">Tap an element to select it</string>
     <string name="car_edit_hint_selected" tools:ignore="MissingTranslation">Drag to move · pinch to resize · Done to save</string>
     <string name="car_routes_title" tools:ignore="MissingTranslation">Choose a route</string>

@@ -1,0 +1,1 @@
+Personnalisation Android Auto : l'affichage s'adapte aux tailles d'écran partagé de l'unité (plein, ⅔, ⅓ de largeur), et vous réglez la disposition séparément par taille et selon navigation/repos. Vitesse et limite sont des éléments modifiables toujours disponibles (déplacer, redimensionner, supprimer), et les fonds en dégradé noir se repositionnent indépendamment.

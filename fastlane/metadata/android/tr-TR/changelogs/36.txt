@@ -1,0 +1,1 @@
+Android Auto düzen özelleştirmesi: yüzey artık ünitenin bölünmüş boyutlarına uyum sağlar (tam, ⅔, ⅓ genişlik) ve düzeni her boyut için ve navigasyon/boşta için ayrı ayarlarsınız. Hız ve hız limiti her zaman kullanılabilir düzenlenebilir öğelerdir (taşı, boyutlandır, kaldır) ve siyah gradyan arka planlar tek tek konumlandırılabilir.
