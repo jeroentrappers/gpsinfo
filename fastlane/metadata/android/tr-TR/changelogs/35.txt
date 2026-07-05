@@ -1,0 +1,1 @@
+Android Auto düzeltmeleri: gösterge kümesi, rota çizgisi ve araç imleci GPU haritasına geri döndü (bindirme katmanı kırpılıyordu). Yeniden çizim de daha akıcı — yakınlaştırma seviyeleri artık kayarak geçiyor ve harita daha yüksek kare hızında çalışıyor.

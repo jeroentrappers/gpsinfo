@@ -92,6 +92,9 @@ class CarMapRenderer(
     /** Continuous zoom level actually rendered; glides toward the
      *  speed-derived target a step per GNSS tick. */
     private var currentZoom = ZOOM_STANDSTILL
+    /** Frame-eased zoom the camera actually uses, so zoom changes glide
+     *  instead of snapping between levels. */
+    private var smoothedZoom = ZOOM_STANDSTILL
     /** Manual nudge from buttons/pinch on top of the automatic level. */
     private var zoomBias = 0.0
     /** Map view mode, cycled from the map action strip's tilt button:
@@ -424,16 +427,20 @@ class CarMapRenderer(
     private var dispSpeedMps = 0f
     private var dispPowerKw = 0.0
 
+    /** Frame cadence: the GL backend renders on the GPU so it runs at ~30 fps;
+     *  the snapshotter stays coarse (each frame re-snapshots MapLibre). */
+    private fun frameDelayMs(): Long = if (glEnabled) GL_FRAME_MS else FRAME_MS
+
     private fun ensureAnimating() {
         if (animating) return
         animating = true
-        mainHandler.postDelayed(frameRunnable, FRAME_MS)
+        mainHandler.postDelayed(frameRunnable, frameDelayMs())
     }
 
     private fun onAnimationFrame() {
         val more = stepAnimation()
         renderFrame()
-        if (more) mainHandler.postDelayed(frameRunnable, FRAME_MS) else animating = false
+        if (more) mainHandler.postDelayed(frameRunnable, frameDelayMs()) else animating = false
     }
 
     /** Advance the eased values one frame; return whether more animation
@@ -450,12 +457,17 @@ class CarMapRenderer(
             while (d < -180f) d += 360f
             smoothedBearingDeg = (smoothedBearingDeg + d * EASE + 360f) % 360f
         }
+        // Ease the map zoom toward its target so auto-zoom steps and pinches
+        // glide instead of snapping between levels (the camera reads
+        // smoothedZoom, not currentZoom).
+        smoothedZoom += (currentZoom - smoothedZoom) * ZOOM_EASE
         // Feed the 2 s efficiency window from the eased (displayed) values.
         val now = SystemClock.elapsedRealtime()
         effBuf.addLast(doubleArrayOf(now.toDouble(), dispPowerKw, dispSpeedMps.toDouble()))
         while (effBuf.isNotEmpty() && effBuf.first()[0] < now - EFF_WINDOW_MS) effBuf.removeFirst()
         val moving = targetMps > MIN_MOVE_MPS
-        val settling = abs(targetMps - dispSpeedMps) > 0.05f || abs(targetKw - dispPowerKw) > 0.5
+        val settling = abs(targetMps - dispSpeedMps) > 0.05f || abs(targetKw - dispPowerKw) > 0.5 ||
+            abs(currentZoom - smoothedZoom) > 0.005
         return moving || settling
     }
 
@@ -589,6 +601,9 @@ class CarMapRenderer(
         zoomBias = (zoomBias + delta).coerceIn(-ZOOM_BIAS_RANGE, ZOOM_BIAS_RANGE)
         // Apply immediately rather than waiting for the next GNSS tick.
         currentZoom = (currentZoom + delta).coerceIn(MIN_ZOOM, MAX_ZOOM)
+        // Run the frame loop so smoothedZoom eases to the new level (glide,
+        // not snap) even when parked.
+        ensureAnimating()
         scheduleRender()
     }
 
@@ -699,7 +714,7 @@ class CarMapRenderer(
             if (glMode) {
                 val loc0 = lastDrawnLocation ?: return@post
                 val lat0 = loc0.latitude
-                val mpp = 156_543.03392 * cos(Math.toRadians(lat0)) / Math.pow(2.0, currentZoom)
+                val mpp = 156_543.03392 * cos(Math.toRadians(lat0)) / Math.pow(2.0, smoothedZoom)
                 val b = Math.toRadians(if (hasBearing) smoothedBearingDeg.toDouble() else 0.0)
                 // Match the projected path's semantics: to = point under
                 // (centre + delta), pan toward it. Screen +y is down.
@@ -1044,7 +1059,7 @@ class CarMapRenderer(
         val bearing = if (hasBearing) smoothedBearingDeg.toDouble() else 0.0
         val lookAheadM = if (hasBearing && !panMode) {
             val mpp = 156_543.03392 * cos(Math.toRadians(loc.latitude)) /
-                Math.pow(2.0, currentZoom)
+                Math.pow(2.0, smoothedZoom)
             LOOK_AHEAD_FRACTION * mpp * h
         } else 0.0
         val brRad = Math.toRadians(bearing)
@@ -1062,7 +1077,7 @@ class CarMapRenderer(
         val gl = glMap
         if (glMode && gl != null) {
             gl.setBuildings3d(viewMode == MapViewMode.TILTED_3D)
-            gl.setCamera(camLat, camLon, currentZoom, bearing, pitch)
+            gl.setCamera(camLat, camLon, smoothedZoom, bearing, pitch)
             val glProj = gl.currentProjector() ?: return
             val vehPf = glProj.pixelForLatLng(
                 org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude),
@@ -1073,8 +1088,6 @@ class CarMapRenderer(
             drawTraffic(canvas, glProj, mapLeft)
             drawProjectedBreadcrumb(canvas, glProj, mapLeft)
             drawProjectedMarker(canvas, puckProjected)
-            // Match the snapshotter: dim the (light) map in dark mode.
-            if (dark) canvas.drawRect(mapLeft, 0f, mapLeft + mapW, h.toFloat(), darkScrimPaint)
             return
         }
 
@@ -1084,7 +1097,7 @@ class CarMapRenderer(
         snapshotter.setBuildings3d(viewMode == MapViewMode.TILTED_3D)
         val cam = org.maplibre.android.camera.CameraPosition.Builder()
             .target(org.maplibre.android.geometry.LatLng(camLat, camLon))
-            .zoom(currentZoom)
+            .zoom(smoothedZoom)
             .bearing(bearing)
             .tilt(pitch)
             .build()
@@ -1748,8 +1761,13 @@ class CarMapRenderer(
          *  kills slow apps). Lower toward ~33 ms only if a real head unit
          *  tolerates it. */
         const val FRAME_MS = 66L
+        /** The live-GL backend renders on the GPU (cheap) rather than
+         *  re-snapshotting, so it can afford a smoother ~30 fps cadence. */
+        const val GL_FRAME_MS = 33L
         /** Per-frame easing factor for needles + heading (0..1). */
         const val EASE = 0.25f
+        /** Per-frame easing for the map zoom (gentler than [EASE]). */
+        const val ZOOM_EASE = 0.16f
         /** Below this ground speed the vehicle is treated as stopped (no
          *  dead-reckoning, loop idles). */
         const val MIN_MOVE_MPS = 0.8f

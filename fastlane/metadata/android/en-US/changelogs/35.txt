@@ -1,0 +1,1 @@
+Android Auto fixes: the gauge cluster, route line and vehicle puck are back on the GPU map (the overlay layer was being clipped away). Map redraw is smoother too — zoom changes now glide between levels and the map runs at a higher frame rate.

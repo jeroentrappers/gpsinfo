@@ -1,0 +1,1 @@
+Poprawki Android Auto: klaster zegarów, linia trasy i znacznik pojazdu wróciły na mapę GPU (warstwa nakładek była przycinana). Odrysowywanie jest płynniejsze — poziomy zoomu teraz płynnie się przenikają, a mapa działa z wyższą liczbą klatek.

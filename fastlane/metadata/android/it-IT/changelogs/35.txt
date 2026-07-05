@@ -1,0 +1,1 @@
+Correzioni Android Auto: il cluster strumenti, la linea del percorso e l'indicatore del veicolo sono di nuovo sulla mappa GPU (il livello degli overlay veniva ritagliato). Il ridisegno è più fluido — i livelli di zoom ora scorrono e la mappa gira a frame rate più alto.

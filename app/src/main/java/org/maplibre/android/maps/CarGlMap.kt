@@ -601,12 +601,17 @@ internal class CarGlOverlay {
         GLES20.glViewport(0, 0, w, h)
         GLES20.glDisable(GLES20.GL_DEPTH_TEST)
         GLES20.glDisable(GLES20.GL_CULL_FACE)
+        // mbgl leaves the scissor + stencil tests enabled (and a scissor box
+        // that need not cover the whole surface) after rendering the map — if
+        // we don't clear them our full-surface overlay quad gets clipped away,
+        // which is why the overlays vanished. Reset all the state we rely on.
+        GLES20.glDisable(GLES20.GL_SCISSOR_TEST)
+        GLES20.glDisable(GLES20.GL_STENCIL_TEST)
+        GLES20.glColorMask(true, true, true, true)
         GLES20.glEnable(GLES20.GL_BLEND)
-        // Android Bitmaps are premultiplied-alpha, and GLUtils.texImage2D
-        // uploads them as-is, so composite with premultiplied blending
-        // (GL_ONE, not GL_SRC_ALPHA) — otherwise semi-transparent overlay
-        // pixels get double-darkened and edges halo.
-        GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+        // Straight-alpha "source-over" — shows both opaque overlays and
+        // antialiased edges over the map.
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
         GLES20.glUseProgram(program)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)

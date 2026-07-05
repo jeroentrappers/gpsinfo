@@ -1,0 +1,1 @@
+Android Auto-correcties: de metercluster, routelijn en voertuigpuck staan weer op de GPU-kaart (de overlaylaag werd weggeknipt). Het opnieuw tekenen is ook vloeiender — zoomniveaus lopen nu soepel in elkaar over en de kaart draait met een hogere framesnelheid.

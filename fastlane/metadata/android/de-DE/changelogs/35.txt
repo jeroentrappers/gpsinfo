@@ -1,0 +1,1 @@
+Android-Auto-Korrekturen: Instrumentencluster, Routenlinie und Fahrzeug-Puck sind auf der GPU-Karte zurück (die Overlay-Ebene wurde abgeschnitten). Der Kartenaufbau ist zudem flüssiger — Zoomstufen gleiten nun ineinander und die Karte läuft mit höherer Bildrate.

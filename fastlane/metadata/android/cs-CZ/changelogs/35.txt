@@ -1,0 +1,1 @@
+Opravy Android Auto: přístrojový cluster, čára trasy i značka vozidla jsou zpět na GPU mapě (vrstva překryvů se ořezávala). Překreslování je plynulejší — úrovně přiblížení nyní plynule přecházejí a mapa běží na vyšší snímkové frekvenci.

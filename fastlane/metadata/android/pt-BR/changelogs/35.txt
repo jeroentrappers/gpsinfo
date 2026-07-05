@@ -1,0 +1,1 @@
+Correções do Android Auto: o cluster de medidores, a linha da rota e o marcador do veículo voltaram ao mapa por GPU (a camada de sobreposição estava sendo cortada). O redesenho está mais suave — os níveis de zoom agora deslizam e o mapa roda com mais quadros por segundo.

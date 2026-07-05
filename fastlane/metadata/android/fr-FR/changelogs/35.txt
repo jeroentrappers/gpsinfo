@@ -1,0 +1,1 @@
+Corrections Android Auto : le cluster de jauges, le tracé et le curseur du véhicule sont de retour sur la carte GPU (la couche de surcouches était rognée). Le rafraîchissement est aussi plus fluide — les niveaux de zoom glissent désormais et la carte tourne à une fréquence d'images plus élevée.
