@@ -1,0 +1,1 @@
+Android Auto: opravena GPU mapa, takže navigační trasa, značka vozidla a všechny překryvy clusteru se opět vykreslují (skrýval je zbytkový stav GPU). Živá GL mapa je ve výchozím stavu zapnutá; vypnete ji v Nastavení › Android Auto.

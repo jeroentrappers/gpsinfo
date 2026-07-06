@@ -1,0 +1,1 @@
+Android Auto: fixed the GPU map so the navigation route, vehicle puck and all gauge-cluster overlays draw again (a leftover GPU state binding was hiding them). The live GL map is on by default; turn it off under Settings › Android Auto to use the snapshot renderer.

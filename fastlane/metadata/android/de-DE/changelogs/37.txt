@@ -1,0 +1,1 @@
+Android Auto: Die GPU-Karte wurde repariert, sodass Navigationsroute, Fahrzeug-Puck und alle Instrumentencluster-Overlays wieder gezeichnet werden (ein zurückgebliebener GPU-Status hatte sie verdeckt). Die Live-GL-Karte ist standardmäßig an; unter Einstellungen › Android Auto abschaltbar.

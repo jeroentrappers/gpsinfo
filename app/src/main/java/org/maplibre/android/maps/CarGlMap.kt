@@ -566,6 +566,9 @@ internal class CarGlOverlay {
         GLES20.glAttachShader(program, vs)
         GLES20.glAttachShader(program, fs)
         GLES20.glLinkProgram(program)
+        val linked = IntArray(1)
+        GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linked, 0)
+        if (linked[0] == 0) Log.e(TAG, "overlay program link failed: ${GLES20.glGetProgramInfoLog(program)}")
         GLES20.glDeleteShader(vs)
         GLES20.glDeleteShader(fs)
         aPos = GLES20.glGetAttribLocation(program, "aPos")
@@ -598,17 +601,27 @@ internal class CarGlOverlay {
 
     fun draw(bmp: Bitmap, w: Int, h: Int) {
         ensureProgram()
+        // mbgl leaves GL state configured for its own pipeline after rendering
+        // the map. The overlays vanished because of these leaked bindings:
+        //  - a non-default FRAMEBUFFER → our quad went to an offscreen target;
+        //  - a bound VERTEX ARRAY (ES3) → client-side arrays are invalid;
+        //  - a bound ARRAY_BUFFER → glVertexAttribPointer treats our client
+        //    FloatBuffer as a byte OFFSET into mbgl's VBO (draws nothing).
+        // Reset every piece of state the quad depends on so it lands on the
+        // visible surface.
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
+        runCatching { android.opengl.GLES30.glBindVertexArray(0) }
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
+        GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0)
         GLES20.glViewport(0, 0, w, h)
         GLES20.glDisable(GLES20.GL_DEPTH_TEST)
+        GLES20.glDepthMask(true)
         GLES20.glDisable(GLES20.GL_CULL_FACE)
-        // mbgl leaves the scissor + stencil tests enabled (and a scissor box
-        // that need not cover the whole surface) after rendering the map — if
-        // we don't clear them our full-surface overlay quad gets clipped away,
-        // which is why the overlays vanished. Reset all the state we rely on.
         GLES20.glDisable(GLES20.GL_SCISSOR_TEST)
         GLES20.glDisable(GLES20.GL_STENCIL_TEST)
         GLES20.glColorMask(true, true, true, true)
         GLES20.glEnable(GLES20.GL_BLEND)
+        GLES20.glBlendEquation(GLES20.GL_FUNC_ADD)
         // Straight-alpha "source-over" — shows both opaque overlays and
         // antialiased edges over the map.
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
@@ -629,6 +642,10 @@ internal class CarGlOverlay {
 
         GLES20.glDisableVertexAttribArray(aPos)
         GLES20.glDisableVertexAttribArray(aTex)
+
+        // Diagnostic: surface why overlays may not appear on a head unit.
+        val err = GLES20.glGetError()
+        if (err != GLES20.GL_NO_ERROR) Log.w(TAG, "overlay draw glGetError=0x${Integer.toHexString(err)} program=$program tex=$texId ${texW}x$texH")
     }
 
     private fun compile(type: Int, src: String): Int {

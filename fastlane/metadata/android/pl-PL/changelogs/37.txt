@@ -1,0 +1,1 @@
+Android Auto: naprawiono mapę GPU, aby trasa nawigacji, znacznik pojazdu i wszystkie nakładki klastra znów się rysowały (ukrywał je pozostawiony stan GPU). Mapa GL na żywo jest domyślnie włączona; wyłączysz ją w Ustawienia › Android Auto.

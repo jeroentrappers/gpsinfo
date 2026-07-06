@@ -1,0 +1,1 @@
+Android Auto: GPU haritası düzeltildi; navigasyon rotası, araç imleci ve tüm gösterge kümesi bindirmeleri yeniden çiziliyor (kalıntı bir GPU durumu bunları gizliyordu). Canlı GL harita varsayılan açık; Ayarlar › Android Auto'dan kapatılabilir.

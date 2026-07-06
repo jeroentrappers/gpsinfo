@@ -1,0 +1,1 @@
+Android Auto: de GPU-kaart is gerepareerd zodat de navigatieroute, de voertuigpuck en alle metercluster-overlays weer worden getekend (een achtergebleven GPU-status verborg ze). De live GL-kaart staat standaard aan; schakel uit via Instellingen › Android Auto voor de snapshotweergave.

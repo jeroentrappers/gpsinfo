@@ -1,0 +1,1 @@
+Android Auto: risolta la mappa GPU così percorso di navigazione, indicatore del veicolo e tutti gli overlay del cluster vengono di nuovo disegnati (uno stato GPU residuo li nascondeva). La mappa GL live è attiva per impostazione predefinita; disattivabile in Impostazioni › Android Auto.

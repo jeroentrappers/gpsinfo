@@ -1,0 +1,1 @@
+Android Auto : correction de la carte GPU pour que l'itinéraire, le curseur du véhicule et toutes les surcouches du cluster s'affichent de nouveau (un état GPU résiduel les masquait). La carte GL en direct est activée par défaut ; désactivable dans Paramètres › Android Auto.

@@ -1,0 +1,1 @@
+Android Auto: corrigimos o mapa por GPU para que a rota de navegação, o marcador do veículo e todas as sobreposições do cluster voltem a ser desenhados (um estado de GPU remanescente os escondia). O mapa GL ao vivo vem ativado; desative em Configurações › Android Auto.

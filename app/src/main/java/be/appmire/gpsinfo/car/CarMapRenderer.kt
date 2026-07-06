@@ -375,14 +375,23 @@ class CarMapRenderer(
 
     /** Classify the usable width (visible area, else surface) against the widest
      *  seen, so a host split into ⅔ / ⅓ selects a different layout bucket. */
+    private var loggedWidthClass: WidthClass? = null
     private fun classifyWidth(): WidthClass {
         val usable = (visibleArea?.width() ?: surfaceW).coerceAtLeast(1)
         if (usable > maxUsableW) maxUsableW = usable
-        return when (usable.toFloat() / maxUsableW) {
+        val wc = when (usable.toFloat() / maxUsableW) {
             in 0.8f..Float.MAX_VALUE -> WidthClass.FULL
             in 0.45f..0.8f -> WidthClass.TWO_THIRDS
             else -> WidthClass.ONE_THIRD
         }
+        if (wc != loggedWidthClass) {
+            loggedWidthClass = wc
+            android.util.Log.i(
+                "CarLayout",
+                "widthClass=$wc usable=$usable surfaceW=$surfaceW visibleW=${visibleArea?.width()} max=$maxUsableW",
+            )
+        }
+        return wc
     }
 
     private fun currentBucket(): OverlayBucket = OverlayBucket(frameWidthClass, overlayState)
