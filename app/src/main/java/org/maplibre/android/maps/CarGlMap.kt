@@ -96,7 +96,8 @@ private const val TAG = "CarGlMap"
  */
 class CarGlMap(
     context: Context,
-    private val styleUri: String,
+    private val lightStyleUri: String,
+    private val darkStyleUri: String,
     private val onStyleReady: () -> Unit,
     private val onNeedRepaint: () -> Unit,
 ) {
@@ -114,6 +115,21 @@ class CarGlMap(
     private var want3d = true
     private var applied3d: Boolean? = null
     private var paletteApplied = false
+    /** Night mode: uses the dark style + night palette. */
+    private var dark = false
+
+    /** Switch between the day (light + warm palette) and night (dark style +
+     *  night palette) map. Reloads the style, which self-heals the nav layers
+     *  and re-applies the right palette. */
+    fun setDark(darkMode: Boolean) {
+        if (darkMode == dark) return
+        dark = darkMode
+        styleLoaded = false
+        navLayersReady = false
+        paletteApplied = false
+        applied3d = null
+        runCatching { nativeMap.setStyleUri(if (darkMode) darkStyleUri else lightStyleUri) }
+    }
 
     // ── Surface lifecycle (main thread) ─────────────────────────────
 
@@ -209,8 +225,10 @@ class CarGlMap(
         }
         if (!paletteApplied) {
             // May report not-ready for a few frames after the style URI is set;
-            // retried from setCamera until it takes.
-            paletteApplied = CarMapPalette.applyTo { id -> runCatching { nativeMap.getLayer(id) }.getOrNull() }
+            // retried from setCamera until it takes. Day vs night palette to
+            // match the active style.
+            val lookup = { id: String -> runCatching { nativeMap.getLayer(id) }.getOrNull() }
+            paletteApplied = if (dark) CarMapPalette.applyNight(lookup) else CarMapPalette.applyDay(lookup)
         }
         ensureNavLayers()
     }
@@ -460,7 +478,7 @@ class CarGlMap(
         // crossSourceCollisions on = default label behaviour.
         val opts = NativeMapOptions(1f, true)
         nativeMap = NativeMapView(appContext, opts, viewCallback, stateCallback, renderer)
-        nativeMap.setStyleUri(styleUri)
+        nativeMap.setStyleUri(if (dark) darkStyleUri else lightStyleUri)
     }
 
     private companion object {
@@ -856,6 +874,10 @@ internal class CarGlOverlay {
 
     fun draw(bmp: Bitmap, w: Int, h: Int) {
         ensureProgram()
+        // Drain any GL error mbgl left from its own render pass so the post-draw
+        // check below reflects only our compositing (glGetError returns any
+        // error since the last check, not just ours).
+        while (GLES20.glGetError() != GLES20.GL_NO_ERROR) { /* clear */ }
         // mbgl leaves GL state configured for its own pipeline after rendering
         // the map. The overlays vanished because of these leaked bindings:
         //  - a non-default FRAMEBUFFER → our quad went to an offscreen target;

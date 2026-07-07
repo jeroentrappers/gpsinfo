@@ -1,0 +1,1 @@
+Android Auto now has a proper night map: in dark mode the GPU map switches to a dark style with a Waze-style night palette (deep-slate land, dark water, contrast-lifted roads, amber highways). Day mode keeps the warm light palette. Route, puck and gauge overlays render correctly in both.

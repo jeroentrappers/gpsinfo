@@ -1,0 +1,1 @@
+Android Auto ma teraz prawdziwą mapę nocną: w trybie ciemnym mapa GPU przełącza się na ciemny styl z nocną paletą w stylu Waze (grafitowe tło, ciemna woda, kontrastowe drogi, bursztynowe autostrady). Tryb dzienny zachowuje ciepłą jasną paletę. Trasa, znacznik i nakładki poprawne w obu.

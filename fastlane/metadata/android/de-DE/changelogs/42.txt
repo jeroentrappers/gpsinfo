@@ -1,0 +1,1 @@
+Android Auto hat jetzt eine echte Nachtkarte: Im Dunkelmodus wechselt die GPU-Karte zu einem dunklen Stil mit Waze-artigem Nachtpalette (dunkler Untergrund, dunkles Wasser, kontrastreiche Straßen, bernsteinfarbene Autobahnen). Der Tagmodus behält die warme helle Palette. Route, Puck und Anzeige-Overlays stimmen in beiden.

@@ -1,0 +1,1 @@
+Android Auto má nyní skutečnou noční mapu: v tmavém režimu se GPU mapa přepne na tmavý styl s noční paletou ve stylu Waze (břidlicové pozadí, tmavá voda, kontrastní silnice, jantarové dálnice). Denní režim zachovává teplou světlou paletu. Trasa, značka a překryvy jsou správné v obou.

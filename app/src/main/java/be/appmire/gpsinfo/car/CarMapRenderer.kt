@@ -161,9 +161,11 @@ class CarMapRenderer(
         val gl = glMap ?: org.maplibre.android.maps.CarGlMap(
             carContext,
             be.appmire.gpsinfo.data.nav.MapLibreStyle.LIBERTY,
+            be.appmire.gpsinfo.data.nav.MapLibreStyle.DARK,
             onStyleReady = { mainHandler.post { scheduleRender() } },
             onNeedRepaint = { mainHandler.post { scheduleRender() } },
         ).also { glMap = it }
+        gl.setDark(carContext.isDarkMode)
         gl.onSurfaceAvailable(surface, w, h)
     }
 
@@ -1156,6 +1158,7 @@ class CarMapRenderer(
         // puck low on screen.
         val gl = glMap
         if (glMode && gl != null) {
+            gl.setDark(dark)
             gl.setBuildings3d(viewMode == MapViewMode.TILTED_3D)
             // Push the map's content padding to match the visible region so the
             // camera target (and thus the low-centre puck) is centred in what

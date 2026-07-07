@@ -1,0 +1,1 @@
+Android Auto ora ha una vera mappa notturna: in modalità scura la mappa GPU passa a uno stile scuro con palette notturna in stile Waze (fondo ardesia, acqua scura, strade a contrasto, autostrade ambra). La modalità giorno mantiene la palette chiara e calda. Percorso, indicatore e overlay corretti in entrambe.

@@ -1,0 +1,1 @@
+Android Auto ya tiene un mapa nocturno real: en modo oscuro el mapa por GPU cambia a un estilo oscuro con paleta nocturna estilo Waze (fondo pizarra, agua oscura, carreteras con contraste, autopistas ámbar). El modo diurno mantiene la paleta clara y cálida. Ruta, marcador y superposiciones se ven bien en ambos.

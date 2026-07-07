@@ -1,0 +1,1 @@
+Android Auto artık gerçek bir gece haritasına sahip: karanlık modda GPU haritası, Waze tarzı gece paletiyle (koyu zemin, koyu su, kontrastlı yollar, kehribar otoyollar) koyu stile geçiyor. Gündüz modu sıcak açık paleti koruyor. Rota, imleç ve göstergeler her ikisinde de doğru görünüyor.

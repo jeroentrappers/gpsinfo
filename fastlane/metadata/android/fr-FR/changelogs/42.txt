@@ -1,0 +1,1 @@
+Android Auto a désormais une vraie carte de nuit : en mode sombre, la carte GPU passe à un style sombre avec une palette de nuit façon Waze (fond ardoise, eau sombre, routes contrastées, autoroutes ambre). Le mode jour garde la palette claire et chaude. Itinéraire, curseur et surcouches s'affichent bien dans les deux.

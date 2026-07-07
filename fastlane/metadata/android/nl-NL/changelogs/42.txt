@@ -1,0 +1,1 @@
+Android Auto heeft nu een echte nachtkaart: in donkere modus schakelt de GPU-kaart naar een donkere stijl met een Waze-achtig nachtpalet (donkere ondergrond, donker water, contrastrijke wegen, amberkleurige snelwegen). De dagmodus houdt het warme lichte palet. Route, puck en meteroverlays kloppen in beide.
