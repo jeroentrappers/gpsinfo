@@ -1,0 +1,1 @@
+Sesli yönlendirme: 'Sesi test et' düğmesi, metin okuma motoru hazır olduğunu geç bildirdiğinde bazı cihazlarda devre dışı kalıyordu. Artık her zaman dokunulabilir ve motor hazır olur olmaz konuşur.

@@ -1,0 +1,1 @@
+Spraakbegeleiding: de knop 'Stem testen' bleef op sommige toestellen uitgeschakeld wanneer de tekst-naar-spraakengine zich laat aanmeldde. Hij is nu altijd aanklikbaar en spreekt zodra de engine klaar is.

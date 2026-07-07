@@ -1,0 +1,1 @@
+Guía por voz: el botón «Probar voz» se quedaba desactivado en algunos dispositivos cuando el motor de texto a voz tardaba en indicar que estaba listo. Ahora siempre se puede pulsar y habla en cuanto el motor está listo.

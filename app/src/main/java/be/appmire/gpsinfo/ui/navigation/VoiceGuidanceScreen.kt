@@ -45,6 +45,7 @@ import be.appmire.gpsinfo.R
 import be.appmire.gpsinfo.ui.about.AppLanguages
 import be.appmire.gpsinfo.ui.viewmodel.DashboardViewModel
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Voice-guidance settings: master on/off, concise vs detailed verbosity,
@@ -65,16 +66,42 @@ fun VoiceGuidanceScreen(
     val languageTag by vm.voiceLanguageTag.collectAsStateWithLifecycle()
 
     // A throwaway TTS engine for the Test button; torn down with the screen.
-    // Track readiness: speak() before onInit(SUCCESS) is silently dropped,
-    // which is why the preview did nothing.
-    var tts by remember { mutableStateOf<TextToSpeech?>(null) }
-    var ttsReady by remember { mutableStateOf(false) }
+    // speak() before onInit(SUCCESS) is silently dropped, which is why the
+    // preview did nothing. Rather than *disabling* the button until ready
+    // (which strands it on devices whose init callback is slow or never lands
+    // on the Compose thread), keep it always enabled and defer the speak: a
+    // tap arms `pendingSpeak`, and onInit(SUCCESS) fulfils it. `pendingSpeak`
+    // is a plain holder, not Compose state, so recomposition timing can't lose
+    // it and the init callback (any thread) can read/clear it safely.
+    val tts = remember { mutableStateOf<TextToSpeech?>(null) }
+    val pendingSpeak = remember { AtomicBoolean(false) }
+
+    fun speakTest(engine: TextToSpeech) {
+        runCatching {
+            val locale = languageTag?.takeIf { it.isNotBlank() }
+                ?.let { Locale.forLanguageTag(it) }
+                ?: context.resources.configuration.locales[0]
+            val res = engine.setLanguage(locale)
+            // Fall back so the preview still speaks when the chosen language's
+            // voice data isn't installed.
+            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                engine.language = Locale.US
+            }
+        }
+        engine.speak(
+            context.getString(R.string.settings_voice_test_phrase),
+            TextToSpeech.QUEUE_FLUSH, null, "voice-test",
+        )
+    }
+
     DisposableEffect(Unit) {
         val engine = TextToSpeech(context.applicationContext) { status ->
-            ttsReady = status == TextToSpeech.SUCCESS
+            if (status == TextToSpeech.SUCCESS && pendingSpeak.getAndSet(false)) {
+                tts.value?.let { speakTest(it) }
+            }
         }
-        tts = engine
-        onDispose { ttsReady = false; engine.stop(); engine.shutdown() }
+        tts.value = engine
+        onDispose { pendingSpeak.set(false); engine.stop(); engine.shutdown() }
     }
 
     var showLangDialog by remember { mutableStateOf(false) }
@@ -124,24 +151,14 @@ fun VoiceGuidanceScreen(
             // Test voice.
             Button(
                 onClick = {
-                    val engine = tts ?: return@Button
-                    runCatching {
-                        val locale = languageTag?.takeIf { it.isNotBlank() }
-                            ?.let { Locale.forLanguageTag(it) }
-                            ?: context.resources.configuration.locales[0]
-                        val res = engine.setLanguage(locale)
-                        // Fall back so the preview still speaks when the chosen
-                        // language's voice data isn't installed.
-                        if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
-                            engine.language = Locale.US
-                        }
-                    }
-                    engine.speak(
-                        context.getString(R.string.settings_voice_test_phrase),
-                        TextToSpeech.QUEUE_FLUSH, null, "voice-test",
-                    )
+                    val engine = tts.value ?: return@Button
+                    // Arm the deferred speak first, then try now: if the engine
+                    // is already initialized this speaks immediately (and the
+                    // armed flag is simply never consumed); if it isn't ready
+                    // yet, this call is dropped and onInit will fulfil it.
+                    pendingSpeak.set(true)
+                    speakTest(engine)
                 },
-                enabled = ttsReady,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.settings_voice_test))

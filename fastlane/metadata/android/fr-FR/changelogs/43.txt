@@ -1,0 +1,1 @@
+Guidage vocal : le bouton « Tester la voix » restait désactivé sur certains appareils quand le moteur de synthèse vocale se signalait tardivement. Il est désormais toujours cliquable et parle dès que le moteur est prêt.

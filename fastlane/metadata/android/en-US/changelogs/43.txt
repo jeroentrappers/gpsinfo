@@ -1,0 +1,1 @@
+Voice guidance: the 'Test voice' button was stuck disabled on some devices when the text-to-speech engine reported readiness late. It's now always tappable and speaks as soon as the engine is ready.

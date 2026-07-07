@@ -1,0 +1,1 @@
+Orientação por voz: o botão "Testar voz" ficava desativado em alguns aparelhos quando o mecanismo de texto para fala sinalizava tarde. Agora está sempre clicável e fala assim que o mecanismo está pronto.

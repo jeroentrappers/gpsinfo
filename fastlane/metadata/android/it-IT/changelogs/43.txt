@@ -1,0 +1,1 @@
+Guida vocale: il pulsante «Prova voce» restava disattivato su alcuni dispositivi quando il motore di sintesi vocale segnalava tardi la disponibilità. Ora è sempre toccabile e parla appena il motore è pronto.

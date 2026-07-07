@@ -1,0 +1,1 @@
+Hlasová navigace: tlačítko „Otestovat hlas" zůstávalo na některých zařízeních vypnuté, když se převod textu na řeč hlásil pozdě. Nyní je vždy klikatelné a přehraje se, jakmile je engine připraven.

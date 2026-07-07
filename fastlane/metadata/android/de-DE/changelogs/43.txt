@@ -1,0 +1,1 @@
+Sprachführung: Die Schaltfläche 'Stimme testen' blieb auf manchen Geräten deaktiviert, wenn die Text-zu-Sprache-Engine sich spät meldete. Sie ist jetzt immer antippbar und spricht, sobald die Engine bereit ist.

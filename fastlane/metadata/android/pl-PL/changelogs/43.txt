@@ -1,0 +1,1 @@
+Wskazówki głosowe: przycisk „Testuj głos" pozostawał wyłączony na niektórych urządzeniach, gdy silnik syntezy mowy zgłaszał gotowość z opóźnieniem. Teraz zawsze można go kliknąć i odzywa się, gdy tylko silnik jest gotowy.
