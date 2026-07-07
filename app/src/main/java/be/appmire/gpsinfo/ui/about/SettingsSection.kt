@@ -178,18 +178,8 @@ fun SettingsSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.padding(top = 12.dp))
-            ToggleRow(
-                R.string.settings_car_overlay_speed,
-                R.string.settings_car_overlay_speed_body,
-                carOverlaySpeed, onCarOverlaySpeedChange,
-            )
-            Spacer(Modifier.padding(top = 8.dp))
-            ToggleRow(
-                R.string.settings_car_overlay_speed_limit,
-                R.string.settings_car_overlay_speed_limit_body,
-                carOverlaySpeedLimit, onCarOverlaySpeedLimitChange,
-            )
-            Spacer(Modifier.padding(top = 8.dp))
+            // Speed + speed-limit are always-on editable elements now (hide via
+            // the on-surface edit-mode Remove), so they no longer have toggles.
             ToggleRow(
                 R.string.settings_car_overlay_cluster,
                 R.string.settings_car_overlay_cluster_body,

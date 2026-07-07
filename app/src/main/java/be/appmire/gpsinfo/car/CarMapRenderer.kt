@@ -352,7 +352,11 @@ class CarMapRenderer(
     /** Width class of the current frame (full / ⅔ / ⅓ split), from the surface
      *  vs the widest we've seen; recomputed each frame. */
     private var frameWidthClass: WidthClass = WidthClass.FULL
-    private var maxUsableW = 1
+    /** The active bucket, resolved once per frame (in [drawFrame]) so the
+     *  per-element [overlay] calls don't each allocate one. */
+    private var frameBucket: OverlayBucket = OverlayBucket(WidthClass.FULL, OverlayState.IDLE)
+    /** Surface density (dpi) from the host, for absolute width classification. */
+    private var surfaceDpi = 160
     /** Parked-only "edit layout" mode: gestures reposition/resize the
      *  selected overlay instead of panning/zooming the map. */
     private var editMode = false
@@ -383,28 +387,30 @@ class CarMapRenderer(
         scheduleRender()
     }
 
-    /** Classify the usable width (visible area, else surface) against the widest
-     *  seen, so a host split into ⅔ / ⅓ selects a different layout bucket. */
+    /** Classify the usable width (visible area, else surface) by ABSOLUTE size
+     *  in dp, so the bucket is deterministic regardless of launch history (a
+     *  session-relative ratio misclassified when the app started in a split).
+     *  Thresholds ~ Android's sw breakpoints; logged so they're tunable. */
     private var loggedWidthClass: WidthClass? = null
     private fun classifyWidth(): WidthClass {
         val usable = (visibleArea?.width() ?: surfaceW).coerceAtLeast(1)
-        if (usable > maxUsableW) maxUsableW = usable
-        val wc = when (usable.toFloat() / maxUsableW) {
-            in 0.8f..Float.MAX_VALUE -> WidthClass.FULL
-            in 0.45f..0.8f -> WidthClass.TWO_THIRDS
+        val dp = usable * 160f / surfaceDpi.coerceAtLeast(1)
+        val wc = when {
+            dp >= 640f -> WidthClass.FULL
+            dp >= 380f -> WidthClass.TWO_THIRDS
             else -> WidthClass.ONE_THIRD
         }
         if (wc != loggedWidthClass) {
             loggedWidthClass = wc
             android.util.Log.i(
                 "CarLayout",
-                "widthClass=$wc usable=$usable surfaceW=$surfaceW visibleW=${visibleArea?.width()} max=$maxUsableW",
+                "widthClass=$wc usableW=$usable dp=${dp.toInt()} dpi=$surfaceDpi surfaceW=$surfaceW visibleW=${visibleArea?.width()}",
             )
         }
         return wc
     }
 
-    private fun currentBucket(): OverlayBucket = OverlayBucket(frameWidthClass, overlayState)
+    private fun currentBucket(): OverlayBucket = frameBucket
 
     fun setEditMode(active: Boolean) {
         if (active == editMode) return
@@ -558,6 +564,10 @@ class CarMapRenderer(
             breadcrumb.clear()
             breadcrumbMinStepM = 3f
             trailDirty = true
+        } else if (!isRecording && wasRecording) {
+            // Recording stopped: clear the native trail so it doesn't linger.
+            breadcrumb.clear()
+            trailDirty = true
         }
         wasRecording = isRecording
 
@@ -687,6 +697,7 @@ class CarMapRenderer(
     override fun onSurfaceAvailable(surfaceContainer: SurfaceContainer) {
         mainHandler.post {
             this.surfaceContainer = surfaceContainer
+            surfaceContainer.dpi.takeIf { it > 0 }?.let { surfaceDpi = it }
             if (glEnabled) ensureGlBound()
             scheduleRender()
         }
@@ -891,6 +902,7 @@ class CarMapRenderer(
         surfaceW = w
         surfaceH = h
         frameWidthClass = classifyWidth()
+        frameBucket = OverlayBucket(frameWidthClass, overlayState)
         elementBounds.clear()
 
         // The last fix dead-reckoned forward to this frame (see
@@ -1120,10 +1132,15 @@ class CarMapRenderer(
         // the surface (~80% down) with the road ahead filling the view —
         // a nav-style camera instead of the puck dead-centre.
         val bearing = if (hasBearing) smoothedBearingDeg.toDouble() else 0.0
+        // Anchor the puck within the host's VISIBLE region (which may be a ⅔/⅓
+        // split or inset by a side panel), not the raw surface — so it sits at
+        // the same low-centre spot regardless of how the head unit splits.
+        val visRect = visibleArea ?: stableArea
+        val visH = visRect?.height()?.takeIf { it > 0 } ?: h
         val lookAheadM = if (hasBearing && !panMode) {
             val mpp = 156_543.03392 * cos(Math.toRadians(loc.latitude)) /
                 Math.pow(2.0, smoothedZoom)
-            LOOK_AHEAD_FRACTION * mpp * h
+            LOOK_AHEAD_FRACTION * mpp * visH
         } else 0.0
         val brRad = Math.toRadians(bearing)
         val camLat = loc.latitude + panLatOffset +
@@ -1140,6 +1157,19 @@ class CarMapRenderer(
         val gl = glMap
         if (glMode && gl != null) {
             gl.setBuildings3d(viewMode == MapViewMode.TILTED_3D)
+            // Push the map's content padding to match the visible region so the
+            // camera target (and thus the low-centre puck) is centred in what
+            // the driver actually sees, at any split size.
+            if (visRect != null) {
+                gl.setContentPadding(
+                    visRect.left.toDouble().coerceAtLeast(0.0),
+                    visRect.top.toDouble().coerceAtLeast(0.0),
+                    (surfaceW - visRect.right).toDouble().coerceAtLeast(0.0),
+                    (surfaceH - visRect.bottom).toDouble().coerceAtLeast(0.0),
+                )
+            } else {
+                gl.setContentPadding(0.0, 0.0, 0.0, 0.0)
+            }
             gl.setCamera(camLat, camLon, smoothedZoom, bearing, pitch)
             // Route + puck are native mbgl layers (rendered in the map's own
             // GPU pass) — push their geometry rather than drawing into the
@@ -1613,10 +1643,12 @@ class CarMapRenderer(
         val left = safe.left.toFloat().coerceIn(0f, w.toFloat()) + pad
         val bottom = safe.bottom.toFloat().coerceIn(0f, h.toFloat()) - pad
 
-        // Speed pill — big number + km/h unit, bottom-left. Always drawn (an
-        // editable element); hide via the edit-mode Remove. Designed bounds are
-        // fixed (independent of the limit sign) so each can be dragged alone.
-        run {
+        // Speed pill — big number + km/h unit, bottom-left. Drawn only when the
+        // full gauge cluster is OFF (the cluster already shows speed) so the
+        // reading is never duplicated; it's an editable element (hide via the
+        // edit-mode Remove). Designed bounds are fixed (independent of the limit
+        // sign) so each can be dragged alone.
+        if (!overlayConfig.cluster) {
             val numText = if (loc != null && loc.hasSpeed())
                 "%.1f".format(Locale.ROOT, dispSpeedMps * 3.6f) else "––"
             val unitText = " km/h"

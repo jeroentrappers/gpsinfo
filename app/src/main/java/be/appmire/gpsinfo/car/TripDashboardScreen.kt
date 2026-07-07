@@ -486,83 +486,67 @@ class TripDashboardScreen(
                 .addAction(placesAction)
                 .build()
             RallyState.Idle -> ActionStrip.Builder().apply {
-                addAction(recordAction)
-                // End-route control while navigating or preparing a
-                // route; trails browsing keeps its slot otherwise.
-                if (nav is NavigationController.NavState.Navigating ||
-                    nav is NavigationController.NavState.Preparing
-                ) {
+                if (renderer.isEditMode()) {
+                    // Edit mode owns the strip — Done · Remove · Reset — so the
+                    // total stays within the host's hard 4-action cap. (Adding
+                    // these ON TOP of the normal actions overflowed the strip
+                    // and crashed the app when entering edit mode.)
                     addAction(
                         Action.Builder()
-                            .setTitle(carContext.getString(R.string.car_action_end_nav))
-                            .setOnClickListener {
-                                NavigationController.stop()
-                                invalidate()
-                            }
-                            .build()
+                            .setTitle(carContext.getString(R.string.car_action_done))
+                            .setOnClickListener { renderer.setEditMode(false); invalidate() }
+                            .build(),
                     )
-                }
-                addAction(placesAction)
-                // Take an en-route alternative when one is offered at a fork.
-                val navAlt = (nav as? NavigationController.NavState.Navigating)
-                    ?.alternatives?.firstOrNull()
-                if (navAlt != null) {
                     addAction(
                         Action.Builder()
-                            .setTitle(carContext.getString(R.string.car_action_take_alt))
-                            .setOnClickListener {
-                                NavigationController.acceptAlternative(navAlt)
-                                invalidate()
-                            }
-                            .build()
+                            .setTitle(carContext.getString(R.string.car_action_remove))
+                            .setOnClickListener { renderer.removeSelected(); invalidate() }
+                            .build(),
                     )
-                }
-                // Layout editor — only while the vehicle is stopped (GPS
-                // standstill), and not during active navigation (keeps the
-                // strip within its 4-action cap and the layout is tuned at
-                // rest). We gate on our own standstill signal rather than a
-                // ParkedOnlyOnClickListener: the host's "parked" gate often
-                // reports "driving" even at a standstill over projection,
-                // which is exactly the "not allowed while driving" toast.
-                // Editing auto-exits the moment the car starts moving again.
-                // Editing is allowed at any standstill — including while
-                // navigating, so the NAV preset (a separate layout from the
-                // idle one) can be tuned too. It auto-exits when the car moves.
-                if (stopped) {
                     addAction(
                         Action.Builder()
-                            .setTitle(
-                                carContext.getString(
-                                    if (renderer.isEditMode()) R.string.car_action_done
-                                    else R.string.car_action_edit_layout
-                                )
-                            )
-                            .setOnClickListener {
-                                renderer.setEditMode(!renderer.isEditMode())
-                                invalidate()
-                            }
-                            .build()
+                            .setTitle(carContext.getString(R.string.car_action_reset))
+                            .setOnClickListener { renderer.resetLayout(); invalidate() }
+                            .build(),
                     )
-                    if (renderer.isEditMode()) {
-                        addAction(
+                } else {
+                    // Normal controls, priority-ordered and capped at 4 so the
+                    // strip can never overflow (which throws). Edit is offered
+                    // at any standstill (incl. while navigating) — its own NAV
+                    // vs IDLE layout bucket is tuned at rest; it auto-exits when
+                    // the car moves.
+                    val navAlt = (nav as? NavigationController.NavState.Navigating)
+                        ?.alternatives?.firstOrNull()
+                    val actions = ArrayList<Action>()
+                    actions.add(recordAction)
+                    if (nav is NavigationController.NavState.Navigating ||
+                        nav is NavigationController.NavState.Preparing
+                    ) {
+                        actions.add(
                             Action.Builder()
-                                .setTitle(carContext.getString(R.string.car_action_remove))
-                                .setOnClickListener {
-                                    renderer.removeSelected()
-                                    invalidate()
-                                }
-                                .build()
-                        )
-                        addAction(
-                            Action.Builder()
-                                .setTitle(carContext.getString(R.string.car_action_reset))
-                                .setOnClickListener {
-                                    renderer.resetLayout()
-                                    invalidate()
-                                }
-                                .build()
+                                .setTitle(carContext.getString(R.string.car_action_end_nav))
+                                .setOnClickListener { NavigationController.stop(); invalidate() }
+                                .build(),
                         )
                     }
+                    if (stopped) {
+                        actions.add(
+                            Action.Builder()
+                                .setTitle(carContext.getString(R.string.car_action_edit_layout))
+                                .setOnClickListener { renderer.setEditMode(true); invalidate() }
+                                .build(),
+                        )
+                    }
+                    actions.add(placesAction)
+                    if (navAlt != null) {
+                        actions.add(
+                            Action.Builder()
+                                .setTitle(carContext.getString(R.string.car_action_take_alt))
+                                .setOnClickListener { NavigationController.acceptAlternative(navAlt); invalidate() }
+                                .build(),
+                        )
+                    }
+                    actions.take(4).forEach { addAction(it) }
                 }
             }.build()
         }

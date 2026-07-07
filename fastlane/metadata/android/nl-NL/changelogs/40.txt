@@ -1,0 +1,1 @@
+Android Auto-fixes: de indeling bewerken crasht niet meer (de bewerkknoppen passen binnen de limiet), de puck en kaart blijven correct gecentreerd bij elke splitsgrootte (vol / twee derde / een derde), punt-verkeersmeldingen verschijnen weer, het opnamespoor wist bij stoppen, en de snelheid wordt niet meer dubbel getoond als het metercluster aanstaat. Ook vloeiender.

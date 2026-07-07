@@ -1,0 +1,1 @@
+Android Auto fixes: editing the layout no longer crashes (the edit controls fit the action-bar limit), the puck and map stay correctly centred at every split size (full / two-thirds / one-third), point traffic incidents show again, the recording trail clears when you stop, and the speed reading is no longer duplicated when the gauge cluster is on. Smoother too.

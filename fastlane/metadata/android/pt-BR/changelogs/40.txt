@@ -1,0 +1,1 @@
+Correções do Android Auto: editar o layout não trava mais (os controles de edição cabem no limite), o marcador e o mapa ficam centralizados em cada tamanho (cheio / dois terços / um terço), incidentes pontuais de trânsito voltam a aparecer, o rastro de gravação some ao parar, e a velocidade não é mais duplicada com o cluster ativo. Mais suave também.

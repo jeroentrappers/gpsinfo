@@ -1,0 +1,1 @@
+Poprawki Android Auto: edycja układu już nie powoduje awarii (przyciski edycji mieszczą się w limicie), znacznik i mapa pozostają wyśrodkowane przy każdym rozmiarze (pełny / dwie trzecie / jedna trzecia), punktowe zdarzenia drogowe znów widoczne, ślad nagrywania czyści się po zatrzymaniu, a prędkość nie jest już podwajana przy włączonym klastrze. Także płynniej.

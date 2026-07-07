@@ -38,7 +38,12 @@ import android.graphics.Paint
 import android.graphics.Path
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.renderer.MapRenderer
+import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
+import org.maplibre.android.style.layers.PropertyFactory.circleColor
+import org.maplibre.android.style.layers.PropertyFactory.circleRadius
+import org.maplibre.android.style.layers.PropertyFactory.circleStrokeColor
+import org.maplibre.android.style.layers.PropertyFactory.circleStrokeWidth
 import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
 import org.maplibre.android.style.layers.PropertyFactory.iconAnchor
 import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
@@ -173,6 +178,18 @@ class CarGlMap(
         renderer.present(overlay)
     }
 
+    private var lastPadding: DoubleArray? = null
+
+    /** Content padding [left, top, right, bottom] px — centres the camera
+     *  target within the visible region (so the puck lands correctly on a
+     *  ⅔/⅓ split). Guarded so it's a no-op when unchanged. */
+    fun setContentPadding(left: Double, top: Double, right: Double, bottom: Double) {
+        val p = doubleArrayOf(left, top, right, bottom)
+        if (lastPadding?.contentEquals(p) == true) return
+        lastPadding = p
+        runCatching { nativeMap.setContentPadding(p) }
+    }
+
     fun setBuildings3d(enabled: Boolean) {
         if (enabled == want3d) return
         want3d = enabled
@@ -209,6 +226,8 @@ class CarGlMap(
      *  change. Keyed by source id. */
     private val lastNavJson = HashMap<String, String>()
     private var lastPuckBearing = 0f
+    private var lastPuckLat = Double.NaN
+    private var lastPuckLon = Double.NaN
 
     private fun ensureNavLayers() {
         if (navLayersReady || !styleLoaded) return
@@ -234,6 +253,13 @@ class CarGlMap(
                 LineLayer(LYR_TRAFFIC, SRC_TRAFFIC).withProperties(
                     lineColor(Expression.get("color")), lineWidth(7f),
                     lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+                ),
+            )
+            // Point incidents (single-coordinate) render as coloured dots.
+            nativeMap.addLayer(
+                CircleLayer(LYR_TRAFFIC_PT, SRC_TRAFFIC).withProperties(
+                    circleColor(Expression.get("color")), circleRadius(6f),
+                    circleStrokeColor("#FFFFFF"), circleStrokeWidth(1.5f),
                 ),
             )
             nativeMap.addLayer(
@@ -303,14 +329,25 @@ class CarGlMap(
         setNavGeoJson(SRC_ROUTE, if (points == null || points.size < 2) EMPTY_FC else lineJson(points))
     }
 
-    /** Place the vehicle puck (heading in degrees); [visible] false hides it. */
+    /** Place the vehicle puck (heading in degrees); [visible] false hides it.
+     *  Called every frame, so skip native work when nothing moved. */
     fun setPuck(lat: Double, lon: Double, bearingDeg: Double, visible: Boolean) {
-        setNavGeoJson(SRC_PUCK, if (visible) pointJson(lat, lon) else EMPTY_FC)
-        if (visible) {
-            lastPuckBearing = bearingDeg.toFloat()
-            runCatching {
-                (nativeMap.getLayer(LYR_PUCK) as? SymbolLayer)?.setProperties(iconRotate(lastPuckBearing))
-            }
+        ensureNavLayers()
+        if (!visible) {
+            if (!lastPuckLat.isNaN()) { setNavGeoJson(SRC_PUCK, EMPTY_FC); lastPuckLat = Double.NaN }
+            return
+        }
+        val posChanged = lastPuckLat.isNaN() ||
+            kotlin.math.abs(lat - lastPuckLat) > 1e-6 || kotlin.math.abs(lon - lastPuckLon) > 1e-6
+        if (posChanged) {
+            setNavGeoJson(SRC_PUCK, pointJson(lat, lon))
+            lastPuckLat = lat
+            lastPuckLon = lon
+        }
+        val b = bearingDeg.toFloat()
+        if (kotlin.math.abs(b - lastPuckBearing) > 0.5f) {
+            lastPuckBearing = b
+            runCatching { (nativeMap.getLayer(LYR_PUCK) as? SymbolLayer)?.setProperties(iconRotate(b)) }
         }
     }
 
@@ -337,10 +374,17 @@ class CarGlMap(
     fun setTraffic(segments: List<Pair<List<DoubleArray>, String>>) {
         val feats = JSONArray()
         for ((coordsLonLat, colorHex) in segments) {
-            if (coordsLonLat.size < 2) continue
-            val coords = JSONArray()
-            for (p in coordsLonLat) coords.put(JSONArray().put(p[0]).put(p[1])) // already [lon, lat]
-            feats.put(feature(JSONObject().put("type", "LineString").put("coordinates", coords), colorHex))
+            if (coordsLonLat.isEmpty()) continue
+            val geom = if (coordsLonLat.size == 1) {
+                // Single-coordinate incident → a Point (drawn by the circle layer).
+                JSONObject().put("type", "Point")
+                    .put("coordinates", JSONArray().put(coordsLonLat[0][0]).put(coordsLonLat[0][1]))
+            } else {
+                val coords = JSONArray()
+                for (p in coordsLonLat) coords.put(JSONArray().put(p[0]).put(p[1])) // already [lon, lat]
+                JSONObject().put("type", "LineString").put("coordinates", coords)
+            }
+            feats.put(feature(geom, colorHex))
         }
         setNavGeoJson(SRC_TRAFFIC, if (feats.length() == 0) EMPTY_FC else collection(feats))
     }
@@ -433,6 +477,7 @@ class CarGlMap(
         const val LYR_TRAIL = "gpsinfo-trail-line"
         const val LYR_ALTS = "gpsinfo-alts-line"
         const val LYR_TRAFFIC = "gpsinfo-traffic-line"
+        const val LYR_TRAFFIC_PT = "gpsinfo-traffic-pt"
         const val EMPTY_FC = """{"type":"FeatureCollection","features":[]}"""
         const val ROUTE = "#3B82F6"
         const val ROUTE_CASING = "#1E3A8A"

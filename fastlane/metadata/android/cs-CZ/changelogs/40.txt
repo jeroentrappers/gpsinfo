@@ -1,0 +1,1 @@
+Opravy Android Auto: úprava rozvržení už nepadá (ovládání úprav se vejde do limitu), značka a mapa zůstávají správně vystředěné při každé velikosti (celá / dvě třetiny / třetina), bodové dopravní události se opět zobrazují, stopa nahrávání se po zastavení smaže a rychlost se už nezdvojuje při zapnutém clusteru. Také plynulejší.

@@ -1,0 +1,1 @@
+Correzioni Android Auto: modificare il layout non causa più crash (i controlli di modifica rientrano nel limite), indicatore e mappa restano centrati a ogni dimensione (intera / due terzi / un terzo), gli incidenti puntuali del traffico riappaiono, la traccia di registrazione si azzera allo stop, e la velocità non è più duplicata col cluster attivo. Anche più fluido.

@@ -1,0 +1,1 @@
+Android Auto düzeltmeleri: düzeni düzenlemek artık çökmüyor (düzenleme kontrolleri sınıra sığıyor), imleç ve harita her bölme boyutunda (tam / üçte iki / üçte bir) düzgün ortalanıyor, nokta trafik olayları tekrar görünüyor, kayıt izi durunca temizleniyor ve gösterge kümesi açıkken hız artık çift gösterilmiyor. Ayrıca daha akıcı.
