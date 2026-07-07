@@ -1,0 +1,1 @@
+Android Auto: traccia, percorsi alternativi e traffico live ora sono disegnati come livelli nativi — più nitidi e più leggeri per la GPU. Tutti gli elementi ancorati alla mappa (percorso, indicatore, traffico, traccia, alternative) sono resi in MapLibre; solo il cluster strumenti resta un overlay a schermo.

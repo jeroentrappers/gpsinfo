@@ -1,0 +1,1 @@
+Android Auto: ślad trasy, alternatywy i ruch na żywo są teraz również rysowane jako natywne warstwy mapy — ostrzejsze i lżejsze dla GPU. Wszystkie elementy powiązane z mapą (trasa, znacznik, ruch, ślad, alternatywy) renderują się w MapLibre; tylko klaster zegarów pozostaje nakładką ekranową.

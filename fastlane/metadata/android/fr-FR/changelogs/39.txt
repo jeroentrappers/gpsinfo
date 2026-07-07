@@ -1,0 +1,1 @@
+Android Auto : la trace, les itinéraires alternatifs et le trafic en direct sont désormais aussi dessinés comme des couches natives — plus nets et plus légers pour le GPU. Tous les éléments géographiques (itinéraire, curseur, trafic, trace, alternatives) sont rendus dans MapLibre ; seul le cluster d'instruments reste une surcouche écran.

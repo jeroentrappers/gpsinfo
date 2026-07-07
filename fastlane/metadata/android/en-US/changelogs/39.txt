@@ -1,0 +1,1 @@
+Android Auto: the breadcrumb trail, route alternatives and live traffic are now drawn as native map layers too — sharper and lighter on the GPU. The map now renders every map-anchored element (route, puck, traffic, trail, alternatives) inside MapLibre; only the instrument cluster stays as a screen overlay.

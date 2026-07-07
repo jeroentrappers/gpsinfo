@@ -1,0 +1,1 @@
+Android Auto: het broodkruimelspoor, route-alternatieven en live verkeer worden nu ook als native kaartlagen getekend — scherper en lichter voor de GPU. Alle kaartgebonden elementen (route, puck, verkeer, spoor, alternatieven) worden nu in MapLibre gerenderd; alleen het metercluster blijft een schermoverlay.

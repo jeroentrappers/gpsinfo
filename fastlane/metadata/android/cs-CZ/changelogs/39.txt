@@ -1,0 +1,1 @@
+Android Auto: stopa, alternativní trasy a živý provoz se nyní také vykreslují jako nativní vrstvy mapy — ostřejší a šetrnější k GPU. Všechny prvky ukotvené k mapě (trasa, značka, provoz, stopa, alternativy) se vykreslují v MapLibre; jen přístrojový cluster zůstává překryvem obrazovky.

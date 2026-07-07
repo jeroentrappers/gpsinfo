@@ -1,0 +1,1 @@
+Android Auto: el rastro, las rutas alternativas y el tráfico en vivo ahora también se dibujan como capas nativas: más nítidos y más ligeros para la GPU. Todos los elementos anclados al mapa (ruta, marcador, tráfico, rastro, alternativas) se renderizan en MapLibre; solo el cluster de instrumentos sigue como superposición.

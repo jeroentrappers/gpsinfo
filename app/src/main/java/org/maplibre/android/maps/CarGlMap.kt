@@ -51,6 +51,7 @@ import org.maplibre.android.style.layers.PropertyFactory.lineColor
 import org.maplibre.android.style.layers.PropertyFactory.lineJoin
 import org.maplibre.android.style.layers.PropertyFactory.lineWidth
 import org.maplibre.android.style.layers.SymbolLayer
+import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.json.JSONArray
 import org.json.JSONObject
@@ -203,16 +204,38 @@ class CarGlMap(
     // compositor) and cheap (no per-frame polyline projection into a bitmap).
 
     private var navLayersReady = false
-    /** Last route GeoJSON, re-applied after a style reload (which drops the
-     *  source) so the route survives without waiting for the next change. */
-    private var lastRouteJson = EMPTY_FC
+    /** Last GeoJSON per nav source, re-applied after a style reload (which
+     *  drops the sources) so the overlays survive without waiting for a
+     *  change. Keyed by source id. */
+    private val lastNavJson = HashMap<String, String>()
+    private var lastPuckBearing = 0f
 
     private fun ensureNavLayers() {
         if (navLayersReady || !styleLoaded) return
         runCatching {
             addPuckImage()
-            nativeMap.addSource(GeoJsonSource(SRC_ROUTE, EMPTY_FC))
-            nativeMap.addSource(GeoJsonSource(SRC_PUCK, EMPTY_FC))
+            for (src in listOf(SRC_ALTS, SRC_TRAIL, SRC_TRAFFIC, SRC_ROUTE, SRC_PUCK)) {
+                nativeMap.addSource(GeoJsonSource(src, lastNavJson[src] ?: EMPTY_FC))
+            }
+            // Bottom → top: alternatives, breadcrumb, traffic, route, puck.
+            nativeMap.addLayer(
+                LineLayer(LYR_ALTS, SRC_ALTS).withProperties(
+                    lineColor(ALT), lineWidth(6f),
+                    lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+                ),
+            )
+            nativeMap.addLayer(
+                LineLayer(LYR_TRAIL, SRC_TRAIL).withProperties(
+                    lineColor(TRAIL), lineWidth(6f),
+                    lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+                ),
+            )
+            nativeMap.addLayer(
+                LineLayer(LYR_TRAFFIC, SRC_TRAFFIC).withProperties(
+                    lineColor(Expression.get("color")), lineWidth(7f),
+                    lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+                ),
+            )
             nativeMap.addLayer(
                 LineLayer(LYR_ROUTE_CASING, SRC_ROUTE).withProperties(
                     lineColor(ROUTE_CASING), lineWidth(13f),
@@ -233,12 +256,17 @@ class CarGlMap(
                     iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
                     iconAnchor(Property.ICON_ANCHOR_CENTER),
                     iconSize(1f),
+                    iconRotate(lastPuckBearing),
                 ),
             )
-            // Re-apply the last route after a fresh style/source.
-            (nativeMap.getSource(SRC_ROUTE) as? GeoJsonSource)?.setGeoJson(lastRouteJson)
             navLayersReady = true
         }.onFailure { Log.w(TAG, "ensureNavLayers", it) }
+    }
+
+    private fun setNavGeoJson(sourceId: String, json: String) {
+        ensureNavLayers()
+        lastNavJson[sourceId] = json
+        (runCatching { nativeMap.getSource(sourceId) as? GeoJsonSource }.getOrNull())?.setGeoJson(json)
     }
 
     /** Draw a chevron-in-disc puck bitmap and register it as a style image. */
@@ -272,38 +300,68 @@ class CarGlMap(
 
     /** Set the route polyline ([lat, lon] points); null/short clears it. */
     fun setRoute(points: List<DoubleArray>?) {
-        ensureNavLayers()
-        lastRouteJson = if (points == null || points.size < 2) EMPTY_FC else lineJson(points)
-        (runCatching { nativeMap.getSource(SRC_ROUTE) as? GeoJsonSource }.getOrNull())?.setGeoJson(lastRouteJson)
+        setNavGeoJson(SRC_ROUTE, if (points == null || points.size < 2) EMPTY_FC else lineJson(points))
     }
 
     /** Place the vehicle puck (heading in degrees); [visible] false hides it. */
     fun setPuck(lat: Double, lon: Double, bearingDeg: Double, visible: Boolean) {
-        ensureNavLayers()
-        val src = runCatching { nativeMap.getSource(SRC_PUCK) as? GeoJsonSource }.getOrNull() ?: return
-        if (!visible) {
-            src.setGeoJson(EMPTY_FC)
-            return
+        setNavGeoJson(SRC_PUCK, if (visible) pointJson(lat, lon) else EMPTY_FC)
+        if (visible) {
+            lastPuckBearing = bearingDeg.toFloat()
+            runCatching {
+                (nativeMap.getLayer(LYR_PUCK) as? SymbolLayer)?.setProperties(iconRotate(lastPuckBearing))
+            }
         }
-        src.setGeoJson(pointJson(lat, lon))
-        runCatching {
-            (nativeMap.getLayer(LYR_PUCK) as? SymbolLayer)?.setProperties(iconRotate(bearingDeg.toFloat()))
+    }
+
+    /** Recorded breadcrumb trail ([lat, lon] points). */
+    fun setTrail(points: List<DoubleArray>?) {
+        setNavGeoJson(SRC_TRAIL, if (points == null || points.size < 2) EMPTY_FC else lineJson(points))
+    }
+
+    /** En-route alternatives (each a [lat, lon] polyline). */
+    fun setAlternatives(routes: List<List<DoubleArray>>) {
+        val feats = JSONArray()
+        for (r in routes) {
+            if (r.size < 2) continue
+            val coords = JSONArray()
+            for (p in r) coords.put(JSONArray().put(p[1]).put(p[0]))
+            feats.put(feature(JSONObject().put("type", "LineString").put("coordinates", coords), null))
         }
+        setNavGeoJson(SRC_ALTS, if (feats.length() == 0) EMPTY_FC else collection(feats))
+    }
+
+    /** Live traffic segments: each a [lon, lat] coordinate list + colour hex.
+     *  Single-coordinate segments render as points via the same coloured line
+     *  layer degenerating; callers pass ≥2 coords for visible incidents. */
+    fun setTraffic(segments: List<Pair<List<DoubleArray>, String>>) {
+        val feats = JSONArray()
+        for ((coordsLonLat, colorHex) in segments) {
+            if (coordsLonLat.size < 2) continue
+            val coords = JSONArray()
+            for (p in coordsLonLat) coords.put(JSONArray().put(p[0]).put(p[1])) // already [lon, lat]
+            feats.put(feature(JSONObject().put("type", "LineString").put("coordinates", coords), colorHex))
+        }
+        setNavGeoJson(SRC_TRAFFIC, if (feats.length() == 0) EMPTY_FC else collection(feats))
     }
 
     private fun lineJson(points: List<DoubleArray>): String {
         val coords = JSONArray()
         for (p in points) coords.put(JSONArray().put(p[1]).put(p[0])) // [lon, lat]
-        val geom = JSONObject().put("type", "LineString").put("coordinates", coords)
-        return JSONObject().put("type", "Feature").put("properties", JSONObject())
-            .put("geometry", geom).toString()
+        return feature(JSONObject().put("type", "LineString").put("coordinates", coords), null).toString()
     }
 
-    private fun pointJson(lat: Double, lon: Double): String {
-        val geom = JSONObject().put("type", "Point").put("coordinates", JSONArray().put(lon).put(lat))
-        return JSONObject().put("type", "Feature").put("properties", JSONObject())
-            .put("geometry", geom).toString()
+    private fun pointJson(lat: Double, lon: Double): String =
+        feature(JSONObject().put("type", "Point").put("coordinates", JSONArray().put(lon).put(lat)), null).toString()
+
+    private fun feature(geometry: JSONObject, colorHex: String?): JSONObject {
+        val props = JSONObject()
+        if (colorHex != null) props.put("color", colorHex)
+        return JSONObject().put("type", "Feature").put("properties", props).put("geometry", geometry)
     }
+
+    private fun collection(features: JSONArray): String =
+        JSONObject().put("type", "FeatureCollection").put("features", features).toString()
 
     // ── NativeMapView callbacks ─────────────────────────────────────
 
@@ -369,9 +427,17 @@ class CarGlMap(
         const val LYR_ROUTE = "gpsinfo-route-line"
         const val LYR_PUCK = "gpsinfo-puck"
         const val PUCK_IMG = "gpsinfo-puck-img"
+        const val SRC_TRAIL = "gpsinfo-trail"
+        const val SRC_ALTS = "gpsinfo-alts"
+        const val SRC_TRAFFIC = "gpsinfo-traffic"
+        const val LYR_TRAIL = "gpsinfo-trail-line"
+        const val LYR_ALTS = "gpsinfo-alts-line"
+        const val LYR_TRAFFIC = "gpsinfo-traffic-line"
         const val EMPTY_FC = """{"type":"FeatureCollection","features":[]}"""
         const val ROUTE = "#3B82F6"
         const val ROUTE_CASING = "#1E3A8A"
+        const val TRAIL = "#9CA3AF"
+        const val ALT = "#6366F1"
         const val PUCK_FILL = 0xFF2563EB.toInt()
     }
 }

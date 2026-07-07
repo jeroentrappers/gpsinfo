@@ -1,0 +1,1 @@
+Android Auto: iz, alternatif rotalar ve canlı trafik artık yerel harita katmanları olarak çiziliyor — daha keskin ve GPU için daha hafif. Haritaya bağlı tüm ögeler (rota, imleç, trafik, iz, alternatifler) MapLibre içinde işleniyor; yalnızca gösterge kümesi ekran bindirmesi olarak kalıyor.

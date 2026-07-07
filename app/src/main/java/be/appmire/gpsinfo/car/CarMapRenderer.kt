@@ -289,9 +289,13 @@ class CarMapRenderer(
     /** Active navigation route as packed (lat, lon) pairs, or null
      *  when not navigating — projected onto the vector map per frame. */
     private var navRoute: List<DoubleArray>? = null
-    /** Set when [navRoute] changes so the native GL route layer is only
-     *  re-pushed on change, not every frame. */
+    /** Set when the corresponding data changes so the native GL layers are
+     *  only re-pushed on change, not every frame (the puck is the exception —
+     *  it dead-reckons every frame). */
     private var navRouteDirty = true
+    private var altsDirty = true
+    private var trafficDirty = true
+    private var trailDirty = true
 
     fun updateNavigationRoute(points: List<be.appmire.gpsinfo.data.nav.RoutePoint>?) {
         navRoute = points?.map { doubleArrayOf(it.lat, it.lon) }
@@ -315,6 +319,7 @@ class CarMapRenderer(
 
     fun updateTraffic(incidents: List<be.appmire.gpsinfo.data.nav.TrafficIncident>) {
         traffic = incidents
+        trafficDirty = true
         scheduleRender()
     }
 
@@ -324,6 +329,7 @@ class CarMapRenderer(
 
     fun updateAlternatives(alts: List<be.appmire.gpsinfo.data.nav.NavigationController.RouteAlternative>) {
         alternatives = alts
+        altsDirty = true
         scheduleRender()
     }
 
@@ -551,6 +557,7 @@ class CarMapRenderer(
         if (isRecording && !wasRecording) {
             breadcrumb.clear()
             breadcrumbMinStepM = 3f
+            trailDirty = true
         }
         wasRecording = isRecording
 
@@ -663,6 +670,7 @@ class CarMapRenderer(
             if (out[0] < breadcrumbMinStepM) return
         }
         breadcrumb.add(doubleArrayOf(loc.latitude, loc.longitude))
+        trailDirty = true
         if (breadcrumb.size > BREADCRUMB_CAP) {
             // Halve resolution, double the accept threshold. Repeats
             // as the trail keeps growing — classic geometric decimation.
@@ -1142,11 +1150,19 @@ class CarMapRenderer(
                 gl.setRoute(navRoute)
                 navRouteDirty = false
             }
+            if (altsDirty) {
+                gl.setAlternatives(alternatives.map { alt -> alt.route.points.map { doubleArrayOf(it.lat, it.lon) } })
+                altsDirty = false
+            }
+            if (trafficDirty) {
+                gl.setTraffic(traffic.map { it.geometry to trafficColorHex(it.category) })
+                trafficDirty = false
+            }
+            if (trailDirty) {
+                gl.setTrail(if (recording is RecordingState.Recording) ArrayList(breadcrumb) else null)
+                trailDirty = false
+            }
             gl.setPuck(loc.latitude, loc.longitude, bearing, visible = true)
-            val glProj = gl.currentProjector() ?: return
-            drawAlternatives(canvas, glProj, mapLeft)
-            drawTraffic(canvas, glProj, mapLeft)
-            drawProjectedBreadcrumb(canvas, glProj, mapLeft)
             return
         }
 
@@ -1429,6 +1445,10 @@ class CarMapRenderer(
         "laneClosure" -> TRAFFIC_CLOSURE
         else -> TRAFFIC_OTHER
     }
+
+    /** "#RRGGBB" for the native traffic layer's data-driven line colour. */
+    private fun trafficColorHex(category: String): String =
+        String.format("#%06X", 0xFFFFFF and trafficColor(category))
 
     private fun drawProjectedBreadcrumb(
         canvas: Canvas,

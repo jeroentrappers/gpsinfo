@@ -1,0 +1,1 @@
+Android Auto: Wegspur, Routenalternativen und Live-Verkehr werden nun ebenfalls als native Kartenebenen gezeichnet — schärfer und GPU-schonender. Alle kartenbezogenen Elemente (Route, Puck, Verkehr, Spur, Alternativen) rendern jetzt in MapLibre; nur das Instrumentencluster bleibt ein Bildschirm-Overlay.
