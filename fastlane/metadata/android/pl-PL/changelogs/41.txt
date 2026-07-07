@@ -1,0 +1,1 @@
+Naprawiono podgląd głosu ("Testuj głos") w telefonie — teraz czeka, aż silnik mowy będzie gotowy, i przełącza się awaryjnie, gdy głos wybranego języka nie jest zainstalowany, więc podgląd faktycznie się odtwarza.

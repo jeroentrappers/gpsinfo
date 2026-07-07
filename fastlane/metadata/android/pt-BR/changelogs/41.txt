@@ -1,0 +1,1 @@
+Corrigida a prévia de voz ("Testar voz") no telefone: agora aguarda o mecanismo de voz ficar pronto e usa uma alternativa se a voz do idioma escolhido não estiver instalada, para a prévia realmente tocar.

@@ -1,0 +1,1 @@
+De spraakvoorbeeld ("Stem testen") op de telefoon is gerepareerd — hij wacht nu tot de spraakengine klaar is en valt netjes terug als de gekozen taalstem niet is geïnstalleerd, zodat het voorbeeld echt afspeelt.

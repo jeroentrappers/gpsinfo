@@ -1,0 +1,1 @@
+Fixed the voice-guidance preview ("Test voice") on the phone — it now waits for the speech engine to be ready before speaking and falls back gracefully if the chosen language's voice isn't installed, so the preview actually plays.

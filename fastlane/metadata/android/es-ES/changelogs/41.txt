@@ -1,0 +1,1 @@
+Se corrigió la vista previa de voz ("Probar voz") en el teléfono: ahora espera a que el motor de voz esté listo y recurre a una alternativa si la voz del idioma elegido no está instalada, para que la vista previa suene.

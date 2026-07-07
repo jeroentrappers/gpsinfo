@@ -1,0 +1,1 @@
+Corretta l'anteprima vocale ("Prova voce") sul telefono: ora attende che il motore vocale sia pronto e ripiega se la voce della lingua scelta non è installata, così l'anteprima viene riprodotta davvero.

@@ -65,11 +65,16 @@ fun VoiceGuidanceScreen(
     val languageTag by vm.voiceLanguageTag.collectAsStateWithLifecycle()
 
     // A throwaway TTS engine for the Test button; torn down with the screen.
+    // Track readiness: speak() before onInit(SUCCESS) is silently dropped,
+    // which is why the preview did nothing.
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
+    var ttsReady by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
-        val engine = TextToSpeech(context.applicationContext, null)
+        val engine = TextToSpeech(context.applicationContext) { status ->
+            ttsReady = status == TextToSpeech.SUCCESS
+        }
         tts = engine
-        onDispose { engine.stop(); engine.shutdown() }
+        onDispose { ttsReady = false; engine.stop(); engine.shutdown() }
     }
 
     var showLangDialog by remember { mutableStateOf(false) }
@@ -121,15 +126,22 @@ fun VoiceGuidanceScreen(
                 onClick = {
                     val engine = tts ?: return@Button
                     runCatching {
-                        engine.language = languageTag?.takeIf { it.isNotBlank() }
+                        val locale = languageTag?.takeIf { it.isNotBlank() }
                             ?.let { Locale.forLanguageTag(it) }
                             ?: context.resources.configuration.locales[0]
+                        val res = engine.setLanguage(locale)
+                        // Fall back so the preview still speaks when the chosen
+                        // language's voice data isn't installed.
+                        if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                            engine.language = Locale.US
+                        }
                     }
                     engine.speak(
                         context.getString(R.string.settings_voice_test_phrase),
                         TextToSpeech.QUEUE_FLUSH, null, "voice-test",
                     )
                 },
+                enabled = ttsReady,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.settings_voice_test))

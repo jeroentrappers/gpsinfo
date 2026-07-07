@@ -1,0 +1,1 @@
+Telefondaki sesli önizleme ("Sesi test et") düzeltildi — artık konuşma motorunun hazır olmasını bekliyor ve seçilen dilin sesi yüklü değilse düzgünce yedeğe geçiyor, böylece önizleme gerçekten çalıyor.

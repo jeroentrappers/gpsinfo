@@ -1,0 +1,1 @@
+Die Sprachvorschau ("Stimme testen") am Telefon wurde repariert — sie wartet jetzt, bis die Sprach-Engine bereit ist, und weicht sauber aus, wenn die Stimme der gewählten Sprache fehlt, sodass die Vorschau wirklich abspielt.

@@ -1,0 +1,1 @@
+Correction de l'aperçu vocal ("Tester la voix") sur le téléphone — il attend désormais que le moteur vocal soit prêt et bascule proprement si la voix de la langue choisie n'est pas installée, pour que l'aperçu se lise vraiment.

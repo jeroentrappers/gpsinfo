@@ -1,0 +1,1 @@
+Opraven náhled hlasu ("Vyzkoušet hlas") v telefonu — nyní počká, až bude řečový engine připravený, a nouzově se přepne, pokud hlas zvoleného jazyka není nainstalován, takže se náhled opravdu přehraje.
