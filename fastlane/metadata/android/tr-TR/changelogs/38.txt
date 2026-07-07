@@ -1,0 +1,1 @@
+Android Auto: navigasyon rotası ve araç imleci artık GPU haritasında yerel harita katmanları olarak çiziliyor — daha keskin, daha akıcı ve her zaman görünür. Ayrıca daha verimli, çünkü rota her karede bindirmeye yeniden çizilmiyor.

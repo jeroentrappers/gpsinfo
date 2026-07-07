@@ -1,0 +1,1 @@
+Android Auto: la ruta de navegación y el marcador del vehículo ahora se dibujan como capas nativas dentro del mapa por GPU: más nítidos, fluidos y siempre visibles. También más eficiente, ya que la ruta no se redibuja en una superposición en cada fotograma.

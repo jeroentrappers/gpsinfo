@@ -1,0 +1,1 @@
+Android Auto: de navigatieroute en de voertuigpuck worden nu als native kaartlagen in de GPU-kaart getekend — scherper, vloeiender en altijd zichtbaar. Ook efficiënter, omdat de route niet meer elk frame in een overlay wordt hertekend.

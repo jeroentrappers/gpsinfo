@@ -1,0 +1,1 @@
+Android Auto: the navigation route and vehicle puck are now drawn as native map layers inside the GPU map — sharper, smoother, and always visible. Rendering is more efficient too, since the route no longer redraws into an overlay each frame.

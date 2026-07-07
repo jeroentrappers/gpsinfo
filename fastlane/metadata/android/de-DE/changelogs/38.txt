@@ -1,0 +1,1 @@
+Android Auto: Navigationsroute und Fahrzeug-Puck werden jetzt als native Kartenebenen in der GPU-Karte gezeichnet — schärfer, flüssiger und immer sichtbar. Auch effizienter, da die Route nicht mehr in jedem Frame in ein Overlay neu gezeichnet wird.

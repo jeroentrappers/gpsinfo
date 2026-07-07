@@ -1,0 +1,1 @@
+Android Auto: navigační trasa a značka vozidla se nyní vykreslují jako nativní vrstvy v GPU mapě — ostřejší, plynulejší a vždy viditelné. Také efektivnější, protože trasa se už nepřekresluje do překryvu v každém snímku.

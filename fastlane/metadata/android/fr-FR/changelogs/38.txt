@@ -1,0 +1,1 @@
+Android Auto : l'itinéraire et le curseur du véhicule sont désormais dessinés comme des couches natives dans la carte GPU — plus nets, plus fluides et toujours visibles. Plus efficace aussi, car l'itinéraire n'est plus redessiné dans une surcouche à chaque image.

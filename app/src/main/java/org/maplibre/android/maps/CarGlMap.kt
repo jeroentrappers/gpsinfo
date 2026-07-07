@@ -32,8 +32,28 @@ import android.view.View
 import be.appmire.gpsinfo.car.CarMapPalette
 import be.appmire.gpsinfo.car.MapProjector
 import org.maplibre.android.MapLibre
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.renderer.MapRenderer
+import org.maplibre.android.style.layers.LineLayer
+import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
+import org.maplibre.android.style.layers.PropertyFactory.iconAnchor
+import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
+import org.maplibre.android.style.layers.PropertyFactory.iconImage
+import org.maplibre.android.style.layers.PropertyFactory.iconRotate
+import org.maplibre.android.style.layers.PropertyFactory.iconRotationAlignment
+import org.maplibre.android.style.layers.PropertyFactory.iconSize
+import org.maplibre.android.style.layers.PropertyFactory.lineCap
+import org.maplibre.android.style.layers.PropertyFactory.lineColor
+import org.maplibre.android.style.layers.PropertyFactory.lineJoin
+import org.maplibre.android.style.layers.PropertyFactory.lineWidth
+import org.maplibre.android.style.layers.SymbolLayer
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.json.JSONArray
+import org.json.JSONObject
 import org.maplibre.android.maps.renderer.egl.EGLConfigChooser
 import org.maplibre.android.maps.renderer.egl.EGLContextFactory
 import org.maplibre.android.maps.renderer.egl.EGLWindowSurfaceFactory
@@ -174,6 +194,115 @@ class CarGlMap(
             // retried from setCamera until it takes.
             paletteApplied = CarMapPalette.applyTo { id -> runCatching { nativeMap.getLayer(id) }.getOrNull() }
         }
+        ensureNavLayers()
+    }
+
+    // ── Native navigation layers (route + puck, rendered inside mbgl) ────
+    // The route line and vehicle puck are real MapLibre layers so they render
+    // in the map's own GPU pass — always visible (independent of the overlay
+    // compositor) and cheap (no per-frame polyline projection into a bitmap).
+
+    private var navLayersReady = false
+    /** Last route GeoJSON, re-applied after a style reload (which drops the
+     *  source) so the route survives without waiting for the next change. */
+    private var lastRouteJson = EMPTY_FC
+
+    private fun ensureNavLayers() {
+        if (navLayersReady || !styleLoaded) return
+        runCatching {
+            addPuckImage()
+            nativeMap.addSource(GeoJsonSource(SRC_ROUTE, EMPTY_FC))
+            nativeMap.addSource(GeoJsonSource(SRC_PUCK, EMPTY_FC))
+            nativeMap.addLayer(
+                LineLayer(LYR_ROUTE_CASING, SRC_ROUTE).withProperties(
+                    lineColor(ROUTE_CASING), lineWidth(13f),
+                    lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+                ),
+            )
+            nativeMap.addLayer(
+                LineLayer(LYR_ROUTE, SRC_ROUTE).withProperties(
+                    lineColor(ROUTE), lineWidth(8f),
+                    lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+                ),
+            )
+            nativeMap.addLayer(
+                SymbolLayer(LYR_PUCK, SRC_PUCK).withProperties(
+                    iconImage(PUCK_IMG),
+                    iconAllowOverlap(true),
+                    iconIgnorePlacement(true),
+                    iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
+                    iconAnchor(Property.ICON_ANCHOR_CENTER),
+                    iconSize(1f),
+                ),
+            )
+            // Re-apply the last route after a fresh style/source.
+            (nativeMap.getSource(SRC_ROUTE) as? GeoJsonSource)?.setGeoJson(lastRouteJson)
+            navLayersReady = true
+        }.onFailure { Log.w(TAG, "ensureNavLayers", it) }
+    }
+
+    /** Draw a chevron-in-disc puck bitmap and register it as a style image. */
+    private fun addPuckImage() {
+        val s = 72
+        val bmp = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        val cx = s / 2f
+        val cy = s / 2f
+        val r = s * 0.34f
+        val disc = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
+        c.drawCircle(cx, cy, r + s * 0.06f, disc)
+        disc.color = PUCK_FILL
+        c.drawCircle(cx, cy, r, disc)
+        val chevron = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
+        // Upward chevron (points to the direction of travel; iconRotate spins it).
+        c.drawPath(
+            Path().apply {
+                moveTo(cx, cy - r * 0.55f)
+                lineTo(cx - r * 0.5f, cy + r * 0.45f)
+                lineTo(cx, cy + r * 0.18f)
+                lineTo(cx + r * 0.5f, cy + r * 0.45f)
+                close()
+            },
+            chevron,
+        )
+        val buf = ByteBuffer.allocate(bmp.byteCount)
+        bmp.copyPixelsToBuffer(buf)
+        nativeMap.addImages(arrayOf(Image(buf.array(), 1f, PUCK_IMG, s, s, false)))
+    }
+
+    /** Set the route polyline ([lat, lon] points); null/short clears it. */
+    fun setRoute(points: List<DoubleArray>?) {
+        ensureNavLayers()
+        lastRouteJson = if (points == null || points.size < 2) EMPTY_FC else lineJson(points)
+        (runCatching { nativeMap.getSource(SRC_ROUTE) as? GeoJsonSource }.getOrNull())?.setGeoJson(lastRouteJson)
+    }
+
+    /** Place the vehicle puck (heading in degrees); [visible] false hides it. */
+    fun setPuck(lat: Double, lon: Double, bearingDeg: Double, visible: Boolean) {
+        ensureNavLayers()
+        val src = runCatching { nativeMap.getSource(SRC_PUCK) as? GeoJsonSource }.getOrNull() ?: return
+        if (!visible) {
+            src.setGeoJson(EMPTY_FC)
+            return
+        }
+        src.setGeoJson(pointJson(lat, lon))
+        runCatching {
+            (nativeMap.getLayer(LYR_PUCK) as? SymbolLayer)?.setProperties(iconRotate(bearingDeg.toFloat()))
+        }
+    }
+
+    private fun lineJson(points: List<DoubleArray>): String {
+        val coords = JSONArray()
+        for (p in points) coords.put(JSONArray().put(p[1]).put(p[0])) // [lon, lat]
+        val geom = JSONObject().put("type", "LineString").put("coordinates", coords)
+        return JSONObject().put("type", "Feature").put("properties", JSONObject())
+            .put("geometry", geom).toString()
+    }
+
+    private fun pointJson(lat: Double, lon: Double): String {
+        val geom = JSONObject().put("type", "Point").put("coordinates", JSONArray().put(lon).put(lat))
+        return JSONObject().put("type", "Feature").put("properties", JSONObject())
+            .put("geometry", geom).toString()
     }
 
     // ── NativeMapView callbacks ─────────────────────────────────────
@@ -185,6 +314,11 @@ class CarGlMap(
         override fun onWillStartLoadingMap() {}
         override fun onDidFinishLoadingStyle() {
             styleLoaded = true
+            // A (re)loaded style drops our sources/layers + palette edits, so
+            // mark them for re-application.
+            navLayersReady = false
+            paletteApplied = false
+            applied3d = null
             applyStyleTweaks()
             onStyleReady()
         }
@@ -229,6 +363,16 @@ class CarGlMap(
 
     private companion object {
         const val BUILDING_3D = "building-3d"
+        const val SRC_ROUTE = "gpsinfo-route"
+        const val SRC_PUCK = "gpsinfo-puck"
+        const val LYR_ROUTE_CASING = "gpsinfo-route-casing"
+        const val LYR_ROUTE = "gpsinfo-route-line"
+        const val LYR_PUCK = "gpsinfo-puck"
+        const val PUCK_IMG = "gpsinfo-puck-img"
+        const val EMPTY_FC = """{"type":"FeatureCollection","features":[]}"""
+        const val ROUTE = "#3B82F6"
+        const val ROUTE_CASING = "#1E3A8A"
+        const val PUCK_FILL = 0xFF2563EB.toInt()
     }
 }
 

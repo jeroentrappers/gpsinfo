@@ -1,0 +1,1 @@
+Android Auto: a rota de navegação e o marcador do veículo agora são desenhados como camadas nativas no mapa por GPU — mais nítidos, suaves e sempre visíveis. Também mais eficiente, pois a rota não é redesenhada em uma sobreposição a cada quadro.

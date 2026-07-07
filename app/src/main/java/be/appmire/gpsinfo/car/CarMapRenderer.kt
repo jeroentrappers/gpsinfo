@@ -289,9 +289,13 @@ class CarMapRenderer(
     /** Active navigation route as packed (lat, lon) pairs, or null
      *  when not navigating — projected onto the vector map per frame. */
     private var navRoute: List<DoubleArray>? = null
+    /** Set when [navRoute] changes so the native GL route layer is only
+     *  re-pushed on change, not every frame. */
+    private var navRouteDirty = true
 
     fun updateNavigationRoute(points: List<be.appmire.gpsinfo.data.nav.RoutePoint>?) {
         navRoute = points?.map { doubleArrayOf(it.lat, it.lon) }
+        navRouteDirty = true
         scheduleRender()
     }
 
@@ -1129,16 +1133,20 @@ class CarMapRenderer(
         if (glMode && gl != null) {
             gl.setBuildings3d(viewMode == MapViewMode.TILTED_3D)
             gl.setCamera(camLat, camLon, smoothedZoom, bearing, pitch)
+            // Route + puck are native mbgl layers (rendered in the map's own
+            // GPU pass) — push their geometry rather than drawing into the
+            // overlay bitmap. Route only when it changed; puck every frame
+            // (it dead-reckons). The remaining map-anchored overlays still
+            // composite for now.
+            if (navRouteDirty) {
+                gl.setRoute(navRoute)
+                navRouteDirty = false
+            }
+            gl.setPuck(loc.latitude, loc.longitude, bearing, visible = true)
             val glProj = gl.currentProjector() ?: return
-            val vehPf = glProj.pixelForLatLng(
-                org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude),
-            )
-            val puckProjected = android.graphics.PointF(mapLeft + vehPf.x, vehPf.y)
             drawAlternatives(canvas, glProj, mapLeft)
-            drawProjectedRoute(canvas, glProj, mapLeft, loc, puckProjected)
             drawTraffic(canvas, glProj, mapLeft)
             drawProjectedBreadcrumb(canvas, glProj, mapLeft)
-            drawProjectedMarker(canvas, puckProjected)
             return
         }
 

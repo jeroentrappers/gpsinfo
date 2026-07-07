@@ -1,0 +1,1 @@
+Android Auto: il percorso di navigazione e l'indicatore del veicolo ora sono disegnati come livelli nativi nella mappa GPU — più nitidi, fluidi e sempre visibili. Anche più efficiente, perché il percorso non viene ridisegnato in un overlay a ogni fotogramma.

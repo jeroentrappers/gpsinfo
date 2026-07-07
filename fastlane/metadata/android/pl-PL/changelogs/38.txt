@@ -1,0 +1,1 @@
+Android Auto: trasa nawigacji i znacznik pojazdu są teraz rysowane jako natywne warstwy mapy w mapie GPU — ostrzejsze, płynniejsze i zawsze widoczne. Wydajniej też, bo trasa nie jest już przerysowywana w nakładce co klatkę.
