@@ -30,7 +30,7 @@ server {
     # unchanged, fresh fetch when it grows.
     location ~ \.pmtiles$ {
         if ($arg_key != "{{ tiles_api_key }}") { return 403; }
-        limit_req zone=gpsinfo_tiles burst=60 nodelay;
+        limit_req zone=gpsinfo_tiles burst=300 nodelay;
         try_files $uri =404;
         add_header Cache-Control "no-cache";
         # Browser map clients (e.g. the Pluvio web PWA) read these cross-origin;
@@ -45,7 +45,7 @@ server {
     # (cheap 304s) rather than pin clients to a stale style for a day.
     location /styles/ {
         if ($arg_key != "{{ tiles_api_key }}") { return 403; }
-        limit_req zone=gpsinfo_tiles burst=60 nodelay;
+        limit_req zone=gpsinfo_tiles burst=300 nodelay;
         try_files $uri =404;
         add_header Cache-Control "no-cache";
         add_header Access-Control-Allow-Origin $cors_allow_origin always;
@@ -56,7 +56,7 @@ server {
     # Static fonts / sprites (stable — long cache).
     location / {
         if ($arg_key != "{{ tiles_api_key }}") { return 403; }
-        limit_req zone=gpsinfo_tiles burst=60 nodelay;
+        limit_req zone=gpsinfo_tiles burst=300 nodelay;
         try_files $uri =404;
         add_header Cache-Control "public, max-age=86400";
         # CORS for browser map clients (see the .pmtiles location).
