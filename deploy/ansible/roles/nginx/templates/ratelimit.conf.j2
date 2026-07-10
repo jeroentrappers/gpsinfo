@@ -1,8 +1,7 @@
-# Managed by Ansible. Rate-limit zones for the GPSinfo tile vhost (http context).
-# A panning map pulls bursts of tile ranges, so the static zone is generous;
-# /extract is CPU-heavy, so its zone is tight.
-limit_req_zone $binary_remote_addr zone=gpsinfo_tiles:10m rate=100r/s;
-limit_req_zone $binary_remote_addr zone=gpsinfo_extract:10m rate=1r/s;
+# Managed by Ansible. Rate-limit zones for the GPSinfo routing vhosts (http
+# context). The tiles vhost (tiles.appmire.be) is owned by the voltway deploy,
+# which ships its own voltway_* zones — this role no longer manages it, so the
+# former gpsinfo_tiles / gpsinfo_extract zones are gone.
 # Routing API: a few requests per route request (alternatives), bursty at
 # trip start / reroute, but not a flood.
 limit_req_zone $binary_remote_addr zone=gpsinfo_routing:10m rate=20r/s;
