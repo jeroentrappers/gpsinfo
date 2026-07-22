@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/xml"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -22,12 +24,7 @@ type Incident struct {
 	Geometry [][2]float64 `json:"geometry"` // [[lon,lat],...] WGS84; 1 point or a polyline
 }
 
-// ── DATEX II v3 Situation Publication (namespace-agnostic by local name) ──
-
-type dxPayload struct {
-	PublicationTime string        `xml:"publicationTime"`
-	Situations      []dxSituation `xml:"situation"`
-}
+// ── DATEX II Situation Publication (namespace-agnostic by local name) ──
 
 type dxSituation struct {
 	ID      string     `xml:"id,attr"`
@@ -53,31 +50,60 @@ type dxRecord struct {
 // Incidents, reprojecting geometry per the source's [srs]
 // ("EPSG:31370" = Belgian Lambert 72; anything else = treated as WGS84,
 // gml axis order lat,lon). Returns the feed's publicationTime too.
+//
+// It walks the document token-by-token and pulls out every `situation`
+// element (and the `publicationTime`) by LOCAL name, at any nesting depth.
+// National Access Points wrap the payload differently — Flanders exposes
+// `situation` near the root, NDW nests it under
+// `messageContainer > payload`, France under a `payloadPublication` — so a
+// fixed struct path can't match them all; matching by local name at any depth
+// does, while staying namespace-agnostic (v2 and v3 both work).
 func parseDATEX(data []byte, sourceID, srs string) ([]Incident, time.Time, error) {
-	var p dxPayload
-	if err := xml.Unmarshal(data, &p); err != nil {
-		return nil, time.Time{}, err
-	}
-	pub := parseTime(p.PublicationTime)
-	out := make([]Incident, 0, len(p.Situations))
-	for _, sit := range p.Situations {
-		for i, r := range sit.Records {
-			id := r.ID
-			if id == "" {
-				id = sit.ID + "#" + strconv.Itoa(i)
+	dec := xml.NewDecoder(bytes.NewReader(data))
+	var pub time.Time
+	out := []Incident{}
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			// Return what we parsed so far; a truncated tail still yields the
+			// leading situations rather than dropping the whole feed.
+			return out, pub, err
+		}
+		se, ok := tok.(xml.StartElement)
+		if !ok {
+			continue
+		}
+		switch se.Name.Local {
+		case "publicationTime":
+			var s string
+			if err := dec.DecodeElement(&s, &se); err == nil && pub.IsZero() {
+				pub = parseTime(s)
 			}
-			inc := Incident{
-				ID:       sourceID + ":" + id,
-				Source:   sourceID,
-				Category: categoryOf(localType(r.Type)),
-				Subtype:  r.AbnormalType,
-				Severity: r.Severity,
-				Start:    r.OverallStart,
-				End:      r.OverallEnd,
-				Updated:  firstNonEmpty(r.VersionTime, r.CreationTime),
-				Geometry: geometryOf(r, srs),
+		case "situation":
+			var sit dxSituation
+			if err := dec.DecodeElement(&sit, &se); err != nil {
+				continue
 			}
-			out = append(out, inc)
+			for i, r := range sit.Records {
+				id := r.ID
+				if id == "" {
+					id = sit.ID + "#" + strconv.Itoa(i)
+				}
+				out = append(out, Incident{
+					ID:       sourceID + ":" + id,
+					Source:   sourceID,
+					Category: categoryOf(localType(r.Type)),
+					Subtype:  r.AbnormalType,
+					Severity: r.Severity,
+					Start:    r.OverallStart,
+					End:      r.OverallEnd,
+					Updated:  firstNonEmpty(r.VersionTime, r.CreationTime),
+					Geometry: geometryOf(r, srs),
+				})
+			}
 		}
 	}
 	return out, pub, nil

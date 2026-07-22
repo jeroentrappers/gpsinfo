@@ -47,6 +47,9 @@ func newEdgeSpeedIndex(valhallaURL string) *EdgeSpeedIndex {
 
 func (x *EdgeSpeedIndex) enabled() bool { return x.valhallaURL != "" }
 
+// Max new incidents resolved to edges per update cycle (bounds first-load burst).
+const maxResolvePerCycle = 300
+
 /** Recompute the edge→speed map from the current incidents, resolving only
  *  incidents not already cached (by id+updated) so each cycle is cheap. */
 func (x *EdgeSpeedIndex) update(incidents []Incident) {
@@ -55,6 +58,12 @@ func (x *EdgeSpeedIndex) update(incidents []Incident) {
 	}
 	seen := map[string]bool{}
 	next := map[int64]int{}
+	// Cap the number of NEW incidents resolved per cycle so a big first load
+	// (e.g. adding the German feed adds thousands at once) doesn't burst
+	// thousands of /trace_attributes calls at the loopback Valhalla in one go.
+	// The cache persists, so the backlog drains over the next few polls; an
+	// as-yet-unresolved incident simply contributes no edges until its turn.
+	resolvedThisCycle := 0
 	for _, inc := range incidents {
 		target, relevant := targetSpeedFor(inc.Category)
 		if !relevant || len(inc.Geometry) == 0 {
@@ -67,7 +76,11 @@ func (x *EdgeSpeedIndex) update(incidents []Incident) {
 		edges, cached := x.cache[key]
 		x.mu.RUnlock()
 		if !cached {
+			if resolvedThisCycle >= maxResolvePerCycle {
+				continue // resolve on a later cycle
+			}
 			edges = x.resolve(inc.Geometry)
+			resolvedThisCycle++
 			x.mu.Lock()
 			x.cache[key] = edges
 			x.mu.Unlock()

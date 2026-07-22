@@ -46,6 +46,11 @@ type Source struct {
 	// HTTP basic-auth, for feeds that require it (e.g. Wallonia/SOFICO).
 	// Filled from env TRAFFIC_<ID>_USER / TRAFFIC_<ID>_PASS at startup.
 	User, Pass string
+	// MaxAheadMin, when > 0, keeps only incidents whose validity window is
+	// active now or starts within this many minutes — for planning feeds like
+	// bridge openings, where the file lists every future window and only the
+	// imminent ones are worth surfacing to a driver.
+	MaxAheadMin int
 }
 
 // loadCreds fills each source's basic-auth from the environment
@@ -58,6 +63,11 @@ func loadCreds() {
 		if u := os.Getenv(key + "_USER"); u != "" {
 			sources[i].User = u
 			sources[i].Pass = os.Getenv(key + "_PASS")
+			// A credential-gated source (e.g. Wallonia/SOFICO) is wired but
+			// left disabled in code; it activates as soon as its creds arrive.
+			if sources[i].URL != "" {
+				sources[i].Enabled = true
+			}
 		}
 	}
 }
@@ -74,23 +84,82 @@ var sources = []Source{
 		Interval: 60 * time.Second,
 		Enabled:  true,
 	},
+	// ── Netherlands (NDW open data) — DATEX II Situation feeds, gzipped.
+	// NDW split the old single incidents file into per-topic feeds; we take
+	// the three event-like ones (safety/SRTI, closures, roadworks+events).
 	{
-		// NDW migrated off the old opendata.ndw.nu file host (now 404);
-		// disabled until the current DATEX II v3 incident URL is confirmed
-		// via docs.ndw.nu. Parser + gzip path are ready.
-		ID:       "nl-ndw-incidents",
-		URL:      "http://opendata.ndw.nu/incidents.xml.gz",
+		ID:       "nl-ndw-srti",
+		URL:      "https://opendata.ndw.nu/veiligheidsgerelateerde_berichten_srti.xml.gz",
 		SRS:      "EPSG:4326",
 		Interval: 60 * time.Second,
 		Gzip:     true,
-		Enabled:  false,
+		Enabled:  true,
+	},
+	{
+		ID:       "nl-ndw-closures",
+		URL:      "https://opendata.ndw.nu/tijdelijke_verkeersmaatregelen_afsluitingen.xml.gz",
+		SRS:      "EPSG:4326",
+		Interval: 60 * time.Second,
+		Gzip:     true,
+		Enabled:  true,
+	},
+	{
+		// NDW movable-bridge opening schedule (DATEX II v3, gzip). It lists
+		// every planned opening window; MaxAheadMin surfaces only bridges
+		// opening now or within the next half hour, so it warns rather than
+		// blankets every bridge as "closed".
+		ID:          "nl-ndw-bridges",
+		URL:         "https://opendata.ndw.nu/planningsfeed_brugopeningen.xml.gz",
+		SRS:         "EPSG:4326",
+		Interval:    60 * time.Second,
+		Gzip:        true,
+		Enabled:     true,
+		MaxAheadMin: 30,
+	},
+	// (NDW planningsfeed roadworks is intentionally omitted — it's a 165 MB
+	// national planning dump of mostly future works, not live-drive relevant;
+	// SRTI + closures above already carry the real-time NL events.)
+	// ── France (transport.data.gouv.fr) — DATEX II, non-concessioned national
+	// road network, real-time events. Etalab Open Licence 2.0.
+	{
+		// The transport.data.gouv.fr /resources/<id>/download link serves an
+		// HTML interstitial; this is the underlying Bison Futé DATEX II file it
+		// points to (current road events, national non-concessioned network).
+		ID:       "fr-dir",
+		URL:      "http://tipi.bison-fute.gouv.fr/bison-fute-ouvert/publicationsDIR/Evenementiel-DIR/grt/RRN/content.xml",
+		SRS:      "EPSG:4326",
+		Interval: 3 * time.Minute,
+		Enabled:  true,
 	},
 	// ── Pre-configured, disabled until the exact resource URL is confirmed ──
-	{ID: "be-wallonia", URL: "", SRS: "EPSG:4326", Interval: 60 * time.Second}, // transportdata.be walloon-road-traffic-events (CC0)
-	{ID: "be-brussels", URL: "", SRS: "EPSG:4326", Interval: 60 * time.Second}, // Brussels Mobility (NAP)
-	{ID: "lu-cita", URL: "", SRS: "EPSG:4326", Interval: 60 * time.Second},     // data.public.lu CITA DATEX II v3.6 (CC0)
-	{ID: "fr-dir", URL: "", SRS: "EPSG:4326", Interval: 6 * time.Minute},       // transport.data.gouv.fr non-toll national network
-	// de-autobahn: JSON REST (github.com/bundesAPI/autobahn-api) — separate fetcher, not DATEX II.
+	// Wallonia (SPW Mobilité / SOFICO) DATEX II — contract-gated basic-auth.
+	// URL is wired; it auto-enables (see loadCreds) once TRAFFIC_BE_WALLONIA_USER
+	// / _PASS are supplied (obtain from the dataset owner via transportdata.be,
+	// resource walloon-road-traffic-events). The exact endpoint path under the
+	// host may need adjusting once credentials allow a test request.
+	{ID: "be-wallonia", URL: "https://ws.sofico-trademex.be", SRS: "EPSG:4326", Interval: 60 * time.Second},
+	// Brussels: no open DATEX II incident/situation feed exists — data.mobility
+	// .brussels publishes traffic counts/measurement, not situations. Left
+	// unwired until Brussels Mobility exposes an events feed.
+	{ID: "be-brussels", URL: "", SRS: "EPSG:4326", Interval: 60 * time.Second},
+	{
+		// Luxembourg — CITA (Roads Administration) DATEX II v3.6 situation
+		// records, published open on data.public.lu (CC0). Updated ~5 min.
+		ID:       "lu-cita",
+		URL:      "https://cita.lu/info_trafic/datex/situationrecord36",
+		SRS:      "EPSG:4326",
+		Interval: 3 * time.Minute,
+		Enabled:  true,
+	},
+	// ── Germany (Autobahn GmbH) — JSON REST, not DATEX II; handled by the
+	// dedicated fetcher in autobahn.go (dispatched from fetch()).
+	{
+		ID:       "de-autobahn",
+		URL:      "https://verkehr.autobahn.de/o/autobahn",
+		SRS:      "EPSG:4326",
+		Interval: 5 * time.Minute,
+		Enabled:  true,
+	},
 }
 
 func main() {
@@ -130,6 +199,10 @@ func main() {
 var httpClient = &http.Client{Timeout: 45 * time.Second}
 
 func fetch(src Source) ([]Incident, time.Time, error) {
+	// Germany's Autobahn feed is JSON REST, not a single DATEX II document.
+	if src.ID == "de-autobahn" {
+		return fetchAutobahn(src)
+	}
 	req, _ := http.NewRequest(http.MethodGet, src.URL, nil)
 	req.Header.Set("User-Agent", "gpsinfo-traffic/0.1 (+https://appmire.be)")
 	if src.User != "" {
@@ -157,7 +230,37 @@ func fetch(src Source) ([]Incident, time.Time, error) {
 	if err != nil {
 		return nil, time.Time{}, err
 	}
-	return parseDATEX(data, src.ID, src.SRS)
+	inc, pub, err := parseDATEX(data, src.ID, src.SRS)
+	if err == nil && src.MaxAheadMin > 0 {
+		inc = filterNearFuture(inc, time.Duration(src.MaxAheadMin)*time.Minute)
+	}
+	return inc, pub, err
+}
+
+// filterNearFuture keeps incidents whose validity window overlaps
+// [now, now+ahead] — i.e. active now or starting soon. Incidents with an
+// unparseable/blank start are dropped (a planning feed entry we can't time
+// isn't actionable); a blank end means "until further notice" (open-ended).
+func filterNearFuture(inc []Incident, ahead time.Duration) []Incident {
+	now := time.Now()
+	horizon := now.Add(ahead)
+	out := inc[:0]
+	for _, in := range inc {
+		start := parseTime(in.Start)
+		if start.IsZero() {
+			continue
+		}
+		end := parseTime(in.End)
+		// Overlaps [now, horizon]: starts before the horizon, and hasn't ended.
+		if start.After(horizon) {
+			continue
+		}
+		if !end.IsZero() && end.Before(now) {
+			continue
+		}
+		out = append(out, in)
+	}
+	return out
 }
 
 func pollLoop(src Source, store *Store, hub *Hub, edgeIndex *EdgeSpeedIndex) {

@@ -54,19 +54,31 @@ TRAFFIC_VALHALLA_URL=http://127.0.0.1:8002 go run . -addr :8791
 
 | ID | Feed | State |
 |---|---|---|
-| `be-flanders` | verkeerscentrum.be DATEX II v3 | ✅ live |
-| `be-wallonia` | transportdata.be walloon-road-traffic-events (SOFICO) | needs basic-auth (contract) — set `TRAFFIC_BE_WALLONIA_USER/PASS` + URL, then `Enabled` |
-| `be-brussels` | Brussels Mobility | URL TODO |
-| `nl-ndw-incidents` | NDW DATEX II (gzip) | URL TODO (old `opendata.ndw.nu` host 404s; parser + gzip ready) |
-| `lu-cita` | data.public.lu CITA DATEX II v3.6 (CC0) | URL TODO |
-| `fr-dir` | transport.data.gouv.fr non-toll national network | URL TODO |
-| `de-autobahn` | Autobahn GmbH REST (JSON, not DATEX II) | needs a separate fetcher |
+| `be-flanders` | verkeerscentrum.be DATEX II v3 (Lambert-72) | ✅ live |
+| `nl-ndw-srti` | NDW `veiligheidsgerelateerde_berichten_srti` DATEX II v3 (gzip) — safety/incidents | ✅ live |
+| `nl-ndw-closures` | NDW `tijdelijke_verkeersmaatregelen_afsluitingen` DATEX II v3 (gzip) — closures/rerouting | ✅ live |
+| `fr-dir` | Bison Futé `Evenementiel-DIR/grt/RRN/content.xml` DATEX II — non-concessioned national network | ✅ live |
+| `de-autobahn` | Autobahn GmbH REST (JSON) via `autobahn.go` — warning/roadworks/closure | ✅ live |
+| `lu-cita` | CITA `cita.lu/info_trafic/datex/situationrecord36` DATEX II v3.6 (data.public.lu, CC0) | ✅ live |
+| `be-wallonia` | `ws.sofico-trademex.be` DATEX II (SPW/SOFICO) | URL wired; **contract basic-auth** — set `TRAFFIC_BE_WALLONIA_USER/PASS` (via secrets.yml) and it auto-enables (`loadCreds`). Creds obtained from the dataset owner on transportdata.be. |
+| `be-brussels` | Brussels Mobility | **no open incident feed** — data.mobility.brussels is counts/measurement, not DATEX situations |
 
-Most are DATEX II Situation feeds that parse with `parseDATEX` — fill in the
-exact resource URL (+ any creds/key) and set `Enabled: true`. Germany's
-Autobahn API is JSON and needs a small separate fetcher emitting the same
-`Incident` model. Per-source basic-auth comes from env
+DATEX II Situation feeds parse with `parseDATEX`, which now walks the document
+and matches `situation` / `publicationTime` by **local name at any depth** —
+so it handles the different NAP wrappers (Flanders exposes `situation` near the
+root, NDW nests it under `messageContainer > payload`, France under
+`payloadPublication`) namespace-agnostically. Germany's Autobahn API is JSON,
+handled by the dedicated fetcher in `autobahn.go` (dispatched from `fetch()`),
+emitting the same `Incident` model. Per-source basic-auth comes from env
 `TRAFFIC_<ID>_USER` / `_PASS` (`-`→`_`, upper-cased).
+
+> Licences: BE verkeerscentrum open; NL NDW open data; FR Etalab Open Licence
+> 2.0; DE Autobahn GmbH (dl-de/by-2-0). Attribution terms vary — surface in the
+> app's data-attribution screen.
+>
+> NDW's `planningsfeed_wegwerkzaamheden_en_evenementen` (roadworks) is
+> intentionally **not** ingested: it's a ~165 MB national planning dump of
+> mostly future works, not live-drive relevant.
 
 > Reuse note: align `parseDATEX` with the charging project's DATEX II parser
 > — that side is the AFIR `EnergyInfrastructure` profile, this is the
@@ -149,5 +161,12 @@ docker logs --tail 3 gpsinfo-traffic-writer   # on the box
 - **Client-side heuristic:** retired. Fork trade-offs now come straight from
   Valhalla's live-traffic-aware durations; the app no longer scores incidents
   against routes itself (that would double-count what the engine already does).
-- **Coverage:** Flanders only until Wallonia (SOFICO creds) / Brussels / the
-  neighbours are wired. Mostly motorway + national roads, not urban streets.
+- **Coverage:** BE Flanders + NL (NDW SRTI + closures) + FR (non-concessioned
+  national network) + DE (Autobahn network) live. Still to wire: BE Wallonia
+  (SOFICO creds), BE Brussels + LU (URLs), and FR's concessioned motorways
+  (separate concessionaire feeds — Vinci/APRR/Sanef). Mostly motorway +
+  national roads, not urban streets.
+- **Edge-resolution warm-up:** adding a large feed (Germany) resolves incidents
+  to Valhalla edges gradually — `maxResolvePerCycle` (valhalla.go) caps new
+  `/trace_attributes` calls per poll so a first load can't burst thousands at
+  the loopback router; the cache drains the backlog over the next few cycles.
