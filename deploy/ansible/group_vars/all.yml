@@ -82,14 +82,22 @@ valhalla_pbf_urls:
   - https://download.geofabrik.de/europe/belgium-latest.osm.pbf
   - https://download.geofabrik.de/europe/netherlands-latest.osm.pbf
   - https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf
-  # Stage 2 — western Europe (uncomment; large build, hours)
-  # - https://download.geofabrik.de/europe/france-latest.osm.pbf
-  # - https://download.geofabrik.de/europe/germany-latest.osm.pbf
+  # Stage 2 — western Europe (large build, hours). France + Germany are ACTIVE:
+  # the tiles currently in service were built from the charging project's
+  # BE+NL+LU+DE+FR extract, and since valhalla_local_pbf is now empty these URLs
+  # are what a rebuild uses — leaving them commented would silently shrink
+  # routing coverage the next time the tiles are rebuilt.
+  - https://download.geofabrik.de/europe/france-latest.osm.pbf
+  - https://download.geofabrik.de/europe/germany-latest.osm.pbf
   # - https://download.geofabrik.de/europe/great-britain-latest.osm.pbf
   # - https://download.geofabrik.de/europe/switzerland-latest.osm.pbf
   # - https://download.geofabrik.de/europe/austria-latest.osm.pbf
   # Stage 3 — planet (very heavy: needs big RAM/disk; deliberate)
   # - https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
+# Elevation tiles (used for grade-aware costing + consumption estimates). The
+# running instance was built with these, so keep the default true: a rebuild with
+# it off would quietly drop elevation-aware routing.
+valhalla_build_elevation: true
 valhalla_threads: 6
 # Resource caps (Docker) so the build + serving never starve the box's
 # production workloads (live sites, charging OSRM, the planet tile build).
@@ -98,11 +106,21 @@ valhalla_cpus: "6"
 valhalla_mem_limit: "48g"
 valhalla_cpu_shares: 256
 # Build from a LOCAL pbf already on the box instead of downloading from
-# geofabrik — currently the charging project's western-Europe extract
-# (~11 GB, covers Benelux + FR/DE/UK/…). When set, the container builds from
-# this file (bind-mounted read-only into /custom_files) and valhalla_pbf_urls
-# is ignored. Clear it to fall back to the staged geofabrik download above.
-valhalla_local_pbf: /opt/charging/osrm-data/eu-west.osm.pbf
+# geofabrik. When set, the container builds from this file (bind-mounted
+# read-only into /custom_files) and valhalla_pbf_urls is ignored.
+#
+# DELIBERATELY EMPTY. This used to point at the charging project's
+# western-Europe extract (/opt/charging/osrm-data/eu-west.osm.pbf) — a file
+# another stack owns and whose monthly osrm-refresh deletes *.osm.pbf by design
+# ("not needed at runtime"). Once it was gone, any restart of this container had
+# docker recreate the missing bind source as an empty DIRECTORY, and valhalla
+# died with "not a directory: Are you trying to mount a directory onto a file"
+# (2026-08-19, after a docker upgrade bounced every container on the box).
+# Serving does not need a pbf at all — tiles are cached in custom_files and
+# use_tiles_ignore_pbf is True — so if you ever rebuild, point this at an extract
+# THIS stack owns (e.g. under {{ valhalla_app_dir }}/custom_files), never at
+# another project's data directory.
+valhalla_local_pbf: ""
 # Reuse the tile server's API key gate (override in secrets.yml for a
 # dedicated routing key).
 valhalla_api_key: "{{ tiles_api_key }}"

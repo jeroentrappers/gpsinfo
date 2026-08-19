@@ -24,7 +24,7 @@ services:
       force_rebuild: "False"
       build_admins: "True"
       build_time_zones: "True"
-      build_elevation: "False"
+      build_elevation: "{{ 'True' if valhalla_build_elevation | default(true) else 'False' }}"
       server_threads: "{{ valhalla_threads }}"
       # Live-traffic overlay: builds an edge-aligned traffic.tar and points
       # mjolnir.traffic_extract at it, so the gpsinfo-traffic-writer sidecar can
