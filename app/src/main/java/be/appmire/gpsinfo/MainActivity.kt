@@ -31,8 +31,6 @@ import androidx.compose.material.icons.outlined.SpaceDashboard
 import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.navigation.compose.NavHost
@@ -102,44 +100,6 @@ private object Routes {
     const val VoiceGuidance = "voice-guidance"
     const val Cluster = "cluster"
     const val Tools = "tools"
-}
-
-/** The four bottom-nav pillars (IA v2). Map = live map, Record = trails. */
-private val TAB_ROUTES = listOf(Routes.Dashboard, Routes.LiveMap, Routes.Trails, Routes.Tools)
-
-@Composable
-private fun MainBottomBar(
-    nav: androidx.navigation.NavController,
-    currentRoute: String?,
-    // On the immersive Map tab the bar hides in lock-step with the map's
-    // own chrome (revealed on touch, auto-hidden a few seconds later).
-    mapChromeVisible: Boolean,
-) {
-    if (currentRoute !in TAB_ROUTES) return
-    if (currentRoute == Routes.LiveMap && !mapChromeVisible) return
-    data class Tab(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val labelRes: Int)
-    val tabs = listOf(
-        Tab(Routes.Dashboard, Icons.Outlined.SpaceDashboard, R.string.tab_dashboard),
-        Tab(Routes.LiveMap, Icons.Outlined.Map, R.string.tab_map),
-        Tab(Routes.Trails, Icons.Outlined.Timeline, R.string.tab_record),
-        Tab(Routes.Tools, Icons.Outlined.Tune, R.string.tab_tools),
-    )
-    NavigationBar {
-        tabs.forEach { tab ->
-            NavigationBarItem(
-                selected = currentRoute == tab.route,
-                onClick = {
-                    nav.navigate(tab.route) {
-                        popUpTo(nav.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                icon = { Icon(tab.icon, contentDescription = null) },
-                label = { Text(stringResource(tab.labelRes)) },
-            )
-        }
-    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -237,21 +197,19 @@ class MainActivity : ComponentActivity() {
                         )
                     } else {
                     val nav = rememberNavController()
-                    val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
-                    // Immersive Map tab: the bottom nav hides/shows together
-                    // with the map's own top bar (LiveMapScreen reports it).
-                    var mapChromeVisible by remember { mutableStateOf(true) }
+                    // Waze-style map-first shell: the live map is the home
+                    // screen and there is no bottom tab bar. Dashboard / Trails
+                    // / Tools / Settings are reached from the map's menu button
+                    // and returned from with the system back gesture.
                     Scaffold(
-                        // Inner screens own their status-bar / side insets via their
-                        // own Scaffolds; the shell only contributes the bottom-bar
-                        // height. Zeroing contentWindowInsets here avoids consuming
-                        // the system-bar insets twice (which left fat top/bottom gaps).
+                        // Inner screens own their status-bar / side insets via
+                        // their own Scaffolds. Zeroing contentWindowInsets here
+                        // avoids consuming the system-bar insets twice.
                         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
-                        bottomBar = { MainBottomBar(nav, currentRoute, mapChromeVisible) },
                     ) { shellPadding ->
                     NavHost(
                         navController = nav,
-                        startDestination = Routes.Dashboard,
+                        startDestination = Routes.LiveMap,
                         modifier = Modifier.padding(shellPadding),
                     ) {
                         composable(Routes.Dashboard) {
@@ -328,12 +286,11 @@ class MainActivity : ComponentActivity() {
                                 vm = vm,
                                 trailId = id,
                                 onBack = { nav.popBackStack() },
-                                // Track-back pops all the way to the dashboard
-                                // so the user sees the navigation arrow on the
-                                // primary screen they'll be glancing at, not
-                                // the map detail they were just on.
+                                // Track-back pops all the way to the live map —
+                                // the primary glance screen the user will watch
+                                // while navigating — not the trail detail.
                                 onTrackBackStarted = {
-                                    nav.popBackStack(Routes.Dashboard, inclusive = false)
+                                    nav.popBackStack(Routes.LiveMap, inclusive = false)
                                 },
                                 onOpenPaceTargets = { nav.navigate(Routes.paceTargets(id)) },
                             )
@@ -491,17 +448,13 @@ class MainActivity : ComponentActivity() {
                             ] ?: be.appmire.gpsinfo.ui.activity.DetailLevel.SIMPLE
                             be.appmire.gpsinfo.ui.livemap.LiveMapScreen(
                                 vm = vm,
-                                // Immersive tab: the back arrow lives in the
-                                // reveal-on-touch top bar and returns home.
-                                onBack = {
-                                    nav.navigate(Routes.Dashboard) {
-                                        popUpTo(nav.graph.startDestinationId) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
-                                onChromeVisibilityChanged = { mapChromeVisible = it },
+                                // Map-first home: no back arrow. Menu entries
+                                // push the other pillars; system back returns.
                                 onOpenDestination = { nav.navigate(Routes.NavPicker) },
+                                onOpenDashboard = { nav.navigate(Routes.Dashboard) },
+                                onOpenTrails = { nav.navigate(Routes.Trails) },
+                                onOpenTools = { nav.navigate(Routes.Tools) },
+                                onOpenSettings = { nav.navigate(Routes.About) },
                                 detailLevel = driveDetail,
                                 onToggleDetail = {
                                     vm.setActivityDetail(

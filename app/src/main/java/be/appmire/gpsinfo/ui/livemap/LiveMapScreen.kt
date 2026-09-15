@@ -1,6 +1,7 @@
 package be.appmire.gpsinfo.ui.livemap
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,28 +15,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.AltRoute
 import androidx.compose.material.icons.outlined.Apartment
 import androidx.compose.material.icons.outlined.CenterFocusStrong
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.ExploreOff
 import androidx.compose.material.icons.outlined.LocationSearching
-import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SpaceDashboard
+import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.outlined.Timeline
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,9 +54,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -87,8 +94,6 @@ import java.util.Locale
 @Composable
 fun LiveMapScreen(
     vm: DashboardViewModel,
-    /** Back navigation. Null when shown as a top-level tab (no back arrow). */
-    onBack: (() -> Unit)? = null,
     /** Open the destination picker (search / saved places). */
     onOpenDestination: (() -> Unit)? = null,
     /** Drive & Navigate detail level: Simple shows just speed + guidance,
@@ -96,10 +101,11 @@ fun LiveMapScreen(
     detailLevel: DetailLevel = DetailLevel.PRO,
     /** Flip the detail level (Simple ⇄ Pro) in place. */
     onToggleDetail: (() -> Unit)? = null,
-    /** Reports the immersive chrome's visibility up to the shell so the
-     *  bottom navigation bar can hide/show in lock-step with the map's
-     *  own top bar. */
-    onChromeVisibilityChanged: (Boolean) -> Unit = {},
+    /** Waze-style menu destinations, opened from the on-map menu button. */
+    onOpenDashboard: (() -> Unit)? = null,
+    onOpenTrails: (() -> Unit)? = null,
+    onOpenTools: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
 ) {
     val pro = detailLevel == DetailLevel.PRO
     val state by vm.state.collectAsStateWithLifecycle()
@@ -169,7 +175,9 @@ fun LiveMapScreen(
     // Map presentation, cycled by the view-mode button (mirrors the car):
     // flat north-up → 2.5D heading-up → 2.5D heading-up + 3D buildings.
     var viewMode by remember { mutableStateOf(be.appmire.gpsinfo.car.MapViewMode.FLAT) }
-    var menuExpanded by remember { mutableStateOf(false) }
+    // Waze-style menu (slide-up sheet) + the en-route alternatives card.
+    var showMenuSheet by remember { mutableStateOf(false) }
+    var showAlternatives by remember { mutableStateOf(false) }
     // Treat the chip's bearing as "course" only above the 3 km/h
     // threshold — below that the Doppler reading is unstable and
     // would jitter the heading-up rotation around the user.
@@ -190,118 +198,14 @@ fun LiveMapScreen(
     var offlineBusy by remember { mutableStateOf(false) }
     var offlineProgress by remember { mutableStateOf(0) }
 
-    // Immersive chrome: the map is full-screen by default; the top bar
-    // (with the back arrow) and the shell's bottom nav reveal on any
-    // touch of the map, then auto-hide a few seconds later. revealTick
-    // is bumped on each touch to (re)start the hide countdown.
-    var chromeVisible by remember { mutableStateOf(true) }
-    var revealTick by remember { mutableStateOf(0) }
-    // While editing the cluster layout, the chrome (and the shell's bottom nav)
-    // must stay hidden — otherwise touching an element reveals it, which
-    // resizes the content area and makes the dragged element jump. Freeze it.
-    var clusterEditing by remember { mutableStateOf(false) }
-    androidx.compose.runtime.LaunchedEffect(chromeVisible) {
-        onChromeVisibilityChanged(chromeVisible)
-    }
-    androidx.compose.runtime.LaunchedEffect(revealTick) {
-        kotlinx.coroutines.delay(3500L)
-        chromeVisible = false
-    }
-    androidx.compose.runtime.LaunchedEffect(clusterEditing) {
-        if (clusterEditing) chromeVisible = false
-    }
-    val revealChrome = {
-        if (!clusterEditing) {
-            chromeVisible = true
-            revealTick++
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            if (chromeVisible) {
-            TopAppBar(
-                title = { Text(stringResource(R.string.live_map_title)) },
-                navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                Icons.AutoMirrored.Outlined.ArrowBack,
-                                contentDescription = stringResource(R.string.action_back),
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    if (onOpenDestination != null) {
-                        IconButton(onClick = onOpenDestination) {
-                            Icon(
-                                Icons.Outlined.Search,
-                                contentDescription = stringResource(R.string.drive_destination),
-                            )
-                        }
-                    }
-                    if (onToggleDetail != null) {
-                        androidx.compose.material3.TextButton(onClick = onToggleDetail) {
-                            Text(
-                                stringResource(
-                                    if (pro) R.string.detail_simple else R.string.detail_detailed
-                                )
-                            )
-                        }
-                    }
-                    // Quick settings — theme + units — without leaving the map.
-                    IconButton(onClick = { menuExpanded = true }) {
-                        Icon(
-                            Icons.Outlined.MoreVert,
-                            contentDescription = stringResource(R.string.activity_hub_more),
-                        )
-                    }
-                    androidx.compose.material3.DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
-                    ) {
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_toggle_theme)) },
-                            onClick = {
-                                menuExpanded = false
-                                vm.setThemeOverride(nextTheme(state.themeOverride))
-                            },
-                        )
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_toggle_units)) },
-                            onClick = {
-                                menuExpanded = false
-                                vm.setUnitSystem(nextUnit(state.unitSystem))
-                            },
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
-                ),
-            )
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
+    // Waze-style: no top app bar and no bottom tab bar. The map fills the
+    // screen and all navigation lives in persistent on-map icon-buttons
+    // (menu / search / alternatives + the right-hand control column), so
+    // the old reveal-on-touch immersive chrome is gone.
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                // Reveal the chrome on any touch of the map, without
-                // consuming the gesture (Initial pass) so the map still
-                // pans/zooms and the controls still receive their taps.
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val ev = awaitPointerEvent(PointerEventPass.Initial)
-                            if (ev.type == PointerEventType.Press) revealChrome()
-                        }
-                    }
-                },
+                .background(MaterialTheme.colorScheme.background),
         ) {
             // MapLibre Native vector map (OpenFreeMap style, no key).
             // The host owns the GL MapView + its annotation layers; we
@@ -387,7 +291,7 @@ fun LiveMapScreen(
                     persisted = phoneLayout,
                     onSave = { vm.savePhoneOverlayLayout(it) },
                     context = overlayCtx,
-                    onEditingChange = { clusterEditing = it },
+                    onEditingChange = { },
                     controlsAlignment = Alignment.CenterStart,
                     modifier = Modifier
                         .fillMaxSize()
@@ -444,6 +348,20 @@ fun LiveMapScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // Route alternatives — Waze's "fork in the road" control.
+                // Always visible; tapping recomputes alternatives on demand
+                // (the card then shows whichever fork the controller finds).
+                LabeledMapControl(label = stringResource(R.string.live_map_alternatives_label)) {
+                    FilledIconButton(onClick = {
+                        NavigationController.requestAlternatives()
+                        showAlternatives = true
+                    }) {
+                        Icon(
+                            Icons.AutoMirrored.Outlined.AltRoute,
+                            contentDescription = stringResource(R.string.live_map_alternatives),
+                        )
+                    }
+                }
                 LabeledMapControl(label = stringResource(R.string.live_map_follow_label)) {
                     FilledIconToggleButton(
                         checked = follow,
@@ -575,8 +493,209 @@ fun LiveMapScreen(
                     )
                 }
             }
+
+            // ── Waze-style floating navigation row (top-left) ──
+            // Replaces the old top app bar: a round menu button and a
+            // prominent "Where to?" search pill, both always visible.
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .safeDrawingPadding()
+                    .padding(start = 12.dp, top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FilledIconButton(onClick = { showMenuSheet = true }) {
+                    Icon(
+                        Icons.Outlined.Menu,
+                        contentDescription = stringResource(R.string.live_map_menu),
+                    )
+                }
+                if (onOpenDestination != null) {
+                    Surface(
+                        onClick = onOpenDestination,
+                        shape = RoundedCornerShape(28.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        shadowElevation = 4.dp,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Outlined.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                stringResource(R.string.live_map_search_hint),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ── Slide-up menu (Waze hamburger) ──
+            if (showMenuSheet) {
+                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                ModalBottomSheet(
+                    onDismissRequest = { showMenuSheet = false },
+                    sheetState = sheetState,
+                ) {
+                    fun go(action: (() -> Unit)?) {
+                        showMenuSheet = false
+                        action?.invoke()
+                    }
+                    if (onOpenSettings != null) {
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.screen_settings)) },
+                            leadingContent = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                            modifier = Modifier.clickable { go(onOpenSettings) },
+                        )
+                    }
+                    if (onOpenDashboard != null) {
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.tab_dashboard)) },
+                            leadingContent = { Icon(Icons.Outlined.SpaceDashboard, contentDescription = null) },
+                            modifier = Modifier.clickable { go(onOpenDashboard) },
+                        )
+                    }
+                    if (onOpenTrails != null) {
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.tab_record)) },
+                            leadingContent = { Icon(Icons.Outlined.Timeline, contentDescription = null) },
+                            modifier = Modifier.clickable { go(onOpenTrails) },
+                        )
+                    }
+                    if (onOpenTools != null) {
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.tab_tools)) },
+                            leadingContent = { Icon(Icons.Outlined.Tune, contentDescription = null) },
+                            modifier = Modifier.clickable { go(onOpenTools) },
+                        )
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                    // Quick toggles carried over from the old overflow menu.
+                    if (onToggleDetail != null) {
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    stringResource(
+                                        if (pro) R.string.detail_simple else R.string.detail_detailed
+                                    )
+                                )
+                            },
+                            leadingContent = { Icon(Icons.Outlined.Map, contentDescription = null) },
+                            modifier = Modifier.clickable { go(onToggleDetail) },
+                        )
+                    }
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.action_toggle_theme)) },
+                        leadingContent = { Icon(Icons.Outlined.DarkMode, contentDescription = null) },
+                        modifier = Modifier.clickable {
+                            vm.setThemeOverride(nextTheme(state.themeOverride))
+                        },
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.action_toggle_units)) },
+                        leadingContent = { Icon(Icons.Outlined.Straighten, contentDescription = null) },
+                        modifier = Modifier.clickable {
+                            vm.setUnitSystem(nextUnit(state.unitSystem))
+                        },
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+
+            // ── En-route alternative card (take / dismiss) ──
+            // Opened by the always-on alternatives button. While the
+            // recompute runs it shows a spinner; when a diverging fork
+            // arrives it offers the trade-off; if none is found (or we're
+            // not navigating) it says so.
+            if (showAlternatives) {
+                val nav = navState as? NavigationController.NavState.Navigating
+                val altNow = nav?.alternatives?.firstOrNull()
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    shape = RoundedCornerShape(22.dp),
+                    tonalElevation = 6.dp,
+                    shadowElevation = 10.dp,
+                ) {
+                    Column(
+                        Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.nav_alt_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                        when {
+                            altNow != null -> {
+                                val mins = kotlin.math.abs(altNow.deltaSeconds) / 60
+                                val label = when {
+                                    mins >= 1 && altNow.deltaSeconds <= 0 ->
+                                        stringResource(R.string.nav_alt_faster, mins)
+                                    mins >= 1 ->
+                                        stringResource(R.string.nav_alt_slower, mins)
+                                    else -> stringResource(R.string.nav_alt_title)
+                                }
+                                Text(
+                                    label,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    TextButton(onClick = { showAlternatives = false }) {
+                                        Text(stringResource(R.string.nav_alt_dismiss))
+                                    }
+                                    Button(onClick = {
+                                        NavigationController.acceptAlternative(altNow)
+                                        showAlternatives = false
+                                    }) {
+                                        Text(stringResource(R.string.nav_alt_take))
+                                    }
+                                }
+                            }
+                            nav != null -> {
+                                // Navigating but nothing back yet — computing.
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(28.dp),
+                                    strokeWidth = 3.dp,
+                                )
+                                Text(
+                                    stringResource(R.string.live_map_alternatives_computing),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                )
+                                TextButton(onClick = { showAlternatives = false }) {
+                                    Text(stringResource(R.string.nav_alt_dismiss))
+                                }
+                            }
+                            else -> {
+                                // Not navigating — no route to offer forks for.
+                                Text(
+                                    stringResource(R.string.live_map_alternatives_none),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                )
+                                TextButton(onClick = { showAlternatives = false }) {
+                                    Text(stringResource(R.string.nav_alt_dismiss))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-    }
 }
 
 /** A map control button with a small caption beneath it, drawn on a

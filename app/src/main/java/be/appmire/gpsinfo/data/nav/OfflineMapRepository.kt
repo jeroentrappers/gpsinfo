@@ -144,6 +144,12 @@ class OfflineMapRepository(context: Context) {
         val minZoom: Int,
         val maxZoom: Int,
         val sizeBytes: Long,
+        /** Server data build this region was cut from (the `/extract` ETag).
+         *  Compared against the catalog's current version to offer updates. */
+        val dataVersion: String? = null,
+        /** Whether an offline search index (`<name>.search.sqlite`) is present
+         *  alongside the `.pmtiles`. */
+        val hasSearch: Boolean = false,
     )
 
     private fun pmtilesDir(): File =
@@ -170,6 +176,8 @@ class OfflineMapRepository(context: Context) {
                     minZoom = j.optInt("minZoom"),
                     maxZoom = j.optInt("maxZoom"),
                     sizeBytes = j.optLong("sizeBytes"),
+                    dataVersion = j.optString("dataVersion").ifBlank { null },
+                    hasSearch = File(dir, "$name.search.sqlite").exists(),
                 )
             }.getOrNull()
         }
@@ -222,6 +230,8 @@ class OfflineMapRepository(context: Context) {
                 emit(DownloadState.Failed("HTTP $code"))
                 return@flow
             }
+            // Server data build this cut came from — used later to offer updates.
+            val dataVersion = conn.getHeaderField("ETag")?.trim('"')?.ifBlank { null }
             val total = conn.contentLengthLong.coerceAtLeast(0L)
             conn.inputStream.use { input ->
                 part.outputStream().use { output ->
@@ -250,6 +260,7 @@ class OfflineMapRepository(context: Context) {
                 .put("minZoom", minZoom)
                 .put("maxZoom", maxZoom)
                 .put("sizeBytes", out.length())
+                .apply { if (dataVersion != null) put("dataVersion", dataVersion) }
                 .let { File(dir, "$name.json").writeText(it.toString()) }
             emit(DownloadState.Done)
         } catch (e: Exception) {

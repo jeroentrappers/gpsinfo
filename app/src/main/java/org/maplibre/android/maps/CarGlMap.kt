@@ -31,6 +31,8 @@ import android.view.Surface
 import android.view.View
 import be.appmire.gpsinfo.car.CarMapPalette
 import be.appmire.gpsinfo.car.MapProjector
+import be.appmire.gpsinfo.data.nav.MapStyleMode
+import be.appmire.gpsinfo.data.nav.MapStyleResolver
 import org.maplibre.android.MapLibre
 import android.graphics.Canvas
 import android.graphics.Color
@@ -100,6 +102,12 @@ class CarGlMap(
     private val darkStyleUri: String,
     private val onStyleReady: () -> Unit,
     private val onNeedRepaint: () -> Unit,
+    /** Selects online vs offline (downloaded region) styles; null keeps the
+     *  map online-only (the online URIs above). */
+    private val resolver: MapStyleResolver? = null,
+    /** Current offline-map mode; read per style-apply so a mode change in
+     *  Settings takes effect on the car surface too. */
+    private val modeProvider: () -> MapStyleMode = { MapStyleMode.AUTO },
 ) {
     private val appContext = context.applicationContext
     private val renderer: CarGlMapRenderer
@@ -117,19 +125,41 @@ class CarGlMap(
     private var paletteApplied = false
     /** Night mode: uses the dark style + night palette. */
     private var dark = false
+    /** Key of the style currently loaded (theme × online/offline region), so
+     *  a reload only fires when the resolved style actually changes. */
+    private var currentStyleKey: String? = null
 
-    /** Switch between the day (light + warm palette) and night (dark style +
-     *  night palette) map. Reloads the style, which self-heals the nav layers
-     *  and re-applies the right palette. */
-    fun setDark(darkMode: Boolean) {
-        if (darkMode == dark) return
+    /**
+     * Apply the right base style for the given theme and camera centre —
+     * online when connected / no pack covers the point, or a downloaded
+     * `.pmtiles` region otherwise (per [resolver] + [modeProvider]). A reload
+     * drops our sources/layers + palette, which [onDidFinishLoadingStyle]
+     * self-heals; it's a no-op while the resolved style is unchanged.
+     *
+     * [lat]/[lon] may be null before the first fix (resolves to online, or
+     * the largest pack under FORCE_OFFLINE).
+     */
+    fun applyStyle(darkMode: Boolean, lat: Double?, lon: Double?) {
+        val resolved = resolver?.resolve(darkMode, modeProvider(), lat, lon)
+            ?: MapStyleResolver.Resolved.Online(if (darkMode) darkStyleUri else lightStyleUri, darkMode)
+        if (resolved.key == currentStyleKey) return
+        currentStyleKey = resolved.key
         dark = darkMode
         styleLoaded = false
         navLayersReady = false
         paletteApplied = false
         applied3d = null
-        runCatching { nativeMap.setStyleUri(if (darkMode) darkStyleUri else lightStyleUri) }
+        runCatching {
+            when (resolved) {
+                is MapStyleResolver.Resolved.Online -> nativeMap.setStyleUri(resolved.uri)
+                is MapStyleResolver.Resolved.Offline -> nativeMap.setStyleJson(resolved.buildJson())
+            }
+        }
     }
+
+    /** Day/night without moving — resolves against the last camera centre by
+     *  leaving position to the resolver (null → online / largest pack). */
+    fun setDark(darkMode: Boolean) = applyStyle(darkMode, null, null)
 
     // ── Surface lifecycle (main thread) ─────────────────────────────
 

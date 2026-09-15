@@ -623,6 +623,15 @@ object NavigationController {
         voice?.announceReroute()
     }
 
+    /** Force an immediate recompute of en-route alternatives for the current
+     *  destination. The on-map "alternatives" button calls this on demand so
+     *  the user gets a fresh set without waiting for the periodic loop. No-op
+     *  when not navigating. */
+    fun requestAlternatives() {
+        val s = _state.value as? NavState.Navigating ?: return
+        scope.launch { refreshAlternatives(s.destLat, s.destLon) }
+    }
+
     /**
      * Periodically (while navigating) compute route alternatives from the
      * current position and keep only those that diverge at a real upcoming

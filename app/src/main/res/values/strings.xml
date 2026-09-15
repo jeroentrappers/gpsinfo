@@ -287,6 +287,13 @@
     <string name="live_map_download_label" tools:ignore="MissingTranslation">Offline</string>
     <string name="live_map_download" tools:ignore="MissingTranslation">Download this area for offline use</string>
     <string name="live_map_download_progress" tools:ignore="MissingTranslation">Offline map: %1$d%%</string>
+    <!-- Waze-style on-map navigation controls. -->
+    <string name="live_map_menu" tools:ignore="MissingTranslation">Menu</string>
+    <string name="live_map_search_hint" tools:ignore="MissingTranslation">Where to?</string>
+    <string name="live_map_alternatives" tools:ignore="MissingTranslation">Route alternatives</string>
+    <string name="live_map_alternatives_label" tools:ignore="MissingTranslation">Routes</string>
+    <string name="live_map_alternatives_computing" tools:ignore="MissingTranslation">Finding alternatives…</string>
+    <string name="live_map_alternatives_none" tools:ignore="MissingTranslation">No alternative routes right now</string>
     <string name="live_map_sats" tools:ignore="MissingTranslation">Sats</string>
     <string name="live_map_open" tools:ignore="MissingTranslation">Open live map</string>
     <string name="live_map_avg_subtext" tools:ignore="MissingTranslation">avg %1$s %2$s · %3$d s</string>
@@ -305,6 +312,12 @@
     <string name="car_waiting_fix" tools:ignore="MissingTranslation">Waiting for GPS fix…</string>
     <string name="car_action_end_nav" tools:ignore="MissingTranslation">End route</string>
     <string name="car_action_navigate" tools:ignore="MissingTranslation">Where to?</string>
+    <!-- Waze-style car map action strip + menu screen. -->
+    <string name="car_action_menu" tools:ignore="MissingTranslation">Menu</string>
+    <string name="car_action_search" tools:ignore="MissingTranslation">Search</string>
+    <string name="car_action_alternatives" tools:ignore="MissingTranslation">Routes</string>
+    <string name="car_menu_title" tools:ignore="MissingTranslation">Menu</string>
+    <string name="car_menu_search" tools:ignore="MissingTranslation">Search a destination</string>
     <string name="car_nav_arrived_title" tools:ignore="MissingTranslation">You\'ve arrived</string>
     <string name="nav_eta_arrival" tools:ignore="MissingTranslation">arrival</string>
     <string name="nav_eta_remaining" tools:ignore="MissingTranslation">time left</string>

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "dataVersion": "bundled",
+  "regions": [
+    {
+      "id": "be",
+      "name": "Belgium",
+      "group": "Benelux",
+      "bbox": [2.51, 49.49, 6.41, 51.51],
+      "minZoom": 6,
+      "maxZoom": 14,
+      "sizeBytes": 620000000
+    },
+    {
+      "id": "nl",
+      "name": "Netherlands",
+      "group": "Benelux",
+      "bbox": [3.31, 50.75, 7.23, 53.68],
+      "minZoom": 6,
+      "maxZoom": 14,
+      "sizeBytes": 560000000
+    },
+    {
+      "id": "lu",
+      "name": "Luxembourg",
+      "group": "Benelux",
+      "bbox": [5.73, 49.44, 6.53, 50.19],
+      "minZoom": 6,
+      "maxZoom": 14,
+      "sizeBytes": 70000000
+    }
+  ]
+}

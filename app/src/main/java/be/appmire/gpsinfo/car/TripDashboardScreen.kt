@@ -346,6 +346,14 @@ class TripDashboardScreen(
             .onEach { renderer.updateLiveGlMap(it) }
             .launchIn(lifecycleScope)
 
+        // Offline-map selection (AUTO / offline / online) — same setting the
+        // phone map honours, so a downloaded region renders on the car too.
+        settings.mapStyleMode
+            .onEach {
+                renderer.updateMapStyleMode(be.appmire.gpsinfo.data.nav.MapStyleMode.fromString(it))
+            }
+            .launchIn(lifecycleScope)
+
         // Dynamic overlay layout (drag/scale per nav state). Push the active
         // state's overrides whenever the saved layout or the nav phase changes.
         combine(
@@ -440,6 +448,25 @@ class TripDashboardScreen(
             }
             .build()
 
+        // Waze-style primary actions on the map strip: a hamburger menu
+        // (parks the less-frequent destinations in CarMenuScreen) and a
+        // one-tap search. Keeping these two constant means "where am I / how
+        // do I search / how do I open everything else" never moves.
+        val menuAction = Action.Builder()
+            .setIcon(carIcon(R.drawable.ic_car_menu))
+            .setTitle(carContext.getString(R.string.car_action_menu))
+            .setOnClickListener {
+                screenManager.push(CarMenuScreen(carContext))
+            }
+            .build()
+        val searchAction = Action.Builder()
+            .setIcon(carIcon(R.drawable.ic_car_search))
+            .setTitle(carContext.getString(R.string.car_action_search))
+            .setOnClickListener {
+                screenManager.push(SearchScreen(carContext))
+            }
+            .build()
+
         // The main strip is contextual on the rally phase. During a
         // running RT the ±10 m distance-sync nudges take the slots —
         // they're the controls a co-driver actually needs mid-stage.
@@ -510,41 +537,59 @@ class TripDashboardScreen(
                             .build(),
                     )
                 } else {
-                    // Normal controls, priority-ordered and capped at 4 so the
-                    // strip can never overflow (which throws). Edit is offered
-                    // at any standstill (incl. while navigating) — its own NAV
-                    // vs IDLE layout bucket is tuned at rest; it auto-exits when
-                    // the car moves.
+                    // Waze-style, priority-ordered and capped at 4 so the
+                    // strip can never overflow (which throws). Menu + Search
+                    // lead and stay constant; the remaining slots are
+                    // contextual on whether we're navigating.
+                    val navigating = nav is NavigationController.NavState.Navigating ||
+                        nav is NavigationController.NavState.Preparing
                     val navAlt = (nav as? NavigationController.NavState.Navigating)
                         ?.alternatives?.firstOrNull()
                     val actions = ArrayList<Action>()
-                    actions.add(recordAction)
-                    if (nav is NavigationController.NavState.Navigating ||
-                        nav is NavigationController.NavState.Preparing
-                    ) {
+                    actions.add(menuAction)
+                    actions.add(searchAction)
+                    if (navigating) {
                         actions.add(
                             Action.Builder()
                                 .setTitle(carContext.getString(R.string.car_action_end_nav))
                                 .setOnClickListener { NavigationController.stop(); invalidate() }
                                 .build(),
                         )
-                    }
-                    if (stopped) {
+                        // Alternatives — mirror the phone: always offered while
+                        // navigating. If a fork is already computed, take it;
+                        // otherwise recompute on demand (the next invalidate
+                        // surfaces it as "Take alt").
                         actions.add(
-                            Action.Builder()
-                                .setTitle(carContext.getString(R.string.car_action_edit_layout))
-                                .setOnClickListener { renderer.setEditMode(true); invalidate() }
-                                .build(),
+                            if (navAlt != null) {
+                                Action.Builder()
+                                    .setIcon(carIcon(R.drawable.ic_car_alt_route))
+                                    .setTitle(carContext.getString(R.string.car_action_take_alt))
+                                    .setOnClickListener {
+                                        NavigationController.acceptAlternative(navAlt); invalidate()
+                                    }
+                                    .build()
+                            } else {
+                                Action.Builder()
+                                    .setIcon(carIcon(R.drawable.ic_car_alt_route))
+                                    .setTitle(carContext.getString(R.string.car_action_alternatives))
+                                    .setOnClickListener {
+                                        NavigationController.requestAlternatives(); invalidate()
+                                    }
+                                    .build()
+                            },
                         )
-                    }
-                    actions.add(placesAction)
-                    if (navAlt != null) {
-                        actions.add(
-                            Action.Builder()
-                                .setTitle(carContext.getString(R.string.car_action_take_alt))
-                                .setOnClickListener { NavigationController.acceptAlternative(navAlt); invalidate() }
-                                .build(),
-                        )
+                    } else {
+                        // Not navigating: recording + (at a standstill) the
+                        // overlay-layout editor take the free slots.
+                        actions.add(recordAction)
+                        if (stopped) {
+                            actions.add(
+                                Action.Builder()
+                                    .setTitle(carContext.getString(R.string.car_action_edit_layout))
+                                    .setOnClickListener { renderer.setEditMode(true); invalidate() }
+                                    .build(),
+                            )
+                        }
                     }
                     actions.take(4).forEach { addAction(it) }
                 }

@@ -17,6 +17,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import be.appmire.gpsinfo.car.MapViewMode
 import be.appmire.gpsinfo.data.RecordingState
 import be.appmire.gpsinfo.data.nav.MapLibreStyle
+import be.appmire.gpsinfo.data.nav.MapStyleMode
+import be.appmire.gpsinfo.data.nav.MapStyleResolver
+import be.appmire.gpsinfo.data.nav.OfflineMapRepository
 import be.appmire.gpsinfo.data.model.NavigationTarget
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
@@ -80,11 +83,17 @@ fun MapLibreMapHost(
     /** Declutter the base map (hide POIs / minor place + name labels) —
      *  on while navigating so the road ahead reads clearly. */
     simplified: Boolean = false,
+    /** Offline-map selection: whether to render from a downloaded region. */
+    styleMode: MapStyleMode = MapStyleMode.AUTO,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val holder = remember { MapHolder() }
+    val resolver = remember(context) {
+        MapStyleResolver(context, OfflineMapRepository(context))
+    }
+    remember(resolver) { holder.attachResolver(resolver); resolver }
 
     val mapView = remember {
         MapLibre.getInstance(context)
@@ -125,7 +134,7 @@ fun MapLibreMapHost(
             holder.update(
                 loc, follow || forceRecenter, viewMode, gpsBearingDeg,
                 recording, navigationTarget, tbtRoute, darkMap, simplified, traffic,
-                alternativeRoutes,
+                alternativeRoutes, styleMode,
             )
         },
     )
@@ -145,10 +154,16 @@ private class MapHolder {
     private var lines: LineManager? = null
     private var symbols: SymbolManager? = null
 
-    /** Which style URI is currently loaded, and whether a (re)load is in
-     *  flight — the style is swapped at runtime when the theme changes. */
-    private var loadedUri: String? = null
+    /** Which resolved style is currently loaded (its stable key), and whether
+     *  a (re)load is in flight — the style is swapped at runtime when the
+     *  theme flips or the map moves in/out of a downloaded offline region. */
+    private var loadedKey: String? = null
     private var styleLoading = false
+
+    /** Selects online vs offline (region-covering) styles. Set before the
+     *  map becomes ready, so the first load already honours downloaded packs. */
+    private var resolver: MapStyleResolver? = null
+    private var lastMode: MapStyleMode = MapStyleMode.AUTO
 
     @Volatile
     private var wantDark = false
@@ -178,6 +193,12 @@ private class MapHolder {
     private var lastRoutePointCount = -1
     private var lastTbtPointCount = -1
 
+    /** Provide the online/offline selector; safe to call before the map is
+     *  ready. Idempotent — a second attach with a new resolver replaces it. */
+    fun attachResolver(resolver: MapStyleResolver) {
+        this.resolver = resolver
+    }
+
     fun onMapReady(view: MapView, map: MapLibreMap) {
         this.map = map
         this.view = view
@@ -187,14 +208,22 @@ private class MapHolder {
             isLogoEnabled = false
             isAttributionEnabled = false
         }
-        loadStyle(MapLibreStyle.forDark(wantDark))
+        // No fix yet → resolve without a centre (online unless FORCE_OFFLINE
+        // finds a pack). The first update() re-resolves against the location.
+        loadStyle(resolve(null, null))
     }
+
+    /** Resolve the style for the given centre, or fall back to a plain online
+     *  style when no resolver is attached. */
+    private fun resolve(lat: Double?, lon: Double?): MapStyleResolver.Resolved =
+        resolver?.resolve(wantDark, lastMode, lat, lon)
+            ?: MapStyleResolver.Resolved.Online(MapLibreStyle.forDark(wantDark), wantDark)
 
     /** (Re)load a style and rebuild the annotation managers on top of it.
      *  Called initially and again whenever the theme flips the style —
      *  a style swap drops all annotations, so the long-lived objects are
      *  nulled and recreated by the next [update]. */
-    private fun loadStyle(uri: String) {
+    private fun loadStyle(resolved: MapStyleResolver.Resolved) {
         val map = map ?: return
         val view = view ?: return
         styleLoading = true
@@ -217,7 +246,15 @@ private class MapHolder {
         lastTbtPointCount = -1
         applied3d = null
         lastSimplified = null
-        map.setStyle(Style.Builder().fromUri(uri)) { style ->
+        val builder = when (resolved) {
+            is MapStyleResolver.Resolved.Online -> Style.Builder().fromUri(resolved.uri)
+            is MapStyleResolver.Resolved.Offline -> Style.Builder().fromJson(resolved.buildJson())
+        }
+        val dark = when (resolved) {
+            is MapStyleResolver.Resolved.Online -> resolved.dark
+            is MapStyleResolver.Resolved.Offline -> resolved.dark
+        }
+        map.setStyle(builder) { style ->
             this.style = style
             // Managers must outlive the style; LineManager added first
             // so the trail/route draw beneath the position markers.
@@ -232,10 +269,11 @@ private class MapHolder {
                 iconIgnorePlacement = true
                 iconRotationAlignment = Property.ICON_ROTATION_ALIGNMENT_MAP
             }
-            // OpenFreeMap's dark style is near-black with low-contrast
-            // roads; brighten the road network + water so features read.
-            if (uri == MapLibreStyle.DARK) tuneDarkStyle(style) else tuneLightStyle(style)
-            loadedUri = uri
+            // The dark style is near-black with low-contrast roads; brighten
+            // the road network + water so features read. Same OpenMapTiles
+            // schema online and offline, so this keys on the theme, not the URI.
+            if (dark) tuneDarkStyle(style) else tuneLightStyle(style)
+            loadedKey = resolved.key
             styleLoading = false
         }
     }
@@ -351,16 +389,20 @@ private class MapHolder {
         simplified: Boolean,
         traffic: List<be.appmire.gpsinfo.data.nav.TrafficIncident>,
         alternativeRoutes: List<List<be.appmire.gpsinfo.data.nav.RoutePoint>>,
+        styleMode: MapStyleMode,
     ) {
         wantDark = darkMap
+        lastMode = styleMode
         val map = map ?: return
 
-        // Swap the base style when the theme flips. A style reload drops
-        // all annotations, so they're rebuilt on the following frame.
-        val desiredUri = MapLibreStyle.forDark(darkMap)
+        // Swap the base style when the theme flips or we move in/out of a
+        // downloaded offline region. A style reload drops all annotations, so
+        // they're rebuilt on the following frame. The resolved-style key makes
+        // this a no-op while nothing relevant changed.
         if (styleLoading) return
-        if (desiredUri != loadedUri) {
-            loadStyle(desiredUri)
+        val desired = resolve(loc?.latitude, loc?.longitude)
+        if (desired.key != loadedKey) {
+            loadStyle(desired)
             return
         }
 
@@ -514,18 +556,24 @@ private class MapHolder {
             trafficCircles.clear()
             for (inc in traffic) {
                 val color = trafficColor(inc.category)
-                val geo = inc.geometry
+                // Guard against malformed feed geometry: a NaN / out-of-range
+                // coordinate makes LatLng's constructor throw, which — now that
+                // the map is the app's launch screen — would crash on startup.
+                // Skip bad points and drop incidents left with too few.
+                val pts = inc.geometry
+                    .filter { it.size >= 2 && validLatLon(it[1], it[0]) }
+                    .map { LatLng(it[1], it[0]) }
                 when {
-                    geo.size == 1 -> trafficCircles.add(
+                    pts.size == 1 -> trafficCircles.add(
                         circles.create(
-                            CircleOptions().withLatLng(LatLng(geo[0][1], geo[0][0]))
+                            CircleOptions().withLatLng(pts[0])
                                 .withCircleRadius(6f).withCircleColor(color)
                                 .withCircleStrokeColor("#FFFFFF").withCircleStrokeWidth(1.5f),
                         ),
                     )
-                    geo.size >= 2 -> trafficLines.add(
+                    pts.size >= 2 -> trafficLines.add(
                         lines.create(
-                            LineOptions().withLatLngs(geo.map { LatLng(it[1], it[0]) })
+                            LineOptions().withLatLngs(pts)
                                 .withLineColor(color).withLineWidth(5f),
                         ),
                     )
@@ -533,6 +581,10 @@ private class MapHolder {
             }
         }
     }
+
+    /** A finite, in-range WGS84 pair — LatLng's setters reject anything else. */
+    private fun validLatLon(lat: Double, lon: Double): Boolean =
+        lat.isFinite() && lon.isFinite() && lat in -90.0..90.0 && lon in -180.0..180.0
 
     private fun trafficColor(category: String): String = when (category) {
         "accident" -> "#B71C1C"

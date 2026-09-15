@@ -335,6 +335,20 @@ class DashboardViewModel(
     val carOverlayRallyPanel: StateFlow<Boolean> = carOverlayFlow({ it.carOverlayRallyPanel }, false)
     val carLiveGlMap: StateFlow<Boolean> = carOverlayFlow({ it.carLiveGlMap }, true)
 
+    /** Offline-map selection mode (AUTO / offline / online). Drives whether the
+     *  phone map renders from a downloaded `.pmtiles` region. */
+    val mapStyleMode: StateFlow<be.appmire.gpsinfo.data.nav.MapStyleMode> =
+        (settings as? SettingsRepository)?.mapStyleMode
+            ?.map { be.appmire.gpsinfo.data.nav.MapStyleMode.fromString(it) }
+            ?.stateIn(
+                viewModelScope, SharingStarted.Eagerly,
+                be.appmire.gpsinfo.data.nav.MapStyleMode.AUTO,
+            )
+            ?: MutableStateFlow(be.appmire.gpsinfo.data.nav.MapStyleMode.AUTO)
+
+    fun setMapStyleMode(mode: be.appmire.gpsinfo.data.nav.MapStyleMode) =
+        persistCarOverlay { it.setMapStyleMode(mode.name) }
+
     fun setCarOverlaySpeed(value: Boolean) = persistCarOverlay { it.setCarOverlaySpeed(value) }
     fun setCarOverlaySpeedLimit(value: Boolean) = persistCarOverlay { it.setCarOverlaySpeedLimit(value) }
     fun setCarOverlayCluster(value: Boolean) = persistCarOverlay { it.setCarOverlayCluster(value) }

@@ -162,6 +162,10 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
          *  car surface; decoded by the car layer (CarOverlayLayout). */
         val CarOverlayLayout = stringPreferencesKey("car_overlay_layout")
         val CarLiveGlMap = booleanPreferencesKey("car_live_gl_map")
+        /** Offline-map selection mode — MapStyleMode name (AUTO | FORCE_OFFLINE
+         *  | FORCE_ONLINE). Governs when the phone + car maps render from a
+         *  downloaded `.pmtiles` region instead of the online tile server. */
+        val MapStyleMode = stringPreferencesKey("map_style_mode")
 
         // EV vehicle profile — feeds live-priced charging queries + the
         // charging-stop planner (reachability + how much to charge).
@@ -514,6 +518,16 @@ class SettingsRepository(private val context: Context) : SettingsDataSource {
 
     suspend fun setCarLiveGlMap(value: Boolean) {
         context.dataStore.edit { it[Keys.CarLiveGlMap] = value }
+    }
+
+    /** Offline-map selection mode as a raw enum name; null = AUTO. Decoded by
+     *  the map layer's MapStyleMode (kept as a string here so the data layer
+     *  stays free of nav-package types, like the other enum settings). */
+    val mapStyleMode: Flow<String?> = context.dataStore.data
+        .map { it[Keys.MapStyleMode] }
+
+    suspend fun setMapStyleMode(name: String) {
+        context.dataStore.edit { it[Keys.MapStyleMode] = name }
     }
 
     /** The EV vehicle profile used for live-priced charger queries and the

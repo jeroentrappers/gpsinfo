@@ -133,6 +133,16 @@ class CarMapRenderer(
     // snapshotter above stays the fallback whenever this is off.
     private var glEnabled = false
     private var glMap: org.maplibre.android.maps.CarGlMap? = null
+    /** Offline-map selection, mirrored from Settings; drives whether the GL
+     *  map renders from a downloaded `.pmtiles` region. */
+    private var styleMode = be.appmire.gpsinfo.data.nav.MapStyleMode.AUTO
+    /** Shared online/offline style selector (same logic as the phone map). */
+    private val styleResolver by lazy {
+        be.appmire.gpsinfo.data.nav.MapStyleResolver(
+            carContext,
+            be.appmire.gpsinfo.data.nav.OfflineMapRepository(carContext),
+        )
+    }
     /** True while a frame is being drawn for the GL backend, so [drawFrame]
      *  skips the opaque background fill and [drawVectorMap] skips the
      *  bitmap blit — the overlay canvas must stay transparent over the map. */
@@ -150,6 +160,13 @@ class CarMapRenderer(
         scheduleRender()
     }
 
+    /** Offline-map mode from Settings; the GL map reads it per style-apply. */
+    fun updateMapStyleMode(mode: be.appmire.gpsinfo.data.nav.MapStyleMode) {
+        if (mode == styleMode) return
+        styleMode = mode
+        scheduleRender()
+    }
+
     /** Create + bind the GL map to the current surface if we have one. */
     private fun ensureGlBound() {
         if (!glEnabled) return
@@ -164,6 +181,8 @@ class CarMapRenderer(
             be.appmire.gpsinfo.data.nav.MapLibreStyle.DARK,
             onStyleReady = { mainHandler.post { scheduleRender() } },
             onNeedRepaint = { mainHandler.post { scheduleRender() } },
+            resolver = styleResolver,
+            modeProvider = { styleMode },
         ).also { glMap = it }
         gl.setDark(carContext.isDarkMode)
         gl.onSurfaceAvailable(surface, w, h)
@@ -1158,7 +1177,9 @@ class CarMapRenderer(
         // puck low on screen.
         val gl = glMap
         if (glMode && gl != null) {
-            gl.setDark(dark)
+            // Resolve online vs a downloaded offline region against the camera
+            // centre (self-heals nav layers + palette on any style swap).
+            gl.applyStyle(dark, camLat, camLon)
             gl.setBuildings3d(viewMode == MapViewMode.TILTED_3D)
             // Push the map's content padding to match the visible region so the
             // camera target (and thus the low-centre puck) is centred in what
