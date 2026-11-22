@@ -10,7 +10,7 @@
   changed_when: false
   failed_when: false
 
-- name: Require the Storage Box to be mounted (PBF + output stage there)
+- name: Require the build staging (hot store) to be mounted (PBF + output stage there)
   ansible.builtin.command: mountpoint -q /mnt/storagebox
   register: sb_mounted
   changed_when: false
@@ -19,7 +19,7 @@
 - name: Fail if the Storage Box isn't mounted
   ansible.builtin.assert:
     that: "sb_mounted.rc == 0"
-    fail_msg: "/mnt/storagebox is not mounted — start gpsinfo-storagebox.service first."
+    fail_msg: "/mnt/storagebox is not mounted — start mnt-storagebox.mount (appmire-infra hot-store)."
 
 - name: Local free space on {{ app_dir }} (KB)
   ansible.builtin.shell: "df -P {{ app_dir }} | awk 'NR==2{print $4}'"

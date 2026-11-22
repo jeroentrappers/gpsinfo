@@ -1,63 +1,27 @@
-# Mount the Hetzner Storage Box subaccount over CIFS at {{ storagebox_mount }}.
-# Used as build staging (PBF + output). The systemd .mount unit name must match
-# the mount path: /mnt/storagebox -> mnt-storagebox.mount.
+# The Hetzner Storage Box is retired (2026-11-19). /mnt/storagebox is now hetz1's local
+# hot store, bind-mounted by appmire-infra (roles/hot-store), which also owns the
+# mnt-storagebox.mount unit. This role only removes what GPSinfo used to install for the
+# box and checks that the build staging path is mounted.
 ---
-- name: Retire the old sshfs mount service if present (we use CIFS now)
+- name: Retire the old sshfs mount service if present
   ansible.builtin.systemd_service:
     name: gpsinfo-storagebox.service
     state: stopped
     enabled: false
   failed_when: false
 
-- name: Unmount any stale (sshfs) mount at the mountpoint
-  ansible.builtin.command: "umount {{ storagebox_mount }}"
-  failed_when: false
-  changed_when: false
-
-- name: Ensure cifs-utils present
-  ansible.builtin.apt:
-    name: cifs-utils
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
-
-- name: Ensure config dir
+- name: Remove the sshfs unit, the SMB credentials and the box SSH key
   ansible.builtin.file:
-    path: /etc/gpsinfo-tiles
-    state: directory
-    mode: "0755"
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/systemd/system/gpsinfo-storagebox.service
+    - /etc/gpsinfo-tiles/smb.cred
+    - /etc/gpsinfo-tiles/storagebox_ed25519
+    - /etc/gpsinfo-tiles/storagebox_ed25519.pub
 
-- name: Write root-only SMB credentials
-  ansible.builtin.copy:
-    dest: /etc/gpsinfo-tiles/smb.cred
-    mode: "0600"
-    owner: root
-    group: root
-    content: |
-      username={{ smb_username }}
-      password={{ smb_password }}
-  no_log: true
-
-- name: Install the CIFS mount unit
-  ansible.builtin.template:
-    src: mnt-storagebox.mount.j2
-    dest: /etc/systemd/system/mnt-storagebox.mount
-    mode: "0644"
-  register: mount_unit
-
-- name: Ensure mountpoint
-  ansible.builtin.file:
-    path: "{{ storagebox_mount }}"
-    state: directory
-    mode: "0755"
-
-- name: Reload systemd + enable/start the CIFS mount
-  ansible.builtin.systemd_service:
-    name: mnt-storagebox.mount
-    daemon_reload: true
-    enabled: true
-    state: started
-
-- name: Verify it mounted
-  ansible.builtin.command: mountpoint -q {{ storagebox_mount }}
+- name: Build staging is mounted (the appmire-infra hot store, not CIFS)
+  ansible.builtin.shell: "findmnt -n -o FSTYPE {{ storagebox_mount }}"
+  register: sb_fstype
   changed_when: false
+  failed_when: sb_fstype.rc != 0 or (sb_fstype.stdout | trim) in ['cifs', 'smb3', 'fuse.sshfs']

@@ -3,7 +3,7 @@
 #   cd deploy/ansible
 #   ansible-playbook site.yml --tags app         # dirs, styles, fonts, sprites, extract container
 #   ansible-playbook site.yml --tags nginx       # vhost + certbot TLS (once DNS points at hetz1)
-#   ansible-playbook site.yml --tags storagebox  # CIFS mount of the Storage Box (build staging)
+#   ansible-playbook site.yml --tags storagebox  # retire the old Storage Box bits, check build staging
 #   ansible-playbook site.yml --tags build       # kick off the throttled planet build (background)
 #   ansible-playbook site.yml --tags valhalla     # Valhalla routing service (valhalla.appmire.be)
 #
@@ -26,7 +26,7 @@
     - role: nginx
       become: true
       tags: [nginx]
-    - role: storagebox       # CIFS mount of the Storage Box (build staging)
+    - role: storagebox       # retired Storage Box: cleanup + staging check
       become: true
       tags: [storagebox]
     - role: tilebuild        # role dir name avoids the repo's build/ gitignore
