@@ -18,7 +18,7 @@ server {
 
     location / {
         if ($arg_key != "{{ valhalla_api_key }}") { return 403; }
-        limit_req zone=gpsinfo_routing burst=10 nodelay;
+        limit_req zone=gpsinfo_routing burst=40 nodelay;
         proxy_pass http://127.0.0.1:{{ valhalla_port }};
         proxy_read_timeout 60s;
         add_header Access-Control-Allow-Origin $cors_allow_origin always;
@@ -39,7 +39,7 @@ server {
     server_name {{ valhalla_domain }};
     location / {
         if ($arg_key != "{{ valhalla_api_key }}") { return 403; }
-        limit_req zone=gpsinfo_routing burst=10 nodelay;
+        limit_req zone=gpsinfo_routing burst=40 nodelay;
         proxy_pass http://127.0.0.1:{{ valhalla_port }};
         proxy_read_timeout 60s;
     }

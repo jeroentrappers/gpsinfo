@@ -24,7 +24,12 @@ services:
       force_rebuild: "False"
       build_admins: "True"
       build_time_zones: "True"
-      build_elevation: "False"
+      # Elevation: downloads terrain tiles for the built extent and points
+      # additional_data.elevation at them, so /height returns real elevations
+      # (the EV range model uses the route's climb/descent) and grade is baked
+      # into the graph on a rebuild. First deploy fetches elevation for the
+      # eu-west extent (sizeable) — expect a long initial build; cached after.
+      build_elevation: "True"
       server_threads: "{{ valhalla_threads }}"
       # Live-traffic overlay: builds an edge-aligned traffic.tar and points
       # mjolnir.traffic_extract at it, so the gpsinfo-traffic-writer sidecar can
